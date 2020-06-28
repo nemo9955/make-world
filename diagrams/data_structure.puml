@@ -1,0 +1,74 @@
+@startmindmap Data Structure overview
+* World
+** Solar System
+
+*** Sun
+****_ Size
+****_ Age
+****_ Tempreature
+
+*** Planet
+
+**** Meta
+*****_ Size
+*****_ Axis inclination
+*****_ Axis rotation speed
+*****_ Sun orbit
+
+**** Creatures
+*****_ Name
+*****_ Descendant
+*****_ Location ans Period list
+*****_ Weight (Size)
+*****_ Fav. foods
+*****_ Fav. temperature
+*****_ Fav. humidity
+
+**** CellData
+***** Binomes
+******_ Name
+***** Resources
+******_ Name
+******_ Quantity
+
+***** Air currents
+******_ Direction
+******_ Elevation
+******_ Speed
+******_ Carry Volume
+***** Water currents
+******_ Direction
+******_ Depth
+******_ Speed
+******_ Carry Volume
+***** Temperature
+******_ Day values per month
+******_ Night values per month
+******_ Avg. year value
+***** Precipitation
+******_ Day values per month
+******_ Night values per month
+******_ Avg. year value
+
+**** LineData
+***** Rivers
+******_ Start Node
+******_ End Node
+******_ Middle Nodes
+******_ Flow rate
+***** Roads
+******_ Start Node
+******_ End Node
+******_ Middle Nodes
+******_ Width
+******_ Quality/Speed
+
+**** PointData
+***** Cities
+******_ Population
+******_ Type?
+******_ Roads
+
+
+
+@endmindmap
