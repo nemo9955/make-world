@@ -5,7 +5,8 @@
     "main": "index.js",
     "private": true,
     "scripts": {
-        "start": "webpack-dev-server --devtool source-map --mode development --open",
+        "starto": "webpack-dev-server --devtool source-map --mode development --open",
+        "start": "webpack-dev-server --devtool source-map --mode development",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "repository": {
@@ -26,5 +27,7 @@
         "webpack-cli": "^3.3.12",
         "webpack-dev-server": "^3.11.0"
     },
-    "dependencies": {}
+    "dependencies": {
+        "workerpool": "^6.0.0"
+    }
 }
