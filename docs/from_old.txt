@@ -1,0 +1,70 @@
+TODOs FROM PREVIOUS SIMILAR PROJCT (private) : https://gitlab.com/nemo9955/world-gen
+
+# world-gen
+
+World fantasy generation project that runs in the browser.
+
+It aims to be a single resource to generate a simulated (as best it can) planet with towns and maybe more.
+
+Planet TODO  :
+	Vizual
+x		draw cells
+x		draw contours
+		draw lines
+x		draw arrows
+		draw symbols
+		draw topology layers
+
+	Cells
+x		manual add/remove
+~		dynamic add/remove cells
+x		compute voronoi
+
+	Tectonic plates
+x		set N similar plates
+		set N plates with varying sizes
+		group plates
+x			basic - close to cenetr
+			complex - weighted graph
+x		translate plates
+		rotate plates
+~		dynamic add/remove cells to plates
+			Convergent
+			Divergent
+			Transform
+
+	Relief
+		tectonic plates interactions
+			Convergent
+			Divergent
+			Transform
+		hotspots
+		rifts
+
+	Fluids
+		specify water/ocean cells
+		air currents
+			just flow vector
+			transports data
+		water currents
+			just flow vector
+			transports data
+
+	Space
+		axial tilt
+		anual sun heating per cell
+
+	Planet data
+		earthkuake points
+		make temperature ranges
+		make binomes
+		make rivers
+
+City TODO :
+
+	Planet
+		pick optimal spots
+
+	Terrain
+		get planet data in that spot
+		make more detailed locally
