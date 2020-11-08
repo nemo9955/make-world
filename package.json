@@ -22,14 +22,14 @@
     "homepage": "https://github.com/nemo9955/make-world#readme",
     "devDependencies": {
         "ts-loader": "^7.0.5",
-        "typescript": "^3.9.5",
-        "webpack": "^4.43.0",
+        "typescript": "^3.9.7",
+        "webpack": "^4.44.2",
         "webpack-cli": "^3.3.12",
         "webpack-dev-server": "^3.11.0"
     },
     "dependencies": {
         "@types/dat.gui": "^0.7.5",
         "dat.gui": "^0.7.7",
-        "workerpool": "^6.0.0"
+        "workerpool": "^6.0.3"
     }
 }
