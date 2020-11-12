@@ -7,9 +7,10 @@
         "sourceMap": true
     },
     "include": [
-        "src/**/*"
+        "src/**/*",
+        "snipets/**/*"
     ],
-    "_exclude": [
+    "exclude": [
         "node_modules"
     ]
 }

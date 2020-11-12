@@ -2,7 +2,7 @@
     "name": "make-world",
     "version": "1.0.0",
     "description": "Make a realistic world by simulating as many aspects as possible",
-    "main": "index.js",
+    "main": "dist/index.js",
     "private": true,
     "scripts": {
         "starto": "webpack-dev-server --devtool source-map --mode development --open",
@@ -21,11 +21,13 @@
     },
     "homepage": "https://github.com/nemo9955/make-world#readme",
     "devDependencies": {
+        "schema-utils": "^3.0.0",
         "ts-loader": "^7.0.5",
         "typescript": "^3.9.7",
         "webpack": "^4.44.2",
         "webpack-cli": "^3.3.12",
-        "webpack-dev-server": "^3.11.0"
+        "webpack-dev-server": "^3.11.0",
+        "worker-loader": "^3.0.5"
     },
     "dependencies": {
         "@types/dat.gui": "^0.7.5",
