@@ -1,7 +1,7 @@
 
-console.log("START TEST 1!")
+console.log("START test_1!")
 
-import PrimeWorker from "worker-loader!./worker.1";
+import PrimeWorker from "worker-loader!./test_1.worker";
 import { openDB, deleteDB, wrap, unwrap } from 'idb';
 
 // Add web worker as described in
@@ -17,7 +17,7 @@ export namespace test_1 {
 
         const db = await openDB("test_1", 1, {
             upgrade(db) {
-                if (!db.objectStoreNames.contains('primes')){
+                if (!db.objectStoreNames.contains('primes')) {
                     const store = db.createObjectStore('primes', { keyPath: 'id', autoIncrement: true });
                     store.createIndex('id', 'id');
                     console.log("createObjectStore primes !!!!!!!!!!!!!!!!");
@@ -47,4 +47,4 @@ export namespace test_1 {
 
 }
 
-console.log("DONE TEST 1!")
+console.log("DONE test_1!")

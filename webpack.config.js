@@ -19,15 +19,11 @@ module.exports = {
         extensions: [".tsx", ".ts", ".js"]
     },
     output: {
-        filename: 'index.js',
+        filename: '[name].js',
+        sourceMapFilename: '[name].map',
+        chunkFilename: '[id].js',
         library: 'make_world',
         publicPath: "/dist/",
         path: path.resolve(__dirname, "dist/"),
     },
-    // output: {
-    //     // This is required so workers are known where to be loaded from
-    //     publicPath: "/dist/",
-    //     filename: "bundle.js",
-    //     path: path.resolve(__dirname, "dist/"),
-    // },
 };
