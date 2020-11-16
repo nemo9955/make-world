@@ -4,7 +4,6 @@ import * as THREE from "three";
 
 // import * as test_s2 from "./test_2"
 
-export namespace test_2 {
     const ctx: Worker = self as any;
     console.log("ctx", ctx);
 
@@ -62,5 +61,3 @@ export namespace test_2 {
           }
 
     });
-
-}

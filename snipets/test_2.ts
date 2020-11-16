@@ -38,7 +38,17 @@ export namespace test_2 {
     }
 
 
+    function wait(ms){
+        var start = new Date().getTime();
+        var end = start;
+        while(end < start + ms) {
+          end = new Date().getTime();
+       }
+     }
+
     export async function init() {
+
+        // debugger;
 
         const canvasWindow: HTMLCanvasElement = document.querySelector("#canvas-window");
         const canvasOffscreen: HTMLCanvasElement = (document.querySelector("#canvas-worker") as any).transferControlToOffscreen();
@@ -50,6 +60,15 @@ export namespace test_2 {
 
 
 
+        document.querySelector('#make-busy').addEventListener('click', () => {
+            (document.querySelector('#busy') as any).innerText = 'Main thread working...';
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                wait(2000) ;
+                (document.querySelector('#busy') as any).innerText = 'Done!';
+              });
+            })
+          });
 
         // const workerCode = document.querySelector('#workerCode').textContent;
         // const blob = new Blob([workerCode], { type: 'text/javascript' });

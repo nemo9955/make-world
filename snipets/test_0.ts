@@ -1,7 +1,7 @@
 
 console.log("START test_0!")
 
-import PrimeWorker from "worker-loader!./test_0.worker";
+// import TheWorker from "worker-loader!./test_0.worker";
 
 export namespace test_0 {
 

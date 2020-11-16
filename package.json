@@ -21,12 +21,13 @@
     },
     "homepage": "https://github.com/nemo9955/make-world#readme",
     "devDependencies": {
+        "@types/stats.js": "^0.17.0",
+        "schema-utils": "^3.0.0",
         "ts-loader": "^7.0.5",
         "typescript": "^3.9.7",
         "webpack": "^4.44.2",
         "webpack-cli": "^3.3.12",
         "webpack-dev-server": "^3.11.0",
-        "schema-utils": "^3.0.0",
         "worker-loader": "^3.0.5"
     },
     "dependencies": {
