@@ -4,6 +4,7 @@ console.log("START test_3!")
 
 import { openDB, deleteDB, wrap, unwrap } from 'idb';
 import * as THREE from "three";
+import * as tfps from "three-fps-counter";
 
 export function wait(ms) {
     var start = new Date().getTime();
@@ -23,6 +24,8 @@ export class ThreejsCube {
     geometry: THREE.BoxGeometry;
     material: THREE.MeshBasicMaterial;
 
+    fps : any;
+
     constructor(renderer: any) {
         this.renderer = renderer;
         this.scene = new THREE.Scene();
@@ -31,6 +34,7 @@ export class ThreejsCube {
         this.material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
         this.camera.position.z = 10;
 
+        this.fps = new (tfps(THREE))(this.renderer)
         this.cubes = new Map()
 
         this.get_cubes();
@@ -93,6 +97,8 @@ export class ThreejsCube {
         //     cube_.rotation.y += 0.01;
         // });
         this.renderer.render(this.scene, this.camera);
+        this.fps.render()
+
     }
 }
 

@@ -86,7 +86,7 @@ export namespace test_3 {
             // requestAnimationFrame(() => {
             // requestAnimationFrame(() => {
                 console.log("stttttttttttt");
-                tcom.wait(3000);
+                tcom.wait(5000);
                 console.log("edddddddddddd");
                 (document.querySelector('#busy') as any).innerText = 'Done!';
             // });
