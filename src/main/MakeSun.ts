@@ -1,6 +1,0 @@
-
-export namespace MakeSun {
-
-
-
-}

@@ -18,10 +18,14 @@ import * as THREE from "three";
 
 // let stats_ = null ;
 
+let db = null;
+
 async function update_me() {
     // requestAnimationFrame(update_me)
     setTimeout(() => { update_me }, 10);
-    const db = await openDB("test_3", 1)
+
+    // const db = await openDB("test_3", 1)
+
     // const tx = db.transaction('cubes', 'readwrite');
     // const index = tx.store.index('cubes');
 
@@ -64,6 +68,8 @@ async function update_me() {
 ctx.addEventListener("message", async (e) => {
 
     console.log("e update : ", e);
+
+    db = await openDB("test_3", 1)
     update_me()
     // stats_  = e.data.stats
 });

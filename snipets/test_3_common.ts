@@ -25,6 +25,7 @@ export class ThreejsCube {
     material: THREE.MeshBasicMaterial;
 
     fps : any;
+    db : any;
 
     constructor(renderer: any) {
         this.renderer = renderer;
@@ -33,6 +34,7 @@ export class ThreejsCube {
         this.geometry = new THREE.BoxGeometry(1, 1, 1);
         this.material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
         this.camera.position.z = 10;
+
 
         this.fps = new (tfps(THREE))(this.renderer)
         this.cubes = new Map()
@@ -44,8 +46,9 @@ export class ThreejsCube {
 
     async get_cubes() {
 
-        const db = await openDB("test_3", 1);
-        const db_cubes = await db.getAllFromIndex('cubes', 'id')
+        this.db = await openDB("test_3", 1)
+        // const db = await openDB("test_3", 1);
+        const db_cubes = await this.db.getAllFromIndex('cubes', 'id')
         console.log("db_cubes", db_cubes);
 
         db_cubes.forEach(cube_ => {
@@ -73,8 +76,7 @@ export class ThreejsCube {
         requestAnimationFrame(this.boundAnimate);
 
 
-        const db = await openDB("test_3", 1)
-        let cursor = await db.transaction('cubes').store.openCursor();
+        let cursor = await this.db.transaction('cubes').store.openCursor();
 
         while (cursor) {
             //   console.log(cursor.key, cursor.value);
