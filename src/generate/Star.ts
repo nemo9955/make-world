@@ -33,8 +33,7 @@ export class Star {
     private setFromMass(mass?: number) {
         if (mass) this.mass = mass;
 
-        // this.luminosity = Math.pow(mass, 3);
-        this.luminosity = Math.pow(mass, 4); // TMP !!!!!!!!!!!!!!!!!!!!!!!!!!! 3 is corect !!!
+        this.luminosity = Math.pow(mass, 3);
         this.radius = Math.pow(mass, 0.74);
         this.diameter = this.radius * 2;
         this.temperature = Math.pow(mass, 0.505);

@@ -3,8 +3,7 @@ import * as THREE from "three";
 import * as d3 from "d3"
 
 export class Color {
-    private value: d3.RGBColor;
-
+    private _color: d3.RGBColor;
     r: number;
     g: number;
     b: number;
@@ -18,12 +17,21 @@ export class Color {
     }
 
     public set(value: string) {
-        this.value = d3.color(value) as d3.RGBColor
+        this.color = d3.color(value) as d3.RGBColor
         // console.log("this.value", this.value);
 
-        this.r = this.value.r;
-        this.g = this.value.g;
-        this.b = this.value.b;
     }
+
+
+    public get color(): d3.RGBColor {
+        return this._color;
+    }
+    public set color(value: d3.RGBColor) {
+        this._color = value;
+        this.r = this._color.r;
+        this.g = this._color.g;
+        this.b = this._color.b;
+    }
+
 
 }

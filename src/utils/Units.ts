@@ -10,3 +10,5 @@ export const ASTRONOMICAL_UNIT = 149597870700 * 1000// m -> Km
 
 
 
+
+export const CANVAS_SUBSTRACT_PIXELS = 2
