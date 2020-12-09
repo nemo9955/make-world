@@ -2,12 +2,10 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
-
-
 import { SWorldData } from "../data/SWorldData"
 import { SWorldWorkerManager } from "../worker/SWorldWorkerManager"
-import { SWorldManage, SWorldConfig } from "../manage/SWorldManage"
-
+import { SWorldManager, SWorldConfig } from "../manage/SWorldManager"
+import { SWorldDBManager, STransaction } from "../manage/SWorldDBManager";
 
 export class SWorldDraw {
 
@@ -15,23 +13,23 @@ export class SWorldDraw {
     canvasOffscreen: HTMLCanvasElement
 
     config: SWorldConfig;
+    dbm: SWorldDBManager;
 
-    private _manager: SWorldManage;
-    public get manager(): SWorldManage { return this._manager; }
-    public set manager(value: SWorldManage) {
+    private _manager: SWorldManager;
+    public get manager(): SWorldManager { return this._manager; }
+    public set manager(value: SWorldManager) {
         this._manager = value;
         this.config = this._manager.config;
+        this.dbm = this._manager.dbm;
     }
 
+    constructor() { }
 
-    constructor() {
-
+    public init_worker() {
     }
 
     public init() {
-
     }
-
 
     public draw_message(event?: MessageEvent) {
         if (event?.data?.config) {

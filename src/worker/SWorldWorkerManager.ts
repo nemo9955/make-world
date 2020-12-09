@@ -6,7 +6,7 @@ import SWorldDrawWorker from "worker-loader!./SWorld.worker";
 // import SWorldDrawWorker from "worker-loader!../../../workers/SWorldDraw.worker";
 
 import * as Units from "../utils/Units"
-import { SWorldManage, SWorldConfig } from "../manage/SWorldManage"
+import { SWorldManager, SWorldConfig } from "../manage/SWorldManager"
 
 
 export class SWorldWorkerManager {
@@ -16,9 +16,9 @@ export class SWorldWorkerManager {
     canvasOffscreen: HTMLCanvasElement
     config: SWorldConfig
 
-    private _manager: SWorldManage;
-    public get manager(): SWorldManage { return this._manager; }
-    public set manager(value: SWorldManage) {
+    private _manager: SWorldManager;
+    public get manager(): SWorldManager { return this._manager; }
+    public set manager(value: SWorldManager) {
         this._manager = value;
         this.config = this._manager.config;
     }

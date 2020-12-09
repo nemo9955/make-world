@@ -2,6 +2,7 @@
 import { SWorldGui } from "../gui/SWorldGui"
 import { SWorldData } from "../data/SWorldData"
 import { SWorldWorkerManager } from "../worker/SWorldWorkerManager"
+import { SWorldDBManager } from "../manage/SWorldDBManager"
 
 
 /*
@@ -9,35 +10,56 @@ import { SWorldWorkerManager } from "../worker/SWorldWorkerManager"
 */
 export class SWorldConfig {
     update_draw: boolean = true
+    world_id: number
 }
 
-export class SWorldManage {
+export class SWorldManager {
 
     gui: SWorldGui;
     world: SWorldData;
     work_mng: SWorldWorkerManager;
     config: SWorldConfig;
+    dbm: SWorldDBManager;
 
-    constructor() {
+    constructor() { }
 
+    public async init_main() {
+        this.dbm = new SWorldDBManager();
         this.world = new SWorldData();
         this.gui = new SWorldGui();
         this.work_mng = new SWorldWorkerManager();
         this.config = new SWorldConfig();
 
+        await this.dbm.init()
+
+        this.world.manager = this;
         this.gui.manager = this;
         this.work_mng.manager = this;
 
+        this.world.init();
+        this.work_mng.init();
+        this.gui.init();
+
+        this.write();
     }
 
-    public init() {
-        this.world.init()
-        this.work_mng.init()
-        this.gui.init()
+    public async init_worker() {
+        this.dbm = new SWorldDBManager();
+        this.world = new SWorldData();
+        this.config = new SWorldConfig();
+        await this.dbm.open()
     }
 
     public update_config() {
         this.work_mng.draw_update()
+    }
+
+    public read() {
+        this.world.read();
+    }
+
+    public write() {
+        this.world.write();
     }
 
 }

@@ -7,7 +7,7 @@ import * as Tweakpane from "tweakpane/dist/tweakpane.js"
 
 import { SWorldData } from "../data/SWorldData"
 import { SWorldWorkerManager } from "../worker/SWorldWorkerManager"
-import { SWorldManage, SWorldConfig } from "../manage/SWorldManage"
+import { SWorldManager, SWorldConfig } from "../manage/SWorldManager"
 
 
 export class SWorldGui {
@@ -15,9 +15,9 @@ export class SWorldGui {
     work_mng: SWorldWorkerManager;
     config: SWorldConfig;
 
-    private _manager: SWorldManage;
-    public get manager(): SWorldManage { return this._manager; }
-    public set manager(value: SWorldManage) {
+    private _manager: SWorldManager;
+    public get manager(): SWorldManager { return this._manager; }
+    public set manager(value: SWorldManager) {
         this._manager = value;
         this.world = this._manager.world;
         this.work_mng = this._manager.work_mng;
@@ -25,8 +25,7 @@ export class SWorldGui {
     }
 
     pane: Tweakpane;
-    constructor() {
-    }
+    constructor() {    }
 
     public init() {
         this.pane = new Tweakpane({
@@ -41,13 +40,14 @@ export class SWorldGui {
     }
 
     public refresh() {
-        this.pane.refresh()
+        this.pane.refresh();
+        this.manager.write();
     }
 
     public init_manager() {
         const folder_tp = this.pane.addFolder({ title: 'Manager', });
         folder_tp.addInput(this.config, 'update_draw').on('change', () => {
-            console.log("this.config.update_draw", this.config.update_draw);
+            // console.log("this.config.update_draw", this.config.update_draw);
             this.manager.update_config()
         });
     }

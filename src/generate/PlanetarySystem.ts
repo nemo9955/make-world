@@ -2,6 +2,7 @@ import { Star } from "./Star";
 import * as Random from "../utils/Random"
 
 export class PlanetarySystem {
+    id: number;
 
     star: Star;
 
@@ -16,6 +17,7 @@ export class PlanetarySystem {
     orbits_distances: number[];
 
     constructor() {
+        this.id = Math.ceil(Math.random() * 10000) + 1000
         this.star = new Star();
     }
 
