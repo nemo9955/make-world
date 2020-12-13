@@ -14,10 +14,10 @@ export class STransaction {
     }
 }
 
-export class SWorldDBManager {
+export class DataBaseManager {
     idb: IDBPDatabase<unknown>;
 
-    constructor() {    }
+    constructor() { }
 
     public async init() {
         await this.delete()
@@ -30,7 +30,7 @@ export class SWorldDBManager {
                 if (!db.objectStoreNames.contains(PLANET_SYSTEM)) {
                     const store = db.createObjectStore(PLANET_SYSTEM, { keyPath: 'id', autoIncrement: false });
                     // store.createIndex('id', 'id');
-                    console.log("createObjectStore ", PLANET_SYSTEM);
+                    // console.log("createObjectStore ", PLANET_SYSTEM);
                 }
             }
         });
@@ -43,9 +43,6 @@ export class SWorldDBManager {
 
     public transaction(obj_store: string, type: IDBTransactionMode = "readonly") {
         var data = new STransaction();
-
-        console.log("this.idb", this.idb);
-
         data.tx = this.idb.transaction(obj_store, type);
         data.store = data.tx.objectStore(obj_store);
 

@@ -21,6 +21,21 @@ export class PlanetarySystem {
         this.star = new Star();
     }
 
+
+    clone(source_: PlanetarySystem) {
+        // console.log("source_", source_);
+        for (const key in source_) {
+            const element = source_[key];
+            switch (key) {
+                case "star":
+                    this.star.clone(element as Star); break;
+                default:
+                    this[key] = element; break;
+            }
+        }
+        // console.log("this", this);
+    }
+
     public genStar(type?: string) {
         switch (type) {
             case "long_life":

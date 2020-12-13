@@ -30,6 +30,20 @@ export class Star {
         this.color = new Color();
     }
 
+    clone(source_: Star) {
+        // console.log("source_", source_);
+        for (const key in source_) {
+            const element = source_[key];
+            switch (key) {
+                case "color":
+                    this.color.clone(element as Color); break;
+                default:
+                    this[key] = element; break;
+            }
+        }
+        // console.log("this", this);
+    }
+
     private setFromMass(mass?: number) {
         if (mass) this.mass = mass;
 

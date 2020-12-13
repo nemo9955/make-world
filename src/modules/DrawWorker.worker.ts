@@ -3,10 +3,9 @@ const ctx: Worker = self as any;
 import { openDB, deleteDB, wrap, unwrap } from 'idb';
 import * as THREE from "three";
 
-import { SWorldWorkerInstance } from "./SWorldWorkerInstance";
+import { DrawWorker } from "./DrawWorker";
 
-
-var work_instance = new SWorldWorkerInstance()
+var work_instance = new DrawWorker()
 
 ctx.addEventListener("message", async (event) => {
     work_instance.get_message(ctx, event)
