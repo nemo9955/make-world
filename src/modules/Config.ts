@@ -4,7 +4,7 @@
 */
 
 export class Config {
-    update_draw: boolean = true
+    update_draw: boolean = false
     world_id: number
     innerWidth: number
     innerHeight: number

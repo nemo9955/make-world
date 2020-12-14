@@ -13,8 +13,6 @@ export class MainManager {
     draw_worker: WorkerInstance
     gui: WorldGui;
 
-    canvasOffscreen: HTMLCanvasElement
-
     world: WorldData;
     config: Config;
     dbm: DataBaseManager;
@@ -38,6 +36,18 @@ export class MainManager {
         this.gui.init();
 
         this.write();
+
+        setTimeout(() => { // start draw after init
+            this.config.update_draw = true;
+            this.gui.refresh();
+        }, 500); // TODO find a more exact callback
+
+        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        setTimeout(() => { // DEBUGG , draw only for the first few secs
+            this.config.update_draw = false;
+            this.gui.refresh();
+        }, 3000);
+
     }
 
     public read() {
@@ -65,8 +75,8 @@ export class MainManager {
     }
 
     public resize() {
-        this.config.innerWidth = window.innerWidth
-        this.config.innerHeight = window.innerHeight
+        this.config.innerWidth = window.innerWidth;
+        this.config.innerHeight = window.innerHeight;
 
         this.config_update()
     }
@@ -87,15 +97,19 @@ export class MainManager {
         canvas.width = window.innerWidth - Units.CANVAS_SUBSTRACT_PIXELS;
         canvas.height = window.innerHeight - Units.CANVAS_SUBSTRACT_PIXELS;
 
-        this.canvasOffscreen = canvas.transferControlToOffscreen();
-        this.canvasOffscreen.width = window.innerWidth - Units.CANVAS_SUBSTRACT_PIXELS;
-        this.canvasOffscreen.height = window.innerHeight - Units.CANVAS_SUBSTRACT_PIXELS;
+        var canvasOffscreen = canvas.transferControlToOffscreen();
+        canvasOffscreen.width = window.innerWidth - Units.CANVAS_SUBSTRACT_PIXELS;
+        canvasOffscreen.height = window.innerHeight - Units.CANVAS_SUBSTRACT_PIXELS;
+
+        this.config.innerWidth = window.innerWidth;
+        this.config.innerHeight = window.innerHeight;
+
 
         (this.draw_worker as any).postMessage({
             message: 'init',
             config: this.config,
-            canvas: this.canvasOffscreen
-        }, [this.canvasOffscreen]);
+            canvas: canvasOffscreen
+        }, [canvasOffscreen]);
 
         this.resize()
     }
