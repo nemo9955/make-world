@@ -67,8 +67,6 @@ export class MainManager {
         this.config_update()
     }
 
-
-
     public config_update() {
         if (this.draw_worker)
             this.draw_worker.postMessage({
@@ -77,14 +75,12 @@ export class MainManager {
             });
     }
 
-
     public resize() {
         this.config.innerWidth = window.innerWidth
         this.config.innerHeight = window.innerHeight
 
         this.config_update()
     }
-
 
     public add_canvas() {
         var body = document.getElementsByTagName("body")[0];

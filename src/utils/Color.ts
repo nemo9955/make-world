@@ -27,7 +27,6 @@ export class Color {
     // private _color: d3.RGBColor;
     private _value: ColorValues;
 
-
     constructor() {
         this._value = new ColorValues();
     }
@@ -51,21 +50,11 @@ export class Color {
         this._value.clone(color)
     }
 
-    // public set color(value: d3.RGBColor) {
-    //     this._color = d3.rgb(value.r, value.g, value.b);
-    //     this._value.clone(this._color as any);
-    //     console.log("SETTTTTTT this._color", this._color);
-    //     console.log("SETTTTTTT this._color.toString()", this._color.toString());
-    // }
-
-
     public get value(): ColorValues {
         return this._value;
     }
     public set value(value: ColorValues) {
         this._value.clone(value);
-        // console.log("SET : this._value", this._value);
-        // console.log("SET : this.toString()", this.toString());
     }
 
     toString(): string {
