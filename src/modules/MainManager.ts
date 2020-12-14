@@ -50,21 +50,10 @@ export class MainManager {
     }
 
     public init_draw_worker() {
-        this.add_canvas()
         window.addEventListener('resize', this.resize.bind(this));
         this.draw_worker = new WorkerInstance();
 
-        this.draw_worker.postMessage({
-            message: 'init'
-        });
-
-        (this.draw_worker as any).postMessage({
-            message: 'set_canvasOffscreen',
-            config: this.config,
-            canvas: this.canvasOffscreen
-        }, [this.canvasOffscreen]);
-
-        this.config_update()
+        this.init_worker_canvas()
     }
 
     public config_update() {
@@ -82,7 +71,7 @@ export class MainManager {
         this.config_update()
     }
 
-    public add_canvas() {
+    public init_worker_canvas() {
         var body = document.getElementsByTagName("body")[0];
 
         body.style.margin = "0"
@@ -101,6 +90,12 @@ export class MainManager {
         this.canvasOffscreen = canvas.transferControlToOffscreen();
         this.canvasOffscreen.width = window.innerWidth - Units.CANVAS_SUBSTRACT_PIXELS;
         this.canvasOffscreen.height = window.innerHeight - Units.CANVAS_SUBSTRACT_PIXELS;
+
+        (this.draw_worker as any).postMessage({
+            message: 'init',
+            config: this.config,
+            canvas: this.canvasOffscreen
+        }, [this.canvasOffscreen]);
 
         this.resize()
     }

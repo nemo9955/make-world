@@ -22,11 +22,10 @@ export class DrawWorker {
 
     constructor() { }
 
-    public async init_objects() {
+    public init() {
         this.dbm = new DataBaseManager();
         this.world = new WorldData();
         this.config = new Config();
-
 
         this.world.dbm = this.dbm
         this.world.config = this.config
@@ -34,25 +33,18 @@ export class DrawWorker {
             .then((value) => this.world.init_worker())
     }
 
-    public init(event: MessageEvent) {
-        this.init_objects()
-    }
-
-
     public get_message(worker: Worker, event: MessageEvent) {
-        if (event?.data?.config) {
+        if (event?.data?.config && this.config) {
             this.config.clone(event.data.config as Config)
         }
 
         switch (event.data.message) {
             case 'init':
-                this.init(event)
+                this.canvasOffscreen = event.data.canvas
+                this.init()
                 break;
             case 'update':
                 this.update_message(event)
-                break;
-            case 'set_canvasOffscreen':
-                this.canvasOffscreen = event.data.canvas
                 break;
         }
     }
