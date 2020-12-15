@@ -42,11 +42,15 @@ export class MainManager {
             this.gui.refresh();
         }, 500); // TODO find a more exact callback
 
-        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        setTimeout(() => { // DEBUGG , draw only for the first few secs
-            this.config.update_draw = false;
-            this.gui.refresh();
-        }, 3000);
+
+
+        // // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // setTimeout(() => { // DEBUGG , draw only for the first few secs
+        //     this.config.update_draw = false;
+        //     this.gui.refresh();
+        // }, 3000);
+
+
 
     }
 

@@ -10,7 +10,7 @@ import { WorldData } from "./WorldData"
 import { Config } from "./Config"
 import { MainManager } from "./MainManager"
 
-export const REFRESH_CALL_INTERVAL = 100
+export const REFRESH_CALL_INTERVAL = 200
 
 export class WorldGui {
     manager: MainManager;
@@ -78,6 +78,12 @@ export class WorldGui {
 
         plsys_tp.addButton({ title: 'genStar' }).on('click', () => {
             this.manager.world.planetary_system.genStar();
+            this.refresh();
+        });
+
+        plsys_tp.addButton({ title: 'genOrbitsSimple' }).on('click', () => {
+            this.manager.world.planetary_system.genOrbitsSimple();
+            console.log("this.manager.world.planetary_system.orbits_distances.length", this.manager.world.planetary_system.orbits_distances.length);
             this.refresh();
         });
 

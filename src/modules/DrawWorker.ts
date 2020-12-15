@@ -61,8 +61,12 @@ export class DrawWorker {
     public update_message(event?: MessageEvent) {
         if (this.dbm.idb)
             this.world.read()
+
         this.draw_world.canvasOffscreen.height = this.config.innerHeight - Units.CANVAS_SUBSTRACT_PIXELS
         this.draw_world.canvasOffscreen.width = this.config.innerWidth - Units.CANVAS_SUBSTRACT_PIXELS
+
+        if (this.config.update_draw) // TODO update_draw also a flag to hold draw until init done
+            this.draw_world.update();
 
         if (this.config.update_draw && this.is_drawing == false) this.draw();
         else this.is_drawing = this.config.update_draw;

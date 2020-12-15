@@ -57,8 +57,12 @@ export class Color {
         this._value.clone(value);
     }
 
-    toString(): string {
+    public toString(): string {
         return d3.rgb(this.r, this.g, this.b).toString()
+    }
+
+    public getRgb(): d3.RGBColor {
+        return d3.rgb(this.r, this.g, this.b)
     }
 
 }
