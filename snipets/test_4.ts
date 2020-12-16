@@ -9,7 +9,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 export namespace test_4 {
 
     var scene: THREE.Scene;
-    var camera: THREE.PerspectiveCamera;
+    export var camera: THREE.PerspectiveCamera;
     var renderer: THREE.WebGLRenderer;
     var geometry: THREE.Geometry;
     var material: THREE.Material;
@@ -55,6 +55,7 @@ export namespace test_4 {
         scene.add(earth);
 
         controls = new OrbitControls(camera, renderer.domElement);
+        // controls = new OrbitControls(camera, document.body);
 
         var ambcolo = 0.2
         const light_am = new THREE.AmbientLight(new THREE.Color(ambcolo, ambcolo, ambcolo)); // soft white light
@@ -92,7 +93,8 @@ export namespace test_4 {
 
     function animate() {
         requestAnimationFrame(animate);
-        controls.update(); // only required if controls.enableDamping = true, or if controls.autoRotate = true
+        // setTimeout(() => { animate() }, 500);
+        // controls.update(); // only required if controls.enableDamping = true, or if controls.autoRotate = true
 
         stime += 0.1;
 

@@ -9,6 +9,14 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 import * as d3 from "d3"
 
 import { Config } from "./Config"
+import * as Convert from "../utils/Convert"
+
+export function make_camera(w, h) {
+    var camera = new THREE.PerspectiveCamera(75, w / h, 0.1, 1000);
+    camera.position.y = 3;
+    camera.lookAt(0, 0, 0)
+    return camera
+}
 
 export class DrawWorld {
     world: WorldData;
@@ -25,22 +33,20 @@ export class DrawWorld {
     material: THREE.Material;
     controls: OrbitControls;
     stime = 0
-    radius = 4
     sun: THREE.Mesh;
     earth: THREE.Mesh;
     // ellipse: THREE.Object3D;
     orbits: THREE.Line[] = []
+
+    hab_zone: THREE.Mesh;
+    frost_zone: THREE.Mesh;
 
     constructor() { }
 
     public init() {
 
         this.scene = new THREE.Scene();
-        this.camera = new THREE.PerspectiveCamera(75, this.config.innerWidth / this.config.innerHeight, 0.1, 1000);
-        this.camera.position.y = 10;
-        // this.camera.position.z = 100;
-        this.camera.lookAt(0, 0, 0)
-
+        this.camera = make_camera(this.config.innerWidth, this.config.innerHeight);
 
         // this.renderer = new THREE.WebGLRenderer();
         this.renderer = new THREE.WebGLRenderer({ canvas: this.canvasOffscreen });
@@ -67,18 +73,35 @@ export class DrawWorld {
 
 
         this.sun = new THREE.Mesh(
-            new THREE.SphereGeometry(1, 5, 5),
+            new THREE.SphereGeometry(0.1, 5, 5),
             new THREE.MeshStandardMaterial({ color: new THREE.Color(0.6, 0.6, 0.0) })
         );
         this.sun.position.set(0, 0, 0);
         this.scene.add(this.sun);
 
         this.earth = new THREE.Mesh(
-            new THREE.SphereGeometry(0.5, 5, 5),
+            new THREE.SphereGeometry(0.1, 5, 5),
             new THREE.MeshStandardMaterial({ color: new THREE.Color(0.0, 0.6, 0.0) })
         );
         this.earth.position.set(0, 0, 5);
         this.scene.add(this.earth);
+
+        const geometry_hab = new THREE.RingGeometry(1, 5, 15, 1);
+        const material_hab = new THREE.MeshBasicMaterial({ color: new THREE.Color("green"), side: THREE.DoubleSide });
+        material_hab.transparent = true
+        material_hab.opacity = 0.2
+        this.hab_zone = new THREE.Mesh(geometry_hab, material_hab);
+        this.hab_zone.rotateX(Convert.degToRad(-90))
+        this.scene.add(this.hab_zone);
+
+        const geometry_fro = new THREE.RingGeometry(10, 50, 15, 1);
+        const material_fro = new THREE.MeshBasicMaterial({ color: new THREE.Color("cyan"), side: THREE.DoubleSide });
+        material_fro.transparent = true
+        material_fro.opacity = 0.1
+        this.frost_zone = new THREE.Mesh(geometry_fro, material_fro);
+        this.frost_zone.rotateX(Convert.degToRad(-90))
+        this.scene.add(this.frost_zone);
+
 
         // BIG TODO ... a way for input to reach workers ....
         // this.controls = new OrbitControls(this.camera, this.renderer.domElement);
@@ -99,7 +122,7 @@ export class DrawWorld {
         // const material = new THREE.LineBasicMaterial({ color: 0xffffff });
         // // Create the final object to add to the scene
         // this.ellipse = new THREE.Line(geometry, material);
-        // this.ellipse.rotateX(90)
+        // this.ellipse.rotateX(Convert.degToRad(90))
         // this.ellipse.use
         // this.scene.add(this.ellipse);
         // this.ellipse.hi
@@ -119,6 +142,21 @@ export class DrawWorld {
         var sun_color = this.world.planetary_system.star.color.getRgb().formatHex();
         (this.sun.material as THREE.MeshStandardMaterial).color.set(sun_color)
 
+        this.sun.geometry = new THREE.SphereGeometry(this.world.planetary_system.star.diameter / 15, 5, 5);
+
+
+        this.hab_zone.geometry = new THREE.RingGeometry(
+            this.world.planetary_system.hab_zone_in,
+            this.world.planetary_system.hab_zone_out,
+            15, 1);
+
+
+        this.frost_zone.geometry = new THREE.RingGeometry(
+            this.world.planetary_system.frost_line,
+            this.world.planetary_system.orbits_limit_out,
+            15, 1);
+
+
 
         for (let index = 0; index < this.orbits.length; index++) {
             const orb3d = this.orbits[index];
@@ -132,7 +170,7 @@ export class DrawWorld {
                 const geometry = new THREE.BufferGeometry()
                 const material = new THREE.LineBasicMaterial({ color: 0xffffff });
                 const orb = new THREE.Line(geometry, material);
-                orb.rotateX(90)
+                orb.rotateX(Convert.degToRad(90))
                 orb.visible = false
                 this.orbits.push(orb)
                 this.scene.add(orb);
@@ -142,7 +180,7 @@ export class DrawWorld {
             orb3d.visible = true
 
 
-            var orb_size = orb_dist * 5
+            var orb_size = orb_dist
             const curve = new THREE.EllipseCurve(
                 0, 0,            // ax, aY
                 orb_size, orb_size,           // xRadius, yRadius
@@ -153,8 +191,7 @@ export class DrawWorld {
             const points = curve.getPoints(50);
             orb3d.geometry.setFromPoints(points);
 
-
-            (orb3d.material as THREE.LineBasicMaterial).color.set(0xffffff * Math.random())
+            // (orb3d.material as THREE.LineBasicMaterial).color.set(0xffffff * Math.random())
 
         }
 
@@ -176,12 +213,12 @@ export class DrawWorld {
 
         // this.controls.update(); // only required if controls.enableDamping = true, or if controls.autoRotate = true
 
-        this.stime += 0.5;
+        this.stime += 1.5;
 
-        this.earth.position.x = this.radius * Math.sin(THREE.MathUtils.degToRad(this.stime));
-        this.earth.position.z = this.radius * Math.cos(THREE.MathUtils.degToRad(this.stime));
+        this.earth.position.x = this.world.planetary_system.hab_zone * Math.sin(Convert.degToRad(this.stime));
+        this.earth.position.z = this.world.planetary_system.hab_zone * Math.cos(Convert.degToRad(this.stime));
 
-        this.sun.rotation.y += 0.3;
+        // this.sun.rotation.y += 0.3;
         this.earth.rotation.y -= 0.2;
 
         this.renderer.render(this.scene, this.camera);

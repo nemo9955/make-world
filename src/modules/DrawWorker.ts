@@ -55,6 +55,13 @@ export class DrawWorker {
             case 'update':
                 this.update_message(event)
                 break;
+            case 'camera':
+                // console.log("event.data.cam_pos", event.data.cam_pos);
+                this.draw_world.camera.position.copy(event.data.position)
+                this.draw_world.camera.up.copy(event.data.up)
+                this.draw_world.camera.rotation.set(event.data.r[0], event.data.r[1], event.data.r[2])
+                this.draw_world.camera.updateProjectionMatrix()
+                break;
         }
     }
 
@@ -75,7 +82,7 @@ export class DrawWorker {
     private draw() {
         if (this.config.update_draw) {
             this.is_drawing = this.config.update_draw;
-            setTimeout(() => { this.draw() }, 500);
+            setTimeout(() => { this.draw() }, 100);
         }
 
         this.draw_world.draw();

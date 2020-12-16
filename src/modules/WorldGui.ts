@@ -78,6 +78,7 @@ export class WorldGui {
 
         plsys_tp.addButton({ title: 'genStar' }).on('click', () => {
             this.manager.world.planetary_system.genStar();
+            this.manager.world.planetary_system.genOrbitsSimple();
             this.refresh();
         });
 
