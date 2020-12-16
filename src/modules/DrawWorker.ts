@@ -69,8 +69,13 @@ export class DrawWorker {
         if (this.dbm.idb)
             this.world.read()
 
-        this.draw_world.canvasOffscreen.height = this.config.innerHeight - Units.CANVAS_SUBSTRACT_PIXELS
-        this.draw_world.canvasOffscreen.width = this.config.innerWidth - Units.CANVAS_SUBSTRACT_PIXELS
+        if (this.draw_world.renderer) {
+            this.draw_world.camera.aspect = this.config.innerWidth / this.config.innerHeight;
+            this.draw_world.camera.updateProjectionMatrix();
+            this.draw_world.renderer.setSize(
+                this.config.innerWidth - Units.CANVAS_SUBSTRACT_PIXELS,
+                this.config.innerHeight - Units.CANVAS_SUBSTRACT_PIXELS, false)
+        }
 
         if (this.config.update_draw) // TODO update_draw also a flag to hold draw until init done
             this.draw_world.update();

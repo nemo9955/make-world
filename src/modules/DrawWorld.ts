@@ -11,8 +11,8 @@ import * as d3 from "d3"
 import { Config } from "./Config"
 import * as Convert from "../utils/Convert"
 
-export function make_camera(w, h) {
-    var camera = new THREE.PerspectiveCamera(75, w / h, 0.1, 1000);
+export function make_camera(width_: number, height_: number) {
+    var camera = new THREE.PerspectiveCamera(75, width_ / height_, 0.1, 1000);
     camera.position.y = 3;
     camera.lookAt(0, 0, 0)
     return camera
