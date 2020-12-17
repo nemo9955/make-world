@@ -17,7 +17,6 @@ export class PlanetarySystem {
     orbits_distances: number[];
 
     constructor() {
-        this.id = Math.ceil(Math.random() * 10000) + 1000
         this.star = new Star();
         this.orbits_distances = [];
     }

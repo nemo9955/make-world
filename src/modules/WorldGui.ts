@@ -17,12 +17,17 @@ export class WorldGui {
     refresh_timeout: any = null;
 
     pane: Tweakpane;
-    constructor() { }
+    constructor() {
+        this.manager = null;
+    }
 
     public init() {
         this.pane = new Tweakpane({
             title: 'Make World',
         });
+
+        var pane_elem: any = document.getElementsByClassName("tp-dfwv")[0];
+        pane_elem.style.zIndex = "100"; // put GUI at the front
 
         this.init_manager()
         this.init_star()
@@ -31,9 +36,10 @@ export class WorldGui {
 
     public refresh_instant(skip_pane_refresh = false) {
         // console.log("refresh_instant");
-        this.manager.write();
-        if (!skip_pane_refresh)
-            this.pane.refresh();
+        this.manager.write().then(() => {
+            if (!skip_pane_refresh)
+                this.pane.refresh();
+        })
     }
 
     public refresh(skip_pane_refresh = false) {

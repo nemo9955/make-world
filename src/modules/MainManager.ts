@@ -4,9 +4,9 @@ import { WorldData } from "./WorldData"
 import { DataBaseManager } from "./DataBaseManager"
 import * as Units from "../utils/Units"
 
-import WorkerInstance from "worker-loader!./DrawWorker.worker.ts";
+import DrawWorkerInstance from "worker-loader!./DrawWorker.worker.ts";
 
-import { Config } from "./Config"
+import { Config, MessageType } from "./Config"
 
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
@@ -19,7 +19,7 @@ export const CAM_MOVED_INTERVAL = 100
 export class MainManager {
     cam_timeout: any = null;
 
-    draw_worker: WorkerInstance
+    draw_worker: DrawWorkerInstance
     gui: WorldGui;
 
     world: WorldData;
@@ -29,30 +29,32 @@ export class MainManager {
     camera: THREE.PerspectiveCamera;
     controls: OrbitControls;
 
-    constructor() { }
-
-    public async init_main() {
+    constructor() {
         this.dbm = new DataBaseManager();
         this.world = new WorldData();
         this.gui = new WorldGui();
         this.config = new Config();
+    }
 
-        this.world.config = this.config
-        this.world.dbm = this.dbm
-        this.gui.manager = this
+    public async init() {
+        this.resize()
+        this.spread_objects()
+        window.addEventListener('resize', this.resize.bind(this));
 
-        await this.dbm.init()
+        this.dbm.init().then(() => {
+            this.world.init();
+            this.config.WorldDataID = this.world.id
+            this.gui.init();
+        }).then(() => {
+            this.write()
+        }).then(() => {
+            this.init_draw_worker()
+        })
 
-        this.world.init();
-        this.init_draw_worker()
-        this.gui.init();
-
-        this.write();
-
-        setTimeout(() => { // start draw after init
-            this.config.update_draw = true;
-            this.gui.refresh();
-        }, 500); // TODO find a more exact callback
+        // setTimeout(() => { // start draw after init
+        //     this.config.update_draw = true;
+        //     this.gui.refresh();
+        // }, 500); // TODO find a more exact callback
 
 
 
@@ -66,35 +68,79 @@ export class MainManager {
 
     }
 
-    public read() {
-        this.world.read();
+    public spread_objects() {
+        var to_spread: any[] = [this.world, this.gui]
+        for (const object_ of to_spread) {
+            if (object_.manager === null) object_.manager = this
+            if (object_.config === null) object_.config = this.config
+            if (object_.world === null) object_.world = this.world
+            if (object_.dbm === null) object_.dbm = this.dbm
+        }
     }
 
-    public write() {
-        this.world.write();
-        this.config_update()
+    public async read() {
+        await this.world.read();
     }
 
-    public init_draw_worker() {
-        window.addEventListener('resize', this.resize.bind(this));
-        this.draw_worker = new WorkerInstance();
+    public async write() {
+        await this.world.write();
 
-        this.init_worker_canvas()
-    }
-
-    public config_update() {
         if (this.draw_worker)
             this.draw_worker.postMessage({
-                message: 'update',
+                message: MessageType.RefreshDB,
                 config: this.config
             });
     }
+
+    public init_draw_worker() {
+        this.draw_worker = new DrawWorkerInstance();
+        this.draw_worker.addEventListener("message", async (event) => {
+            this.get_message(this.draw_worker, event)
+        });
+
+        this.draw_worker.postMessage({
+            message: MessageType.InitWorker,
+            config: this.config
+        });
+    }
+
+
+    public refresh_workers() {
+        this.draw_worker.postMessage({
+            message: MessageType.RefreshConfig,
+            config: this.config
+        });
+        this.draw_worker.postMessage({
+            message: MessageType.RefreshDB,
+            config: this.config
+        });
+    }
+
+    public get_message(the_worker: Worker, event: MessageEvent) {
+        console.debug("#HERELINE MainManager get_message ", event.data.message);
+
+        switch (event.data.message as MessageType) {
+            case MessageType.Ready:
+                this.refresh_workers()
+                break;
+            case MessageType.MakeCanvas:
+                this.init_worker_canvas()
+                break;
+            default:
+                console.warn("DEFAULT not implemented !"); break
+        }
+    }
+
 
     public resize() {
         this.config.innerWidth = window.innerWidth;
         this.config.innerHeight = window.innerHeight;
 
-        this.config_update()
+        if (this.draw_worker)
+            this.draw_worker.postMessage({
+                message: MessageType.Resize,
+                config: this.config
+            });
     }
 
     public init_worker_canvas() {
@@ -118,7 +164,6 @@ export class MainManager {
         this.controls = new OrbitControls(this.camera, canvas);
         // this.camera.position.set(0, 20, 100);
         // this.camera_update();
-        console.log("this.controls", this.controls);
         this.controls.addEventListener("change", this.camera_moved.bind(this))
         // this.controls.addEventListener("end", this.camera_print.bind(this))
 
@@ -127,28 +172,19 @@ export class MainManager {
         canvasOffscreen.height = window.innerHeight - Units.CANVAS_SUBSTRACT_PIXELS;
 
 
-        (this.draw_worker as any).postMessage({
-            message: 'init',
+        this.draw_worker.postMessage({
+            message: MessageType.InitCanvas,
             config: this.config,
             canvas: canvasOffscreen
         }, [canvasOffscreen]);
-
-        this.resize()
     }
-
-    public camera_update() {
-        setTimeout(() => { this.camera_update(); }, 500);
-        this.camera_moved()
-    }
-
-
 
     public camera_moved() {
         // clearTimeout(this.cam_timeout);
         // this.cam_timeout = setTimeout(() => {
         // console.log(this.camera.position);
         this.draw_worker.postMessage({
-            message: 'camera',
+            message: MessageType.RefreshCamera,
             position: this.camera.position,
             up: this.camera.up,
             r: [

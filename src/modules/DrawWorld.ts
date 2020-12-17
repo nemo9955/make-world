@@ -24,8 +24,6 @@ export class DrawWorld {
     canvasOffscreen: any;
     config: Config;
 
-
-
     scene: THREE.Scene;
     camera: THREE.PerspectiveCamera;
     renderer: THREE.WebGLRenderer;
@@ -41,9 +39,14 @@ export class DrawWorld {
     hab_zone: THREE.Mesh;
     frost_zone: THREE.Mesh;
 
-    constructor() { }
+    constructor() {
+        this.config = null;
+        this.world = null;
+        this.manager = null;
+    }
 
     public init() {
+        console.debug("#HERELINE DrawWorld init ");
 
         this.scene = new THREE.Scene();
         this.camera = make_camera(this.config.innerWidth, this.config.innerHeight);
@@ -138,7 +141,7 @@ export class DrawWorld {
 
 
     public update() {
-        // console.log("#HERELINE DrawWorld 118 ");
+        console.debug("#HERELINE DrawWorld update WorldDataID ", this.config.WorldDataID);
         var sun_color = this.world.planetary_system.star.color.getRgb().formatHex();
         (this.sun.material as THREE.MeshStandardMaterial).color.set(sun_color)
 

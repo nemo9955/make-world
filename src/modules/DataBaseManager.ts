@@ -9,15 +9,17 @@ export class STransaction {
     public tx: IDBPTransaction<unknown, [string]>;
     public store: IDBPObjectStore<unknown, [string], string>;
     constructor() { }
-    public done() {
-        this.tx.done
+    public async done() {
+        await this.tx.done
     }
 }
 
 export class DataBaseManager {
     idb: IDBPDatabase<unknown>;
 
-    constructor() { }
+    constructor() {
+        this.idb = null;
+    }
 
     public async init() {
         await this.delete()

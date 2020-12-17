@@ -6,40 +6,47 @@ import { DataBaseManager, STransaction, PLANET_SYSTEM } from "./DataBaseManager"
 import { Config } from "./Config"
 export class WorldData {
 
+    private _id: number;
+
     planetary_system: PlanetarySystem;
     dbm: DataBaseManager;
-    config: Config;
 
     constructor() {
         this.planetary_system = new PlanetarySystem();
+        this.dbm = null;
+    }
+
+    public get id(): number { return this._id; }
+    public set id(value: number) {
+        this._id = value;
+        this.planetary_system.id = this._id;
     }
 
     public init() {
+        console.debug("#HERELINE WorldData init");
+        this.id = Math.ceil(Math.random() * 10000) + 1000
         this.planetary_system.genStar()
         this.planetary_system.genOrbitsSimple()
-        this.config.world_id = this.planetary_system.id
-    }
-
-    public init_worker() {
-        this.read()
     }
 
     public async read() {
-        var data = this.dbm.transaction(PLANET_SYSTEM, "readwrite");
-        var ps_db = await data.store.get(this.config.world_id)
+        console.debug("#HERELINE WorldData read ");
 
-        this.planetary_system.clone(ps_db as PlanetarySystem)
+        if (this.id) {
+            // console.trace("#HERELINE WorldData read this.id", this.id);
+            var data = this.dbm.transaction(PLANET_SYSTEM, "readwrite");
+            var ps_db = await data.store.get(this.id)
+            this.planetary_system.clone(ps_db as PlanetarySystem)
+        }
 
-        // console.log("this.planetary_system", this.planetary_system);
-
-        // data.store.get("id", this.config.world_id)
-        data.done()
+        await data.done()
     }
 
-    public write() {
+    public async write() {
+        console.debug("#HERELINE WorldData write ");
         var data = this.dbm.transaction(PLANET_SYSTEM, "readwrite");
-        data.store.put(this.planetary_system)
-        data.done()
+        await data.store.put(this.planetary_system)
+        await data.done()
     }
 
 }
