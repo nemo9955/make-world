@@ -51,20 +51,12 @@ export class MainManager {
             this.init_draw_worker()
         })
 
-        // setTimeout(() => { // start draw after init
-        //     this.config.update_draw = true;
-        //     this.gui.refresh();
-        // }, 500); // TODO find a more exact callback
-
-
 
         // // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         // setTimeout(() => { // DEBUGG , draw only for the first few secs
         //     this.config.update_draw = false;
         //     this.gui.refresh();
         // }, 3000);
-
-
 
     }
 
@@ -106,10 +98,6 @@ export class MainManager {
 
 
     public refresh_workers() {
-        this.draw_worker.postMessage({
-            message: MessageType.RefreshConfig,
-            config: this.config
-        });
         this.draw_worker.postMessage({
             message: MessageType.RefreshDB,
             config: this.config

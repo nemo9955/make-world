@@ -69,7 +69,7 @@ export class PlanetarySystem {
     }
 
     public genOrbitsSimple() {
-        this.orbits_distances = [];
+        this.orbits_distances.length = 0;
         var lfg_orbit = this.genLargestFrostGiantOrbit();
 
         var last_orbit = lfg_orbit;
