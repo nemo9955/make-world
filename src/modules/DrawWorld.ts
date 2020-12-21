@@ -10,10 +10,12 @@ import * as d3 from "d3"
 
 import { Config } from "./Config"
 import * as Convert from "../utils/Convert"
+import * as Units from "../utils/Units"
 
 export function make_camera(width_: number, height_: number) {
-    var camera = new THREE.PerspectiveCamera(75, width_ / height_, 0.1, 1000);
-    camera.position.y = 3;
+    var camera = new THREE.PerspectiveCamera(75, width_ / height_, 0.1, 1000000000000);
+    // camera.position.y = 3;
+    camera.position.y = Convert.auToKm(3);
     camera.lookAt(0, 0, 0)
     return camera
 }
@@ -62,8 +64,8 @@ export class DrawWorld {
         this.scene.add(light_am);
 
         var ptlicolo = 0.1
-        const light_pt = new THREE.PointLight(new THREE.Color(ptlicolo, ptlicolo, ptlicolo), 10, 800);
-        var ptltpos = 50;
+        const light_pt = new THREE.PointLight(new THREE.Color(ptlicolo, ptlicolo, ptlicolo), 10, Convert.auToKm(800));
+        var ptltpos = Convert.auToKm(50);
         light_pt.position.set(-ptltpos, ptltpos, ptltpos);
         this.scene.add(light_pt);
 
@@ -145,29 +147,27 @@ export class DrawWorld {
         var sun_color = this.world.planetary_system.star.color.getRgb().formatHex();
         (this.sun.material as THREE.MeshStandardMaterial).color.set(sun_color)
 
-        this.sun.geometry = new THREE.SphereGeometry(this.world.planetary_system.star.diameter / 15, 5, 5);
-
+        // make sun bigger just because
+        this.sun.geometry = new THREE.SphereGeometry(this.world.planetary_system.star.diameter_km * 10, 5, 5);
+        this.earth.geometry = new THREE.SphereGeometry(this.world.planetary_system.star.diameter_km * 20, 5, 5);
 
         this.hab_zone.geometry = new THREE.RingGeometry(
-            this.world.planetary_system.hab_zone_in,
-            this.world.planetary_system.hab_zone_out,
+            this.world.planetary_system.hab_zone_in_km,
+            this.world.planetary_system.hab_zone_out_km,
             15, 1);
-
 
         this.frost_zone.geometry = new THREE.RingGeometry(
-            this.world.planetary_system.frost_line,
-            this.world.planetary_system.orbits_limit_out,
+            this.world.planetary_system.frost_line_km,
+            this.world.planetary_system.orbits_limit_out_km,
             15, 1);
-
-
 
         for (let index = 0; index < this.orbits.length; index++) {
             const orb3d = this.orbits[index];
             orb3d.visible = false
         }
 
-        for (let index = 0; index < this.world.planetary_system.orbits_distances.length; index++) {
-            const orb_dist = this.world.planetary_system.orbits_distances[index];
+        for (let index = 0; index < this.world.planetary_system.orbits_distances_km.length; index++) {
+            const orb_dist = this.world.planetary_system.orbits_distances_km[index];
             // console.log("orb_dist", orb_dist);
             if (this.orbits.length < index + 1) {
                 const geometry = new THREE.BufferGeometry()
@@ -218,8 +218,8 @@ export class DrawWorld {
 
         this.stime += 1.5;
 
-        this.earth.position.x = this.world.planetary_system.hab_zone * Math.sin(Convert.degToRad(this.stime));
-        this.earth.position.z = this.world.planetary_system.hab_zone * Math.cos(Convert.degToRad(this.stime));
+        this.earth.position.x = this.world.planetary_system.hab_zone_km * Math.sin(Convert.degToRad(this.stime));
+        this.earth.position.z = this.world.planetary_system.hab_zone_km * Math.cos(Convert.degToRad(this.stime));
 
         // this.sun.rotation.y += 0.3;
         this.earth.rotation.y -= 0.2;

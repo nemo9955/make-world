@@ -7,9 +7,9 @@ import { Star } from "../../src/generate/Star"
 test('Test Star class G', () => {
     var star = new Star().makeClassG(1);
     expect(star.sclass).toBe("G");
-    expect(star.mass).toBe(1);
-    expect(star.radius).toBe(1);
-    expect(star.diameter).toBe(2);
+    expect(star.mass_sm).toBe(1);
+    expect(star.radius_sr).toBe(1);
+    // expect(star.diameter_sd).toBe(2);
     expect(star.luminosity).toBe(1);
     expect(star.temperature).toBe(1);
     expect(star.lifetime).toBe(1);
