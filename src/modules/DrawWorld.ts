@@ -54,7 +54,11 @@ export class DrawWorld {
         this.camera = make_camera(this.config.innerWidth, this.config.innerHeight);
 
         // this.renderer = new THREE.WebGLRenderer();
-        this.renderer = new THREE.WebGLRenderer({ canvas: this.canvasOffscreen });
+        this.renderer = new THREE.WebGLRenderer({
+            canvas: this.canvasOffscreen,
+            antialias: true,
+            logarithmicDepthBuffer: true,
+        });
         // this.renderer.setSize(this.config.innerWidth, this.config.innerHeight);
         // document.body.appendChild(this.renderer.domElement);
 
