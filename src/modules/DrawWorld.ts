@@ -152,17 +152,17 @@ export class DrawWorld {
         (this.sun.material as THREE.MeshStandardMaterial).color.set(sun_color)
 
         // make sun bigger just because
-        this.sun.geometry = new THREE.SphereGeometry(this.world.planetary_system.star.diameter_km * 10, 5, 5);
-        this.earth.geometry = new THREE.SphereGeometry(this.world.planetary_system.star.diameter_km * 20, 5, 5);
+        this.sun.geometry = new THREE.SphereGeometry(this.world.planetary_system.star.diameter.km * 10, 5, 5);
+        this.earth.geometry = new THREE.SphereGeometry(this.world.planetary_system.star.diameter.km * 20, 5, 5);
 
         this.hab_zone.geometry = new THREE.RingGeometry(
-            this.world.planetary_system.hab_zone_in_km,
-            this.world.planetary_system.hab_zone_out_km,
+            this.world.planetary_system.hab_zone_in.km,
+            this.world.planetary_system.hab_zone_out.km,
             15, 1);
 
         this.frost_zone.geometry = new THREE.RingGeometry(
-            this.world.planetary_system.frost_line_km,
-            this.world.planetary_system.orbits_limit_out_km,
+            this.world.planetary_system.frost_line.km,
+            this.world.planetary_system.orbits_limit_out.km,
             15, 1);
 
         for (let index = 0; index < this.orbits.length; index++) {
@@ -170,8 +170,8 @@ export class DrawWorld {
             orb3d.visible = false
         }
 
-        for (let index = 0; index < this.world.planetary_system.orbits_distances_km.length; index++) {
-            const orb_dist = this.world.planetary_system.orbits_distances_km[index];
+        for (let index = 0; index < this.world.planetary_system.orbits_distances.length; index++) {
+            const orb_dist = this.world.planetary_system.orbits_distances[index];
             // console.log("orb_dist", orb_dist);
             if (this.orbits.length < index + 1) {
                 const geometry = new THREE.BufferGeometry()
@@ -186,11 +186,9 @@ export class DrawWorld {
             const orb3d = this.orbits[index]
             orb3d.visible = true
 
-
-            var orb_size = orb_dist
             const curve = new THREE.EllipseCurve(
                 0, 0,            // ax, aY
-                orb_size, orb_size,           // xRadius, yRadius
+                orb_dist.km, orb_dist.km,           // xRadius, yRadius
                 0, 2 * Math.PI,  // aStartAngle, aEndAngle
                 false,            // aClockwise
                 0                 // aRotation
@@ -222,8 +220,8 @@ export class DrawWorld {
 
         this.stime += 1.5;
 
-        this.earth.position.x = this.world.planetary_system.hab_zone_km * Math.sin(Convert.degToRad(this.stime));
-        this.earth.position.z = this.world.planetary_system.hab_zone_km * Math.cos(Convert.degToRad(this.stime));
+        this.earth.position.x = this.world.planetary_system.hab_zone.km * Math.sin(Convert.degToRad(this.stime));
+        this.earth.position.z = this.world.planetary_system.hab_zone.km * Math.cos(Convert.degToRad(this.stime));
 
         // this.sun.rotation.y += 0.3;
         this.earth.rotation.y -= 0.2;

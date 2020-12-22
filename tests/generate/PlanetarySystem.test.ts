@@ -9,7 +9,7 @@ test('Sample Habitable', () => {
         var system = new PlanetarySystem().genStar(); // empty defaults to habitable
         expect(["F", "G", "K"]).toContain(system.star.sclass);
 
-        var orbits_dists = system.genOrbitsSimple().orbits_distances_km
+        var orbits_dists = system.genOrbitsSimple().orbits_distances
         expect(orbits_dists.length).toBeGreaterThanOrEqual(5)
     }
 });

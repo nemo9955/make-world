@@ -86,30 +86,26 @@ export class WorldGui {
     public init_star() {
         const star_tp = this.pane.addFolder({ title: 'The Star' });
         star_tp.addInput(this.manager.world.planetary_system.star, 'sclass');
-        star_tp.addInput(this.manager.world.planetary_system.star, 'mass_kg');
-        star_tp.addInput(this.manager.world.planetary_system.star, 'mass_sm');
         star_tp.addInput(this.manager.world.planetary_system.star, 'luminosity');
-        // star_tp.addInput(this.manager.world.planetary_system.star, 'diameter_km');
-        // star_tp.addInput(this.manager.world.planetary_system.star, 'diameter_sd');
-        star_tp.addInput(this.manager.world.planetary_system.star, 'radius_km');
-        star_tp.addInput(this.manager.world.planetary_system.star, 'radius_sr');
         star_tp.addInput(this.manager.world.planetary_system.star, 'temperature');
         star_tp.addInput(this.manager.world.planetary_system.star, 'lifetime');
         this.pane.addInput(this.manager.world.planetary_system.star.color, 'value');
+
+        star_tp.addInput(this.manager.world.planetary_system.star.mass, 'kg', { label: "mass" });
+        star_tp.addInput(this.manager.world.planetary_system.star.diameter, 'km', { label: "diameter" });
+        star_tp.addInput(this.manager.world.planetary_system.star.radius, 'km', { label: "radius" });
+
         // star_tp.expanded = false
     }
 
     public init_plsystem() {
         const plsys_tp = this.pane.addFolder({ title: 'Planet System' });
-        plsys_tp.addInput(this.manager.world.planetary_system, 'hab_zone_in_km');
-        plsys_tp.addInput(this.manager.world.planetary_system, 'hab_zone_in_au');
-        plsys_tp.addInput(this.manager.world.planetary_system, 'hab_zone_km');
-        plsys_tp.addInput(this.manager.world.planetary_system, 'hab_zone_au');
-        plsys_tp.addInput(this.manager.world.planetary_system, 'hab_zone_out_km');
-        plsys_tp.addInput(this.manager.world.planetary_system, 'hab_zone_out_au');
-        plsys_tp.addInput(this.manager.world.planetary_system, 'orbits_limit_in_km');
-        plsys_tp.addInput(this.manager.world.planetary_system, 'frost_line_km');
-        plsys_tp.addInput(this.manager.world.planetary_system, 'orbits_limit_out_km');
+        plsys_tp.addInput(this.manager.world.planetary_system.hab_zone_in, 'km', { label: "hab_zone_in" });
+        plsys_tp.addInput(this.manager.world.planetary_system.hab_zone, 'km', { label: "hab_zone" });
+        plsys_tp.addInput(this.manager.world.planetary_system.hab_zone_out, 'km', { label: "hab_zone_out" });
+        plsys_tp.addInput(this.manager.world.planetary_system.orbits_limit_in, 'km', { label: "orbits_limit_in" });
+        plsys_tp.addInput(this.manager.world.planetary_system.frost_line, 'km', { label: "frost_line" });
+        plsys_tp.addInput(this.manager.world.planetary_system.orbits_limit_out, 'km', { label: "orbits_limit_out" });
 
         this.pane.addButton({ title: 'genStar' }).on('click', () => {
             this.manager.world.planetary_system.genStar();
@@ -119,7 +115,7 @@ export class WorldGui {
 
         this.pane.addButton({ title: 'genOrbitsSimple' }).on('click', () => {
             this.manager.world.planetary_system.genOrbitsSimple();
-            console.log("this.manager.world.planetary_system.orbits_distances_km.length", this.manager.world.planetary_system.orbits_distances_km.length);
+            console.log("this.manager.world.planetary_system.orbits_distances_km.length", this.manager.world.planetary_system.orbits_distances.length);
             this.refresh();
         });
 

@@ -25,53 +25,26 @@ export class Star {
 
     color: Color;
 
-    private _radius_km: number;
-    public get radius_sr(): number { return Convert.kmToSr(this._radius_km); }
-    public set radius_sr(value: number) { this._radius_km = Convert.srToKm(value); }
-    public get radius_au(): number { return Convert.kmToAu(this._radius_km); }
-    public set radius_au(value: number) { this._radius_km = Convert.auToKm(value); }
-    public get radius_km(): number { return this._radius_km; }
-    public set radius_km(value: number) { this._radius_km = value; }
 
-    public get diameter_sr(): number { return 2 * Convert.kmToSr(this._radius_km); }
-    public set diameter_sr(value: number) { this._radius_km = Convert.srToKm(value) / 2; }
-    public get diameter_au(): number { return 2 * Convert.kmToAu(this._radius_km); }
-    public set diameter_au(value: number) { this._radius_km = Convert.auToKm(value) / 2; }
-    public get diameter_km(): number { return 2 * this._radius_km; }
-    public set diameter_km(value: number) { this._radius_km = value / 2; }
-
-
-    private _mass_kg: number;
-    public get mass_sm(): number { return Convert.kgToSm(this._mass_kg); }
-    public set mass_sm(value: number) { this._mass_kg = Convert.smToKg(value); }
-    public get mass_kg(): number { return this._mass_kg; }
-    public set mass_kg(value: number) { this._mass_kg = value; }
+    public radius = new Convert.NumberLength();
+    public mass = new Convert.NumberMass();
+    public _diameter = new Convert.NumberLength();
+    public get diameter(): any { return this._diameter.set(this.radius).mul(2); }
+    // public set diameter(value: any) { this.mass.set(value.div(2)); }
 
     constructor() {
         this.color = new Color();
     }
 
-
-
-    clone(source_: Star) {
-        // console.log("source_", source_);
-        for (const key in source_) {
-            const element = source_[key];
-            switch (key) {
-                case "color":
-                    this.color.clone(element as Color); break;
-                default:
-                    this[key] = element; break;
-            }
-        }
-        // console.log("this", this);
+    public clone(source_: Star) {
+        Convert.clone(this, source_)
     }
 
     private setFromMass(mass?: number) {
-        if (mass) this.mass_sm = mass;
+        if (mass) this.mass.sm = mass;
 
         this.luminosity = Math.pow(mass, 3);
-        this.radius_sr = Math.pow(mass, 0.74);
+        this.radius.sr = Math.pow(mass, 0.74);
         this.temperature = Math.pow(mass, 0.505);
         this.lifetime = Math.pow(mass, -2.5);
     }
@@ -79,64 +52,64 @@ export class Star {
     public makeClassO(mass?: number) {
         this.sclass = "O";
         this.color.set("#92B5FF")
-        this.mass_sm = (mass ? mass : Random.random_float_clamp(16, 100));
-        this.setFromMass(this.mass_sm);
+        this.mass.sm = (mass ? mass : Random.random_float_clamp(16, 100));
+        this.setFromMass(this.mass.sm);
         return this;
     }
 
     public makeClassB(mass?: number) {
         this.sclass = "B";
         this.color.set("#A2C0FF")
-        this.mass_sm = (mass ? mass : Random.random_float_clamp(2.1, 16));
-        this.setFromMass(this.mass_sm);
+        this.mass.sm = (mass ? mass : Random.random_float_clamp(2.1, 16));
+        this.setFromMass(this.mass.sm);
         return this;
     }
 
     public makeClassA(mass?: number) {
         this.sclass = "A";
         this.color.set("#D5E0FF")
-        this.mass_sm = (mass ? mass : Random.random_float_clamp(1.4, 2.1));
-        this.setFromMass(this.mass_sm);
+        this.mass.sm = (mass ? mass : Random.random_float_clamp(1.4, 2.1));
+        this.setFromMass(this.mass.sm);
         return this;
     }
 
     public makeClassF(mass?: number) {
         this.sclass = "F";
         this.color.set("#F9F5FF")
-        this.mass_sm = (mass ? mass : Random.random_float_clamp(1.04, 1.4));
-        this.setFromMass(this.mass_sm);
+        this.mass.sm = (mass ? mass : Random.random_float_clamp(1.04, 1.4));
+        this.setFromMass(this.mass.sm);
         return this;
     }
 
     public makeClassG(mass?: number) {
         this.sclass = "G";
         this.color.set("#FFEDE3")
-        this.mass_sm = (mass ? mass : Random.random_float_clamp(0.8, 1.04));
-        this.setFromMass(this.mass_sm);
+        this.mass.sm = (mass ? mass : Random.random_float_clamp(0.8, 1.04));
+        this.setFromMass(this.mass.sm);
         return this;
     }
 
     public makeClassK(mass?: number) {
         this.sclass = "K";
         this.color.set("#FFDAB5")
-        this.mass_sm = (mass ? mass : Random.random_float_clamp(0.45, 0.8));
-        this.setFromMass(this.mass_sm);
+        this.mass.sm = (mass ? mass : Random.random_float_clamp(0.45, 0.8));
+        this.setFromMass(this.mass.sm);
         return this;
     }
 
     public makeClassHabK(mass?: number) {
         this.sclass = "K";
         this.color.set("#FFDAB5")
-        this.mass_sm = (mass ? mass : Random.random_float_clamp(0.6, 0.8));
-        this.setFromMass(this.mass_sm);
+        this.mass.sm = (mass ? mass : Random.random_float_clamp(0.6, 0.8));
+        this.setFromMass(this.mass.sm);
         return this;
     }
 
     public makeClassM(mass?: number) {
         this.sclass = "M";
         this.color.set("#FFB56C")
-        this.mass_sm = (mass ? mass : Random.random_float_clamp(0.08, 0.45));
-        this.setFromMass(this.mass_sm);
+        this.mass.sm = (mass ? mass : Random.random_float_clamp(0.08, 0.45));
+        this.setFromMass(this.mass.sm);
         return this;
     }
 

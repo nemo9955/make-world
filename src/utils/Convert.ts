@@ -48,9 +48,37 @@ export function clamp(value: number, min: number, max: number): number {
     return THREE.MathUtils.clamp(value, min, max)
 }
 
+export function clone(target_: any, source_: any) {
+    // console.log("source_", source_);
+    for (const key in source_) {
+        // console.log("key, typeof source_[key], source_[key] ", key, typeof source_[key], source_[key]);
 
-export class NumberKm {
-    value: number = 0
+        if (source_[key].__proto__.constructor.name === "Array")
+            target_[key] = [...source_[key]]; // TODO FIXME Arrays need to be refreshed for some reason ...
+        else if (typeof target_?.[key]?.['clone'] === "function")
+            target_[key]['clone'](source_[key]);
+        else
+            target_[key] = source_[key];
+    }
+    // console.log("target_", target_);
+}
+
+export class NumberConverter {
+    value: number
+    constructor(value = 0) {
+        this.value = value;
+    }
+
+    public clone(source_: any) { this.value = source_.value; }
+    public set(source_: any) { this.clone(source_); return this; }
+
+    public add(val_: number) { this.value += val_; return this; }
+    public sub(val_: number) { this.value -= val_; return this; }
+    public mul(val_: number) { this.value *= val_; return this; }
+    public div(val_: number) { this.value /= val_; return this; }
+}
+
+export class NumberLength extends NumberConverter {
     public get km(): number { return this.value; }
     public set km(value: number) { this.value = value; }
     public get au(): number { return kmToAu(this.value); }
@@ -59,16 +87,14 @@ export class NumberKm {
     public set sr(value: number) { this.value = srToKm(value); }
 }
 
-export class NumberKg {
-    value: number = 0
+export class NumberMass extends NumberConverter {
     public get kg(): number { return this.value; }
     public set kg(value: number) { this.value = value; }
     public get sm(): number { return kgToSm(this.value); }
     public set sm(value: number) { this.value = smToKg(value); }
 }
 
-export class NumberAngle {
-    value: number = 0
+export class NumberAngle extends NumberConverter {
     public get deg(): number { return this.value; }
     public set deg(value: number) { this.value = value; }
     public get rad(): number { return degToRad(this.value); }
