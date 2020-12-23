@@ -48,29 +48,42 @@ export function clamp(value: number, min: number, max: number): number {
     return THREE.MathUtils.clamp(value, min, max)
 }
 
-export function clone(target_: any, source_: any) {
+export function copy(target_: any, source_: any) {
     // console.log("source_", source_);
     for (const key in source_) {
         // console.log("key, typeof source_[key], source_[key] ", key, typeof source_[key], source_[key]);
 
-        if (source_[key].__proto__.constructor.name === "Array")
+        if (source_[key].__proto__.constructor.name === "Array") {
             target_[key] = [...source_[key]]; // TODO FIXME Arrays need to be refreshed for some reason ...
-        else if (typeof target_?.[key]?.['clone'] === "function")
-            target_[key]['clone'](source_[key]);
-        else
+        }
+        else if (typeof target_?.[key]?.['copy'] === "function") {
+            target_[key]['copy'](source_[key]);
+            // console.log("SETTTTTTTTTTTTTTTTTTTTTT", key,target_[key]);
+        }
+        else {
             target_[key] = source_[key];
+        }
     }
     // console.log("target_", target_);
 }
 
 export class NumberConverter {
     value: number
-    constructor(value = 0) {
+    constructor(value = null) {
         this.value = value;
     }
 
-    public clone(source_: any) { this.value = source_.value; }
-    public set(source_: any) { this.clone(source_); return this; }
+    public clone() { return new NumberConverter(this.value); }
+
+    public copy(source_: NumberConverter | number) {
+        if (typeof (source_ as any)?.value === "number") {
+            this.value = (source_ as any).value;
+        }
+        if (typeof source_ === "number") {
+            this.value = source_;
+        }
+        return this;
+    }
 
     public add(val_: number) { this.value += val_; return this; }
     public sub(val_: number) { this.value -= val_; return this; }
@@ -79,6 +92,7 @@ export class NumberConverter {
 }
 
 export class NumberLength extends NumberConverter {
+    public clone() { return new NumberLength(this.value); }
     public get km(): number { return this.value; }
     public set km(value: number) { this.value = value; }
     public get au(): number { return kmToAu(this.value); }
@@ -88,6 +102,7 @@ export class NumberLength extends NumberConverter {
 }
 
 export class NumberMass extends NumberConverter {
+    public clone() { return new NumberMass(this.value); }
     public get kg(): number { return this.value; }
     public set kg(value: number) { this.value = value; }
     public get sm(): number { return kgToSm(this.value); }
@@ -95,10 +110,17 @@ export class NumberMass extends NumberConverter {
 }
 
 export class NumberAngle extends NumberConverter {
+    public clone() { return new NumberAngle(this.value); }
     public get deg(): number { return this.value; }
     public set deg(value: number) { this.value = value; }
     public get rad(): number { return degToRad(this.value); }
     public set rad(value: number) { this.value = radToDeg(value); }
+}
+
+export class NumberTime extends NumberConverter {
+    public clone() { return new NumberTime(this.value); }
+    public get delta(): number { return this.value; }
+    public set delta(value: number) { this.value = value; }
 }
 
 

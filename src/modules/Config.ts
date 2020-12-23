@@ -10,7 +10,7 @@ export class Config {
 
     WorldDataID: number
 
-    public clone(config_: Config) {
+    public copy(config_: Config) {
         if (config_.update_draw !== undefined)
             this.update_draw = config_.update_draw
         if (config_.WorldDataID !== undefined)

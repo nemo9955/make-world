@@ -53,7 +53,7 @@ export class DrawWorker {
     public get_message(event: MessageEvent) {
         // console.debug("#HERELINE DrawWorker get_message ", event.data.message);
         if (event?.data?.config && this.config)
-            this.config.clone(event.data.config as Config)
+            this.config.copy(event.data.config as Config)
 
         switch (event.data.message as MessageType) {
             case MessageType.InitWorker:

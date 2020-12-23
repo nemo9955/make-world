@@ -29,15 +29,15 @@ export class Star {
     public radius = new Convert.NumberLength();
     public mass = new Convert.NumberMass();
     public _diameter = new Convert.NumberLength();
-    public get diameter(): any { return this._diameter.set(this.radius).mul(2); }
-    // public set diameter(value: any) { this.mass.set(value.div(2)); }
+    public get diameter(): any { return this._diameter.copy(this.radius).mul(2); }
+    // public set diameter(value: any) { this.mass.copy(value.div(2)); }
 
     constructor() {
         this.color = new Color();
     }
 
-    public clone(source_: Star) {
-        Convert.clone(this, source_)
+    public copy(source_: Star) {
+        Convert.copy(this, source_)
     }
 
     private setFromMass(mass?: number) {
@@ -51,7 +51,7 @@ export class Star {
 
     public makeClassO(mass?: number) {
         this.sclass = "O";
-        this.color.set("#92B5FF")
+        this.color.set_color("#92B5FF")
         this.mass.sm = (mass ? mass : Random.random_float_clamp(16, 100));
         this.setFromMass(this.mass.sm);
         return this;
@@ -59,7 +59,7 @@ export class Star {
 
     public makeClassB(mass?: number) {
         this.sclass = "B";
-        this.color.set("#A2C0FF")
+        this.color.set_color("#A2C0FF")
         this.mass.sm = (mass ? mass : Random.random_float_clamp(2.1, 16));
         this.setFromMass(this.mass.sm);
         return this;
@@ -67,7 +67,7 @@ export class Star {
 
     public makeClassA(mass?: number) {
         this.sclass = "A";
-        this.color.set("#D5E0FF")
+        this.color.set_color("#D5E0FF")
         this.mass.sm = (mass ? mass : Random.random_float_clamp(1.4, 2.1));
         this.setFromMass(this.mass.sm);
         return this;
@@ -75,7 +75,7 @@ export class Star {
 
     public makeClassF(mass?: number) {
         this.sclass = "F";
-        this.color.set("#F9F5FF")
+        this.color.set_color("#F9F5FF")
         this.mass.sm = (mass ? mass : Random.random_float_clamp(1.04, 1.4));
         this.setFromMass(this.mass.sm);
         return this;
@@ -83,7 +83,7 @@ export class Star {
 
     public makeClassG(mass?: number) {
         this.sclass = "G";
-        this.color.set("#FFEDE3")
+        this.color.set_color("#FFEDE3")
         this.mass.sm = (mass ? mass : Random.random_float_clamp(0.8, 1.04));
         this.setFromMass(this.mass.sm);
         return this;
@@ -91,7 +91,7 @@ export class Star {
 
     public makeClassK(mass?: number) {
         this.sclass = "K";
-        this.color.set("#FFDAB5")
+        this.color.set_color("#FFDAB5")
         this.mass.sm = (mass ? mass : Random.random_float_clamp(0.45, 0.8));
         this.setFromMass(this.mass.sm);
         return this;
@@ -99,7 +99,7 @@ export class Star {
 
     public makeClassHabK(mass?: number) {
         this.sclass = "K";
-        this.color.set("#FFDAB5")
+        this.color.set_color("#FFDAB5")
         this.mass.sm = (mass ? mass : Random.random_float_clamp(0.6, 0.8));
         this.setFromMass(this.mass.sm);
         return this;
@@ -107,7 +107,7 @@ export class Star {
 
     public makeClassM(mass?: number) {
         this.sclass = "M";
-        this.color.set("#FFB56C")
+        this.color.set_color("#FFB56C")
         this.mass.sm = (mass ? mass : Random.random_float_clamp(0.08, 0.45));
         this.setFromMass(this.mass.sm);
         return this;

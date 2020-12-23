@@ -16,6 +16,7 @@ export function make_camera(width_: number, height_: number) {
     var camera = new THREE.PerspectiveCamera(75, width_ / height_, 0.1, 1000000000000);
     // camera.position.y = 3;
     camera.position.y = Convert.auToKm(3);
+    camera.position.y = Convert.auToKm(50);
     camera.lookAt(0, 0, 0)
     return camera
 }
@@ -37,6 +38,7 @@ export class DrawWorld {
     earth: THREE.Mesh;
     // ellipse: THREE.Object3D;
     orbits: THREE.Line[] = []
+    planets: THREE.Object3D[] = []
 
     hab_zone: THREE.Mesh;
     frost_zone: THREE.Mesh;
@@ -177,7 +179,6 @@ export class DrawWorld {
                 const geometry = new THREE.BufferGeometry()
                 const material = new THREE.LineBasicMaterial({ color: 0xffffff });
                 const orb = new THREE.Line(geometry, material);
-                orb.rotateX(Convert.degToRad(90))
                 orb.visible = false
                 this.orbits.push(orb)
                 this.scene.add(orb);
@@ -185,10 +186,19 @@ export class DrawWorld {
 
             const orb3d = this.orbits[index]
             orb3d.visible = true
+            orb3d.rotation.set(0, 0, 0)
+            orb3d.rotation.x = Convert.degToRad(-90)
+            orb3d.rotation.z = orb_dist.longitude_perihelion.rad
+
+            // orb3d.rotation.y = orb_dist.longitude_ascending_node.rad
+            // orb3d.rotateX(orb_dist.inclination.rad)
+
+            orb3d.rotation.y = orb_dist.inclination.rad
+            orb3d.rotateOnWorldAxis(this._yAxis, orb_dist.longitude_ascending_node.rad)
 
             const curve = new THREE.EllipseCurve(
-                0, 0,            // ax, aY
-                orb_dist.km, orb_dist.km,           // xRadius, yRadius
+                orb_dist.focal_distance.km, 0,            // ax, aY
+                orb_dist.semimajor_axis.km, orb_dist.semiminor_axis.km,           // xRadius, yRadius
                 0, 2 * Math.PI,  // aStartAngle, aEndAngle
                 false,            // aClockwise
                 0                 // aRotation
@@ -202,7 +212,9 @@ export class DrawWorld {
 
     }
 
-
+    _xAxis = new THREE.Vector3(1, 0, 0);
+    _yAxis = new THREE.Vector3(0, 1, 0);
+    _zAxis = new THREE.Vector3(0, 0, 1);
 
     public draw() {
         // var canvas_ctx = this.canvasOffscreen.getContext("2d");

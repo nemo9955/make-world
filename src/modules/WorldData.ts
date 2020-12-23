@@ -36,7 +36,7 @@ export class WorldData {
             // console.trace("#HERELINE WorldData read this.id", this.id);
             var data = this.dbm.transaction(PLANET_SYSTEM, "readwrite");
             var ps_db = await data.store.get(this.id)
-            this.planetary_system.clone(ps_db)
+            this.planetary_system.copy(ps_db)
         }
 
         await data.done()

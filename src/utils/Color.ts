@@ -8,7 +8,7 @@ class ColorValues {
     b: number = 255;
     opacity: number = 1;
 
-    clone(source_: any) {
+    copy(source_: any) {
         // console.log("ColorValues .... source_", source_);
         if (typeof source_.r !== "undefined")
             this.r = source_.r
@@ -31,12 +31,12 @@ export class Color {
         this._value = new ColorValues();
     }
 
-    clone(source_: any) {
+    copy(source_: any) {
         // console.log("source_", source_);
         if (source_._value)
-            this._value.clone(source_._value)
+            this._value.copy(source_._value)
         else
-            this._value.clone(source_)
+            this._value.copy(source_)
         // console.log("this._value", this._value);
         // console.log("this", this);
     }
@@ -45,16 +45,16 @@ export class Color {
     public get g(): number { return this._value.g; }
     public get b(): number { return this._value.b; }
 
-    public set(value: string) {
+    public set_color(value: string) {
         var color = d3.color(value) as d3.RGBColor
-        this._value.clone(color)
+        this._value.copy(color)
     }
 
     public get value(): ColorValues {
         return this._value;
     }
     public set value(value: ColorValues) {
-        this._value.clone(value);
+        this._value.copy(value);
     }
 
     public toString(): string {
