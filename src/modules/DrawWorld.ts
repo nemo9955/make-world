@@ -16,7 +16,7 @@ export function make_camera(width_: number, height_: number) {
     var camera = new THREE.PerspectiveCamera(75, width_ / height_, 0.1, 1000000000000);
     // camera.position.y = 3;
     camera.position.y = Convert.auToKm(3);
-    camera.position.y = Convert.auToKm(50);
+    // camera.position.y = Convert.auToKm(50);
     camera.lookAt(0, 0, 0)
     return camera
 }
@@ -205,6 +205,7 @@ export class DrawWorld {
             );
             const points = curve.getPoints(50);
             orb3d.geometry.setFromPoints(points);
+            orb3d.userData = curve
 
             // (orb3d.material as THREE.LineBasicMaterial).color.set(0xffffff * Math.random())
 
@@ -215,6 +216,8 @@ export class DrawWorld {
     _xAxis = new THREE.Vector3(1, 0, 0);
     _yAxis = new THREE.Vector3(0, 1, 0);
     _zAxis = new THREE.Vector3(0, 0, 1);
+    tmpv3 = new THREE.Vector3(0, 0, 0);
+    tmpv2 = new THREE.Vector2(0, 0);
 
     public draw() {
         // var canvas_ctx = this.canvasOffscreen.getContext("2d");
@@ -230,10 +233,28 @@ export class DrawWorld {
 
         // this.controls.update(); // only required if controls.enableDamping = true, or if controls.autoRotate = true
 
-        this.stime += 1.5;
+        this.stime += 0.01;
+        this.stime %= 1
+        // console.log("this.stime", this.stime);
+        var someorb = this.orbits[3]
+        var somepl = (someorb.userData as THREE.EllipseCurve)
 
-        this.earth.position.x = this.world.planetary_system.hab_zone.km * Math.sin(Convert.degToRad(this.stime));
-        this.earth.position.z = this.world.planetary_system.hab_zone.km * Math.cos(Convert.degToRad(this.stime));
+        // somepl.getPoint(this.stime, this.tmpv2)
+        somepl.getPoint(this.stime, this.tmpv2)
+        // somepl.getPointAt(this.stime, this.tmpv2)
+
+        // console.log("someorb", someorb);
+        // console.log("this.tmpv2", this.tmpv2);
+
+        this.tmpv3.set(this.tmpv2.x, this.tmpv2.y, 0)
+
+        someorb.localToWorld(this.tmpv3)
+
+        this.earth.position.copy(this.tmpv3)
+
+
+        // this.earth.position.x = this.world.planetary_system.hab_zone.km * Math.sin(Convert.degToRad(this.stime));
+        // this.earth.position.z = this.world.planetary_system.hab_zone.km * Math.cos(Convert.degToRad(this.stime));
 
         // this.sun.rotation.y += 0.3;
         this.earth.rotation.y -= 0.2;
