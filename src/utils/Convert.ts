@@ -44,6 +44,22 @@ export function radToDeg(radians: number): number {
     return THREE.MathUtils.radToDeg(radians)
 }
 
+export function revToRad(revolutions: number): number {
+    return THREE.MathUtils.degToRad(revolutions * 360)
+}
+
+export function radToRev(radians: number): number {
+    return THREE.MathUtils.radToDeg(radians) / 360
+}
+
+export function degToRev(degrees: number): number {
+    return degrees / 360
+}
+
+export function revToDeg(revolutions: number): number {
+    return revolutions * 360
+}
+
 export function clamp(value: number, min: number, max: number): number {
     return THREE.MathUtils.clamp(value, min, max)
 }
@@ -66,6 +82,50 @@ export function copy(target_: any, source_: any) {
     }
     // console.log("target_", target_);
 }
+
+
+// export function true_anomaly_rev(rev_: number, ecc: number) {
+//     // view-source:https://jtauber.github.io/orbits/030.html
+//     // https://www.vcalc.com/wiki/MichaelBartmess/True+Anomaly%2C+%60nu%60%5BE%5D
+
+//     rev_ = revToRad(rev_)
+
+//     var up = Math.cos(rev_) - ecc
+//     var down = 1 - (ecc * Math.cos(rev_))
+//     var the_rev = Math.acos(up / down)
+
+//     the_rev = radToRev(the_rev)
+
+//     return the_rev
+// }
+
+export function true_anomaly_rev(t: number, ecc: number) {
+    // view-source:https://jtauber.github.io/orbits/030.html
+
+    // mean anomaly
+    var M = 2 * Math.PI * t;
+
+    // calculate eccentric anomaly using Newton-Rhapson
+    var E = M;
+    var next = 0;
+    var count = 0;
+    while (count++ < 10) {
+        next = E + (M - (E - ecc * Math.sin(E))) / (1 - ecc * Math.cos(E));
+        if (Math.abs(next - E) < 1E-6) {
+            break;
+        }
+        E = next;
+    }
+
+    // calculate true anomaly
+    var theta = 2 * Math.atan2(Math.sqrt(1 - ecc) * Math.cos(E / 2), Math.sqrt(1 + ecc) * Math.sin(E / 2));
+
+    var the_rev = (((theta / Math.PI) * -1) + 1) / 2
+    return the_rev
+}
+
+
+
 
 export class NumberConverter {
     value: number
@@ -115,6 +175,8 @@ export class NumberAngle extends NumberConverter {
     public set deg(value: number) { this.value = value; }
     public get rad(): number { return degToRad(this.value); }
     public set rad(value: number) { this.value = radToDeg(value); }
+    public get rev(): number { return degToRev(this.value); }
+    public set rev(value: number) { this.value = revToDeg(value); }
 }
 
 export class NumberTime extends NumberConverter {
@@ -123,38 +185,4 @@ export class NumberTime extends NumberConverter {
     public set delta(value: number) { this.value = value; }
 }
 
-
-
-// interface Number {
-//     toPowerOf10: () => string;
-// }
-// Number.prototype
-// (Number as any).prototype.toPowerOf10 = function (): string {
-//     return this.toExponential();
-// }
-
-// console.log("(5 as Number).toExponential(5)", (5 as Number).toExponential(5));
-
-
-
-// public add_converter_accessors_length(var_name: string, base_unit = "km") {
-//     var units = ["km", "au", "sr"]
-//     for (let index = 0; index < units.length; index++) {
-//         const unit = units[index];
-//         var key = var_name.substr(1, var_name.length) + "_" + unit
-
-//         if (unit === base_unit)
-//             Object.defineProperty(this, key, {
-//                 get: () => { return this[var_name]; },
-//                 set: (value: any) => { this[var_name] = value; },
-//             });
-//         else
-//             Object.defineProperty(this, key, {
-//                 get: () => { return this[var_name]; },
-//                 set: (value: any) => { this[var_name] = value; },
-//             });
-
-//     }
-
-// }
 

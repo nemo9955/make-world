@@ -35,8 +35,7 @@ export class DrawWorld {
     controls: OrbitControls;
     stime = 0
     sun: THREE.Mesh;
-    earth: THREE.Mesh;
-    // ellipse: THREE.Object3D;
+
     orbits: THREE.Line[] = []
     planets: THREE.Object3D[] = []
 
@@ -90,13 +89,6 @@ export class DrawWorld {
         this.sun.position.set(0, 0, 0);
         this.scene.add(this.sun);
 
-        this.earth = new THREE.Mesh(
-            new THREE.SphereGeometry(0.1, 5, 5),
-            new THREE.MeshStandardMaterial({ color: new THREE.Color(0.0, 0.6, 0.0) })
-        );
-        this.earth.position.set(0, 0, 5);
-        this.scene.add(this.earth);
-
         const geometry_hab = new THREE.RingGeometry(1, 5, 15, 1);
         const material_hab = new THREE.MeshBasicMaterial({ color: new THREE.Color("green"), side: THREE.DoubleSide });
         material_hab.transparent = true
@@ -144,6 +136,11 @@ export class DrawWorld {
         // var test_sel = d3.selectAll("").data(arr)
         // console.log("test_sel", test_sel);
 
+        for (let rev_ = 0; rev_ < 1; rev_ += 0.05) {
+            var true_rev = Convert.true_anomaly_rev(rev_, 0.5)
+            console.log("rev_, true_rev", rev_.toFixed(4), true_rev.toFixed(4));
+        }
+
 
     }
 
@@ -155,7 +152,7 @@ export class DrawWorld {
 
         // make sun bigger just because
         this.sun.geometry = new THREE.SphereGeometry(this.world.planetary_system.star.diameter.km * 10, 5, 5);
-        this.earth.geometry = new THREE.SphereGeometry(this.world.planetary_system.star.diameter.km * 20, 5, 5);
+        // this.earth.geometry = new THREE.SphereGeometry(this.world.planetary_system.star.diameter.km * 20, 5, 5);
 
         this.hab_zone.geometry = new THREE.RingGeometry(
             this.world.planetary_system.hab_zone_in.km,
@@ -168,48 +165,76 @@ export class DrawWorld {
             15, 1);
 
         for (let index = 0; index < this.orbits.length; index++) {
-            const orb3d = this.orbits[index];
-            orb3d.visible = false
+            const orbit_ = this.orbits[index];
+            orbit_.visible = false
+        }
+        for (let index = 0; index < this.planets.length; index++) {
+            const planet_ = this.planets[index];
+            planet_.visible = false
         }
 
         for (let index = 0; index < this.world.planetary_system.orbits_distances.length; index++) {
             const orb_dist = this.world.planetary_system.orbits_distances[index];
-            // console.log("orb_dist", orb_dist);
+
             if (this.orbits.length < index + 1) {
                 const geometry = new THREE.BufferGeometry()
                 const material = new THREE.LineBasicMaterial({ color: 0xffffff });
-                const orb = new THREE.Line(geometry, material);
-                orb.visible = false
-                this.orbits.push(orb)
-                this.scene.add(orb);
+                const orbit_ = new THREE.Line(geometry, material);
+                orbit_.visible = false;
+                this.orbits.push(orbit_);
+                this.scene.add(orbit_);
             }
 
-            const orb3d = this.orbits[index]
-            orb3d.visible = true
-            orb3d.rotation.set(0, 0, 0)
-            orb3d.rotation.x = Convert.degToRad(-90)
-            orb3d.rotation.z = orb_dist.longitude_perihelion.rad
+            if (this.planets.length < index + 1) {
+                const pl_ = new THREE.Mesh(
+                    new THREE.SphereGeometry(100000, 5, 5),
+                    new THREE.MeshStandardMaterial({ color: new THREE.Color(0.0, 0.6, 0.0) })
+                );
+                this.planets.push(pl_)
+                this.scene.add(pl_);
+                pl_.visible = false;
+            }
 
-            // orb3d.rotation.y = orb_dist.longitude_ascending_node.rad
-            // orb3d.rotateX(orb_dist.inclination.rad)
+            const orbit_ = this.orbits[index]
+            orbit_.visible = true
+            orbit_.rotation.set(0, 0, 0)
+            orbit_.rotation.x = Convert.degToRad(-90)
+            orbit_.rotation.z = orb_dist.longitude_perihelion.rad
 
-            orb3d.rotation.y = orb_dist.inclination.rad
-            orb3d.rotateOnWorldAxis(this._yAxis, orb_dist.longitude_ascending_node.rad)
+            // orbit_.rotation.y = orb_dist.longitude_ascending_node.rad
+            // orbit_.rotateX(orb_dist.inclination.rad)
+
+            orbit_.rotation.y = orb_dist.inclination.rad
+            orbit_.rotateOnWorldAxis(this._yAxis, orb_dist.longitude_ascending_node.rad)
 
             const curve = new THREE.EllipseCurve(
-                orb_dist.focal_distance.km, 0,            // ax, aY
+                -orb_dist.focal_distance.km, 0,            // ax, aY
                 orb_dist.semimajor_axis.km, orb_dist.semiminor_axis.km,           // xRadius, yRadius
                 0, 2 * Math.PI,  // aStartAngle, aEndAngle
                 false,            // aClockwise
                 0                 // aRotation
             );
             const points = curve.getPoints(50);
-            orb3d.geometry.setFromPoints(points);
-            orb3d.userData = curve
+            orbit_.geometry.setFromPoints(points);
+            orbit_.userData = curve
 
-            // (orb3d.material as THREE.LineBasicMaterial).color.set(0xffffff * Math.random())
+            const planet_ = this.planets[index] as THREE.Mesh
+            planet_.visible = true
+            planet_.rotation.set(0, 0, 0)
 
+            // TODO TMP WA set the planet size so it is easy to see, not realist .....
+            var visible_planet_size = curve.getLength() / 35
+            // var visible_planet_size = Math.sqrt(curve.getLength()) * 1000
+            // var visible_planet_size = Math.sqrt(curve.getLength())*100
+            // var visible_planet_size = 70000 * Math.pow((index + 3) * 1.4, 3)
+            planet_.geometry = new THREE.SphereGeometry(visible_planet_size, 5, 5);
+            planet_.userData = orbit_
+
+
+
+            // (orbit_.material as THREE.LineBasicMaterial).color.set(0xffffff * Math.random())
         }
+
 
     }
 
@@ -233,31 +258,53 @@ export class DrawWorld {
 
         // this.controls.update(); // only required if controls.enableDamping = true, or if controls.autoRotate = true
 
-        this.stime += 0.01;
-        this.stime %= 1
+        this.stime += 1000000 * 10;
+
+
+        for (let index = 0; index < this.planets.length; index++) {
+            const planet_ = this.planets[index];
+            var pl_orb_crv = (planet_.userData.userData as THREE.EllipseCurve)
+
+            var orb_len = pl_orb_crv.getLength()
+            var time_orb = this.stime % orb_len
+            var time_orb_proc = time_orb / orb_len
+
+            var orb_obj = this.world.planetary_system.orbits_distances[index]
+            var true_theta = Convert.true_anomaly_rev(time_orb_proc, orb_obj.eccentricity)
+
+
+            pl_orb_crv.getPoint(true_theta, this.tmpv2)
+            this.tmpv3.set(this.tmpv2.x, this.tmpv2.y, 0)
+            planet_.userData.localToWorld(this.tmpv3)
+            planet_.position.copy(this.tmpv3)
+            planet_.rotation.y += 0.1;
+        }
+
+
+
         // console.log("this.stime", this.stime);
-        var someorb = this.orbits[3]
-        var somepl = (someorb.userData as THREE.EllipseCurve)
+        // var someorb = this.orbits[3]
+        // var somepl = (someorb.userData as THREE.EllipseCurve)
 
         // somepl.getPoint(this.stime, this.tmpv2)
-        somepl.getPoint(this.stime, this.tmpv2)
+        // somepl.getPoint(this.stime, this.tmpv2)
         // somepl.getPointAt(this.stime, this.tmpv2)
 
         // console.log("someorb", someorb);
         // console.log("this.tmpv2", this.tmpv2);
 
-        this.tmpv3.set(this.tmpv2.x, this.tmpv2.y, 0)
+        // this.tmpv3.set(this.tmpv2.x, this.tmpv2.y, 0)
 
-        someorb.localToWorld(this.tmpv3)
+        // someorb.localToWorld(this.tmpv3)
 
-        this.earth.position.copy(this.tmpv3)
+        // this.earth.position.copy(this.tmpv3)
 
 
         // this.earth.position.x = this.world.planetary_system.hab_zone.km * Math.sin(Convert.degToRad(this.stime));
         // this.earth.position.z = this.world.planetary_system.hab_zone.km * Math.cos(Convert.degToRad(this.stime));
 
         // this.sun.rotation.y += 0.3;
-        this.earth.rotation.y -= 0.2;
+        // this.earth.rotation.y -= 0.2;
 
         this.renderer.render(this.scene, this.camera);
 

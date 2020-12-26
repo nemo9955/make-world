@@ -63,11 +63,16 @@ export class Orbit {
             Random.random_float_clamp(0.5, 30),
             Random.random_float_clamp(0.0001, 0.2)
         )
+
         this.longitude_perihelion.deg = Random.random_float_clamp(0, 360)
         this.longitude_ascending_node.deg = Random.random_float_clamp(0, 360)
-
-        // afects the "flattness" in plane
         this.inclination.deg = Random.random_float_clamp(0, 5)
+
+        // this.eccentricity = 0.6
+        // this.longitude_perihelion.deg = 0
+        // this.longitude_ascending_node.deg = 0
+        // this.inclination.deg = 0
+
         return this;
     }
 
@@ -75,6 +80,7 @@ export class Orbit {
         Convert.copy(this, source_)
         return this;
     }
+
 
     set_axis(semimajor: number | Convert.NumberLength, semiminor: number | Convert.NumberLength) {
         this.semimajor_axis.copy(semimajor);
