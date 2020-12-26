@@ -136,10 +136,10 @@ export class DrawWorld {
         // var test_sel = d3.selectAll("").data(arr)
         // console.log("test_sel", test_sel);
 
-        for (let rev_ = 0; rev_ < 1; rev_ += 0.05) {
-            var true_rev = Convert.true_anomaly_rev(rev_, 0.5)
-            console.log("rev_, true_rev", rev_.toFixed(4), true_rev.toFixed(4));
-        }
+        // for (let rev_ = 0; rev_ < 1; rev_ += 0.05) {
+        //     var true_rev = Convert.true_anomaly_rev(rev_, 0.5)
+        //     console.log("rev_, true_rev", rev_.toFixed(4), true_rev.toFixed(4));
+        // }
 
 
     }

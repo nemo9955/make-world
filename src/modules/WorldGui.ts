@@ -9,7 +9,7 @@ import * as TweakpaneDummy from "tweakpane"
 import { WorldData } from "./WorldData"
 import { Config } from "./Config"
 import { MainManager } from "./MainManager"
-import { Intervaler } from "../utils/Intervaler"
+import { Intervaler } from "../utils/Time"
 import * as Convert from "../utils/Convert"
 
 export const REFRESH_CALL_INTERVAL = 200
