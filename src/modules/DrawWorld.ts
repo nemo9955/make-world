@@ -23,7 +23,6 @@ export function make_camera(width_: number, height_: number) {
 
 export class DrawWorld {
     world: WorldData;
-    manager: DrawWorker;
     canvasOffscreen: any;
     config: Config;
 
@@ -45,7 +44,6 @@ export class DrawWorld {
     constructor() {
         this.config = null;
         this.world = null;
-        this.manager = null;
     }
 
     public init() {
@@ -63,7 +61,6 @@ export class DrawWorld {
         // this.renderer.setSize(this.config.innerWidth, this.config.innerHeight);
         // document.body.appendChild(this.renderer.domElement);
 
-
         var ambcolo = 0.2
         const light_am = new THREE.AmbientLight(new THREE.Color(ambcolo, ambcolo, ambcolo)); // soft white light
         this.scene.add(light_am);
@@ -74,13 +71,10 @@ export class DrawWorld {
         light_pt.position.set(-ptltpos, ptltpos, ptltpos);
         this.scene.add(light_pt);
 
-
-
         this.update_not();
     }
 
     public update_not() {
-
 
         this.sun = new THREE.Mesh(
             new THREE.SphereGeometry(0.1, 5, 5),
@@ -92,7 +86,7 @@ export class DrawWorld {
         const geometry_hab = new THREE.RingGeometry(1, 5, 15, 1);
         const material_hab = new THREE.MeshBasicMaterial({ color: new THREE.Color("green"), side: THREE.DoubleSide });
         material_hab.transparent = true
-        material_hab.opacity = 0.2
+        material_hab.opacity = 0.3
         this.hab_zone = new THREE.Mesh(geometry_hab, material_hab);
         this.hab_zone.rotateX(Convert.degToRad(-90))
         this.scene.add(this.hab_zone);
@@ -146,6 +140,9 @@ export class DrawWorld {
 
 
     public update() {
+        // console.debug("#HERELINE DrawWorld 143 ");
+        console.time("#time DrawWorld update");
+
         console.debug("#HERELINE DrawWorld update WorldDataID ", this.config.WorldDataID);
         var sun_color = this.world.planetary_system.star.color.getRgb().formatHex();
         (this.sun.material as THREE.MeshStandardMaterial).color.set(sun_color)
@@ -235,7 +232,7 @@ export class DrawWorld {
             // (orbit_.material as THREE.LineBasicMaterial).color.set(0xffffff * Math.random())
         }
 
-
+        console.timeEnd("#time DrawWorld update");
     }
 
     _xAxis = new THREE.Vector3(1, 0, 0);

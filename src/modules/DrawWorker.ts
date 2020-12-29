@@ -42,7 +42,6 @@ export class DrawWorker {
 
         var to_spread: any[] = [this.world, this.draw_world]
         for (const object_ of to_spread) {
-            if (object_.manager === null) object_.manager = this
             if (object_.config === null) object_.config = this.config
             if (object_.world === null) object_.world = this.world
             if (object_.dbm === null) object_.dbm = this.dbm
@@ -78,7 +77,7 @@ export class DrawWorker {
         this.draw_world.canvasOffscreen = event.data.canvas;
         this.draw_world.init()
         this.ready_to_draw = true;
-        this.worker.postMessage({ message: MessageType.Ready });
+        this.worker.postMessage({ message: MessageType.Ready, from: "DrawWorker" });
     }
 
     public refresh_camera(event?: MessageEvent) {
@@ -90,11 +89,13 @@ export class DrawWorker {
     }
 
     public async refresh_db(event?: MessageEvent) {
-        console.debug("#HERELINE DrawWorker refresh_db !this.dbm.idb", !this.dbm.idb);
+        console.debug("#HERELINE DrawWorker refresh_db this.dbm.idb ready", !!this.dbm.idb);
         if (!this.dbm.idb) return;
 
+        console.time("#time DrawWorker refresh_db");
         await this.world.read();
         this.update();
+        console.timeEnd("#time DrawWorker refresh_db");
     }
 
     public resize(event?: MessageEvent) {
@@ -114,13 +115,13 @@ export class DrawWorker {
 
         this.draw_world.update();
 
-        if (this.config.update_draw && this.is_drawing == false) this.draw();
-        else this.is_drawing = this.config.update_draw;
+        if (this.config.do_draw_loop && this.is_drawing == false) this.draw();
+        else this.is_drawing = this.config.do_draw_loop;
 
     }
     private draw() {
-        if (this.config.update_draw) {
-            this.is_drawing = this.config.update_draw;
+        if (this.config.do_draw_loop) {
+            this.is_drawing = this.config.do_draw_loop;
             setTimeout(() => { this.draw() }, 100);
         }
 

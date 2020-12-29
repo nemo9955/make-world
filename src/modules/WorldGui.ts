@@ -76,7 +76,8 @@ export class WorldGui {
     public init_manager() {
         // const folder_tp = this.pane.addFolder({ title: 'Manager', });
         this.pane.addButton({ title: 'Update!' }).on('click', () => { this.refresh(); });
-        this.pane.addInput(this.manager.config, 'update_draw').on('change', () => { this.refresh(true); });
+        this.pane.addInput(this.manager.config, 'do_draw_loop').on('change', () => { this.refresh(true); });
+        this.pane.addInput(this.manager.config, 'do_update_loop').on('change', () => { this.refresh(true); });
 
         this.pane.on('change', (val1) => {
             this.refresh(true);// Issue with tweakpane color causing recursive refresh

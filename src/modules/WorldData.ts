@@ -32,19 +32,23 @@ export class WorldData {
     public async read() {
         // console.debug("#HERELINE WorldData read ");
         if (this.id) {
+            console.time("#time WorldData read");
             // console.debug("#HERELINE WorldData read this.id", this.id);
             var data = this.dbm.transaction(this.dbm.PLANET_SYSTEM, "readonly");
             var ps_db = await data.store.get(this.id)
             this.planetary_system.copy(ps_db)
+            console.timeEnd("#time WorldData read");
             return data.done()
         }
         return Promise.reject("NO ID : " + this.id);
     }
 
     public async write() {
-        // console.debug("#HERELINE WorldData write ");
+        console.time("#time WorldData write");
+        console.debug("#HERELINE WorldData write this.id", this.id);
         var data = this.dbm.transaction(this.dbm.PLANET_SYSTEM, "readwrite");
         await data.store.put(this.planetary_system)
+        console.timeEnd("#time WorldData write");
         return data.done()
     }
 

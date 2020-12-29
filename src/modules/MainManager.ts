@@ -4,7 +4,7 @@ import { WorldData } from "./WorldData"
 import { DataBaseManager } from "./DataBaseManager"
 import * as Units from "../utils/Units"
 
-import DrawWorkerInstance from "worker-loader!./DrawWorker.worker.ts";
+import GenericWorkerInstance from "worker-loader!./Generic.worker.ts";
 
 import { Config, MessageType } from "./Config"
 
@@ -19,7 +19,8 @@ export const CAM_MOVED_INTERVAL = 100
 export class MainManager {
     cam_timeout: any = null;
 
-    draw_worker: DrawWorkerInstance
+    draw_worker: GenericWorkerInstance
+    update_worker: GenericWorkerInstance
     gui: WorldGui;
 
     world: WorldData;
@@ -49,12 +50,13 @@ export class MainManager {
             this.write()
         }).then(() => {
             this.init_draw_worker()
+            this.init_update_worker()
         })
 
 
         // // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         // setTimeout(() => { // DEBUGG , draw only for the first few secs
-        //     this.config.update_draw = false;
+        //     this.config.do_draw_loop = false;
         //     this.gui.refresh();
         // }, 3000);
 
@@ -71,21 +73,31 @@ export class MainManager {
     }
 
     public async read() {
+        console.time("#time MainManager read");
         await this.world.read();
+        console.timeEnd("#time MainManager read");
     }
 
     public async write() {
+        console.time("#time MainManager write");
         await this.world.write();
 
-        if (this.draw_worker)
-            this.draw_worker.postMessage({
-                message: MessageType.RefreshDB,
-                config: this.config
-            });
+        this.draw_worker.postMessage({
+            message: MessageType.RefreshDB,
+            config: this.config
+        });
+
+        this.update_worker.postMessage({
+            message: MessageType.RefreshDB,
+            config: this.config
+        });
+        console.timeEnd("#time MainManager write");
     }
 
     public init_draw_worker() {
-        this.draw_worker = new DrawWorkerInstance();
+        this.draw_worker = new GenericWorkerInstance();
+        this.draw_worker.postMessage({ create: "DrawWorker" });
+
         this.draw_worker.addEventListener("message", async (event) => {
             this.get_message(this.draw_worker, event)
         });
@@ -96,9 +108,23 @@ export class MainManager {
         });
     }
 
+    public init_update_worker() {
+        this.update_worker = new GenericWorkerInstance();
+        this.update_worker.postMessage({ create: "UpdateWorker" });
 
-    public refresh_workers() {
-        this.draw_worker.postMessage({
+        this.update_worker.addEventListener("message", async (event) => {
+            this.get_message(this.update_worker, event)
+        });
+
+        this.update_worker.postMessage({
+            message: MessageType.InitWorker,
+            config: this.config
+        });
+    }
+
+
+    public refresh_workers(the_worker: GenericWorkerInstance) {
+        the_worker.postMessage({
             message: MessageType.RefreshDB,
             config: this.config
         });
@@ -109,7 +135,7 @@ export class MainManager {
 
         switch (event.data.message as MessageType) {
             case MessageType.Ready:
-                this.refresh_workers()
+                this.refresh_workers(the_worker)
                 break;
             case MessageType.MakeCanvas:
                 this.init_worker_canvas()
