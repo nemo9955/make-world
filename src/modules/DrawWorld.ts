@@ -32,7 +32,6 @@ export class DrawWorld {
     geometry: THREE.Geometry;
     material: THREE.Material;
     controls: OrbitControls;
-    stime = 0
     sun: THREE.Mesh;
 
     orbits: THREE.Line[] = []
@@ -77,7 +76,7 @@ export class DrawWorld {
     public update_not() {
 
         this.sun = new THREE.Mesh(
-            new THREE.SphereGeometry(0.1, 5, 5),
+            new THREE.SphereGeometry(1, 5, 5),
             new THREE.MeshStandardMaterial({ color: new THREE.Color(0.6, 0.6, 0.0) })
         );
         this.sun.position.set(0, 0, 0);
@@ -148,7 +147,10 @@ export class DrawWorld {
         (this.sun.material as THREE.MeshStandardMaterial).color.set(sun_color)
 
         // make sun bigger just because
-        this.sun.geometry = new THREE.SphereGeometry(this.world.planetary_system.star.diameter.km * 10, 5, 5);
+        var sun_size = this.world.planetary_system.star.diameter.km * 10
+        // this.sun.geometry.scale(sun_size,sun_size,sun_size)
+        // this.sun.geometry = new THREE.SphereGeometry(sun_size, 5, 5);
+        this.sun.scale.set(sun_size, sun_size, sun_size)
         // this.earth.geometry = new THREE.SphereGeometry(this.world.planetary_system.star.diameter.km * 20, 5, 5);
 
         this.hab_zone.geometry = new THREE.RingGeometry(
@@ -184,7 +186,7 @@ export class DrawWorld {
 
             if (this.planets.length < index + 1) {
                 const pl_ = new THREE.Mesh(
-                    new THREE.SphereGeometry(100000, 5, 5),
+                    new THREE.SphereGeometry(1, 5, 5),
                     new THREE.MeshStandardMaterial({ color: new THREE.Color(0.0, 0.6, 0.0) })
                 );
                 this.planets.push(pl_)
@@ -224,7 +226,9 @@ export class DrawWorld {
             // var visible_planet_size = Math.sqrt(curve.getLength()) * 1000
             // var visible_planet_size = Math.sqrt(curve.getLength())*100
             // var visible_planet_size = 70000 * Math.pow((index + 3) * 1.4, 3)
-            planet_.geometry = new THREE.SphereGeometry(visible_planet_size, 5, 5);
+            // planet_.geometry = new THREE.SphereGeometry(visible_planet_size, 5, 5);
+            // planet_.geometry.scale(visible_planet_size, visible_planet_size, visible_planet_size)
+            planet_.scale.set(visible_planet_size, visible_planet_size, visible_planet_size)
             planet_.userData = orbit_
 
 
@@ -255,15 +259,14 @@ export class DrawWorld {
 
         // this.controls.update(); // only required if controls.enableDamping = true, or if controls.autoRotate = true
 
-        this.stime += 1000000 * 10;
 
-
-        for (let index = 0; index < this.planets.length; index++) {
+        // console.log("planets.length, .orbits_distances.length", this.planets.length, this.world.planetary_system.orbits_distances.length);
+        for (let index = 0; index < this.world.planetary_system.orbits_distances.length; index++) {
             const planet_ = this.planets[index];
             var pl_orb_crv = (planet_.userData.userData as THREE.EllipseCurve)
 
             var orb_len = pl_orb_crv.getLength()
-            var time_orb = this.stime % orb_len
+            var time_orb = this.world.planetary_system.time.universal % orb_len
             var time_orb_proc = time_orb / orb_len
 
             var orb_obj = this.world.planetary_system.orbits_distances[index]

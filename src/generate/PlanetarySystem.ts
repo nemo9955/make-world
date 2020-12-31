@@ -12,6 +12,9 @@ export class PlanetarySystem {
     id: number;
     star: Star;
 
+    // TODO Move in WorldData when more fine read/write can be done
+    public time = new Convert.NumberTime();
+
     public hab_zone = new Convert.NumberLength();
     public hab_zone_in = new Convert.NumberLength();
     public hab_zone_out = new Convert.NumberLength();
@@ -52,6 +55,8 @@ export class PlanetarySystem {
                 break;
         }
 
+        this.time.universal = 0
+
         this.hab_zone.au = Math.sqrt(this.star.luminosity);
         this.hab_zone_in.au = this.hab_zone.au * 0.95;
         this.hab_zone_out.au = this.hab_zone.au * 1.37;
@@ -73,6 +78,8 @@ export class PlanetarySystem {
     }
 
     public genOrbitsSimple() {
+        this.time.universal = 0
+
         this.orbits_distances.length = 0;
         var lfg_orbit = this.genLargestFrostGiantOrbit();
 

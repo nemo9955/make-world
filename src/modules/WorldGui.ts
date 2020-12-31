@@ -116,7 +116,6 @@ export class WorldGui {
 
         this.pane.addButton({ title: 'genOrbitsSimple' }).on('click', () => {
             this.manager.world.planetary_system.genOrbitsSimple();
-            console.log("this.manager.world.planetary_system.orbits_distances_km.length", this.manager.world.planetary_system.orbits_distances.length);
             this.refresh();
         });
 

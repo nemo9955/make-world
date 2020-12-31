@@ -11,12 +11,10 @@ export class STransaction {
     }
 }
 
-export const PLANET_SYSTEM_ = "planet_system";
-
 export class DataBaseManager {
     idb: IDBPDatabase<unknown>;
 
-    PLANET_SYSTEM = PLANET_SYSTEM_;
+    public static PLANET_SYSTEM = "planet_system";
     public TABLE_NAME = "world_table";
 
     constructor() {
@@ -31,8 +29,8 @@ export class DataBaseManager {
     public async open() {
         this.idb = await openDB(this.TABLE_NAME, 1, {
             upgrade(db) {
-                if (!db.objectStoreNames.contains(PLANET_SYSTEM_)) {
-                    const store = db.createObjectStore(PLANET_SYSTEM_, { keyPath: 'id', autoIncrement: false });
+                if (!db.objectStoreNames.contains(DataBaseManager.PLANET_SYSTEM)) {
+                    const store = db.createObjectStore(DataBaseManager.PLANET_SYSTEM, { keyPath: 'id', autoIncrement: false });
                     // store.createIndex('id', 'id');
                     // console.log("createObjectStore ", PLANET_SYSTEM);
                 }

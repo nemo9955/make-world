@@ -9,9 +9,13 @@ import { WorldData } from "./WorldData"
 import { DrawWorld } from "./DrawWorld"
 
 import { Config, MessageType } from "./Config"
+import { Intervaler } from "../utils/Time"
+
+export const READ_DB_INTERVAL = 10
 
 export class DrawWorker {
     draw_world: DrawWorld
+    db_read_itv = new Intervaler();
 
     world: WorldData;
     config: Config;
@@ -24,7 +28,7 @@ export class DrawWorker {
     constructor(worker: Worker) {
         this.worker = worker;
         this.dbm = new DataBaseManager();
-        this.world = new WorldData();
+        this.world = new WorldData("DrawWorker");
         this.config = new Config();
         this.draw_world = new DrawWorld();
     }
@@ -125,6 +129,9 @@ export class DrawWorker {
             setTimeout(() => { this.draw() }, 100);
         }
 
+        // if (this.db_read_itv.check(READ_DB_INTERVAL)) {
+        this.world.read();
+        // }
         this.draw_world.draw();
 
     }

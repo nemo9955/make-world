@@ -1,17 +1,20 @@
 
 import { PlanetarySystem } from "../generate/PlanetarySystem"
 import { DataBaseManager, STransaction } from "./DataBaseManager";
-
+import * as Convert from "../utils/Convert"
 
 import { Config } from "./Config"
+
 export class WorldData {
 
     private _id: number;
+    name: string;
 
     planetary_system: PlanetarySystem;
     dbm: DataBaseManager;
 
-    constructor() {
+    constructor(name: string) {
+        this.name = name;
         this.planetary_system = new PlanetarySystem();
         this.dbm = null;
     }
@@ -29,27 +32,35 @@ export class WorldData {
         this.planetary_system.genOrbitsSimple()
     }
 
+
     public async read() {
         // console.debug("#HERELINE WorldData read ");
         if (this.id) {
-            console.time("#time WorldData read");
+            // console.time("#time WorldData " + this.name + " read");
             // console.debug("#HERELINE WorldData read this.id", this.id);
-            var data = this.dbm.transaction(this.dbm.PLANET_SYSTEM, "readonly");
-            var ps_db = await data.store.get(this.id)
+
+            var data_ps = this.dbm.transaction(DataBaseManager.PLANET_SYSTEM, "readonly");
+            var ps_db = await data_ps.store.get(this.id)
+            await data_ps.done()
             this.planetary_system.copy(ps_db)
-            console.timeEnd("#time WorldData read");
-            return data.done()
+
+            // console.timeEnd("#time WorldData " + this.name + " read");
+            // return data_ps.done()
+            return Promise.resolve();
         }
         return Promise.reject("NO ID : " + this.id);
     }
 
     public async write() {
-        console.time("#time WorldData write");
+        // console.time("#time WorldData " + this.name + " write");
         console.debug("#HERELINE WorldData write this.id", this.id);
-        var data = this.dbm.transaction(this.dbm.PLANET_SYSTEM, "readwrite");
-        await data.store.put(this.planetary_system)
-        console.timeEnd("#time WorldData write");
-        return data.done()
-    }
 
+        var data_ps = this.dbm.transaction(DataBaseManager.PLANET_SYSTEM, "readwrite");
+        await data_ps.store.put(this.planetary_system)
+        await data_ps.done()
+
+        // console.timeEnd("#time WorldData " + this.name + " write");
+        // return data_ps.done()
+        return Promise.resolve();
+    }
 }

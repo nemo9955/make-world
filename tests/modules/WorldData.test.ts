@@ -5,11 +5,12 @@ import { DataBaseManager } from "../.././src/modules/DataBaseManager"
 // https://jestjs.io/docs/en/expect
 
 console.debug = jest.fn() // supress debugg logs
+console.time = jest.fn()
 
 require("fake-indexeddb/auto");
 
 function make_world_test(db_name: string) {
-    var wdata = new WorldData()
+    var wdata = new WorldData("make_world_test-" + db_name)
     var dbm = new DataBaseManager();
     wdata.dbm = dbm
     wdata.dbm.TABLE_NAME = db_name

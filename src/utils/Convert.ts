@@ -181,8 +181,8 @@ export class NumberAngle extends NumberConverter {
 
 export class NumberTime extends NumberConverter {
     public clone() { return new NumberTime(this.value); }
-    public get delta(): number { return this.value; }
-    public set delta(value: number) { this.value = value; }
+    public get universal(): number { return this.value; }
+    public set universal(value: number) { this.value = value; }
 }
 
 

@@ -32,7 +32,7 @@ export class MainManager {
 
     constructor() {
         this.dbm = new DataBaseManager();
-        this.world = new WorldData();
+        this.world = new WorldData("MainManager");
         this.gui = new WorldGui();
         this.config = new Config();
     }

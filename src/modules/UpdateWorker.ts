@@ -18,7 +18,10 @@ import * as Units from "../utils/Units"
 
 
 
+import { Intervaler } from "../utils/Time"
 
+
+export const WRITE_DB_INTERVAL = 10
 
 export class UpdateWorker {
 
@@ -27,13 +30,14 @@ export class UpdateWorker {
     dbm: DataBaseManager;
     worker: Worker;
 
+    db_read_itv = new Intervaler();
     update_world: UpdateWorld;
     is_updating: boolean = false;
 
     constructor(worker: Worker) {
         this.worker = worker;
         this.dbm = new DataBaseManager();
-        this.world = new WorldData();
+        this.world = new WorldData("UpdateWorker");
         this.config = new Config();
         this.update_world = new UpdateWorld();
     }
@@ -98,11 +102,16 @@ export class UpdateWorker {
     private update_loop() {
         if (this.config.do_update_loop) {
             this.is_updating = this.config.do_update_loop;
-            setTimeout(() => { this.update_loop() }, 500);
+            setTimeout(() => { this.update_loop() }, 100);
         }
 
         this.update_world.update();
 
+
+        // if (this.db_read_itv.check(WRITE_DB_INTERVAL)) {
+            // this.refresh_db();
+            this.world.write();
+        // }
     }
 
 
