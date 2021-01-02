@@ -9,7 +9,7 @@ import { WorldData } from "./WorldData"
 import { DrawWorld } from "./DrawWorld"
 
 import { Config, MessageType } from "./Config"
-import { Intervaler } from "../utils/Time"
+import { Intervaler, Ticker } from "../utils/Time"
 
 export const READ_DB_INTERVAL = 10
 
@@ -22,7 +22,8 @@ export class DrawWorker {
     dbm: DataBaseManager;
     worker: Worker;
 
-    is_drawing = false;
+    draw_tick: Ticker
+
     ready_to_draw = false;
 
     constructor(worker: Worker) {
@@ -31,6 +32,7 @@ export class DrawWorker {
         this.world = new WorldData("DrawWorker");
         this.config = new Config();
         this.draw_world = new DrawWorld();
+        this.draw_tick = new Ticker(false, this.draw.bind(this), 100)
     }
 
     public init() {
@@ -119,23 +121,14 @@ export class DrawWorker {
 
         this.draw_world.update();
 
-        if (this.config.do_draw_loop && this.is_drawing == false) this.draw();
-        else this.is_drawing = this.config.do_draw_loop;
-
+        this.draw_tick.updateState(this.config.do_draw_loop);
     }
-    private draw() {
-        if (this.config.do_draw_loop) {
-            this.is_drawing = this.config.do_draw_loop;
-            setTimeout(() => { this.draw() }, 100);
-        }
 
+    private draw() {
         // if (this.db_read_itv.check(READ_DB_INTERVAL)) {
         this.world.read();
         // }
         this.draw_world.draw();
-
     }
-
-
 
 }

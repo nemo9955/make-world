@@ -22,7 +22,7 @@ export class PlanetarySystem {
     public orbits_limit_in = new Convert.NumberLength();
     public orbits_limit_out = new Convert.NumberLength();
 
-    orbits_distances = new Array<Orbit>();
+    public orbits_distances = new Array<Orbit>();
 
     constructor() {
         this.star = new Star();
@@ -31,9 +31,17 @@ export class PlanetarySystem {
     public copy(source_: any) {
         Convert.copy(this, source_)
 
-        this.orbits_distances.length = 0;
-        for (const iterator of source_.orbits_distances) {
-            this.orbits_distances.push(new Orbit().copy(iterator))
+        var max_len = Math.max(source_.orbits_distances.length, this.orbits_distances.length)
+        for (let index = 0; index < max_len; index++) {
+            if (index < this.orbits_distances.length && index < source_.orbits_distances.length) {
+                this.orbits_distances[index].copy(source_.orbits_distances[index])
+            } else if (index < this.orbits_distances.length) {
+                Orbit.free(this.orbits_distances.pop())
+                // console.log("Orbit.release",index, source_.orbits_distances.length, this.orbits_distances.length);
+            } else if (index < source_.orbits_distances.length) {
+                this.orbits_distances.push(Orbit.new().copy(source_.orbits_distances[index]))
+                // console.log("Orbit.new    ",index, source_.orbits_distances.length, this.orbits_distances.length);
+            }
         }
 
         return this;
@@ -137,6 +145,7 @@ export class PlanetarySystem {
         }
 
         this.orbits_distances.sort((a, b) => a.semimajor_axis.value - b.semimajor_axis.value);
+        console.debug("this.orbits_distances.length", this.orbits_distances.length);
 
         // var sangle = 0
         // for (const iterator of this.orbits_distances) {

@@ -13,6 +13,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 
 import { make_camera } from "./DrawWorld"
+import { Ticker } from "../utils/Time";
 
 export const CAM_MOVED_INTERVAL = 100
 
@@ -29,12 +30,14 @@ export class MainManager {
 
     camera: THREE.PerspectiveCamera;
     controls: OrbitControls;
+    update_tick: Ticker;
 
     constructor() {
         this.dbm = new DataBaseManager();
         this.world = new WorldData("MainManager");
         this.gui = new WorldGui();
         this.config = new Config();
+        this.update_tick = new Ticker(false, this.read.bind(this), 100)
     }
 
     public async init() {
@@ -44,15 +47,15 @@ export class MainManager {
 
         this.dbm.init().then(() => {
             this.world.init();
-            this.config.WorldDataID = this.world.id
+            this.config.WorldDataID = this.world.id;
             this.gui.init();
         }).then(() => {
-            this.write()
+            this.write();
         }).then(() => {
-            this.init_draw_worker()
-            this.init_update_worker()
+            this.init_draw_worker();
+            this.init_update_worker();
+            this.update_tick.updateState(this.config.do_main_loop);
         })
-
 
         // // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         // setTimeout(() => { // DEBUGG , draw only for the first few secs
@@ -73,13 +76,15 @@ export class MainManager {
     }
 
     public async read() {
-        console.time("#time MainManager read");
+        // console.time("#time MainManager read");
         await this.world.read();
-        console.timeEnd("#time MainManager read");
+        // console.timeEnd("#time MainManager read");
     }
 
     public async write() {
-        console.time("#time MainManager write");
+        // console.time("#time MainManager write");
+        this.update_tick.updateState(this.config.do_main_loop)
+
         await this.world.write();
 
         this.draw_worker.postMessage({
@@ -91,7 +96,7 @@ export class MainManager {
             message: MessageType.RefreshDB,
             config: this.config
         });
-        console.timeEnd("#time MainManager write");
+        // console.timeEnd("#time MainManager write");
     }
 
     public init_draw_worker() {

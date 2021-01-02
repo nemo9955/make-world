@@ -18,7 +18,7 @@ import * as Units from "../utils/Units"
 
 
 
-import { Intervaler } from "../utils/Time"
+import { Intervaler, Ticker } from "../utils/Time"
 
 
 export const WRITE_DB_INTERVAL = 10
@@ -32,7 +32,7 @@ export class UpdateWorker {
 
     db_read_itv = new Intervaler();
     update_world: UpdateWorld;
-    is_updating: boolean = false;
+    update_tick: Ticker;
 
     constructor(worker: Worker) {
         this.worker = worker;
@@ -40,6 +40,7 @@ export class UpdateWorker {
         this.world = new WorldData("UpdateWorker");
         this.config = new Config();
         this.update_world = new UpdateWorld();
+        this.update_tick = new Ticker(false, this.update_loop.bind(this), 100)
     }
 
     public init() {
@@ -93,24 +94,16 @@ export class UpdateWorker {
         console.debug("#HERELINE UpdateWorker update ");
         console.time("#time UpdateWorker update");
 
-        if (this.config.do_update_loop && this.is_updating == false) this.update_loop();
-        else this.is_updating = this.config.do_update_loop;
-
+        this.update_tick.updateState(this.config.do_update_loop)
         console.timeEnd("#time UpdateWorker update");
     }
 
     private update_loop() {
-        if (this.config.do_update_loop) {
-            this.is_updating = this.config.do_update_loop;
-            setTimeout(() => { this.update_loop() }, 100);
-        }
-
         this.update_world.update();
 
-
         // if (this.db_read_itv.check(WRITE_DB_INTERVAL)) {
-            // this.refresh_db();
-            this.world.write();
+        // this.refresh_db();
+        this.world.write();
         // }
     }
 

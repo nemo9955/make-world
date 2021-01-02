@@ -3,6 +3,7 @@
 import * as Random from "../utils/Random"
 import * as Units from "../utils/Units"
 import * as Convert from "../utils/Convert"
+import { ObjectPool } from "../utils/ObjectPool";
 
 
 /*
@@ -13,8 +14,8 @@ https://jtauber.github.io/orbits/019.html
 
 */
 
-export class Orbit {
 
+export class Orbit {
     // public mean_longitude = new Convert.NumberAngle();
 
     // Right Ascension of Ascending Node
@@ -131,4 +132,8 @@ export class Orbit {
         return this._semiminor_axis.value * this._eccentricity
     }
 
+    public clone() { return Orbit.new().copy(this) }
+    public static free(item: Orbit) { Orbit.pool_.free(item) }
+    public static new() { return Orbit.pool_.get() }
+    public static pool_ = new ObjectPool<Orbit>(() => new Orbit(), (item: Orbit) => { }, 12);
 }

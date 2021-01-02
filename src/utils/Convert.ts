@@ -70,9 +70,8 @@ export function copy(target_: any, source_: any) {
         // console.log("key, typeof source_[key], source_[key] ", key, typeof source_[key], source_[key]);
 
         if (source_[key].__proto__.constructor.name === "Array") {
-            target_[key] = [...source_[key]]; // TODO FIXME Arrays need to be refreshed for some reason ...
-        }
-        else if (typeof target_?.[key]?.['copy'] === "function") {
+            // LEAVE ARRAYS UNTOUCHED !!!
+        } else if (typeof target_?.[key]?.['copy'] === "function") {
             target_[key]['copy'](source_[key]);
             // console.log("SETTTTTTTTTTTTTTTTTTTTTT", key,target_[key]);
         }

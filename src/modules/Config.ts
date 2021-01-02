@@ -7,6 +7,7 @@ import * as Convert from "../utils/Convert"
 export class Config {
     do_draw_loop: boolean = true
     do_update_loop: boolean = true
+    do_main_loop: boolean = true
     innerWidth: number
     innerHeight: number
 

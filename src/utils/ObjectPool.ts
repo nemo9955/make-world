@@ -8,7 +8,7 @@
 
 export class ObjectPool<T> {
 
-    freeList: any[];
+    freeList: T[];
     count: number;
     isObjectPool: boolean;
 
@@ -28,8 +28,7 @@ export class ObjectPool<T> {
         }
     }
 
-    acquire(): T {
-
+    public get(): T {
         // Grow the list by 20%ish if we're out
         if (this.freeList.length <= 0) {
             this.expand(Math.round(this.count * 0.2) + 1);
@@ -40,13 +39,12 @@ export class ObjectPool<T> {
         return item;
     }
 
-    release(item: T): void {
+    public free(item: T): void {
         this.reset(item);
         this.freeList.push(item);
     }
 
-    expand(count: number): void {
-
+    public expand(count: number): void {
         for (var n = 0; n < count; n++) {
             var clone = this.create();
             // clone._pool = this;
@@ -55,15 +53,15 @@ export class ObjectPool<T> {
         this.count += count;
     }
 
-    totalSize(): number {
+    public totalSize(): number {
         return this.count;
     }
 
-    totalFree(): number {
+    public totalFree(): number {
         return this.freeList.length;
     }
 
-    totalUsed(): number {
+    public totalUsed(): number {
         return this.count - this.freeList.length;
     }
 

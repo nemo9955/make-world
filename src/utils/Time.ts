@@ -26,3 +26,47 @@ export class Intervaler {
     }
 
 }
+
+export class Ticker {
+
+    public enabled: boolean;
+    public timeout_val: NodeJS.Timeout;
+
+    public tick_interval: number;
+    public tick_function: any
+
+    constructor(enabled = false, tick_function = null, tick_interval = 100) {
+        this.enabled = enabled
+        this.timeout_val = null
+        this.tick_function = tick_function
+        this.tick_interval = tick_interval
+    }
+
+    public tick() {
+        this.tick_function()
+    }
+
+    public start() {
+        if (this.timeout_val === null) {
+            this.timeout_val = setTimeout(() => {
+                this.timeout_val = null;
+                this.start();
+                this.tick();
+            }, this.tick_interval);
+        }
+    }
+
+    public stop() {
+        if (this.timeout_val !== null) {
+            clearTimeout(this.timeout_val)
+            this.timeout_val = null;
+        }
+    }
+
+    public updateState(state: boolean) {
+        if (state) this.start();
+        else this.stop();
+    }
+
+
+}

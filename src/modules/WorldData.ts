@@ -53,7 +53,7 @@ export class WorldData {
 
     public async write() {
         // console.time("#time WorldData " + this.name + " write");
-        console.debug("#HERELINE WorldData write this.id", this.id);
+        // console.debug("#HERELINE WorldData write this.id", this.id);
 
         var data_ps = this.dbm.transaction(DataBaseManager.PLANET_SYSTEM, "readwrite");
         await data_ps.store.put(this.planetary_system)
