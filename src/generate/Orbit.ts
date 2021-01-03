@@ -54,12 +54,20 @@ export class Orbit {
         this._focal_distance.value = this.calc_focal_distance()
     }
     public set semimajor_axis(value) {
-        this._semimajor_axis = value;
+        this._semimajor_axis.copy(value);
         this._semiminor_axis.value = this.calc_semiminor_axis()
         this._focal_distance.value = this.calc_focal_distance()
     }
 
-    random_sane() {
+    public random_uniform() {
+        this.set_major_ecc(1, 0.0001)
+        this.longitude_perihelion.deg = 0
+        this.longitude_ascending_node.deg = 0
+        this.inclination.deg = 0
+        return this;
+    }
+
+    public random_sane() {
         this.set_major_ecc(
             Random.random_float_clamp(0.5, 30),
             Random.random_float_clamp(0.0001, 0.2)
@@ -69,21 +77,16 @@ export class Orbit {
         this.longitude_ascending_node.deg = Random.random_float_clamp(0, 360)
         this.inclination.deg = Random.random_float_clamp(0, 5)
 
-        // this.eccentricity = 0.6
-        // this.longitude_perihelion.deg = 0
-        // this.longitude_ascending_node.deg = 0
-        // this.inclination.deg = 0
-
         return this;
     }
 
-    copy(source_: Orbit) {
+    public copy(source_: Orbit) {
         Convert.copy(this, source_)
         return this;
     }
 
 
-    set_axis(semimajor: number | Convert.NumberLength, semiminor: number | Convert.NumberLength) {
+    public set_axis(semimajor: number | Convert.NumberLength, semiminor: number | Convert.NumberLength) {
         this.semimajor_axis.copy(semimajor);
         this.semiminor_axis.copy(semiminor);
         if (this.semimajor_axis.value < this.semiminor_axis.value) {

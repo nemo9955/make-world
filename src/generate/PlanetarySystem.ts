@@ -31,36 +31,26 @@ export class PlanetarySystem {
     public copy(source_: any) {
         Convert.copy(this, source_)
 
-        var max_len = Math.max(source_.orbits_distances.length, this.orbits_distances.length)
-        for (let index = 0; index < max_len; index++) {
-            if (index < this.orbits_distances.length && index < source_.orbits_distances.length) {
-                this.orbits_distances[index].copy(source_.orbits_distances[index])
-            } else if (index < this.orbits_distances.length) {
-                Orbit.free(this.orbits_distances.pop())
-                // console.log("Orbit.release",index, source_.orbits_distances.length, this.orbits_distances.length);
-            } else if (index < source_.orbits_distances.length) {
-                this.orbits_distances.push(Orbit.new().copy(source_.orbits_distances[index]))
-                // console.log("Orbit.new    ",index, source_.orbits_distances.length, this.orbits_distances.length);
-            }
-        }
+
+        this.clear_orbits();
+        for (let index = 0; index < source_.orbits_distances.length; index++)
+            this.orbits_distances.push(Orbit.new().copy(source_.orbits_distances[index]))
 
         return this;
     }
 
     public genStar(type?: string) {
         switch (type) {
+            case "sun":
+                this.star.makeClassG(1); break;
             case "long_life":
-                this.star.genLongLifeStar();
-                break;
+                this.star.genLongLifeStar(); break;
             case "any":
-                this.star.genAnyStar();
-                break;
+                this.star.genAnyStar(); break;
             case "habitable":
-                this.star.genHabitableStar();
-                break;
+                this.star.genHabitableStar(); break;
             default:
-                this.star.genHabitableStar();
-                break;
+                this.star.genHabitableStar(); break;
         }
 
         this.time.universal = 0
@@ -85,10 +75,45 @@ export class PlanetarySystem {
         return instance
     }
 
+
+
+    private clear_orbits() {
+        while (this.orbits_distances.length > 0)
+            Orbit.free(this.orbits_distances.pop());
+    }
+
+
+    public genOrbitsUniform() {
+        this.time.universal = 0
+
+        this.clear_orbits();
+
+        var orb_size = Random.random_int_clamp(4, 7)
+
+        var last_orbit = this.orbits_limit_in.clone()
+        for (let index = 0; index < orb_size; index++) {
+            var orb_dist = Orbit.new().random_uniform();
+            orb_dist.semimajor_axis = last_orbit
+            this.orbits_distances.push(orb_dist)
+            last_orbit.au += 3.5;
+        }
+
+        var orb_dist = Orbit.new().random_uniform();
+        orb_dist.semimajor_axis = this.orbits_limit_out
+        this.orbits_distances.push(orb_dist)
+
+
+        console.debug("this.orbits_distances.length", this.orbits_distances.length);
+
+        return this;
+    }
+
+
     public genOrbitsSimple() {
         this.time.universal = 0
 
-        this.orbits_distances.length = 0;
+        this.clear_orbits();
+
         var lfg_orbit = this.genLargestFrostGiantOrbit();
 
         var last_orbit = lfg_orbit.clone();
@@ -109,7 +134,7 @@ export class PlanetarySystem {
             }
 
             if (is_valid) {
-                var orb_dist = new Orbit().random_sane();
+                var orb_dist = Orbit.new().random_sane();
                 orb_dist.semimajor_axis = last_orbit
                 this.orbits_distances.push(orb_dist)
             }
@@ -136,7 +161,7 @@ export class PlanetarySystem {
             }
 
             if (is_valid) {
-                var orb_dist = new Orbit().random_sane();
+                var orb_dist = Orbit.new().random_sane();
                 orb_dist.semimajor_axis = last_orbit
                 this.orbits_distances.push(orb_dist)
             }

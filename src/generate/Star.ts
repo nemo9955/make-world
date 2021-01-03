@@ -28,8 +28,8 @@ export class Star {
 
     public radius = new Convert.NumberLength();
     public mass = new Convert.NumberMass();
-    public _diameter = new Convert.NumberLength();
-    public get diameter(): any { return this._diameter.copy(this.radius).mul(2); }
+    // public _diameter = new Convert.NumberLength();
+    // public get diameter(): any { return this._diameter.copy(this.radius).mul(2); }
     // public set diameter(value: any) { this.mass.copy(value.div(2)); }
 
     constructor() {

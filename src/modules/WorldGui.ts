@@ -94,10 +94,10 @@ export class WorldGui {
         this.pane.addInput(this.manager.world.planetary_system.star.color, 'value');
 
         star_tp.addInput(this.manager.world.planetary_system.star.mass, 'kg', { label: "mass" });
-        star_tp.addInput(this.manager.world.planetary_system.star.diameter, 'km', { label: "diameter" });
+        // star_tp.addInput(this.manager.world.planetary_system.star.diameter, 'km', { label: "diameter" });
         star_tp.addInput(this.manager.world.planetary_system.star.radius, 'km', { label: "radius" });
 
-        // star_tp.expanded = false
+        star_tp.expanded = false
     }
 
     public init_plsystem() {
@@ -115,12 +115,21 @@ export class WorldGui {
             this.refresh();
         });
 
-        this.pane.addButton({ title: 'genOrbitsSimple' }).on('click', () => {
-            this.manager.world.planetary_system.genOrbitsSimple();
+        this.pane.addButton({ title: 'genDebugg' }).on('click', () => {
+            this.manager.world.planetary_system.genStar("sun");
+            this.manager.world.planetary_system.genOrbitsUniform();
             this.refresh();
         });
 
-        // plsys_tp.expanded = false
+        this.pane.addButton({ title: 'genOrbitsSimple' }).on('click', () => {
+            this.manager.world.planetary_system.genOrbitsSimple(); this.refresh();
+        });
+
+        this.pane.addButton({ title: 'genOrbitsUniform' }).on('click', () => {
+            this.manager.world.planetary_system.genOrbitsUniform(); this.refresh();
+        });
+
+        plsys_tp.expanded = false
 
         // this.orbits_tp = plsys_tp.addFolder({ title: 'Orbits' });
         // this.orbits_tp.expanded = false

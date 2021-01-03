@@ -1,5 +1,7 @@
 const ctx: Worker = self as any;
 
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer
+
 import { DrawWorker } from "./DrawWorker";
 import { UpdateWorker } from "./UpdateWorker";
 

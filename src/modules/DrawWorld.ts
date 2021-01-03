@@ -15,7 +15,8 @@ import * as Units from "../utils/Units"
 export function make_camera(width_: number, height_: number) {
     var camera = new THREE.PerspectiveCamera(75, width_ / height_, 0.1, 1000000000000);
     // camera.position.y = 3;
-    camera.position.y = Convert.auToKm(3);
+    // camera.position.y = Convert.auToKm(4);
+    camera.position.y = Convert.auToKm(20);
     // camera.position.y = Convert.auToKm(50);
     camera.lookAt(0, 0, 0)
     return camera
@@ -147,7 +148,7 @@ export class DrawWorld {
         (this.sun.material as THREE.MeshStandardMaterial).color.set(sun_color)
 
         // make sun bigger just because
-        var sun_size = this.world.planetary_system.star.diameter.km * 10
+        var sun_size = this.world.planetary_system.star.radius.km * 2 * 10
         // this.sun.geometry.scale(sun_size,sun_size,sun_size)
         // this.sun.geometry = new THREE.SphereGeometry(sun_size, 5, 5);
         this.sun.scale.set(sun_size, sun_size, sun_size)
