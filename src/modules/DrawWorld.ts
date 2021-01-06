@@ -12,11 +12,19 @@ import { Config } from "./Config"
 import * as Convert from "../utils/Convert"
 import * as Units from "../utils/Units"
 
+
+import { ObjectPool } from "../utils/ObjectPool";
+import { Orbit } from "../generate/Orbit";
+
+// https://orbitalmechanics.info/
+
+
 export function make_camera(width_: number, height_: number) {
     var camera = new THREE.PerspectiveCamera(75, width_ / height_, 0.1, 1000000000000);
     // camera.position.y = 3;
     // camera.position.y = Convert.auToKm(4);
-    camera.position.y = Convert.auToKm(20);
+    // camera.position.y = Convert.auToKm(40);
+    camera.position.y = Convert.auToKm(60);
     // camera.position.y = Convert.auToKm(50);
     camera.lookAt(0, 0, 0)
     return camera
@@ -35,15 +43,60 @@ export class DrawWorld {
     controls: OrbitControls;
     sun: THREE.Mesh;
 
-    orbits: THREE.Line[] = []
-    planets: THREE.Object3D[] = []
+    orb_lines: THREE.Line[] = []
+    orb_planets: THREE.Mesh[] = []
+    orb_groups: THREE.Group[] = []
+    satelits_gr: THREE.Group[] = []
+    orb_objects: Orbit[] = []
 
     hab_zone: THREE.Mesh;
     frost_zone: THREE.Mesh;
 
+    tjs_pool_lines: ObjectPool<THREE.Line>;
+    tjs_pool_planets: ObjectPool<THREE.Mesh>;
+    tjs_pool_groups: ObjectPool<THREE.Group>;
+
+
     constructor() {
         this.config = null;
         this.world = null;
+
+
+
+        this.tjs_pool_lines = new ObjectPool<THREE.Line>(() => {
+            const geometry = new THREE.BufferGeometry()
+            const material = new THREE.LineBasicMaterial({ color: 0xffffff });
+            const item = new THREE.Line(geometry, material);
+            item.visible = false;
+            return item;
+        }, (item) => {
+            item.visible = false;
+            item.parent.remove(item)
+        }, 0)
+
+        this.tjs_pool_planets = new ObjectPool<THREE.Mesh>(() => {
+            const item = new THREE.Mesh(
+                new THREE.SphereGeometry(1, 5, 5),
+                new THREE.MeshStandardMaterial({ color: new THREE.Color(0.0, 0.6, 0.0) })
+            );
+            item.visible = false;
+            return item;
+        }, (item) => {
+            item.visible = false;
+            item.parent.remove(item)
+        }, 0)
+
+        this.tjs_pool_groups = new ObjectPool<THREE.Group>(() => {
+            const item = new THREE.Group();
+            item.visible = false;
+            return item;
+        }, (item) => {
+            item.visible = false;
+            item.parent.remove(item)
+        }, 0)
+
+
+
     }
 
     public init() {
@@ -51,6 +104,11 @@ export class DrawWorld {
 
         this.scene = new THREE.Scene();
         this.camera = make_camera(this.config.innerWidth, this.config.innerHeight);
+
+
+        this.tjs_pool_lines.expand(20);
+        this.tjs_pool_planets.expand(20);
+        this.tjs_pool_groups.expand(50);
 
         // this.renderer = new THREE.WebGLRenderer();
         this.renderer = new THREE.WebGLRenderer({
@@ -99,44 +157,15 @@ export class DrawWorld {
         this.frost_zone.rotateX(Convert.degToRad(-90))
         this.scene.add(this.frost_zone);
 
-
-        // BIG TODO ... a way for input to reach workers ....
-        // this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-
-
-        // raycaster = new THREE.Raycaster();
-
-
-        // var curve = new THREE.EllipseCurve(
-        //     0, 0,            // ax, aY
-        //     4, 5,           // xRadius, yRadius
-        //     0, 2 * Math.PI,  // aStartAngle, aEndAngle
-        //     false,            // aClockwise
-        //     0                 // aRotation
-        // );
-        // const points = curve.getPoints(50);
-        // const geometry = new THREE.BufferGeometry().setFromPoints(points);
-        // const material = new THREE.LineBasicMaterial({ color: 0xffffff });
-        // // Create the final object to add to the scene
-        // this.ellipse = new THREE.Line(geometry, material);
-        // this.ellipse.rotateX(Convert.degToRad(90))
-        // this.ellipse.use
-        // this.scene.add(this.ellipse);
-        // this.ellipse.hi
-
-
-
-        // var arr = [1,2,2,3,4]
-        // var test_sel = d3.selectAll("").data(arr)
-        // console.log("test_sel", test_sel);
-
-        // for (let rev_ = 0; rev_ < 1; rev_ += 0.05) {
-        //     var true_rev = Convert.true_anomaly_rev(rev_, 0.5)
-        //     console.log("rev_, true_rev", rev_.toFixed(4), true_rev.toFixed(4));
-        // }
-
-
     }
+
+
+
+
+
+
+
+
 
 
     public update() {
@@ -164,78 +193,21 @@ export class DrawWorld {
             this.world.planetary_system.orbits_limit_out.km,
             15, 1);
 
-        for (let index = 0; index < this.orbits.length; index++) {
-            const orbit_ = this.orbits[index];
-            orbit_.visible = false
-        }
-        for (let index = 0; index < this.planets.length; index++) {
-            const planet_ = this.planets[index];
-            planet_.visible = false
-        }
 
-        for (let index = 0; index < this.world.planetary_system.orbits_distances.length; index++) {
-            const orb_dist = this.world.planetary_system.orbits_distances[index];
+        while (this.orb_lines.length > 0)
+            this.tjs_pool_lines.free(this.orb_lines.pop());
+        while (this.orb_planets.length > 0)
+            this.tjs_pool_planets.free(this.orb_planets.pop());
+        while (this.orb_groups.length > 0)
+            this.tjs_pool_groups.free(this.orb_groups.pop());
+        while (this.satelits_gr.length > 0)
+            this.tjs_pool_groups.free(this.satelits_gr.pop());
 
-            if (this.orbits.length < index + 1) {
-                const geometry = new THREE.BufferGeometry()
-                const material = new THREE.LineBasicMaterial({ color: 0xffffff });
-                const orbit_ = new THREE.Line(geometry, material);
-                orbit_.visible = false;
-                this.orbits.push(orbit_);
-                this.scene.add(orbit_);
-            }
+        while (this.orb_objects.length > 0)
+            this.orb_objects.pop();
 
-            if (this.planets.length < index + 1) {
-                const pl_ = new THREE.Mesh(
-                    new THREE.SphereGeometry(1, 5, 5),
-                    new THREE.MeshStandardMaterial({ color: new THREE.Color(0.0, 0.6, 0.0) })
-                );
-                this.planets.push(pl_)
-                this.scene.add(pl_);
-                pl_.visible = false;
-            }
+        this.popOrbits(this.world.planetary_system.star.satelites, this.scene)
 
-            const orbit_ = this.orbits[index]
-            orbit_.visible = true
-            orbit_.rotation.set(0, 0, 0)
-            orbit_.rotation.x = Convert.degToRad(-90)
-            orbit_.rotation.z = orb_dist.longitude_perihelion.rad
-
-            // orbit_.rotation.y = orb_dist.longitude_ascending_node.rad
-            // orbit_.rotateX(orb_dist.inclination.rad)
-
-            orbit_.rotation.y = orb_dist.inclination.rad
-            orbit_.rotateOnWorldAxis(this._yAxis, orb_dist.longitude_ascending_node.rad)
-
-            const curve = new THREE.EllipseCurve(
-                -orb_dist.focal_distance.km, 0,            // ax, aY
-                orb_dist.semimajor_axis.km, orb_dist.semiminor_axis.km,           // xRadius, yRadius
-                0, 2 * Math.PI,  // aStartAngle, aEndAngle
-                false,            // aClockwise
-                0                 // aRotation
-            );
-            const points = curve.getPoints(50);
-            orbit_.geometry.setFromPoints(points);
-            orbit_.userData = curve
-
-            const planet_ = this.planets[index] as THREE.Mesh
-            planet_.visible = true
-            planet_.rotation.set(0, 0, 0)
-
-            // TODO TMP WA set the planet size so it is easy to see, not realist .....
-            var visible_planet_size = curve.getLength() / 35
-            // var visible_planet_size = Math.sqrt(curve.getLength()) * 1000
-            // var visible_planet_size = Math.sqrt(curve.getLength())*100
-            // var visible_planet_size = 70000 * Math.pow((index + 3) * 1.4, 3)
-            // planet_.geometry = new THREE.SphereGeometry(visible_planet_size, 5, 5);
-            // planet_.geometry.scale(visible_planet_size, visible_planet_size, visible_planet_size)
-            planet_.scale.set(visible_planet_size, visible_planet_size, visible_planet_size)
-            planet_.userData = orbit_
-
-
-
-            // (orbit_.material as THREE.LineBasicMaterial).color.set(0xffffff * Math.random())
-        }
 
         console.timeEnd("#time DrawWorld update");
     }
@@ -244,68 +216,191 @@ export class DrawWorld {
     _yAxis = new THREE.Vector3(0, 1, 0);
     _zAxis = new THREE.Vector3(0, 0, 1);
     tmpv3 = new THREE.Vector3(0, 0, 0);
+    tmpv3_1 = new THREE.Vector3(0, 0, 0);
+    tmpv3_2 = new THREE.Vector3(0, 0, 0);
     tmpv2 = new THREE.Vector2(0, 0);
 
+
+
+    public popOrbits(satelites_: Array<Orbit>, root_: any) {
+        for (let index = 0; index < satelites_.length; index++) {
+            const orb_dist = satelites_[index];
+
+            orb_dist.updateMajEcc();
+            // if (orb_dist.depth >= 2) continue;
+
+            const orbit_ = this.tjs_pool_lines.get()
+            const planet_ = this.tjs_pool_planets.get()
+            const object_ = this.tjs_pool_groups.get()
+            const satelits_ = this.tjs_pool_groups.get()
+
+            this.orb_lines.push(orbit_);
+            this.orb_planets.push(planet_);
+            this.orb_objects.push(orb_dist)
+            this.orb_groups.push(object_);
+            this.satelits_gr.push(satelits_);
+
+            orbit_.visible = true
+            planet_.visible = true
+            object_.visible = true
+            satelits_.visible = true
+
+
+
+
+
+
+
+            var ellipse_ = new THREE.EllipseCurve(
+                // 0, 0, //// at the center of the ellipse
+                -orb_dist.focal_distance.km * 1, 0, //// correct focus placement, consideting 0 rotation is at periapsis
+                orb_dist.semimajor_axis.km, orb_dist.semiminor_axis.km,           // xRadius, yRadius
+                0, 2 * Math.PI,  // aStartAngle, aEndAngle
+                false,           // aClockwise
+                0                // aRotation
+            );
+            const points: any[] = ellipse_.getPoints(50);
+            orbit_.geometry.setFromPoints(points);
+
+
+            // TODO TMP WA set the planet size so it is easy to see, not realist .....
+            // var visible_planet_size = 100000000
+            var visible_planet_size = ellipse_.getLength() / 50
+            // var visible_planet_size = Math.sqrt(ellipse_.getLength()) * 1000
+            // var visible_planet_size = Math.sqrt(ellipse_.getLength())*100
+            // var visible_planet_size = 70000 * Math.pow((index + 3) * 1.4, 3)
+            // planet_.geometry = new THREE.SphereGeometry(visible_planet_size, 5, 5);
+            // planet_.geometry.scale(visible_planet_size, visible_planet_size, visible_planet_size)
+            planet_.scale.setScalar(visible_planet_size)
+
+
+
+
+            var all_obj: any = {}
+            all_obj.orbit = orbit_
+            all_obj.planet = planet_
+            all_obj.ellipse = ellipse_
+            all_obj.object = object_
+            all_obj.satelits = satelits_
+
+            orbit_.userData = all_obj
+            planet_.userData = all_obj
+            object_.userData = all_obj
+            satelits_.userData = all_obj
+
+
+            satelits_.add(planet_)
+            object_.add(satelits_)
+            object_.add(orbit_)
+            root_.add(object_)
+
+
+            planet_.rotation.set(0, 0, 0)
+            planet_.position.set(0, 0, 0)
+
+            orbit_.rotation.set(0, 0, 0)
+            orbit_.position.set(0, 0, 0)
+
+            object_.position.set(0, 0, 0)
+            object_.rotation.set(0, 0, 0)
+
+            satelits_.position.set(0, 0, 0)
+            satelits_.rotation.set(0, 0, 0)
+
+
+
+
+            object_.getWorldPosition(this.tmpv3_2)
+            this.tmpv3_2.y += 100000000000
+            object_.lookAt(this.tmpv3_2)
+
+            console.log("orb_dist.depth", orb_dist.depth);
+            console.log("tmpv3_2 POS", this.tmpv3_2.x.toPrecision(3), this.tmpv3_2.y.toPrecision(3), this.tmpv3_2.z.toPrecision(3));
+            object_.getWorldDirection(this.tmpv3_2)
+            this.tmpv3_2.normalize();
+            console.log("tmpv3_2 DIR", this.tmpv3_2.x.toPrecision(3), this.tmpv3_2.y.toPrecision(3), this.tmpv3_2.z.toPrecision(3));
+
+
+
+
+
+            // if (orb_dist.depth == 2) object_.rotateX(Convert.degToRad(90));
+            ///////////// object_.rotateOnWorldAxis(this._xAxis, Convert.degToRad(-90));
+            ///////////// object_.rotateX(Convert.degToRad(-90));
+
+
+
+            ////////// object_.rotateOnWorldAxis(this._yAxis, Convert.degToRad(90)); // put 0deg of argument_of_perihelion in the right starting place
+            object_.rotateZ(Convert.degToRad(90)); // put 0deg of argument_of_perihelion in the right starting place
+
+            ////////// object_.rotateOnWorldAxis(this._zAxis, orb_dist.argument_of_perihelion.rad);
+            object_.rotateZ(orb_dist.argument_of_perihelion.rad);
+
+            // object_.rotateOnWorldAxis(this._zAxis, orb_dist.inclination.rad);
+            object_.rotateY(orb_dist.inclination.rad);
+
+            // object_.rotateOnWorldAxis(this._yAxis, orb_dist.longitude_ascending_node.rad)
+            object_.rotateZ(orb_dist.longitude_ascending_node.rad); // not working with rotateY(orb_dist.inclination.rad)
+
+
+
+
+            object_.getWorldDirection(this.tmpv3_2)
+            this.tmpv3_2.normalize();
+            console.log("tmpv3_2 DIR", this.tmpv3_2.x.toPrecision(3), this.tmpv3_2.y.toPrecision(3), this.tmpv3_2.z.toPrecision(3));
+
+
+
+            // ////// const arrowHelper = new THREE.ArrowHelper(this._xAxis, orbit_.position, visible_planet_size * 10, 0xffff00);
+            // ////// object_.add(arrowHelper);
+            // ////////////// https://threejs.org/docs/#api/en/helpers/AxesHelper
+            // const axesHelper = new THREE.AxesHelper(5); // The X axis is red. The Y axis is green. The Z axis is blue.
+            // axesHelper.position.copy(object_.position)
+            // axesHelper.scale.setScalar(visible_planet_size)
+            // object_.add(axesHelper);
+
+
+
+            this.popOrbits(orb_dist.satelites, satelits_)
+
+            // console.log("orb_dist", orb_dist);
+            // (orbit_.material as THREE.LineBasicMaterial).color.set(0xffffff * Math.random())
+        }
+
+        // const axesHelper = new THREE.AxesHelper(5); // The X axis is red. The Y axis is green. The Z axis is blue.
+        // axesHelper.position.z = 100000000 * 50
+        // axesHelper.position.x = 100000000 * 50
+        // axesHelper.scale.setScalar(100000000 * 5)
+        // this.scene.add(axesHelper);
+
+    }
+
+
     public draw() {
-        // var canvas_ctx = this.canvasOffscreen.getContext("2d");
-        // canvas_ctx.clearRect(0, 0, this.canvasOffscreen.width, this.canvasOffscreen.height);
-        // canvas_ctx.fillStyle = "rgba(255, 0, 0, 0.2)";
-        // canvas_ctx.fillRect(100, 100, 200, 200);
-        // canvas_ctx.fillStyle = "rgba(0, 255, 0, 0.2)";
-        // canvas_ctx.fillRect(150, 150, 200, 200);
-        // // console.log("this.world.planetary_system.star.color", this.world.planetary_system.star.color);
-        // // console.log("this.world.planetary_system.star", this.world.planetary_system.star);
-        // canvas_ctx.fillStyle = this.world.planetary_system.star.color.toString();
-        // canvas_ctx.fillRect(50 * Math.random() + 100, 50 * Math.random(), 200, 200);
-
-        // this.controls.update(); // only required if controls.enableDamping = true, or if controls.autoRotate = true
-
-
-        // console.log("planets.length, .orbits_distances.length", this.planets.length, this.world.planetary_system.orbits_distances.length);
-        for (let index = 0; index < this.world.planetary_system.orbits_distances.length; index++) {
-            const planet_ = this.planets[index];
-            var pl_orb_crv = (planet_.userData.userData as THREE.EllipseCurve)
+        for (let index = 0; index < this.satelits_gr.length; index++) {
+            const planet_ = this.satelits_gr[index];
+            var pl_orb_crv = (planet_.userData.ellipse as THREE.EllipseCurve)
 
             var orb_len = pl_orb_crv.getLength()
             var time_orb = this.world.planetary_system.time.universal % orb_len
             var time_orb_proc = time_orb / orb_len
 
-            var orb_obj = this.world.planetary_system.orbits_distances[index]
+            var orb_obj = this.orb_objects[index]
             var true_theta = Convert.true_anomaly_rev(time_orb_proc, orb_obj.eccentricity)
 
 
+            // true_theta = 0 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
             pl_orb_crv.getPoint(true_theta, this.tmpv2)
+            // planet_.userData.orbit.localToWorld(this.tmpv3)
+
+            // this.tmpv3.set(this.tmpv2.x, 0, this.tmpv2.y)
             this.tmpv3.set(this.tmpv2.x, this.tmpv2.y, 0)
-            planet_.userData.localToWorld(this.tmpv3)
+
             planet_.position.copy(this.tmpv3)
-            planet_.rotation.y += 0.1;
         }
 
 
-
-        // console.log("this.stime", this.stime);
-        // var someorb = this.orbits[3]
-        // var somepl = (someorb.userData as THREE.EllipseCurve)
-
-        // somepl.getPoint(this.stime, this.tmpv2)
-        // somepl.getPoint(this.stime, this.tmpv2)
-        // somepl.getPointAt(this.stime, this.tmpv2)
-
-        // console.log("someorb", someorb);
-        // console.log("this.tmpv2", this.tmpv2);
-
-        // this.tmpv3.set(this.tmpv2.x, this.tmpv2.y, 0)
-
-        // someorb.localToWorld(this.tmpv3)
-
-        // this.earth.position.copy(this.tmpv3)
-
-
-        // this.earth.position.x = this.world.planetary_system.hab_zone.km * Math.sin(Convert.degToRad(this.stime));
-        // this.earth.position.z = this.world.planetary_system.hab_zone.km * Math.cos(Convert.degToRad(this.stime));
-
-        // this.sun.rotation.y += 0.3;
-        // this.earth.rotation.y -= 0.2;
 
         this.renderer.render(this.scene, this.camera);
 

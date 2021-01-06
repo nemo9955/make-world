@@ -24,7 +24,7 @@ export class UpdateWorld {
     }
 
     update() {
-        this.world.planetary_system.time.universal += 1000000 * 10;
+        this.world.planetary_system.time.universal += 1000000 * 70;
     }
 
 }

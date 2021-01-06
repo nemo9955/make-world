@@ -3,6 +3,8 @@ import { Color } from "../utils/Color"
 import * as Random from "../utils/Random"
 import * as Units from "../utils/Units"
 import * as Convert from "../utils/Convert"
+import { Orbit } from "./Orbit";
+import { ObjectPool } from "../utils/ObjectPool";
 
 // Artifexian : https://www.youtube.com/watch?v=x55nxxaWXAM
 // https://en.wikipedia.org/wiki/Stellar_classification
@@ -16,7 +18,7 @@ import * as Convert from "../utils/Convert"
 // K	3,700–5,200 K	light orange	pale yellow orange	0.45–0.8 M☉	0.7–0.96 R☉	0.08–0.6 L☉	Very weak	12.1%
 // M	2,400–3,700 K	orange red	light orange red	0.08–0.45 M☉	≤ 0.7 R☉	≤ 0.08 L☉	Very weak	76.45%
 
-export class Star {
+export class Star extends Orbit {
 
     sclass: string;
     luminosity: number;
@@ -33,11 +35,9 @@ export class Star {
     // public set diameter(value: any) { this.mass.copy(value.div(2)); }
 
     constructor() {
+        super();
         this.color = new Color();
-    }
-
-    public copy(source_: Star) {
-        Convert.copy(this, source_)
+        Orbit.orbit_types_["Star"] = Star
     }
 
     private setFromMass(mass?: number) {
@@ -193,5 +193,16 @@ export class Star {
         return this.makeClassG(); // Like the Sun
     }
 
+
+    public clone() { return Star.clone().copy(this) }
+    public free() {
+        this.clearSats();
+        Star.pool_.free(this)
+    }
+
+    public static clone() { return Star.pool_.get() }
+    public static new() { return Star.clone() }
+
+    public static pool_ = new ObjectPool<Star>(() => new Star(), (item: Star) => { }, 12);
 
 }

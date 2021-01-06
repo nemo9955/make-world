@@ -1,6 +1,8 @@
 const path = require("path");
+const SpeedMeasurePlugin = require("speed-measure-webpack-plugin");
+const smp = new SpeedMeasurePlugin();
 
-module.exports = {
+module.exports = smp.wrap({
     entry: './src/index.ts',
     module: {
         rules: [
@@ -26,4 +28,8 @@ module.exports = {
         publicPath: "/dist/",
         path: path.resolve(__dirname, "dist/"),
     },
-};
+    devServer: {
+        // compress: true,
+        disableHostCheck: true,   // That solved it
+    },
+});

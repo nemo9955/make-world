@@ -28,9 +28,9 @@ export class WorldData {
     public init() {
         // console.debug("#HERELINE WorldData init");
         this.id = Math.ceil(Math.random() * 10000) + 1000
+        this.planetary_system.genStar("sun")
         // this.planetary_system.genStar()
         // this.planetary_system.genOrbitsSimple()
-        this.planetary_system.genStar("sun")
         this.planetary_system.genOrbitsUniform()
     }
 

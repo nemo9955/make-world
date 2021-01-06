@@ -1,12 +1,12 @@
 {
     "name": "make-world",
-    "version": "0.13.1",
+    "version": "0.14.0",
     "description": "Make a realistic world by simulating as many aspects as possible",
     "main": "dist/main.js",
     "private": true,
     "scripts": {
-        "starto": "webpack-dev-server --devtool source-map --mode development --open",
-        "start": "webpack-dev-server --devtool source-map --mode development",
+        "starto": "webpack-dev-server --host 0.0.0.0 --devtool source-map --mode development --open",
+        "start": "webpack-dev-server --host 0.0.0.0 --devtool source-map --mode development",
         "test": "jest"
     },
     "repository": {
@@ -27,6 +27,7 @@
         "fake-indexeddb": "^3.1.2",
         "jest": "^26.6.3",
         "schema-utils": "^3.0.0",
+        "speed-measure-webpack-plugin": "^1.3.3",
         "ts-jest": "^26.4.4",
         "ts-loader": "^7.0.5",
         "ts-node": "^9.1.1",
