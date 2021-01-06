@@ -21,7 +21,7 @@ export class Orbit {
     type: string = null;
     depth: number = 0;
 
-    // public mean_longitude = new Convert.NumberAngle();
+    public mean_longitude = new Convert.NumberAngle();
 
 
 

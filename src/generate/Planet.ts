@@ -15,6 +15,7 @@ export class Planet extends Orbit {
 
     constructor() {
         super();
+        this.radius.value = 1;
         Orbit.orbit_types_["Planet"] = Planet
     }
 

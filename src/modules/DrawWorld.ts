@@ -15,6 +15,7 @@ import * as Units from "../utils/Units"
 
 import { ObjectPool } from "../utils/ObjectPool";
 import { Orbit } from "../generate/Orbit";
+import { Planet } from "../generate/Planet";
 
 // https://orbitalmechanics.info/
 
@@ -240,8 +241,11 @@ export class DrawWorld {
             this.orb_groups.push(object_);
             this.satelits_gr.push(satelits_);
 
+
+            // console.log("orb_dist.type", orb_dist.type);
+
             orbit_.visible = true
-            planet_.visible = true
+            planet_.visible = (orb_dist.type == "Planet")
             object_.visible = true
             satelits_.visible = true
 
@@ -265,7 +269,12 @@ export class DrawWorld {
 
             // TODO TMP WA set the planet size so it is easy to see, not realist .....
             // var visible_planet_size = 100000000
-            var visible_planet_size = ellipse_.getLength() / 50
+            var visible_planet_size = ellipse_.getLength() / 20;
+            if (orb_dist.depth == 1) visible_planet_size = ellipse_.getLength() / 200;
+            if (orb_dist.type == "Planet") {
+                visible_planet_size *= (orb_dist as Planet).radius.value
+            }
+
             // var visible_planet_size = Math.sqrt(ellipse_.getLength()) * 1000
             // var visible_planet_size = Math.sqrt(ellipse_.getLength())*100
             // var visible_planet_size = 70000 * Math.pow((index + 3) * 1.4, 3)
@@ -314,11 +323,11 @@ export class DrawWorld {
             this.tmpv3_2.y += 100000000000
             object_.lookAt(this.tmpv3_2)
 
-            console.log("orb_dist.depth", orb_dist.depth);
-            console.log("tmpv3_2 POS", this.tmpv3_2.x.toPrecision(3), this.tmpv3_2.y.toPrecision(3), this.tmpv3_2.z.toPrecision(3));
-            object_.getWorldDirection(this.tmpv3_2)
-            this.tmpv3_2.normalize();
-            console.log("tmpv3_2 DIR", this.tmpv3_2.x.toPrecision(3), this.tmpv3_2.y.toPrecision(3), this.tmpv3_2.z.toPrecision(3));
+            // console.log("orb_dist.depth", orb_dist.depth);
+            // console.log("tmpv3_2 POS", this.tmpv3_2.x.toPrecision(3), this.tmpv3_2.y.toPrecision(3), this.tmpv3_2.z.toPrecision(3));
+            // object_.getWorldDirection(this.tmpv3_2)
+            // this.tmpv3_2.normalize();
+            // console.log("tmpv3_2 DIR", this.tmpv3_2.x.toPrecision(3), this.tmpv3_2.y.toPrecision(3), this.tmpv3_2.z.toPrecision(3));
 
 
 
@@ -345,9 +354,9 @@ export class DrawWorld {
 
 
 
-            object_.getWorldDirection(this.tmpv3_2)
-            this.tmpv3_2.normalize();
-            console.log("tmpv3_2 DIR", this.tmpv3_2.x.toPrecision(3), this.tmpv3_2.y.toPrecision(3), this.tmpv3_2.z.toPrecision(3));
+            // object_.getWorldDirection(this.tmpv3_2)
+            // this.tmpv3_2.normalize();
+            // console.log("tmpv3_2 DIR", this.tmpv3_2.x.toPrecision(3), this.tmpv3_2.y.toPrecision(3), this.tmpv3_2.z.toPrecision(3));
 
 
 
@@ -380,12 +389,14 @@ export class DrawWorld {
         for (let index = 0; index < this.satelits_gr.length; index++) {
             const planet_ = this.satelits_gr[index];
             var pl_orb_crv = (planet_.userData.ellipse as THREE.EllipseCurve)
+            var orb_obj = this.orb_objects[index]
 
             var orb_len = pl_orb_crv.getLength()
             var time_orb = this.world.planetary_system.time.universal % orb_len
             var time_orb_proc = time_orb / orb_len
 
-            var orb_obj = this.orb_objects[index]
+            time_orb_proc += orb_obj.mean_longitude.rev
+
             var true_theta = Convert.true_anomaly_rev(time_orb_proc, orb_obj.eccentricity)
 
 

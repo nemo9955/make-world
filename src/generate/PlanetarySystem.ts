@@ -152,6 +152,75 @@ export class PlanetarySystem {
     }
 
 
+    public getOrbitElem(par_maj_axis: Convert.NumberLength) {
+
+        if (Random.percent() < 50) {
+            // binary planets
+            var orbit_ = Orbit.new()
+            orbit_.semimajor_axis = par_maj_axis
+
+            var planet1_ = Planet.new().randomSane()
+            planet1_.semimajor_axis = par_maj_axis
+            planet1_.semimajor_axis.value /= 50
+            planet1_.radius.value = 30;
+
+            var planet2_ = planet1_.clone()
+            // planet2_.longitude_ascending_node.deg += 180;
+            planet2_.mean_longitude.deg += 180;
+
+            orbit_.addSat(planet1_)
+            orbit_.addSat(planet2_)
+            return orbit_
+        }
+
+        var planet_ = Planet.new()
+        planet_.semimajor_axis = par_maj_axis
+        return planet_
+    }
+
+    public genOrbitsSimpleMoons() {
+        this.genOrbitsSimple();
+
+        for (const orbit_ of this.star.satelites) {
+
+            // console.log("orbit_.semimajor_axis.au", orbit_.semimajor_axis.au);
+
+            if (orbit_.semimajor_axis.au < 0.6)
+                continue; // skip small orbits
+            if (Random.percent() < 20)
+                continue; // only some to have moons
+
+            var moons_total = 0
+
+            if (orbit_.semimajor_axis.au < 2) {
+                moons_total = Random.random_int_clamp(1, 2);
+            }
+            else if (orbit_.semimajor_axis.au < 10) {
+                moons_total = Random.random_int_clamp(2, 3);
+            }
+            else {
+                moons_total = Random.random_int_clamp(2, 5);
+            }
+
+            // console.log("moons_total", moons_total);
+
+            for (let index = 0; index < moons_total; index++) {
+                // var orb_dist = Planet.new().randomUniform();
+                var orb_dist = Planet.new().randomSane();
+                orb_dist.semimajor_axis = orbit_.semimajor_axis
+                orb_dist.semimajor_axis.value /= 3
+                orb_dist.semimajor_axis.value /= Random.random_float_clamp(3, 4)
+                orb_dist.updateMajEcc();
+                orbit_.addSat(orb_dist)
+            }
+
+
+
+        }
+    }
+
+
+
     public genOrbitsSimple() {
         this.time.universal = 0
 
@@ -177,8 +246,9 @@ export class PlanetarySystem {
             }
 
             if (is_valid) {
-                var orb_dist = Orbit.new().randomSane();
-                orb_dist.semimajor_axis = last_orbit
+                var orb_dist = this.getOrbitElem(last_orbit)
+                // var orb_dist = Orbit.new().randomSane();
+                // orb_dist.semimajor_axis = last_orbit
                 this.star.addSat(orb_dist)
             }
             else
@@ -204,8 +274,9 @@ export class PlanetarySystem {
             }
 
             if (is_valid) {
-                var orb_dist = Orbit.new().randomSane();
-                orb_dist.semimajor_axis = last_orbit
+                var orb_dist = this.getOrbitElem(last_orbit)
+                // var orb_dist = Orbit.new().randomSane();
+                // orb_dist.semimajor_axis = last_orbit
                 this.star.addSat(orb_dist)
 
                 // var orb_sat1 = Orbit.new().randomSane();
