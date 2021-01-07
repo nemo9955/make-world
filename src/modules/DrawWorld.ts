@@ -53,6 +53,7 @@ export class DrawWorld {
     hab_zone: THREE.Mesh;
     frost_zone: THREE.Mesh;
 
+    // TODO FIXME some pool somewhere is not properly reset !!!!!!!!!
     tjs_pool_lines: ObjectPool<THREE.Line>;
     tjs_pool_planets: ObjectPool<THREE.Mesh>;
     tjs_pool_groups: ObjectPool<THREE.Group>;
@@ -71,8 +72,11 @@ export class DrawWorld {
             item.visible = false;
             return item;
         }, (item) => {
+            // console.log("item THREE.Line", item);
             item.visible = false;
-            item.parent.remove(item)
+            item.scale.setScalar(1);
+            item?.parent?.remove(item)
+            item.clear()
         }, 0)
 
         this.tjs_pool_planets = new ObjectPool<THREE.Mesh>(() => {
@@ -80,11 +84,16 @@ export class DrawWorld {
                 new THREE.SphereGeometry(1, 5, 5),
                 new THREE.MeshStandardMaterial({ color: new THREE.Color(0.0, 0.6, 0.0) })
             );
+            // item.material.transparent = true
+            // item.material.opacity = 0.5
             item.visible = false;
             return item;
         }, (item) => {
+            // console.log("item THREE.Mesh", item);
             item.visible = false;
-            item.parent.remove(item)
+            item.scale.setScalar(1);
+            item?.parent?.remove(item)
+            item.clear()
         }, 0)
 
         this.tjs_pool_groups = new ObjectPool<THREE.Group>(() => {
@@ -92,8 +101,11 @@ export class DrawWorld {
             item.visible = false;
             return item;
         }, (item) => {
+            // console.log("item THREE.Group", item);
             item.visible = false;
-            item.parent.remove(item)
+            item.scale.setScalar(1);
+            item?.parent?.remove(item)
+            item.clear()
         }, 0)
 
 
@@ -173,7 +185,7 @@ export class DrawWorld {
         // console.debug("#HERELINE DrawWorld 143 ");
         console.time("#time DrawWorld update");
 
-        console.debug("#HERELINE DrawWorld update WorldDataID ", this.config.WorldDataID);
+        console.debug("#HERELINE DrawWorld update WorldDataID ", this.config.WorldPlanetarySystemID);
         var sun_color = this.world.planetary_system.star.color.getRgb().formatHex();
         (this.sun.material as THREE.MeshStandardMaterial).color.set(sun_color)
 
@@ -272,6 +284,7 @@ export class DrawWorld {
             var visible_planet_size = ellipse_.getLength() / 20;
             if (orb_dist.depth == 1) visible_planet_size = ellipse_.getLength() / 200;
             if (orb_dist.type == "Planet") {
+                // console.log("orb_dist , radius.value", (orb_dist as Planet).radius.value, orb_dist);
                 visible_planet_size *= (orb_dist as Planet).radius.value
             }
 

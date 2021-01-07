@@ -5,9 +5,12 @@ import * as Convert from "../utils/Convert"
 
 import { Config } from "./Config"
 
+// TODO read&write function WITH and WITHOUT structure change
+// WITHOUT structure change is just update or variables values
+// WITH represents a refresh/regen
+
 export class WorldData {
 
-    private _id: number;
     name: string;
 
     planetary_system: PlanetarySystem;
@@ -19,15 +22,16 @@ export class WorldData {
         this.dbm = null;
     }
 
-    public get id(): number { return this._id; }
-    public set id(value: number) {
-        this._id = value;
-        this.planetary_system.id = this._id;
-    }
+    // private _id: number;
+    // public get id(): number { return this._id; }
+    // public set id(value: number) {
+    //     this._id = value;
+    //     this.planetary_system.id = this._id;
+    // }
 
     public init() {
         // console.debug("#HERELINE WorldData init");
-        this.id = Math.ceil(Math.random() * 10000) + 1000
+        this.planetary_system.init()
         this.planetary_system.genStar("sun")
         // this.planetary_system.genStar()
         this.planetary_system.genOrbitsSimpleMoons()
@@ -38,12 +42,12 @@ export class WorldData {
 
     public async read() {
         // console.debug("#HERELINE WorldData read ");
-        if (this.id) {
+        if (this.planetary_system.id) {
             // console.time("#time WorldData " + this.name + " read");
             // console.debug("#HERELINE WorldData read this.id", this.id);
 
             var data_ps = this.dbm.transaction(DataBaseManager.PLANET_SYSTEM, "readonly");
-            var ps_db = await data_ps.store.get(this.id)
+            var ps_db = await data_ps.store.get(this.planetary_system.id)
             await data_ps.done()
             this.planetary_system.copy(ps_db)
 
@@ -51,7 +55,7 @@ export class WorldData {
             // return data_ps.done()
             return Promise.resolve();
         }
-        return Promise.reject("NO ID : " + this.id);
+        return Promise.reject("NO ID : " + this.planetary_system.id);
     }
 
     public async write() {

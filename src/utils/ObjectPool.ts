@@ -35,6 +35,7 @@ export class ObjectPool<T> {
         }
 
         var item = this.freeList.pop();
+        // this.reset(item);
 
         return item;
     }

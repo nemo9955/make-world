@@ -5,11 +5,16 @@ import * as Units from "../utils/Units"
 import * as Convert from "../utils/Convert"
 import { ObjectPool } from "../utils/ObjectPool";
 
-// import { getOrbInstance } from "./PlanetarySystem";
 
+
+// TODO Make Convert.Number* types read-only to make life simpler
+// So no getters and setters are needed which complicates things
+
+// TODO Make Orbits and similar data-driven
+// have the data in the object and the functions as static ones that accept as paramt the data structure
+// skip the need to instantiate objects that will be in a high number
 
 /*
-
 https://www.amsat.org/keplerian-elements-tutorial/
 http://www.planetaryorbits.com/kepler-laws-orbital-elements.html
 https://jtauber.github.io/orbits/019.html
@@ -21,10 +26,7 @@ export class Orbit {
     type: string = null;
     depth: number = 0;
 
-    public mean_longitude = new Convert.NumberAngle();
-
-
-
+    public readonly mean_longitude = new Convert.NumberAngle();
 
 
     // Right Ascension of Ascending Node
@@ -32,51 +34,60 @@ export class Orbit {
     // Longitude of Ascending Node
     // Ω, longitude of ascending node
     // Rotation of the PLANE of the orbit
-    public longitude_ascending_node = new Convert.NumberAngle();
+    public readonly longitude_ascending_node = new Convert.NumberAngle();
 
     // LONGITUDE OF PERIHELION
     // argument of periapsis
     // Argument of Perigee
     // ω, argument of perihelion
     // Rotation of the orbit inside the plane
-    public argument_of_perihelion = new Convert.NumberAngle();
+    public readonly argument_of_perihelion = new Convert.NumberAngle();
 
     // Orbital Inclination
     // i, inclination
     // How tilted the plan of orbit is compared to "horizontal"
-    public inclination = new Convert.NumberAngle();
+    public readonly inclination = new Convert.NumberAngle();
 
     // Eccentricity
     // ecce
-    private _eccentricity = 0.00001;
+    public _eccentricity = 0.00001;
+    public get eccentricity() { return this._eccentricity; }
+    public set eccentricity(value) {
+        this._eccentricity = value;
+        this.semiminor_axis.value = this.calc_semiminor_axis()
+        this.focal_distance.value = this.calc_focal_distance()
+    }
 
     // Mean Motion
     // orbit period
     // semimajor-axis
-    private _semimajor_axis = new Convert.NumberLength();
+    public readonly semimajor_axis = new Convert.NumberLength();
 
-    private _semiminor_axis = new Convert.NumberLength();
-    private _focal_distance = new Convert.NumberLength();
+    public readonly semiminor_axis = new Convert.NumberLength();
+    public readonly focal_distance = new Convert.NumberLength();
 
-    public get eccentricity() { return this._eccentricity; }
-    public get semimajor_axis() { return this._semimajor_axis; }
-    public get semiminor_axis() { return this._semiminor_axis; }
-    public get focal_distance() { return this._focal_distance; }
+    // public get semimajor_axis() { return this.semimajor_axis; }
+    // public get semiminor_axis() { return this.semiminor_axis; }
+    // public get focal_distance() { return this.focal_distance; }
 
-    public set eccentricity(value) {
-        this._eccentricity = value;
-        this._semiminor_axis.value = this.calc_semiminor_axis()
-        this._focal_distance.value = this.calc_focal_distance()
-    }
-    public set semimajor_axis(value) {
-        this._semimajor_axis.copy(value);
-        this._semiminor_axis.value = this.calc_semiminor_axis()
-        this._focal_distance.value = this.calc_focal_distance()
-    }
+    // public set semimajor_axis(value) {
+    //     this.semimajor_axis.copy(value);
+    //     this.semiminor_axis.value = this.calc_semiminor_axis()
+    //     this.focal_distance.value = this.calc_focal_distance()
+    // }
 
     public satelites: Array<Orbit> = null;
 
+
+    private _id: number;
+    public get id(): number { return this._id; }
+    public set id(value: number) { this._id = value; }
+
+
+
+
     constructor() {
+        this.id = Math.ceil(Math.random() * 100000) + 10000
         this.satelites = new Array<Orbit>();
         // console.log("this.constructor", this.constructor);
         this.type = this.constructor.name;
@@ -90,8 +101,8 @@ export class Orbit {
 
 
     public updateMajEcc() {
-        this._semiminor_axis.value = this.calc_semiminor_axis()
-        this._focal_distance.value = this.calc_focal_distance()
+        this.semiminor_axis.value = this.calc_semiminor_axis()
+        this.focal_distance.value = this.calc_focal_distance()
     }
 
 
@@ -148,7 +159,7 @@ export class Orbit {
             this.semiminor_axis.copy(semimajor);
         }
         this.eccentricity = this.calc_eccentricity()
-        this._focal_distance.value = this.calc_focal_distance()
+        this.focal_distance.value = this.calc_focal_distance()
     }
 
 
@@ -156,7 +167,7 @@ export class Orbit {
         this.semimajor_axis.copy(semimajor);
         this.eccentricity = eccentricity;
         this.semiminor_axis.value = this.calc_semiminor_axis()
-        this._focal_distance.value = this.calc_focal_distance()
+        this.focal_distance.value = this.calc_focal_distance()
         if (this.semimajor_axis.value < this.semiminor_axis.value) {
             console.error("this.semimajor_axis.value, this.semiminor_axis.value", this.semimajor_axis.value, this.semiminor_axis.value)
             throw new Error("Major axis is smaller that Minor axis!");
@@ -167,7 +178,7 @@ export class Orbit {
         this.semiminor_axis.copy(semiminor);
         this.eccentricity = eccentricity;
         this.semimajor_axis.value = this.calc_semimajor_axis()
-        this._focal_distance.value = this.calc_focal_distance()
+        this.focal_distance.value = this.calc_focal_distance()
         if (this.semimajor_axis.value < this.semiminor_axis.value) {
             console.error("this.semimajor_axis.value, this.semiminor_axis.value", this.semimajor_axis.value, this.semiminor_axis.value)
             throw new Error("Major axis is smaller that Minor axis!");
@@ -176,20 +187,20 @@ export class Orbit {
 
 
     private calc_eccentricity(): number {
-        return Math.sqrt(1 - Math.pow((this._semiminor_axis.value / this._semimajor_axis.value), 2));
+        return Math.sqrt(1 - Math.pow((this.semiminor_axis.value / this.semimajor_axis.value), 2));
     }
 
     private calc_semiminor_axis(): number {
-        return Math.sqrt(Math.pow(this._semimajor_axis.value, 2) * (1 - Math.pow(this._eccentricity, 2)));
+        return Math.sqrt(Math.pow(this.semimajor_axis.value, 2) * (1 - Math.pow(this._eccentricity, 2)));
     }
 
     private calc_semimajor_axis(): number {
-        return Math.sqrt(Math.pow(this._semiminor_axis.value, 2) / (1 - Math.pow(this._eccentricity, 2)));
+        return Math.sqrt(Math.pow(this.semiminor_axis.value, 2) / (1 - Math.pow(this._eccentricity, 2)));
     }
 
     private calc_focal_distance(): number {
-        return this._semimajor_axis.value * this._eccentricity
-        // return this._semiminor_axis.value * this._eccentricity
+        return this.semimajor_axis.value * this._eccentricity
+        // return this.semiminor_axis.value * this._eccentricity
     }
 
     public clearSats() {

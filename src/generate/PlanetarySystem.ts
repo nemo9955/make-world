@@ -11,42 +11,31 @@ import * as Convert from "../utils/Convert"
 // https://www.youtube.com/watch?v=J5xU-8Kb63Y&list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&index=11&ab_channel=Artifexian
 
 
-export function getOrbInstance(source_: any) {
-    // console.log("source_", source_);
-    switch (source_.type) {
-        case "Orbit":
-            return Orbit.new().copy(source_);
-        case "Planet":
-            return Planet.new().copy(source_);
-        case "Star":
-            return Star.new().copy(source_);
-        default:
-            throw new Error("NOT CONVERTED : " + source_.type);
-    }
-
-}
-
-
 
 export class PlanetarySystem {
-    id: number;
+    id: number = null;
     star: Star;
 
     // TODO Move in WorldData when more fine read/write can be done
-    public time = new Convert.NumberTime();
+    public readonly time = new Convert.NumberTime();
 
-    public hab_zone = new Convert.NumberLength();
-    public hab_zone_in = new Convert.NumberLength();
-    public hab_zone_out = new Convert.NumberLength();
-    public frost_line = new Convert.NumberLength();
-    public orbits_limit_in = new Convert.NumberLength();
-    public orbits_limit_out = new Convert.NumberLength();
+    public readonly hab_zone = new Convert.NumberLength();
+    public readonly hab_zone_in = new Convert.NumberLength();
+    public readonly hab_zone_out = new Convert.NumberLength();
+    public readonly frost_line = new Convert.NumberLength();
+    public readonly orbits_limit_in = new Convert.NumberLength();
+    public readonly orbits_limit_out = new Convert.NumberLength();
 
     constructor() {
         this.star = new Star();
     }
 
+    init() {
+        this.id = Math.ceil(Math.random() * 10000) + 1000
+    }
+
     public copy(source_: any) {
+        this.star.clearSats()
         Convert.copy(this, source_)
 
         return this;
@@ -68,7 +57,7 @@ export class PlanetarySystem {
 
         this.time.universal = 0
 
-        this.hab_zone.au = Math.sqrt(this.star.luminosity);
+        this.hab_zone.au = Math.sqrt(this.star.luminosity.watt);
         this.hab_zone_in.au = this.hab_zone.au * 0.95;
         this.hab_zone_out.au = this.hab_zone.au * 1.37;
 
@@ -101,29 +90,29 @@ export class PlanetarySystem {
         for (let index = 0; index < orb_size; index++) {
             // var orb_dist = Planet.new().randomUniform();
             var orb_dist = Planet.new().randomSane();
-            orb_dist.semimajor_axis = last_orbit
+            orb_dist.semimajor_axis.copy(last_orbit)
             this.star.addSat(orb_dist)
             last_orbit.au += 4;
         }
 
         var orb_dist = Planet.new().randomSane();
-        orb_dist.semimajor_axis = this.orbits_limit_out.clone().mul(1.5)
+        orb_dist.semimajor_axis.copy(this.orbits_limit_out).mul(1.5)
         this.star.addSat(orb_dist)
 
         var last_orb = Orbit.new().randomSane();
-        last_orb.semimajor_axis = this.orbits_limit_out.clone().mul(0.4)
+        last_orb.semimajor_axis.copy(this.orbits_limit_out).mul(0.4)
         orb_dist.addSat(last_orb)
 
         var last_orb = Orbit.new().randomSane();
-        last_orb.semimajor_axis = this.orbits_limit_out.clone().mul(0.4)
+        last_orb.semimajor_axis.copy(this.orbits_limit_out).mul(0.4)
         orb_dist.addSat(last_orb)
 
         var last_last_orb = Orbit.new().randomSane();
-        last_last_orb.semimajor_axis = this.orbits_limit_out.clone().mul(0.2)
+        last_last_orb.semimajor_axis.copy(this.orbits_limit_out).mul(0.2)
         last_orb.addSat(last_last_orb)
 
         var last_last_orb = Orbit.new().randomSane();
-        last_last_orb.semimajor_axis = this.orbits_limit_out.clone().mul(0.2)
+        last_last_orb.semimajor_axis.copy(this.orbits_limit_out).mul(0.2)
         last_orb.addSat(last_last_orb)
 
 
@@ -157,15 +146,15 @@ export class PlanetarySystem {
         if (Random.percent() < 50) {
             // binary planets
             var orbit_ = Orbit.new()
-            orbit_.semimajor_axis = par_maj_axis
+            orbit_.semimajor_axis.copy(par_maj_axis)
 
             var planet1_ = Planet.new().randomSane()
-            planet1_.semimajor_axis = par_maj_axis
-            planet1_.semimajor_axis.value /= 50
-            planet1_.radius.value = 30;
+            console.log("planet1_", planet1_.radius.value, planet1_);
+            planet1_.semimajor_axis.copy(par_maj_axis)
+            planet1_.semimajor_axis.value /= 20
+            planet1_.radius.value = 30; // TODO FIXME does not reset on pool refresh somewhere
 
             var planet2_ = planet1_.clone()
-            // planet2_.longitude_ascending_node.deg += 180;
             planet2_.mean_longitude.deg += 180;
 
             orbit_.addSat(planet1_)
@@ -174,7 +163,7 @@ export class PlanetarySystem {
         }
 
         var planet_ = Planet.new()
-        planet_.semimajor_axis = par_maj_axis
+        planet_.semimajor_axis.copy(par_maj_axis)
         return planet_
     }
 
@@ -207,7 +196,7 @@ export class PlanetarySystem {
             for (let index = 0; index < moons_total; index++) {
                 // var orb_dist = Planet.new().randomUniform();
                 var orb_dist = Planet.new().randomSane();
-                orb_dist.semimajor_axis = orbit_.semimajor_axis
+                orb_dist.semimajor_axis.copy(orbit_.semimajor_axis)
                 orb_dist.semimajor_axis.value /= 3
                 orb_dist.semimajor_axis.value /= Random.random_float_clamp(3, 4)
                 orb_dist.updateMajEcc();

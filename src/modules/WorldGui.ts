@@ -88,9 +88,9 @@ export class WorldGui {
     public init_star() {
         const star_tp = this.pane.addFolder({ title: 'The Star' });
         star_tp.addInput(this.manager.world.planetary_system.star, 'sclass');
-        star_tp.addInput(this.manager.world.planetary_system.star, 'luminosity');
-        star_tp.addInput(this.manager.world.planetary_system.star, 'temperature');
-        star_tp.addInput(this.manager.world.planetary_system.star, 'lifetime');
+        star_tp.addInput(this.manager.world.planetary_system.star.luminosity, 'watt', { label: "watt" });
+        star_tp.addInput(this.manager.world.planetary_system.star.temperature, 'kelvin', { label: "kelvin" });
+        star_tp.addInput(this.manager.world.planetary_system.star.lifetime, 'universal', { label: "universal" });
         this.pane.addInput(this.manager.world.planetary_system.star.color, 'value');
 
         star_tp.addInput(this.manager.world.planetary_system.star.mass, 'kg', { label: "mass" });

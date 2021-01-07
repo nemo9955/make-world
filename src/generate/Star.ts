@@ -21,15 +21,15 @@ import { ObjectPool } from "../utils/ObjectPool";
 export class Star extends Orbit {
 
     sclass: string;
-    luminosity: number;
-    temperature: number;
-    lifetime: number;
+    luminosity = new Convert.NumberRadiantFlux();
+    temperature = new Convert.NumberTemperature();
+    public readonly lifetime = new Convert.NumberTime();
 
     color: Color;
 
 
-    public radius = new Convert.NumberLength();
-    public mass = new Convert.NumberMass();
+    public readonly radius = new Convert.NumberLength();
+    public readonly mass = new Convert.NumberMass();
     // public _diameter = new Convert.NumberLength();
     // public get diameter(): any { return this._diameter.copy(this.radius).mul(2); }
     // public set diameter(value: any) { this.mass.copy(value.div(2)); }
@@ -43,10 +43,10 @@ export class Star extends Orbit {
     private setFromMass(mass?: number) {
         if (mass) this.mass.sm = mass;
 
-        this.luminosity = Math.pow(mass, 3);
+        this.luminosity.watt = Math.pow(mass, 3);
         this.radius.sr = Math.pow(mass, 0.74);
-        this.temperature = Math.pow(mass, 0.505);
-        this.lifetime = Math.pow(mass, -2.5);
+        this.temperature.kelvin = Math.pow(mass, 0.505);
+        this.lifetime.universal = Math.pow(mass, -2.5);
     }
 
     public makeClassO(mass?: number) {

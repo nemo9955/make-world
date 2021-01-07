@@ -2,6 +2,7 @@
 import * as THREE from "three";
 
 import * as Units from "../utils/Units"
+import { ActionsManager } from "./Actions";
 
 // import * as Convert from "../utils/Convert"
 
@@ -124,12 +125,16 @@ export function true_anomaly_rev(t: number, ecc: number) {
 }
 
 
-
+// TODO Use ActionsManager to add listeners for NumberConverter value changes
 
 export class NumberConverter {
+    // public readonly action = new ActionsManager();
+
     value: number
+    type: String
     constructor(value = null) {
         this.value = value;
+        this.type = this.constructor.name
     }
 
     public clone() { return new NumberConverter(this.value); }
@@ -144,8 +149,8 @@ export class NumberConverter {
         return this;
     }
 
-    public add(val_: number) { this.value += val_; return this; }
-    public sub(val_: number) { this.value -= val_; return this; }
+    // public add(val_: number) { this.value += val_; return this; }
+    // public sub(val_: number) { this.value -= val_; return this; }
     public mul(val_: number) { this.value *= val_; return this; }
     public div(val_: number) { this.value /= val_; return this; }
 }
@@ -182,6 +187,22 @@ export class NumberTime extends NumberConverter {
     public clone() { return new NumberTime(this.value); }
     public get universal(): number { return this.value; }
     public set universal(value: number) { this.value = value; }
+}
+
+
+export class NumberTemperature extends NumberConverter {
+    public clone() { return new NumberTemperature(this.value); }
+    public get kelvin(): number { return this.value; }
+    public set kelvin(value: number) { this.value = value; }
+    public get celsius(): number { return this.value - 273.15; }
+    public set celsius(value: number) { this.value = value + 273.15; }
+}
+
+
+export class NumberRadiantFlux extends NumberConverter {
+    public clone() { return new NumberRadiantFlux(this.value); }
+    public get watt(): number { return this.value; }
+    public set watt(value: number) { this.value = value; }
 }
 
 

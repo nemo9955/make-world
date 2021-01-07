@@ -23,7 +23,7 @@ test('Clone 1', async () => {
 
     return wdata_orig.dbm.init().then(() => {
         wdata_orig.init()
-        wdata_copy.id = wdata_orig.id
+        wdata_copy.planetary_system.id = wdata_orig.planetary_system.id
         // console.log("wdata_orig.id, wdata_copy.id", wdata_orig.id, wdata_copy.id);
     }).then(() => {
         // console.log("wdata_orig.dbm.idb", wdata_orig.dbm.idb);
@@ -36,7 +36,7 @@ test('Clone 1', async () => {
 
         expect(wdata_copy).toMatchObject(wdata_orig)
         expect(wdata_orig).toMatchObject(wdata_copy)
-        expect(wdata_copy.id).toBe(wdata_orig.id)
+        expect(wdata_copy.planetary_system.id).toBe(wdata_orig.planetary_system.id)
 
         return Promise.resolve()
     }).then(() => {
@@ -44,7 +44,7 @@ test('Clone 1', async () => {
 
         expect(wdata_copy).not.toMatchObject(wdata_orig)
         expect(wdata_orig).not.toMatchObject(wdata_copy)
-        expect(wdata_copy.id).toBe(wdata_orig.id)
+        expect(wdata_copy.planetary_system.id).toBe(wdata_orig.planetary_system.id)
 
         return Promise.resolve()
     }).then(() => {

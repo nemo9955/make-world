@@ -11,7 +11,7 @@ export class Config {
     innerWidth: number
     innerHeight: number
 
-    WorldDataID: number
+    WorldPlanetarySystemID: number
 
     public copy(source_: Config) {
         Convert.copy(this, source_)

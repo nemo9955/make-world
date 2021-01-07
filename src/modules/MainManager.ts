@@ -47,7 +47,7 @@ export class MainManager {
 
         this.dbm.init().then(() => {
             this.world.init();
-            this.config.WorldDataID = this.world.id;
+            this.config.WorldPlanetarySystemID = this.world.planetary_system.id;
             this.gui.init();
         }).then(() => {
             this.write();
