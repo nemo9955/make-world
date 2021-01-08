@@ -8,7 +8,7 @@ class ColorValues {
     b: number = 255;
     opacity: number = 1;
 
-    copy(source_: any) {
+    public copy(source_: any) {
         // console.log("ColorValues .... source_", source_);
         if (typeof source_.r !== "undefined")
             this.r = source_.r
@@ -31,7 +31,8 @@ export class Color {
         this._value = new ColorValues();
     }
 
-    copy(source_: any) {
+    public copyDeep(source_: any) { this.copyShallow(source_) }
+    public copyShallow(source_: any) {
         // console.log("source_", source_);
         if (source_._value)
             this._value.copy(source_._value)

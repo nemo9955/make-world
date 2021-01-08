@@ -99,7 +99,7 @@ export class DrawWorker {
         if (!this.dbm.idb) return;
 
         console.time("#time DrawWorker refresh_db");
-        await this.world.read();
+        await this.world.readDeep();
         this.update();
         console.timeEnd("#time DrawWorker refresh_db");
     }
@@ -126,7 +126,7 @@ export class DrawWorker {
 
     private draw() {
         // if (this.db_read_itv.check(READ_DB_INTERVAL)) {
-        this.world.read();
+        this.world.readShallow();
         // }
         this.draw_world.draw();
     }

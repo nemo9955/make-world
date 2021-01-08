@@ -129,6 +129,10 @@ export class WorldGui {
             this.manager.world.planetary_system.genOrbitsUniform(); this.refresh();
         });
 
+        this.pane.addButton({ title: 'genOrbitsSimpleMoons' }).on('click', () => {
+            this.manager.world.planetary_system.genOrbitsSimpleMoons(); this.refresh();
+        });
+
         plsys_tp.expanded = false
 
         // this.orbits_tp = plsys_tp.addFolder({ title: 'Orbits' });

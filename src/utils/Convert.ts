@@ -65,22 +65,42 @@ export function clamp(value: number, min: number, max: number): number {
     return THREE.MathUtils.clamp(value, min, max)
 }
 
-export function copy(target_: any, source_: any) {
-    // console.log("source_", source_);
-    for (const key in source_) {
-        // console.log("key, typeof source_[key], source_[key] ", key, typeof source_[key], source_[key]);
+export function copy(target_: any, source_: any) { copyDeep(target_, source_) }
 
-        if (source_[key].__proto__.constructor.name === "Array") {
-            // LEAVE ARRAYS UNTOUCHED !!!
-        } else if (typeof target_?.[key]?.['copy'] === "function") {
-            target_[key]['copy'](source_[key]);
-            // console.log("SETTTTTTTTTTTTTTTTTTTTTT", key,target_[key]);
-        }
-        else {
+
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/typeof
+// https://stackoverflow.com/questions/31538010/test-if-a-variable-is-a-primitive-rather-than-an-object
+
+export function copyShallow(target_: any, source_: any) {
+    for (const key in source_) {
+        if (source_[key]?.__proto__.constructor.name === "Array") {
+            for (const ar_key in target_[key])
+                if (typeof target_?.[key]?.[ar_key]?.['copyShallow'] === "function")
+                    copyShallow(target_[key][ar_key], source_[key][ar_key])
+                else if (typeof target_?.[key]?.[ar_key]?.['copy'] === "function")
+                    target_[key]['copy'](source_[key]);
+        } else if (typeof target_?.[key]?.['copyShallow'] === "function") {
+            target_[key]['copyShallow'](source_[key]);
+            // } else if (typeof target_?.[key]?.['copy'] === "function") {
+            //     target_[key]['copy'](source_[key]);
+        } else {
             target_[key] = source_[key];
         }
     }
-    // console.log("target_", target_);
+}
+
+export function copyDeep(target_: any, source_: any) {
+    for (const key in source_) {
+        if (source_[key]?.__proto__.constructor.name === "Array") {
+            continue; // to be done explicitly by the user
+        } else if (typeof target_?.[key]?.['copyDeep'] === "function") {
+            target_[key]['copyDeep'](source_[key]);
+            // } else if (typeof target_?.[key]?.['copy'] === "function") {
+            //     target_[key]['copy'](source_[key]);
+        } else {
+            target_[key] = source_[key];
+        }
+    }
 }
 
 
@@ -139,6 +159,8 @@ export class NumberConverter {
 
     public clone() { return new NumberConverter(this.value); }
 
+    public copyDeep(source_: NumberConverter | number) { this.copy(source_) }
+    public copyShallow(source_: NumberConverter | number) { this.copy(source_) }
     public copy(source_: NumberConverter | number) {
         if (typeof (source_ as any)?.value === "number") {
             this.value = (source_ as any).value;

@@ -31,7 +31,7 @@ test('Clone 1', async () => {
     }).then(() => {
         return wdata_copy.dbm.open()
     }).then(() => {
-        return wdata_copy.read()
+        return wdata_copy.readDeep()
     }).then(() => {
 
         expect(wdata_copy).toMatchObject(wdata_orig)

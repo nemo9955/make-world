@@ -29,19 +29,14 @@ export class Planet extends Orbit {
     }
 
 
-    public clone() { return Planet.clone().copy(this) }
-    public free() {
-        this.clearSats();
-        // console.log("this.radius.value = 1;", this.radius.value);
-        this.radius.value = 1;
-        Planet.pool_.free(this)
-    }
+    public free() { Planet.pool_.free(this) }
+    public clone() { return Planet.clone().copyDeep(this) }
 
     public static clone() { return Planet.pool_.get() }
     public static new() { return Planet.clone() }
 
     public static pool_ = new ObjectPool<Planet>(() => new Planet(), (item: Planet) => {
-        // console.log("item.radius.value = 1;", item.radius.value);
+        console.log("item.radius.value = 1;", item.radius.value, item.id);
         item.radius.value = 1;
     }, 12);
 

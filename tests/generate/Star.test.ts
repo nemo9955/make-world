@@ -11,7 +11,7 @@ test('Test Star class G', () => {
     expect(star.radius.sr).toBe(1);
     // expect(star.diameter.sr).toBe(2);
     expect(star.radius.sr).toBe(1);
-    expect(star.luminosity).toBe(1);
-    expect(star.temperature).toBe(1);
-    expect(star.lifetime).toBe(1);
+    expect(star.luminosity.watt).toBe(1);
+    expect(star.temperature.kelvin).toBe(1);
+    expect(star.lifetime.universal).toBe(1);
 });

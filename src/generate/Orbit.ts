@@ -135,21 +135,6 @@ export class Orbit {
         return this;
     }
 
-    public copy(source_: Orbit) {
-        Convert.copy(this, source_)
-
-        this.clearSats();
-        for (let index = 0; index < source_.satelites.length; index++) {
-            const orbit_src_: any = source_.satelites[index]
-
-            var obj_ = Orbit.orbit_types_[orbit_src_.type].new().copy(orbit_src_)
-            this.satelites.push(obj_);
-        }
-
-        return this;
-    }
-
-
     public set_axis(semimajor: number | Convert.NumberLength, semiminor: number | Convert.NumberLength) {
         this.semimajor_axis.copy(semimajor);
         this.semiminor_axis.copy(semiminor);
@@ -203,21 +188,48 @@ export class Orbit {
         // return this.semiminor_axis.value * this._eccentricity
     }
 
+
+    public copyDeep(source_: Orbit) {
+        Convert.copyDeep(this, source_)
+
+        this.clearSats();
+        for (let index = 0; index < source_.satelites.length; index++) {
+            const orbit_src_: any = source_.satelites[index]
+
+            var obj_ = Orbit.orbit_types_[orbit_src_.type].new().copyDeep(orbit_src_)
+            this.satelites.push(obj_);
+        }
+        return this;
+    }
+
+    public copyShallow(source_: Orbit) {
+        Convert.copyShallow(this, source_)
+        return this;
+    }
+
+
+
+    public free() { Orbit.pool_.free(this) }
+
     public clearSats() {
         while (this.satelites.length > 0)
-            this.satelites.pop().free();
+            Orbit.pool_.free(this.satelites.pop())
     }
 
-    public clone() { return Orbit.clone().copy(this) }
-    public free() {
-        this.clearSats();
-        Orbit.pool_.free(this)
-    }
-
-    public static clone() { return Orbit.pool_.get() }
+    public clone() { return Orbit.clone().copyDeep(this) }
     public static new() { return Orbit.clone() }
+    public static clone() {
+        var orb_ = Orbit.pool_.get()
+        // console.log("orb_ ", orb_ );
+        return orb_
+    }
 
-    public static pool_ = new ObjectPool<Orbit>(() => new Orbit(), (item: Orbit) => { }, 12);
+    public static pool_ = new ObjectPool<Orbit>(() => new Orbit(), (item: Orbit) => {
+        item.clearSats();
+        item.depth = 0;
+        console.log("item.radius.value ", (item as any)?.radius?.value, item.id);
+        // Orbit.pool_.free(item)
+    }, 12);
 }
 
 

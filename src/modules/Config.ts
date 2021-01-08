@@ -14,7 +14,7 @@ export class Config {
     WorldPlanetarySystemID: number
 
     public copy(source_: Config) {
-        Convert.copy(this, source_)
+        Convert.copyShallow(this, source_)
     }
 }
 

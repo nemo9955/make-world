@@ -16,6 +16,7 @@ import * as Units from "../utils/Units"
 import { ObjectPool } from "../utils/ObjectPool";
 import { Orbit } from "../generate/Orbit";
 import { Planet } from "../generate/Planet";
+import { Star } from "../generate/Star";
 
 // https://orbitalmechanics.info/
 
@@ -48,7 +49,7 @@ export class DrawWorld {
     orb_planets: THREE.Mesh[] = []
     orb_groups: THREE.Group[] = []
     satelits_gr: THREE.Group[] = []
-    orb_objects: Orbit[] = []
+    orb_objects: Orbit[] | Planet[] | Star[] = []
 
     hab_zone: THREE.Mesh;
     frost_zone: THREE.Mesh;
@@ -217,7 +218,7 @@ export class DrawWorld {
             this.tjs_pool_groups.free(this.satelits_gr.pop());
 
         while (this.orb_objects.length > 0)
-            this.orb_objects.pop();
+            this.orb_objects.pop().free();
 
         this.popOrbits(this.world.planetary_system.star.satelites, this.scene)
 
@@ -249,7 +250,7 @@ export class DrawWorld {
 
             this.orb_lines.push(orbit_);
             this.orb_planets.push(planet_);
-            this.orb_objects.push(orb_dist)
+            this.orb_objects.push(orb_dist as any)
             this.orb_groups.push(object_);
             this.satelits_gr.push(satelits_);
 

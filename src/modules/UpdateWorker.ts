@@ -84,7 +84,7 @@ export class UpdateWorker {
         console.debug("#HERELINE UpdateWorker refresh_db this.dbm.idb ready", !!this.dbm.idb);
         if (!this.dbm.idb) return;
 
-        await this.world.read();
+        await this.world.readDeep();
         this.update();
     }
 

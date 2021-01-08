@@ -24,7 +24,7 @@ test('Clone 1', () => {
         // system_orig.genOrbitsSimple();
         system_orig.genOrbitsUniform();
 
-        var system_copy = new PlanetarySystem().copy(system_orig)
+        var system_copy = new PlanetarySystem().copyDeep(system_orig)
 
         expect(system_copy).toMatchObject(system_orig)
         expect(system_orig).toMatchObject(system_copy)
@@ -38,7 +38,7 @@ test('Clone 1', () => {
         expect(system_orig.orbits_limit_out.km).toBe(system_copy.orbits_limit_out.km)
 
         // expect(system_orig.star.diameter.au).toBe(system_copy.star.diameter.au)
-        expect(system_orig.star.luminosity).toBe(system_copy.star.luminosity)
+        expect(system_orig.star.luminosity).toMatchObject(system_copy.star.luminosity)
         expect(system_orig.star.mass.kg).toBe(system_copy.star.mass.kg)
     }
 });

@@ -40,7 +40,7 @@ export class WorldData {
     }
 
 
-    public async read() {
+    public async readShallow() {
         // console.debug("#HERELINE WorldData read ");
         if (this.planetary_system.id) {
             // console.time("#time WorldData " + this.name + " read");
@@ -49,7 +49,25 @@ export class WorldData {
             var data_ps = this.dbm.transaction(DataBaseManager.PLANET_SYSTEM, "readonly");
             var ps_db = await data_ps.store.get(this.planetary_system.id)
             await data_ps.done()
-            this.planetary_system.copy(ps_db)
+            this.planetary_system.copyShallow(ps_db)
+
+            // console.timeEnd("#time WorldData " + this.name + " read");
+            // return data_ps.done()
+            return Promise.resolve();
+        }
+        return Promise.reject("NO ID : " + this.planetary_system.id);
+    }
+
+    public async readDeep() {
+        // console.debug("#HERELINE WorldData read ");
+        if (this.planetary_system.id) {
+            // console.time("#time WorldData " + this.name + " read");
+            // console.debug("#HERELINE WorldData read this.id", this.id);
+
+            var data_ps = this.dbm.transaction(DataBaseManager.PLANET_SYSTEM, "readonly");
+            var ps_db = await data_ps.store.get(this.planetary_system.id)
+            await data_ps.done()
+            this.planetary_system.copyDeep(ps_db)
 
             // console.timeEnd("#time WorldData " + this.name + " read");
             // return data_ps.done()
@@ -70,4 +88,6 @@ export class WorldData {
         // return data_ps.done()
         return Promise.resolve();
     }
+
+
 }

@@ -98,7 +98,7 @@ test('Test Ellipse 845-159', () => {
 
 test('Copy 1', () => {
     var orig_ = new Orbit();
-    var copy = new Orbit().copy(orig_);
+    var copy = new Orbit().copyDeep(orig_);
 
     expect(orig_).toMatchObject(copy)
 });
@@ -111,7 +111,7 @@ test('Copy 2', () => {
     test_orb_.semimajor_axis.div(1)
     orig_.satelites.push(test_orb_)
 
-    var copy_ = new Orbit().copy(orig_);
+    var copy_ = new Orbit().copyDeep(orig_);
 
     expect(orig_).toMatchObject(copy_)
     expect(copy_).toMatchObject(orig_)
@@ -126,7 +126,7 @@ test('Copy 3', () => {
     test_pl_.mass.kg = 1000
     orig_.satelites.push(test_pl_)
 
-    var copy_ = new Orbit().copy(orig_);
+    var copy_ = new Orbit().copyDeep(orig_);
 
     expect(orig_).toMatchObject(copy_)
     expect(copy_).toMatchObject(orig_)

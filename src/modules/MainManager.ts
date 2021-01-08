@@ -37,7 +37,10 @@ export class MainManager {
         this.world = new WorldData("MainManager");
         this.gui = new WorldGui();
         this.config = new Config();
-        this.update_tick = new Ticker(false, this.read.bind(this), 100)
+
+        // TODO Ations will need to tell everyone of cases when an readDeep will be need
+        // Usual var updates will be ok readShallow, structure changes need readDeep
+        this.update_tick = new Ticker(false, this.readShallow.bind(this), 100)
     }
 
     public async init() {
@@ -75,10 +78,12 @@ export class MainManager {
         }
     }
 
-    public async read() {
-        // console.time("#time MainManager read");
-        await this.world.read();
-        // console.timeEnd("#time MainManager read");
+    public async readDeep() {
+        await this.world.readDeep();
+    }
+
+    public async readShallow() {
+        await this.world.readShallow();
     }
 
     public async write() {

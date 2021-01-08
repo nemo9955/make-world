@@ -194,12 +194,8 @@ export class Star extends Orbit {
     }
 
 
-    public clone() { return Star.clone().copy(this) }
-    public free() {
-        this.clearSats();
-        Star.pool_.free(this)
-    }
-
+    public free() { Star.pool_.free(this) }
+    public clone() { return Star.clone().copyDeep(this) }
     public static clone() { return Star.pool_.get() }
     public static new() { return Star.clone() }
 

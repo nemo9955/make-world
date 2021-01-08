@@ -34,10 +34,15 @@ export class PlanetarySystem {
         this.id = Math.ceil(Math.random() * 10000) + 1000
     }
 
-    public copy(source_: any) {
+    public copyDeep(source_: any) {
         this.star.clearSats()
-        Convert.copy(this, source_)
+        Convert.copyDeep(this, source_)
 
+        return this;
+    }
+
+    public copyShallow(source_: any) {
+        Convert.copyShallow(this, source_)
         return this;
     }
 
@@ -143,22 +148,23 @@ export class PlanetarySystem {
 
     public getOrbitElem(par_maj_axis: Convert.NumberLength) {
 
-        if (Random.percent() < 50) {
+        if (Random.percent() < 90) {
             // binary planets
             var orbit_ = Orbit.new()
             orbit_.semimajor_axis.copy(par_maj_axis)
 
             var planet1_ = Planet.new().randomSane()
-            console.log("planet1_", planet1_.radius.value, planet1_);
             planet1_.semimajor_axis.copy(par_maj_axis)
             planet1_.semimajor_axis.value /= 20
             planet1_.radius.value = 30; // TODO FIXME does not reset on pool refresh somewhere
 
-            var planet2_ = planet1_.clone()
+            var planet2_ = Planet.new().copyShallow(planet1_)
             planet2_.mean_longitude.deg += 180;
 
             orbit_.addSat(planet1_)
             orbit_.addSat(planet2_)
+            // console.log("planet1_", planet1_.radius.value, planet1_);
+            // console.log("planet2_", planet2_.radius.value, planet2_);
             return orbit_
         }
 
