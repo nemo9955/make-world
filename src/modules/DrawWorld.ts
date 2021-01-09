@@ -14,7 +14,7 @@ import * as Units from "../utils/Units"
 
 
 import { ObjectPool } from "../utils/ObjectPool";
-import { Orbit } from "../generate/Orbit";
+import { OrbitingElement, Orbit } from "../generate/Orbit";
 import { Planet } from "../generate/Planet";
 import { Star } from "../generate/Star";
 
@@ -49,7 +49,7 @@ export class DrawWorld {
     orb_planets: THREE.Mesh[] = []
     orb_groups: THREE.Group[] = []
     satelits_gr: THREE.Group[] = []
-    orb_objects: Orbit[] | Planet[] | Star[] = []
+    orb_objects: OrbitingElement[] = [] // Orbit Planet Sun
 
     hab_zone: THREE.Mesh;
     frost_zone: THREE.Mesh;
@@ -220,7 +220,7 @@ export class DrawWorld {
         while (this.orb_objects.length > 0)
             this.orb_objects.pop().free();
 
-        this.popOrbits(this.world.planetary_system.star.satelites, this.scene)
+        this.popOrbits(this.world.planetary_system.star.orbit.satelites, this.scene)
 
 
         console.timeEnd("#time DrawWorld update");
@@ -236,11 +236,11 @@ export class DrawWorld {
 
 
 
-    public popOrbits(satelites_: Array<Orbit>, root_: any) {
+    public popOrbits(satelites_: Array<OrbitingElement>, root_: any) {
         for (let index = 0; index < satelites_.length; index++) {
             const orb_dist = satelites_[index];
 
-            orb_dist.updateMajEcc();
+            orb_dist.orbit.updateMajEcc();
             // if (orb_dist.depth >= 2) continue;
 
             const orbit_ = this.tjs_pool_lines.get()
@@ -250,7 +250,7 @@ export class DrawWorld {
 
             this.orb_lines.push(orbit_);
             this.orb_planets.push(planet_);
-            this.orb_objects.push(orb_dist as any)
+            this.orb_objects.push(orb_dist)
             this.orb_groups.push(object_);
             this.satelits_gr.push(satelits_);
 
@@ -283,10 +283,11 @@ export class DrawWorld {
             // TODO TMP WA set the planet size so it is easy to see, not realist .....
             // var visible_planet_size = 100000000
             var visible_planet_size = ellipse_.getLength() / 20;
-            if (orb_dist.depth == 1) visible_planet_size = ellipse_.getLength() / 200;
-            if (orb_dist.type == "Planet") {
+            if (orb_dist.orbit.depth == 1) visible_planet_size = ellipse_.getLength() / 200;
+            if (orb_dist instanceof Planet) {
                 // console.log("orb_dist , radius.value", (orb_dist as Planet).radius.value, orb_dist);
-                visible_planet_size *= (orb_dist as Planet).radius.value
+                // visible_planet_size *= (orb_dist as Planet).radius.value
+                visible_planet_size *= orb_dist.radius.value
             }
 
             // var visible_planet_size = Math.sqrt(ellipse_.getLength()) * 1000

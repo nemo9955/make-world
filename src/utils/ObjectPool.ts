@@ -41,6 +41,11 @@ export class ObjectPool<T> {
     }
 
     public free(item: T): void {
+        if (this.freeList.includes(item)) {
+            console.error("Resource freed multiple times", item);
+            return;
+        }
+        // if (typeof item == T) return;
         this.reset(item);
         this.freeList.push(item);
     }

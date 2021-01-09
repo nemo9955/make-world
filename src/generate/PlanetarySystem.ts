@@ -35,7 +35,7 @@ export class PlanetarySystem {
     }
 
     public copyDeep(source_: any) {
-        this.star.clearSats()
+        this.star.orbit.clearSats()
         Convert.copyDeep(this, source_)
 
         return this;
@@ -87,20 +87,22 @@ export class PlanetarySystem {
     public genOrbitsUniform() {
         this.time.universal = 0
 
-        this.star.clearSats();
+        this.star.orbit.clearSats();
 
         var orb_size = Random.random_int_clamp(6, 8)
 
         var last_orbit = this.orbits_limit_in.clone()
         for (let index = 0; index < orb_size; index++) {
             // var orb_dist = Planet.new().randomUniform();
-            var orb_dist = Planet.new().randomSane();
+            var orb_dist = Planet.new()
+            orb_dist.orbit.randomSane();
             orb_dist.semimajor_axis.copy(last_orbit)
             this.star.addSat(orb_dist)
             last_orbit.au += 4;
         }
 
-        var orb_dist = Planet.new().randomSane();
+        var orb_dist = Planet.new()
+        orb_dist.orbit.randomSane();
         orb_dist.semimajor_axis.copy(this.orbits_limit_out).mul(1.5)
         this.star.addSat(orb_dist)
 
@@ -148,12 +150,13 @@ export class PlanetarySystem {
 
     public getOrbitElem(par_maj_axis: Convert.NumberLength) {
 
-        if (Random.percent() < 90) {
+        if (Random.percent() < 50) {
             // binary planets
             var orbit_ = Orbit.new()
             orbit_.semimajor_axis.copy(par_maj_axis)
 
-            var planet1_ = Planet.new().randomSane()
+            var planet1_ = Planet.new()
+            planet1_.orbit.randomSane()
             planet1_.semimajor_axis.copy(par_maj_axis)
             planet1_.semimajor_axis.value /= 20
             planet1_.radius.value = 30; // TODO FIXME does not reset on pool refresh somewhere
@@ -201,11 +204,12 @@ export class PlanetarySystem {
 
             for (let index = 0; index < moons_total; index++) {
                 // var orb_dist = Planet.new().randomUniform();
-                var orb_dist = Planet.new().randomSane();
+                var orb_dist = Planet.new()
+                orb_dist.orbit.randomSane();
                 orb_dist.semimajor_axis.copy(orbit_.semimajor_axis)
                 orb_dist.semimajor_axis.value /= 3
                 orb_dist.semimajor_axis.value /= Random.random_float_clamp(3, 4)
-                orb_dist.updateMajEcc();
+                orb_dist.orbit.updateMajEcc();
                 orbit_.addSat(orb_dist)
             }
 
@@ -219,7 +223,7 @@ export class PlanetarySystem {
     public genOrbitsSimple() {
         this.time.universal = 0
 
-        this.star.clearSats();
+        this.star.orbit.clearSats();
 
         var lfg_orbit = this.genLargestFrostGiantOrbit();
 
@@ -284,8 +288,8 @@ export class PlanetarySystem {
                 break;
         }
 
-        this.star.satelites.sort((a, b) => a.semimajor_axis.value - b.semimajor_axis.value);
-        console.debug("this.star.satelites.length", this.star.satelites.length);
+        this.star.orbit.satelites.sort((a, b) => a.semimajor_axis.value - b.semimajor_axis.value);
+        console.debug("this.star.satelites.length", this.star.orbit.satelites.length);
 
         return this;
     }

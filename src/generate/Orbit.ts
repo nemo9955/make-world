@@ -21,10 +21,34 @@ https://jtauber.github.io/orbits/019.html
 
 */
 
-export class Orbit {
-    static orbit_types_ = {}
+export interface OrbitingElement {
+    readonly mean_longitude: Convert.NumberAngle;
+    readonly longitude_ascending_node: Convert.NumberAngle;
+    readonly argument_of_perihelion: Convert.NumberAngle;
+    readonly inclination: Convert.NumberAngle;
+    readonly semimajor_axis: Convert.NumberLength;
+    readonly semiminor_axis: Convert.NumberLength;
+    readonly focal_distance: Convert.NumberLength;
+
+    readonly eccentricity: number;
+    readonly satelites: OrbitingElement[];
+    readonly orbit: Orbit;
+    readonly type: string;
+
+    free(): void;
+    addSat(sat_: OrbitingElement): void;
+
+}
+
+
+export class Orbit implements OrbitingElement {
+
+    public id: number = null;
     type: string = null;
+    public used_by: number = null;
     depth: number = 0;
+
+
 
     public readonly mean_longitude = new Convert.NumberAngle();
 
@@ -76,26 +100,23 @@ export class Orbit {
     //     this.focal_distance.value = this.calc_focal_distance()
     // }
 
-    public satelites: Array<Orbit> = null;
+    public satelites: Array<OrbitingElement> = null;
 
 
-    private _id: number;
-    public get id(): number { return this._id; }
-    public set id(value: number) { this._id = value; }
 
-
+    static orbit_types_ = {}
+    public get orbit() { return this; }
 
 
     constructor() {
         this.id = Math.ceil(Math.random() * 100000) + 10000
-        this.satelites = new Array<Orbit>();
+        this.satelites = new Array<any>();
         // console.log("this.constructor", this.constructor);
         this.type = this.constructor.name;
-        Orbit.orbit_types_["Orbit"] = Orbit
     }
 
-    public addSat(sat_: Orbit) {
-        sat_.depth = this.depth + 1
+    public addSat(sat_: OrbitingElement) {
+        sat_.orbit.depth = this.depth + 1
         this.satelites.push(sat_)
     }
 
@@ -209,28 +230,47 @@ export class Orbit {
 
 
 
-    public free() { Orbit.pool_.free(this) }
+    // GRAVEYARD ZONE :
+    public free() {
+        return;
+        if (this.used_by != null) {
+            console.error("Cannot free a used Orbit !!!! ", this, Orbit.pool_);
+            return;
+        }
 
+        if (this.type != "Orbit") {
+            // console.groupCollapsed();
+            // console.error("Free not same type ", this);
+            console.error("Free not same type ", this, Orbit.pool_);
+            // console.trace("Free not same type ", this);
+            // console.groupEnd();
+            // throw new Error("Free not same type");
+            return;
+        }
+        this.clearSats();
+        // console.log("free this", this);
+        Orbit.pool_.free(this)
+    }
     public clearSats() {
         while (this.satelites.length > 0)
-            Orbit.pool_.free(this.satelites.pop())
+            this.satelites.pop().free()
     }
-
     public clone() { return Orbit.clone().copyDeep(this) }
     public static new() { return Orbit.clone() }
     public static clone() {
-        var orb_ = Orbit.pool_.get()
+        // var orb_ = Orbit.pool_.get()
+        var orb_ = Orbit.pool_.create() // TODO FIXME ideally to use get //////////////////////////////////////////////////////////
         // console.log("orb_ ", orb_ );
         return orb_
     }
-
     public static pool_ = new ObjectPool<Orbit>(() => new Orbit(), (item: Orbit) => {
-        item.clearSats();
+        // console.log("item", item);
+        // item.clearSats();
         item.depth = 0;
-        console.log("item.radius.value ", (item as any)?.radius?.value, item.id);
         // Orbit.pool_.free(item)
-    }, 12);
+    }, 0);
 }
 
+Orbit.orbit_types_["Orbit"] = Orbit
 
 

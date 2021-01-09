@@ -73,6 +73,7 @@ export function copy(target_: any, source_: any) { copyDeep(target_, source_) }
 
 export function copyShallow(target_: any, source_: any) {
     for (const key in source_) {
+        // if (key.startsWith("__") && key.endsWith("__")) continue;
         if (source_[key]?.__proto__.constructor.name === "Array") {
             for (const ar_key in target_[key])
                 if (typeof target_?.[key]?.[ar_key]?.['copyShallow'] === "function")
@@ -91,6 +92,7 @@ export function copyShallow(target_: any, source_: any) {
 
 export function copyDeep(target_: any, source_: any) {
     for (const key in source_) {
+        // if (key.startsWith("__") && key.endsWith("__")) continue;
         if (source_[key]?.__proto__.constructor.name === "Array") {
             continue; // to be done explicitly by the user
         } else if (typeof target_?.[key]?.['copyDeep'] === "function") {

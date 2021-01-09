@@ -1,5 +1,6 @@
 const ctx: Worker = self as any;
 
+// TODO make a performance monitor using SharedArrayBuffer, data just dumped in a structure and read in main (FPS, memory, etc)
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer
 
 import { DrawWorker } from "./DrawWorker";

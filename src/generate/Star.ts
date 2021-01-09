@@ -3,7 +3,7 @@ import { Color } from "../utils/Color"
 import * as Random from "../utils/Random"
 import * as Units from "../utils/Units"
 import * as Convert from "../utils/Convert"
-import { Orbit } from "./Orbit";
+import { OrbitingElement, Orbit } from "./Orbit";
 import { ObjectPool } from "../utils/ObjectPool";
 
 // Artifexian : https://www.youtube.com/watch?v=x55nxxaWXAM
@@ -18,7 +18,7 @@ import { ObjectPool } from "../utils/ObjectPool";
 // K	3,700–5,200 K	light orange	pale yellow orange	0.45–0.8 M☉	0.7–0.96 R☉	0.08–0.6 L☉	Very weak	12.1%
 // M	2,400–3,700 K	orange red	light orange red	0.08–0.45 M☉	≤ 0.7 R☉	≤ 0.08 L☉	Very weak	76.45%
 
-export class Star extends Orbit {
+export class Star implements OrbitingElement {
 
     sclass: string;
     luminosity = new Convert.NumberRadiantFlux();
@@ -34,10 +34,34 @@ export class Star extends Orbit {
     // public get diameter(): any { return this._diameter.copy(this.radius).mul(2); }
     // public set diameter(value: any) { this.mass.copy(value.div(2)); }
 
+
+    public get mean_longitude() { return this.orbit.mean_longitude; }
+    public get longitude_ascending_node() { return this.orbit.longitude_ascending_node; }
+    public get argument_of_perihelion() { return this.orbit.argument_of_perihelion; }
+    public get inclination() { return this.orbit.inclination; }
+    public get semimajor_axis() { return this.orbit.semimajor_axis; }
+    public get semiminor_axis() { return this.orbit.semiminor_axis; }
+    public get focal_distance() { return this.orbit.focal_distance; }
+    public get satelites() { return this.orbit.satelites; }
+    public get eccentricity() { return this.orbit.eccentricity; }
+
+
+
+
+
+
+    public orbit: Orbit;
+    public id: number;
+    type: string = null;
     constructor() {
-        super();
+        this.type = this.constructor.name;
+        this.id = Math.ceil(Math.random() * 100000) + 10000
+
+        this.orbit = Orbit.new();
+        // this.orbit.used_by = this;
+        this.orbit.used_by = this.id;
+
         this.color = new Color();
-        Orbit.orbit_types_["Star"] = Star
     }
 
     private setFromMass(mass?: number) {
@@ -194,11 +218,36 @@ export class Star extends Orbit {
     }
 
 
-    public free() { Star.pool_.free(this) }
+    public addSat(sat_: OrbitingElement) { this.orbit.addSat(sat_) }
+
+    public copyDeep(source_: Star) {
+        Convert.copyDeep(this, source_)
+        return this;
+    }
+    public copyShallow(source_: Star) {
+        Convert.copyShallow(this, source_)
+        return this;
+    }
+
+    // GRAVEYARD ZONE :
+    public free() {
+        return;
+        if (this.type != "Star") {
+            console.error("Free not same type ", this);
+            return;
+        }
+        // this.orbit.free();
+        this.orbit.clearSats();
+        // console.log("free this", this);
+        Star.pool_.free(this)
+    }
     public clone() { return Star.clone().copyDeep(this) }
-    public static clone() { return Star.pool_.get() }
+    public static clone() {
+        return Star.pool_.create() // TODO FIXME ideally to use get //////////////////////////////////////////////////////////
+        // return Star.pool_.get()
+    }
     public static new() { return Star.clone() }
-
-    public static pool_ = new ObjectPool<Star>(() => new Star(), (item: Star) => { }, 12);
-
+    public static pool_ = new ObjectPool<Star>(() => new Star(), (item: Star) => { }, 0);
 }
+
+Orbit.orbit_types_["Star"] = Star

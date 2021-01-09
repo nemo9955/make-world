@@ -120,7 +120,8 @@ test('Copy 2', () => {
 test('Copy 3', () => {
     var orig_ = new Orbit();
 
-    var test_pl_ = Planet.new().randomUniform();
+    var test_pl_ = Planet.new()
+    test_pl_.orbit.randomUniform();
     test_pl_.semimajor_axis.div(1)
     test_pl_.radius.km = 1000
     test_pl_.mass.kg = 1000
