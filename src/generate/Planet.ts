@@ -77,7 +77,7 @@ export class Planet implements OrbitingElement {
 
             return;
         }
-        this.orbit.clearSats();
+        this.orbit.clearNonStars();
         // console.log("free this", this);
         Planet.pool_.free(this);
     }

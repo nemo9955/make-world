@@ -14,6 +14,11 @@ import * as Convert from "../utils/Convert"
 
 export const REFRESH_CALL_INTERVAL = 200
 
+// TODO regenerate WHOLE GUI after world structural changes
+// like new stars and orbits
+// TODO regenerate only affected GUI parts after structural changes
+
+
 export class WorldGui {
     manager: MainManager;
     refresh_inval: Intervaler;
@@ -79,6 +84,7 @@ export class WorldGui {
         this.pane.addInput(this.manager.config, 'do_draw_loop').on('change', () => { this.refresh(true); });
         this.pane.addInput(this.manager.config, 'do_update_loop').on('change', () => { this.refresh(true); });
         this.pane.addInput(this.manager.config, 'do_main_loop').on('change', () => { this.refresh(true); });
+        this.pane.addInput(this.manager.config, 'timeUpdSpeed', { min: 0, max: 100, });
 
         this.pane.on('change', (val1) => {
             this.refresh(true);// Issue with tweakpane color causing recursive refresh
@@ -87,15 +93,15 @@ export class WorldGui {
 
     public init_star() {
         const star_tp = this.pane.addFolder({ title: 'The Star' });
-        star_tp.addInput(this.manager.world.planetary_system.star, 'sclass');
-        star_tp.addInput(this.manager.world.planetary_system.star.luminosity, 'watt', { label: "watt" });
-        star_tp.addInput(this.manager.world.planetary_system.star.temperature, 'kelvin', { label: "kelvin" });
-        star_tp.addInput(this.manager.world.planetary_system.star.lifetime, 'universal', { label: "universal" });
-        this.pane.addInput(this.manager.world.planetary_system.star.color, 'value');
+        star_tp.addInput(this.manager.world.planetary_system.getStars()[0], 'sclass');
+        star_tp.addInput(this.manager.world.planetary_system.getStars()[0].luminosity, 'watt', { label: "watt" });
+        star_tp.addInput(this.manager.world.planetary_system.getStars()[0].temperature, 'kelvin', { label: "kelvin" });
+        star_tp.addInput(this.manager.world.planetary_system.getStars()[0].lifetime, 'universal', { label: "universal" });
+        this.pane.addInput(this.manager.world.planetary_system.getStars()[0].color, 'value');
 
-        star_tp.addInput(this.manager.world.planetary_system.star.mass, 'kg', { label: "mass" });
-        // star_tp.addInput(this.manager.world.planetary_system.star.diameter, 'km', { label: "diameter" });
-        star_tp.addInput(this.manager.world.planetary_system.star.radius, 'km', { label: "radius" });
+        star_tp.addInput(this.manager.world.planetary_system.getStars()[0].mass, 'kg', { label: "mass" });
+        // star_tp.addInput(this.manager.world.planetary_system.getStars()[0].diameter, 'km', { label: "diameter" });
+        star_tp.addInput(this.manager.world.planetary_system.getStars()[0].radius, 'km', { label: "radius" });
 
         star_tp.expanded = false
     }

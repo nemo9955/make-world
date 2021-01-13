@@ -9,9 +9,9 @@ console.time = jest.fn()
 test('Sample Habitable', () => {
     for (let index = 0; index < 100; index++) {
         var system = new PlanetarySystem().genStar(); // empty defaults to habitable
-        expect(["F", "G", "K"]).toContain(system.star.sclass);
+        expect(["F", "G", "K"]).toContain(system.getStars()[0].sclass);
 
-        var orbits_dists = system.genOrbitsSimple().star.satelites
+        var orbits_dists = system.genOrbitsSimple().satelites
         expect(orbits_dists.length).toBeGreaterThanOrEqual(5)
     }
 });
@@ -29,17 +29,17 @@ test('Clone 1', () => {
         expect(system_copy).toMatchObject(system_orig)
         expect(system_orig).toMatchObject(system_copy)
 
-        expect(system_copy.star).toMatchObject(system_orig.star)
-        expect(system_orig.star).toMatchObject(system_copy.star)
+        expect(system_copy.satelites[0]).toMatchObject(system_orig.satelites[0])
+        expect(system_orig.satelites[0]).toMatchObject(system_copy.satelites[0])
 
-        expect(system_orig.star.satelites.length).toBe(system_copy.star.satelites.length)
+        expect(system_orig.satelites[0].satelites.length).toBe(system_copy.satelites[0].satelites.length)
         expect(system_orig.id).toBe(system_copy.id)
         expect(system_orig.hab_zone_in.km).toBe(system_copy.hab_zone_in.km)
         expect(system_orig.orbits_limit_out.km).toBe(system_copy.orbits_limit_out.km)
 
-        // expect(system_orig.star.diameter.au).toBe(system_copy.star.diameter.au)
-        expect(system_orig.star.luminosity).toMatchObject(system_copy.star.luminosity)
-        expect(system_orig.star.mass.kg).toBe(system_copy.star.mass.kg)
+        // expect(system_orig.satelites[0].diameter.au).toBe(system_copy.satelites[0].diameter.au)
+        expect(system_orig.getStars()[0].luminosity).toMatchObject(system_copy.getStars()[0].luminosity)
+        expect(system_orig.getStars()[0].mass.kg).toBe(system_copy.getStars()[0].mass.kg)
     }
 });
 

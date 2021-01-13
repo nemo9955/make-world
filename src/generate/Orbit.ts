@@ -213,7 +213,7 @@ export class Orbit implements OrbitingElement {
     public copyDeep(source_: Orbit) {
         Convert.copyDeep(this, source_)
 
-        this.clearSats();
+        this.clearNonStars();
         for (let index = 0; index < source_.satelites.length; index++) {
             const orbit_src_: any = source_.satelites[index]
 
@@ -228,6 +228,23 @@ export class Orbit implements OrbitingElement {
         return this;
     }
 
+
+
+    public clearAll() {
+        while (this.satelites.length > 0)
+            this.satelites.pop().free()
+    }
+
+    public clearNonStars() {
+        var count = 0;
+        while (this.satelites.length > count) {
+            if (this.satelites[this.satelites.length - 1].type === "Star") {
+                count++;
+                continue;
+            }
+            this.satelites.pop().free()
+        }
+    }
 
 
     // GRAVEYARD ZONE :
@@ -247,13 +264,9 @@ export class Orbit implements OrbitingElement {
             // throw new Error("Free not same type");
             return;
         }
-        this.clearSats();
+        this.clearNonStars();
         // console.log("free this", this);
         Orbit.pool_.free(this)
-    }
-    public clearSats() {
-        while (this.satelites.length > 0)
-            this.satelites.pop().free()
     }
     public clone() { return Orbit.clone().copyDeep(this) }
     public static new() { return Orbit.clone() }
@@ -265,7 +278,7 @@ export class Orbit implements OrbitingElement {
     }
     public static pool_ = new ObjectPool<Orbit>(() => new Orbit(), (item: Orbit) => {
         // console.log("item", item);
-        // item.clearSats();
+        // item.clearNonStars();
         item.depth = 0;
         // Orbit.pool_.free(item)
     }, 0);

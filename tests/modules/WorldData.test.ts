@@ -40,7 +40,7 @@ test('Clone 1', async () => {
 
         return Promise.resolve()
     }).then(() => {
-        wdata_copy.planetary_system.star.mass.kg = -500
+        wdata_copy.planetary_system.getStars()[0].mass.kg = -500
 
         expect(wdata_copy).not.toMatchObject(wdata_orig)
         expect(wdata_orig).not.toMatchObject(wdata_copy)

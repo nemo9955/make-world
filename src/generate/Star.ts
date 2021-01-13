@@ -230,22 +230,9 @@ export class Star implements OrbitingElement {
     }
 
     // GRAVEYARD ZONE :
-    public free() {
-        return;
-        if (this.type != "Star") {
-            console.error("Free not same type ", this);
-            return;
-        }
-        // this.orbit.free();
-        this.orbit.clearSats();
-        // console.log("free this", this);
-        Star.pool_.free(this)
-    }
+    public free() { return; }
     public clone() { return Star.clone().copyDeep(this) }
-    public static clone() {
-        return Star.pool_.create() // TODO FIXME ideally to use get //////////////////////////////////////////////////////////
-        // return Star.pool_.get()
-    }
+    public static clone() { return Star.pool_.create() } // TODO FIXME ideally to use get
     public static new() { return Star.clone() }
     public static pool_ = new ObjectPool<Star>(() => new Star(), (item: Star) => { }, 0);
 }

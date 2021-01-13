@@ -11,6 +11,8 @@ export class Config {
     innerWidth: number
     innerHeight: number
 
+    timeUpdSpeed = 10;
+
     WorldPlanetarySystemID: number
 
     public copy(source_: Config) {

@@ -43,7 +43,7 @@ export class DrawWorld {
     geometry: THREE.Geometry;
     material: THREE.Material;
     controls: OrbitControls;
-    sun: THREE.Mesh;
+    // sun: THREE.Mesh;
 
     orb_lines: THREE.Line[] = []
     orb_planets: THREE.Mesh[] = []
@@ -56,7 +56,7 @@ export class DrawWorld {
 
     // TODO FIXME some pool somewhere is not properly reset !!!!!!!!!
     tjs_pool_lines: ObjectPool<THREE.Line>;
-    tjs_pool_planets: ObjectPool<THREE.Mesh>;
+    tjs_pool_orbobjects: ObjectPool<THREE.Mesh>;
     tjs_pool_groups: ObjectPool<THREE.Group>;
 
 
@@ -80,10 +80,10 @@ export class DrawWorld {
             item.clear()
         }, 0)
 
-        this.tjs_pool_planets = new ObjectPool<THREE.Mesh>(() => {
+        this.tjs_pool_orbobjects = new ObjectPool<THREE.Mesh>(() => {
             const item = new THREE.Mesh(
                 new THREE.SphereGeometry(1, 5, 5),
-                new THREE.MeshStandardMaterial({ color: new THREE.Color(0.0, 0.6, 0.0) })
+                new THREE.MeshStandardMaterial({ color: new THREE.Color() })
             );
             // item.material.transparent = true
             // item.material.opacity = 0.5
@@ -121,7 +121,7 @@ export class DrawWorld {
 
 
         this.tjs_pool_lines.expand(20);
-        this.tjs_pool_planets.expand(20);
+        this.tjs_pool_orbobjects.expand(20);
         this.tjs_pool_groups.expand(50);
 
         // this.renderer = new THREE.WebGLRenderer();
@@ -148,12 +148,12 @@ export class DrawWorld {
 
     public update_not() {
 
-        this.sun = new THREE.Mesh(
-            new THREE.SphereGeometry(1, 5, 5),
-            new THREE.MeshStandardMaterial({ color: new THREE.Color(0.6, 0.6, 0.0) })
-        );
-        this.sun.position.set(0, 0, 0);
-        this.scene.add(this.sun);
+        // this.sun = new THREE.Mesh(
+        //     new THREE.SphereGeometry(1, 5, 5),
+        //     new THREE.MeshStandardMaterial({ color: new THREE.Color(0.6, 0.6, 0.0) })
+        // );
+        // this.sun.position.set(0, 0, 0);
+        // this.scene.add(this.sun);
 
         const geometry_hab = new THREE.RingGeometry(1, 5, 15, 1);
         const material_hab = new THREE.MeshBasicMaterial({ color: new THREE.Color("green"), side: THREE.DoubleSide });
@@ -186,16 +186,15 @@ export class DrawWorld {
         // console.debug("#HERELINE DrawWorld 143 ");
         console.time("#time DrawWorld update");
 
-        console.debug("#HERELINE DrawWorld update WorldDataID ", this.config.WorldPlanetarySystemID);
-        var sun_color = this.world.planetary_system.star.color.getRgb().formatHex();
-        (this.sun.material as THREE.MeshStandardMaterial).color.set(sun_color)
+        // console.debug("#HERELINE DrawWorld update WorldDataID ", this.config.WorldPlanetarySystemID);
+        // var sun_color = this.world.planetary_system.getStars()[0].color.getRgb().formatHex();
+        // (this.sun.material as THREE.MeshStandardMaterial).color.set(sun_color)
 
         // make sun bigger just because
-        var sun_size = this.world.planetary_system.star.radius.km * 2 * 10
+        // var sun_size = this.world.planetary_system.getStars()[0].radius.km * 2 * 10
         // this.sun.geometry.scale(sun_size,sun_size,sun_size)
         // this.sun.geometry = new THREE.SphereGeometry(sun_size, 5, 5);
-        this.sun.scale.set(sun_size, sun_size, sun_size)
-        // this.earth.geometry = new THREE.SphereGeometry(this.world.planetary_system.star.diameter.km * 20, 5, 5);
+        // this.sun.scale.set(sun_size, sun_size, sun_size)
 
         this.hab_zone.geometry = new THREE.RingGeometry(
             this.world.planetary_system.hab_zone_in.km,
@@ -211,7 +210,7 @@ export class DrawWorld {
         while (this.orb_lines.length > 0)
             this.tjs_pool_lines.free(this.orb_lines.pop());
         while (this.orb_planets.length > 0)
-            this.tjs_pool_planets.free(this.orb_planets.pop());
+            this.tjs_pool_orbobjects.free(this.orb_planets.pop());
         while (this.orb_groups.length > 0)
             this.tjs_pool_groups.free(this.orb_groups.pop());
         while (this.satelits_gr.length > 0)
@@ -220,7 +219,7 @@ export class DrawWorld {
         while (this.orb_objects.length > 0)
             this.orb_objects.pop().free();
 
-        this.popOrbits(this.world.planetary_system.star.orbit.satelites, this.scene)
+        this.popOrbits(this.world.planetary_system.satelites, this.scene)
 
 
         console.timeEnd("#time DrawWorld update");
@@ -244,12 +243,12 @@ export class DrawWorld {
             // if (orb_dist.depth >= 2) continue;
 
             const orbit_ = this.tjs_pool_lines.get()
-            const planet_ = this.tjs_pool_planets.get()
+            const orbobject_ = this.tjs_pool_orbobjects.get()
             const object_ = this.tjs_pool_groups.get()
             const satelits_ = this.tjs_pool_groups.get()
 
             this.orb_lines.push(orbit_);
-            this.orb_planets.push(planet_);
+            this.orb_planets.push(orbobject_);
             this.orb_objects.push(orb_dist)
             this.orb_groups.push(object_);
             this.satelits_gr.push(satelits_);
@@ -258,7 +257,7 @@ export class DrawWorld {
             // console.log("orb_dist.type", orb_dist.type);
 
             orbit_.visible = true
-            planet_.visible = (orb_dist.type == "Planet")
+            orbobject_.visible = false
             object_.visible = true
             satelits_.visible = true
 
@@ -285,9 +284,24 @@ export class DrawWorld {
             var visible_planet_size = ellipse_.getLength() / 20;
             if (orb_dist.orbit.depth == 1) visible_planet_size = ellipse_.getLength() / 200;
             if (orb_dist instanceof Planet) {
+                orbobject_.visible = true;
                 // console.log("orb_dist , radius.value", (orb_dist as Planet).radius.value, orb_dist);
                 // visible_planet_size *= (orb_dist as Planet).radius.value
+                (orbobject_.material as THREE.MeshStandardMaterial).color.setRGB(0.0, 0.6, 0.0);
                 visible_planet_size *= orb_dist.radius.value
+            }
+            if (orb_dist instanceof Star) {
+                orbobject_.visible = true
+                // console.debug("#HERELINE DrawWorld update WorldDataID ", this.config.WorldPlanetarySystemID);
+                var sun_color = this.world.planetary_system.getStars()[0].color.getRgb().formatHex();
+                (orbobject_.material as THREE.MeshStandardMaterial).color.set(sun_color)
+
+                // make sun bigger just because
+                visible_planet_size = this.world.planetary_system.getStars()[0].radius.km * 2 * 10
+                // this.sun.geometry.scale(sun_size,sun_size,sun_size)
+                // this.sun.geometry = new THREE.SphereGeometry(sun_size, 5, 5);
+                // this.sun.scale.set(sun_size, sun_size, sun_size)
+
             }
 
             // var visible_planet_size = Math.sqrt(ellipse_.getLength()) * 1000
@@ -295,32 +309,32 @@ export class DrawWorld {
             // var visible_planet_size = 70000 * Math.pow((index + 3) * 1.4, 3)
             // planet_.geometry = new THREE.SphereGeometry(visible_planet_size, 5, 5);
             // planet_.geometry.scale(visible_planet_size, visible_planet_size, visible_planet_size)
-            planet_.scale.setScalar(visible_planet_size)
+            orbobject_.scale.setScalar(visible_planet_size)
 
 
 
 
             var all_obj: any = {}
             all_obj.orbit = orbit_
-            all_obj.planet = planet_
+            all_obj.orbitObject = orbobject_
             all_obj.ellipse = ellipse_
             all_obj.object = object_
             all_obj.satelits = satelits_
 
             orbit_.userData = all_obj
-            planet_.userData = all_obj
+            orbobject_.userData = all_obj
             object_.userData = all_obj
             satelits_.userData = all_obj
 
 
-            satelits_.add(planet_)
+            satelits_.add(orbobject_)
             object_.add(satelits_)
             object_.add(orbit_)
             root_.add(object_)
 
 
-            planet_.rotation.set(0, 0, 0)
-            planet_.position.set(0, 0, 0)
+            orbobject_.rotation.set(0, 0, 0)
+            orbobject_.position.set(0, 0, 0)
 
             orbit_.rotation.set(0, 0, 0)
             orbit_.position.set(0, 0, 0)

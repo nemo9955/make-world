@@ -1,5 +1,5 @@
 import { Star } from "./Star";
-import { Orbit } from "./Orbit";
+import { Orbit, OrbitingElement } from "./Orbit";
 import { Planet } from "./Planet";
 
 import * as Random from "../utils/Random"
@@ -12,9 +12,23 @@ import * as Convert from "../utils/Convert"
 
 
 
-export class PlanetarySystem {
+export class PlanetarySystem implements OrbitingElement {
     id: number = null;
-    star: Star;
+    type: string;
+    // star: Star;
+
+
+    public orbit: Orbit;
+    public get mean_longitude() { return this.orbit.mean_longitude; }
+    public get longitude_ascending_node() { return this.orbit.longitude_ascending_node; }
+    public get argument_of_perihelion() { return this.orbit.argument_of_perihelion; }
+    public get inclination() { return this.orbit.inclination; }
+    public get semimajor_axis() { return this.orbit.semimajor_axis; }
+    public get semiminor_axis() { return this.orbit.semiminor_axis; }
+    public get focal_distance() { return this.orbit.focal_distance; }
+    public get satelites() { return this.orbit.satelites; }
+    public get eccentricity() { return this.orbit.eccentricity; }
+
 
     // TODO Move in WorldData when more fine read/write can be done
     public readonly time = new Convert.NumberTime();
@@ -27,15 +41,18 @@ export class PlanetarySystem {
     public readonly orbits_limit_out = new Convert.NumberLength();
 
     constructor() {
-        this.star = new Star();
+        // this.star = new Star();
+        this.orbit = Orbit.new();
+        this.type = this.constructor.name;
     }
+
 
     init() {
         this.id = Math.ceil(Math.random() * 10000) + 1000
     }
 
     public copyDeep(source_: any) {
-        this.star.orbit.clearSats()
+        this.orbit.clearAll()
         Convert.copyDeep(this, source_)
 
         return this;
@@ -47,27 +64,31 @@ export class PlanetarySystem {
     }
 
     public genStar(type?: string) {
+        this.orbit.clearAll()
+        var star_ = new Star() // TODO add support for multiple Stars
         switch (type) {
             case "sun":
-                this.star.makeClassG(1); break;
+                star_.makeClassG(1); break;
             case "long_life":
-                this.star.genLongLifeStar(); break;
+                star_.genLongLifeStar(); break;
             case "any":
-                this.star.genAnyStar(); break;
+                star_.genAnyStar(); break;
             case "habitable":
-                this.star.genHabitableStar(); break;
+                star_.genHabitableStar(); break;
             default:
-                this.star.genHabitableStar(); break;
+                star_.genHabitableStar(); break;
         }
+
+        this.addSat(star_)
 
         this.time.universal = 0
 
-        this.hab_zone.au = Math.sqrt(this.star.luminosity.watt);
+        this.hab_zone.au = Math.sqrt(star_.luminosity.watt);
         this.hab_zone_in.au = this.hab_zone.au * 0.95;
         this.hab_zone_out.au = this.hab_zone.au * 1.37;
 
-        this.orbits_limit_in.au = 0.1 * this.star.mass.sm
-        this.orbits_limit_out.au = 40 * this.star.mass.sm
+        this.orbits_limit_in.au = 0.1 * star_.mass.sm
+        this.orbits_limit_out.au = 40 * star_.mass.sm
         this.frost_line.au = 4.85 * this.hab_zone.au
 
         return this;
@@ -87,7 +108,7 @@ export class PlanetarySystem {
     public genOrbitsUniform() {
         this.time.universal = 0
 
-        this.star.orbit.clearSats();
+        this.orbit.clearNonStars();
 
         var orb_size = Random.random_int_clamp(6, 8)
 
@@ -97,14 +118,14 @@ export class PlanetarySystem {
             var orb_dist = Planet.new()
             orb_dist.orbit.randomSane();
             orb_dist.semimajor_axis.copy(last_orbit)
-            this.star.addSat(orb_dist)
+            this.addSat(orb_dist)
             last_orbit.au += 4;
         }
 
         var orb_dist = Planet.new()
         orb_dist.orbit.randomSane();
         orb_dist.semimajor_axis.copy(this.orbits_limit_out).mul(1.5)
-        this.star.addSat(orb_dist)
+        this.addSat(orb_dist)
 
         var last_orb = Orbit.new().randomSane();
         last_orb.semimajor_axis.copy(this.orbits_limit_out).mul(0.4)
@@ -142,7 +163,7 @@ export class PlanetarySystem {
 
 
 
-        console.debug("this.star.satelites.length", this.star.satelites.length);
+        console.debug("this.star.satelites.length", this.orbit.satelites.length);
 
         return this;
     }
@@ -172,6 +193,7 @@ export class PlanetarySystem {
         }
 
         var planet_ = Planet.new()
+        planet_.orbit.randomSane();
         planet_.semimajor_axis.copy(par_maj_axis)
         return planet_
     }
@@ -179,7 +201,7 @@ export class PlanetarySystem {
     public genOrbitsSimpleMoons() {
         this.genOrbitsSimple();
 
-        for (const orbit_ of this.star.satelites) {
+        for (const orbit_ of this.orbit.satelites) {
 
             // console.log("orbit_.semimajor_axis.au", orbit_.semimajor_axis.au);
 
@@ -223,7 +245,7 @@ export class PlanetarySystem {
     public genOrbitsSimple() {
         this.time.universal = 0
 
-        this.star.orbit.clearSats();
+        this.orbit.clearNonStars();
 
         var lfg_orbit = this.genLargestFrostGiantOrbit();
 
@@ -248,7 +270,7 @@ export class PlanetarySystem {
                 var orb_dist = this.getOrbitElem(last_orbit)
                 // var orb_dist = Orbit.new().randomSane();
                 // orb_dist.semimajor_axis = last_orbit
-                this.star.addSat(orb_dist)
+                this.addSat(orb_dist)
             }
             else
                 break;
@@ -276,7 +298,7 @@ export class PlanetarySystem {
                 var orb_dist = this.getOrbitElem(last_orbit)
                 // var orb_dist = Orbit.new().randomSane();
                 // orb_dist.semimajor_axis = last_orbit
-                this.star.addSat(orb_dist)
+                this.addSat(orb_dist)
 
                 // var orb_sat1 = Orbit.new().randomSane();
                 // orb_sat1.semimajor_axis = last_orbit
@@ -288,12 +310,17 @@ export class PlanetarySystem {
                 break;
         }
 
-        this.star.orbit.satelites.sort((a, b) => a.semimajor_axis.value - b.semimajor_axis.value);
-        console.debug("this.star.satelites.length", this.star.orbit.satelites.length);
+        this.orbit.satelites.sort((a, b) => a.semimajor_axis.value - b.semimajor_axis.value);
+        console.debug("this.orbit.satelites.length", this.orbit.satelites.length);
 
         return this;
     }
 
+    public free(): void { return; }
+    public addSat(sat_: OrbitingElement) { this.orbit.addSat(sat_) }
+    public getStars(): Star[] {
+        return [this.satelites[0] as Star] // TODO proper search Stars
+    }
 
 
 }
