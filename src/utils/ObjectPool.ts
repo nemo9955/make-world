@@ -15,7 +15,6 @@ export class ObjectPool<T> {
     create: () => T
     reset: (item: T) => void
 
-    // TODO pass  "create" and "reset" actions to constructor so this can be used with any Object
     constructor(create_func: () => T, reset_func: (item: T) => void, initialSize?: number) {
         this.create = create_func
         this.reset = reset_func

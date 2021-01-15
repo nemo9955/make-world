@@ -54,7 +54,6 @@ export class DrawWorld {
     hab_zone: THREE.Mesh;
     frost_zone: THREE.Mesh;
 
-    // TODO FIXME some pool somewhere is not properly reset !!!!!!!!!
     tjs_pool_lines: ObjectPool<THREE.Line>;
     tjs_pool_orbobjects: ObjectPool<THREE.Mesh>;
     tjs_pool_groups: ObjectPool<THREE.Group>;
