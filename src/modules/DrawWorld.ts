@@ -219,7 +219,7 @@ export class DrawWorld {
         while (this.orb_objects.length > 0)
             this.orb_objects.pop().free();
 
-        this.popOrbits(this.world.planetary_system.satelites, this.scene)
+        this.popOrbits(this.world.planetary_system.satelites, this.scene, this.scene)
 
 
         console.timeEnd("#time DrawWorld update");
@@ -235,31 +235,31 @@ export class DrawWorld {
 
 
 
-    public popOrbits(satelites_: Array<OrbitingElement>, root_: any) {
+    public popOrbits(satelites_: Array<OrbitingElement>, root_: THREE.Object3D, position_root_: THREE.Object3D) {
         for (let index = 0; index < satelites_.length; index++) {
             const orb_dist = satelites_[index];
 
             orb_dist.orbit.updateMajEcc();
             // if (orb_dist.depth >= 2) continue;
 
-            const orbit_ = this.tjs_pool_lines.get()
+            const orbit_line_ = this.tjs_pool_lines.get()
             const orbobject_ = this.tjs_pool_orbobjects.get()
-            const object_ = this.tjs_pool_groups.get()
-            const satelits_ = this.tjs_pool_groups.get()
+            const orbline_gr_ = this.tjs_pool_groups.get()
+            const orbobj_gr_ = this.tjs_pool_groups.get()
 
-            this.orb_lines.push(orbit_);
+            this.orb_lines.push(orbit_line_);
             this.orb_planets.push(orbobject_);
             this.orb_objects.push(orb_dist)
-            this.orb_groups.push(object_);
-            this.satelits_gr.push(satelits_);
+            this.orb_groups.push(orbline_gr_);
+            this.satelits_gr.push(orbobj_gr_);
 
 
             // console.log("orb_dist.type", orb_dist.type);
 
-            orbit_.visible = true
+            orbit_line_.visible = true
             orbobject_.visible = false
-            object_.visible = true
-            satelits_.visible = true
+            orbline_gr_.visible = true
+            orbobj_gr_.visible = true
 
 
 
@@ -276,7 +276,7 @@ export class DrawWorld {
                 0                // aRotation
             );
             const points: any[] = ellipse_.getPoints(50);
-            orbit_.geometry.setFromPoints(points);
+            orbit_line_.geometry.setFromPoints(points);
 
 
             // TODO TMP WA set the planet size so it is easy to see, not realist .....
@@ -315,46 +315,52 @@ export class DrawWorld {
 
 
             var all_obj: any = {}
-            all_obj.orbit = orbit_
+            all_obj.orbit_line = orbit_line_
             all_obj.orbitObject = orbobject_
             all_obj.ellipse = ellipse_
-            all_obj.object = object_
-            all_obj.satelits = satelits_
+            all_obj.orbline_group = orbline_gr_
+            all_obj.satelits = orbobj_gr_
+            all_obj.parent = position_root_
 
-            orbit_.userData = all_obj
+            orbit_line_.userData = all_obj
             orbobject_.userData = all_obj
-            object_.userData = all_obj
-            satelits_.userData = all_obj
+            orbline_gr_.userData = all_obj
+            orbobj_gr_.userData = all_obj
 
 
-            satelits_.add(orbobject_)
-            object_.add(satelits_)
-            object_.add(orbit_)
-            root_.add(object_)
+            orbobj_gr_.add(orbobject_)
+            root_.add(orbobj_gr_)
+            orbline_gr_.add(orbit_line_)
+            root_.add(orbline_gr_)
+
+            // orbobj_gr_.add(orbobject_)
+            // orbline_gr_.add(orbobj_gr_)
+            // orbline_gr_.add(orbit_)
+            // root_.add(orbline_gr_)
 
 
             orbobject_.rotation.set(0, 0, 0)
             orbobject_.position.set(0, 0, 0)
 
-            orbit_.rotation.set(0, 0, 0)
-            orbit_.position.set(0, 0, 0)
+            orbit_line_.rotation.set(0, 0, 0)
+            orbit_line_.position.set(0, 0, 0)
 
-            object_.position.set(0, 0, 0)
-            object_.rotation.set(0, 0, 0)
+            orbline_gr_.position.set(0, 0, 0)
+            orbline_gr_.rotation.set(0, 0, 0)
 
-            satelits_.position.set(0, 0, 0)
-            satelits_.rotation.set(0, 0, 0)
-
-
+            orbobj_gr_.position.set(0, 0, 0)
+            orbobj_gr_.rotation.set(0, 0, 0)
 
 
-            object_.getWorldPosition(this.tmpv3_2)
+
+
+            orbline_gr_.getWorldPosition(this.tmpv3_2)
             this.tmpv3_2.y += 100000000000
-            object_.lookAt(this.tmpv3_2)
+            orbline_gr_.lookAt(this.tmpv3_2)
 
             // console.log("orb_dist.depth", orb_dist.depth);
             // console.log("tmpv3_2 POS", this.tmpv3_2.x.toPrecision(3), this.tmpv3_2.y.toPrecision(3), this.tmpv3_2.z.toPrecision(3));
-            // object_.getWorldDirection(this.tmpv3_2)
+            // orbline_gr_.getWorldDirection(this.tmpv3_2)
             // this.tmpv3_2.normalize();
             // console.log("tmpv3_2 DIR", this.tmpv3_2.x.toPrecision(3), this.tmpv3_2.y.toPrecision(3), this.tmpv3_2.z.toPrecision(3));
 
@@ -362,44 +368,45 @@ export class DrawWorld {
 
 
 
-            // if (orb_dist.depth == 2) object_.rotateX(Convert.degToRad(90));
-            ///////////// object_.rotateOnWorldAxis(this._xAxis, Convert.degToRad(-90));
-            ///////////// object_.rotateX(Convert.degToRad(-90));
+            // if (orb_dist.depth == 2) orbline_gr_.rotateX(Convert.degToRad(90));
+            ///////////// orbline_gr_.rotateOnWorldAxis(this._xAxis, Convert.degToRad(-90));
+            ///////////// orbline_gr_.rotateX(Convert.degToRad(-90));
 
 
 
-            ////////// object_.rotateOnWorldAxis(this._yAxis, Convert.degToRad(90)); // put 0deg of argument_of_perihelion in the right starting place
-            object_.rotateZ(Convert.degToRad(90)); // put 0deg of argument_of_perihelion in the right starting place
+            ////////// orbline_gr_.rotateOnWorldAxis(this._yAxis, Convert.degToRad(90)); // put 0deg of argument_of_perihelion in the right starting place
+            orbline_gr_.rotateZ(Convert.degToRad(90)); // put 0deg of argument_of_perihelion in the right starting place
 
-            ////////// object_.rotateOnWorldAxis(this._zAxis, orb_dist.argument_of_perihelion.rad);
-            object_.rotateZ(orb_dist.argument_of_perihelion.rad);
+            ////////// orbline_gr_.rotateOnWorldAxis(this._zAxis, orb_dist.argument_of_perihelion.rad);
+            orbline_gr_.rotateZ(orb_dist.argument_of_perihelion.rad);
 
-            // object_.rotateOnWorldAxis(this._zAxis, orb_dist.inclination.rad);
-            object_.rotateY(orb_dist.inclination.rad);
+            // orbline_gr_.rotateOnWorldAxis(this._zAxis, orb_dist.inclination.rad);
+            orbline_gr_.rotateY(orb_dist.inclination.rad);
 
-            // object_.rotateOnWorldAxis(this._yAxis, orb_dist.longitude_ascending_node.rad)
-            object_.rotateZ(orb_dist.longitude_ascending_node.rad); // not working with rotateY(orb_dist.inclination.rad)
-
-
+            // orbline_gr_.rotateOnWorldAxis(this._yAxis, orb_dist.longitude_ascending_node.rad)
+            orbline_gr_.rotateZ(orb_dist.longitude_ascending_node.rad); // not working with rotateY(orb_dist.inclination.rad)
 
 
-            // object_.getWorldDirection(this.tmpv3_2)
+
+
+            // orbline_gr_.getWorldDirection(this.tmpv3_2)
             // this.tmpv3_2.normalize();
             // console.log("tmpv3_2 DIR", this.tmpv3_2.x.toPrecision(3), this.tmpv3_2.y.toPrecision(3), this.tmpv3_2.z.toPrecision(3));
 
 
 
             // ////// const arrowHelper = new THREE.ArrowHelper(this._xAxis, orbit_.position, visible_planet_size * 10, 0xffff00);
-            // ////// object_.add(arrowHelper);
+            // ////// orbline_gr_.add(arrowHelper);
             // ////////////// https://threejs.org/docs/#api/en/helpers/AxesHelper
             // const axesHelper = new THREE.AxesHelper(5); // The X axis is red. The Y axis is green. The Z axis is blue.
-            // axesHelper.position.copy(object_.position)
+            // axesHelper.position.copy(orbline_gr_.position)
             // axesHelper.scale.setScalar(visible_planet_size)
-            // object_.add(axesHelper);
+            // orbline_gr_.add(axesHelper);
 
 
 
-            this.popOrbits(orb_dist.satelites, satelits_)
+            this.popOrbits(orb_dist.satelites, root_, orbobj_gr_)
+            // this.popOrbits(orb_dist.satelites, orbobj_gr_)
 
             // console.log("orb_dist", orb_dist);
             // (orbit_.material as THREE.LineBasicMaterial).color.set(0xffffff * Math.random())
@@ -416,9 +423,13 @@ export class DrawWorld {
 
     public draw() {
         for (let index = 0; index < this.satelits_gr.length; index++) {
-            const planet_ = this.satelits_gr[index];
-            var pl_orb_crv = (planet_.userData.ellipse as THREE.EllipseCurve)
+            const orbobj_gr_ = this.satelits_gr[index];
+            var pl_orb_crv = (orbobj_gr_.userData.ellipse as THREE.EllipseCurve)
             var orb_obj = this.orb_objects[index]
+
+            var orbline_gr_ = (orbobj_gr_.userData.orbline_group as THREE.Group)
+            var parent_ = (orbobj_gr_.userData.parent as THREE.Object3D)
+            var orbit_line_ = (orbobj_gr_.userData.orbit_line as THREE.Object3D)
 
             var orb_len = pl_orb_crv.getLength()
             var time_orb = this.world.planetary_system.time.universal % orb_len
@@ -432,21 +443,15 @@ export class DrawWorld {
             // true_theta = 0 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
             pl_orb_crv.getPoint(true_theta, this.tmpv2)
-            // planet_.userData.orbit.localToWorld(this.tmpv3)
 
-            // this.tmpv3.set(this.tmpv2.x, 0, this.tmpv2.y)
             this.tmpv3.set(this.tmpv2.x, this.tmpv2.y, 0)
 
-            planet_.position.copy(this.tmpv3)
+            orbit_line_.localToWorld(this.tmpv3)
+
+            orbline_gr_.position.copy(parent_.position)
+            orbobj_gr_.position.copy(this.tmpv3)
         }
 
-
-
         this.renderer.render(this.scene, this.camera);
-
-
     }
-
-
-
 }
