@@ -7,16 +7,15 @@ import * as TweakpaneDummy from "tweakpane"
 
 
 import { WorldData } from "./WorldData"
-import { Config } from "./Config"
+import { Config, MessageType } from "./Config"
 import { MainManager } from "./MainManager"
 import { Intervaler } from "../utils/Time"
 import * as Convert from "../utils/Convert"
 
 export const REFRESH_CALL_INTERVAL = 200
 
-// TODO regenerate WHOLE GUI after world structural changes
-// like new stars and orbits
 // TODO regenerate only affected GUI parts after structural changes
+// TODO send shallow read action for simple value changes
 
 
 export class WorldGui {
@@ -32,6 +31,7 @@ export class WorldGui {
         this.refresh_inval = new Intervaler();
     }
 
+
     public init() {
         this.pane = new Tweakpane({
             title: 'Make World',
@@ -45,9 +45,28 @@ export class WorldGui {
         this.init_plsystem()
     }
 
-    public refresh_instant(skip_pane_refresh = false) {
+    private clear() {
+        this.pane.containerElem_.remove();
+        this.pane.dispose();
+    }
+
+    public regenerate() {
+        this.clear()
+        this.init()
+        this.refresh_instant(true, MessageType.RefreshDBDeep)
+        // this.refresh();
+    }
+
+    public refresh_instant(skip_pane_refresh, extra: MessageType) {
         // console.debug("#HERELINE WorldGui refresh_instant ");
-        this.manager.write().then(() => {
+        var promise: Promise<void> = null;
+
+        if (extra == MessageType.RefreshDBDeep)
+            promise = this.manager.writeDeep()
+        if (extra == MessageType.RefreshDBShallow)
+            promise = this.manager.writeShallow()
+
+        promise.then(() => {
             if (!skip_pane_refresh)
                 this.refresh_gui();
         })
@@ -71,39 +90,56 @@ export class WorldGui {
             this.pane.refresh();
     }
 
-    public refresh(skip_pane_refresh = false) {
+    public refreshDeep(skip_pane_refresh = false) {
         // console.debug("#HERELINE WorldGui refresh ");
         if (this.refresh_inval.check(REFRESH_CALL_INTERVAL)) {
-            this.refresh_instant(skip_pane_refresh);
+            this.refresh_instant(skip_pane_refresh, MessageType.RefreshDBDeep);
+        }
+    }
+    public refreshShallow(skip_pane_refresh = true) {
+        // console.debug("#HERELINE WorldGui refresh ");
+        if (this.refresh_inval.check(REFRESH_CALL_INTERVAL)) {
+            this.refresh_instant(skip_pane_refresh, MessageType.RefreshDBShallow);
         }
     }
 
+
     public init_manager() {
         // const folder_tp = this.pane.addFolder({ title: 'Manager', });
-        this.pane.addButton({ title: 'Update!' }).on('click', () => { this.refresh(); });
-        this.pane.addInput(this.manager.config, 'do_draw_loop').on('change', () => { this.refresh(true); });
-        this.pane.addInput(this.manager.config, 'do_update_loop').on('change', () => { this.refresh(true); });
-        this.pane.addInput(this.manager.config, 'do_main_loop').on('change', () => { this.refresh(true); });
+        this.pane.addButton({ title: 'Update!' }).on('click', () => { this.refreshDeep(); });
+        this.pane.addInput(this.manager.config, 'do_draw_loop').on('change', () => { this.refreshShallow(true); });
+        this.pane.addInput(this.manager.config, 'do_update_loop').on('change', () => { this.refreshShallow(true); });
+        this.pane.addInput(this.manager.config, 'do_main_loop').on('change', () => { this.refreshShallow(true); });
         this.pane.addInput(this.manager.config, 'timeUpdSpeed', { min: 0, max: 100, });
 
+
+
+        this.pane.addButton({ title: 'regen' }).on('click', () => {
+            this.regenerate();
+        });
+
         this.pane.on('change', (val1) => {
-            this.refresh(true);// Issue with tweakpane color causing recursive refresh
+            this.refreshShallow(true);// Issue with tweakpane color causing recursive refresh
         });
     }
 
     public init_star() {
-        const star_tp = this.pane.addFolder({ title: 'The Star' });
-        star_tp.addInput(this.manager.world.planetary_system.getStars()[0], 'sclass');
-        star_tp.addInput(this.manager.world.planetary_system.getStars()[0].luminosity, 'watt', { label: "watt" });
-        star_tp.addInput(this.manager.world.planetary_system.getStars()[0].temperature, 'kelvin', { label: "kelvin" });
-        star_tp.addInput(this.manager.world.planetary_system.getStars()[0].lifetime, 'universal', { label: "universal" });
-        this.pane.addInput(this.manager.world.planetary_system.getStars()[0].color, 'value');
+        for (let index = 0; index < this.manager.world.planetary_system.getStars().length; index++) {
+            const element = this.manager.world.planetary_system.getStars()[index];
 
-        star_tp.addInput(this.manager.world.planetary_system.getStars()[0].mass, 'kg', { label: "mass" });
-        // star_tp.addInput(this.manager.world.planetary_system.getStars()[0].diameter, 'km', { label: "diameter" });
-        star_tp.addInput(this.manager.world.planetary_system.getStars()[0].radius, 'km', { label: "radius" });
+            const star_tp = this.pane.addFolder({ title: 'Star ' + index });
+            star_tp.addInput(element, 'sclass');
+            star_tp.addInput(element.luminosity, 'watt', { label: "watt" });
+            star_tp.addInput(element.temperature, 'kelvin', { label: "kelvin" });
+            star_tp.addInput(element.lifetime, 'universal', { label: "universal" });
+            this.pane.addInput(element.color, 'value');
 
-        star_tp.expanded = false
+            star_tp.addInput(element.mass, 'kg', { label: "mass" });
+            // star_tp.addInput(element.diameter, 'km', { label: "diameter" });
+            star_tp.addInput(element.radius, 'km', { label: "radius" });
+
+            star_tp.expanded = false
+        }
     }
 
     public init_plsystem() {
@@ -118,25 +154,31 @@ export class WorldGui {
         this.pane.addButton({ title: 'genStar' }).on('click', () => {
             this.manager.world.planetary_system.genStar();
             this.manager.world.planetary_system.genOrbitsSimple();
-            this.refresh();
+            this.regenerate();
+        });
+
+        this.pane.addButton({ title: 'genPTypeStarts' }).on('click', () => {
+            this.manager.world.planetary_system.genPTypeStarts();
+            this.manager.world.planetary_system.genOrbitsSimple();
+            this.regenerate();
         });
 
         this.pane.addButton({ title: 'genDebugg' }).on('click', () => {
             this.manager.world.planetary_system.genStar("sun");
             this.manager.world.planetary_system.genOrbitsUniform();
-            this.refresh();
+            this.refreshDeep();
         });
 
         this.pane.addButton({ title: 'genOrbitsSimple' }).on('click', () => {
-            this.manager.world.planetary_system.genOrbitsSimple(); this.refresh();
+            this.manager.world.planetary_system.genOrbitsSimple(); this.refreshDeep();
         });
 
         this.pane.addButton({ title: 'genOrbitsUniform' }).on('click', () => {
-            this.manager.world.planetary_system.genOrbitsUniform(); this.refresh();
+            this.manager.world.planetary_system.genOrbitsUniform(); this.refreshDeep();
         });
 
         this.pane.addButton({ title: 'genOrbitsSimpleMoons' }).on('click', () => {
-            this.manager.world.planetary_system.genOrbitsSimpleMoons(); this.refresh();
+            this.manager.world.planetary_system.genOrbitsSimpleMoons(); this.refreshDeep();
         });
 
         plsys_tp.expanded = false

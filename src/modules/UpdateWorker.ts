@@ -67,11 +67,13 @@ export class UpdateWorker {
         if (event?.data?.config && this.config)
             this.config.copy(event.data.config as Config)
 
-        switch (event.data.message as MessageType) {
+        const message_ = (event.data.message as MessageType);
+        switch (message_) {
             case MessageType.InitWorker:
                 this.init(); break;
-            case MessageType.RefreshDB:
-                this.refresh_db(event); break;
+            case MessageType.RefreshDBDeep:
+            case MessageType.RefreshDBShallow:
+                this.refresh_db(event, message_); break;
             case MessageType.RefreshConfig:
                 this.update(); break;
             default:
@@ -80,11 +82,15 @@ export class UpdateWorker {
     }
 
 
-    public async refresh_db(event?: MessageEvent) {
-        console.debug("#HERELINE UpdateWorker refresh_db this.dbm.idb ready", !!this.dbm.idb);
+    public async refresh_db(event: MessageEvent, refreshType: MessageType) {
+        console.debug("#HERELINE UpdateWorker refresh_db this.dbm.idb ready", !!this.dbm.idb, refreshType);
         if (!this.dbm.idb) return;
 
-        await this.world.readDeep();
+        if (refreshType == MessageType.RefreshDBDeep)
+            await this.world.readDeep();
+        if (refreshType == MessageType.RefreshDBShallow)
+            await this.world.readShallow();
+
         this.update();
     }
 

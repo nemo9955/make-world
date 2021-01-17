@@ -24,10 +24,10 @@ import { Star } from "../generate/Star";
 export function make_camera(width_: number, height_: number) {
     var camera = new THREE.PerspectiveCamera(75, width_ / height_, 0.1, 1000000000000);
     // camera.position.y = 3;
-    // camera.position.y = Convert.auToKm(4);
+    camera.position.y = Convert.auToKm(4);
     // camera.position.y = Convert.auToKm(40);
-    camera.position.y = Convert.auToKm(60);
     // camera.position.y = Convert.auToKm(50);
+    // camera.position.y = Convert.auToKm(60);
     camera.lookAt(0, 0, 0)
     return camera
 }
@@ -185,15 +185,6 @@ export class DrawWorld {
         // console.debug("#HERELINE DrawWorld 143 ");
         console.time("#time DrawWorld update");
 
-        // console.debug("#HERELINE DrawWorld update WorldDataID ", this.config.WorldPlanetarySystemID);
-        // var sun_color = this.world.planetary_system.getStars()[0].color.getRgb().formatHex();
-        // (this.sun.material as THREE.MeshStandardMaterial).color.set(sun_color)
-
-        // make sun bigger just because
-        // var sun_size = this.world.planetary_system.getStars()[0].radius.km * 2 * 10
-        // this.sun.geometry.scale(sun_size,sun_size,sun_size)
-        // this.sun.geometry = new THREE.SphereGeometry(sun_size, 5, 5);
-        // this.sun.scale.set(sun_size, sun_size, sun_size)
 
         this.hab_zone.geometry = new THREE.RingGeometry(
             this.world.planetary_system.hab_zone_in.km,
@@ -292,11 +283,11 @@ export class DrawWorld {
             if (orb_dist instanceof Star) {
                 orbobject_.visible = true
                 // console.debug("#HERELINE DrawWorld update WorldDataID ", this.config.WorldPlanetarySystemID);
-                var sun_color = this.world.planetary_system.getStars()[0].color.getRgb().formatHex();
+                var sun_color = orb_dist.color.getRgb().formatHex();
                 (orbobject_.material as THREE.MeshStandardMaterial).color.set(sun_color)
 
                 // make sun bigger just because
-                visible_planet_size = this.world.planetary_system.getStars()[0].radius.km * 2 * 10
+                visible_planet_size = orb_dist.radius.km * 2 * 10
                 // this.sun.geometry.scale(sun_size,sun_size,sun_size)
                 // this.sun.geometry = new THREE.SphereGeometry(sun_size, 5, 5);
                 // this.sun.scale.set(sun_size, sun_size, sun_size)

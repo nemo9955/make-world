@@ -53,7 +53,7 @@ export class MainManager {
             this.config.WorldPlanetarySystemID = this.world.planetary_system.id;
             this.gui.init();
         }).then(() => {
-            this.write();
+            this.writeDeep();
         }).then(() => {
             this.init_draw_worker();
             this.init_update_worker();
@@ -86,19 +86,37 @@ export class MainManager {
         await this.world.readShallow();
     }
 
-    public async write() {
+    public async writeDeep() {
         // console.time("#time MainManager write");
         this.update_tick.updateState(this.config.do_main_loop)
 
         await this.world.write();
 
         this.draw_worker.postMessage({
-            message: MessageType.RefreshDB,
+            message: MessageType.RefreshDBDeep,
             config: this.config
         });
 
         this.update_worker.postMessage({
-            message: MessageType.RefreshDB,
+            message: MessageType.RefreshDBDeep,
+            config: this.config
+        });
+        // console.timeEnd("#time MainManager write");
+    }
+
+    public async writeShallow() {
+        // console.time("#time MainManager write");
+        this.update_tick.updateState(this.config.do_main_loop)
+
+        await this.world.write();
+
+        this.draw_worker.postMessage({
+            message: MessageType.RefreshDBShallow,
+            config: this.config
+        });
+
+        this.update_worker.postMessage({
+            message: MessageType.RefreshDBShallow,
             config: this.config
         });
         // console.timeEnd("#time MainManager write");
@@ -135,7 +153,7 @@ export class MainManager {
 
     public refresh_workers(the_worker: GenericWorkerInstance) {
         the_worker.postMessage({
-            message: MessageType.RefreshDB,
+            message: MessageType.RefreshDBDeep,
             config: this.config
         });
     }

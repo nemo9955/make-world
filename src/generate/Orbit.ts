@@ -37,6 +37,7 @@ export interface OrbitingElement {
 
     free(): void;
     addSat(sat_: OrbitingElement): void;
+    clearAllSats(): void;
 
 }
 
@@ -229,8 +230,7 @@ export class Orbit implements OrbitingElement {
     }
 
 
-
-    public clearAll() {
+    public clearAllSats() {
         while (this.satelites.length > 0)
             this.satelites.pop().free()
     }

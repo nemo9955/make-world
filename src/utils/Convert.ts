@@ -173,8 +173,8 @@ export class NumberConverter {
         return this;
     }
 
-    // public add(val_: number) { this.value += val_; return this; }
-    // public sub(val_: number) { this.value -= val_; return this; }
+    public add(val_: number) { this.value += val_; return this; }
+    public sub(val_: number) { this.value -= val_; return this; }
     public mul(val_: number) { this.value *= val_; return this; }
     public div(val_: number) { this.value /= val_; return this; }
 }

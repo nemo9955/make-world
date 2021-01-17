@@ -62,6 +62,7 @@ export class Planet implements OrbitingElement {
 
 
     public addSat(sat_: OrbitingElement) { this.orbit.addSat(sat_) }
+    public clearAllSats() { this.orbit.clearAllSats() }
 
 
     // GRAVEYARD ZONE :

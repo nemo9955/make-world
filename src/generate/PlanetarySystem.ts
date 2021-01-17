@@ -40,6 +40,8 @@ export class PlanetarySystem implements OrbitingElement {
     public readonly orbits_limit_in = new Convert.NumberLength();
     public readonly orbits_limit_out = new Convert.NumberLength();
 
+    private starts = new Array<Star>();
+
     constructor() {
         // this.star = new Star();
         this.orbit = Orbit.new();
@@ -52,7 +54,7 @@ export class PlanetarySystem implements OrbitingElement {
     }
 
     public copyDeep(source_: any) {
-        this.orbit.clearAll()
+        this.clearAllSats()
         Convert.copyDeep(this, source_)
 
         return this;
@@ -63,9 +65,44 @@ export class PlanetarySystem implements OrbitingElement {
         return this;
     }
 
+    public genPTypeStarts() {
+        this.clearAllSats()
+        var star1_ = new Star()
+        var star2_ = new Star()
+
+        star1_.orbit.randomSane()
+        star1_.semimajor_axis.km = 10000000
+        star1_.orbit.updateMajEcc()
+        star1_.genHabitableStar()
+
+        star2_.orbit.copyShallow(star1_.orbit)
+        star2_.orbit.mean_longitude.deg += 180;
+        star2_.genHabitableStar()
+
+        this.addSat(star1_)
+        this.addSat(star2_)
+
+
+        this.time.universal = 0
+
+        // TODO check is just adding these values is "good enough" or implement proper
+        var stars_lum_ = star1_.luminosity.clone().add(star2_.luminosity.value)
+        var stars_mass_ = star1_.mass.clone().add(star2_.mass.value)
+
+        this.hab_zone.au = Math.sqrt(stars_lum_.watt);
+        this.hab_zone_in.au = this.hab_zone.au * 0.95;
+        this.hab_zone_out.au = this.hab_zone.au * 1.37;
+
+        this.orbits_limit_in.au = 0.1 * stars_mass_.sm
+        this.orbits_limit_out.au = 40 * stars_mass_.sm
+        this.frost_line.au = 4.85 * this.hab_zone.au
+
+        return this;
+    }
+
     public genStar(type?: string) {
-        this.orbit.clearAll()
-        var star_ = new Star() // TODO add support for multiple Stars
+        this.clearAllSats()
+        var star_ = new Star()
         switch (type) {
             case "sun":
                 star_.makeClassG(1); break;
@@ -316,10 +353,19 @@ export class PlanetarySystem implements OrbitingElement {
         return this;
     }
 
+    public clearAllSats() {
+        this.starts.length = 0;
+        this.orbit.clearAllSats();
+    }
+    public addSat(sat_: OrbitingElement) {
+        this.orbit.addSat(sat_);
+        if (sat_ instanceof Star)
+            this.starts.push(sat_)
+    }
+
     public free(): void { return; }
-    public addSat(sat_: OrbitingElement) { this.orbit.addSat(sat_) }
     public getStars(): Star[] {
-        return [this.satelites[0] as Star] // TODO proper search Stars
+        return this.starts
     }
 
 

@@ -229,6 +229,7 @@ export class Star implements OrbitingElement {
         return this;
     }
 
+    public clearAllSats() { this.orbit.clearAllSats() }
     // GRAVEYARD ZONE :
     public free() { return; }
     public clone() { return Star.clone().copyDeep(this) }

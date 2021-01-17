@@ -41,7 +41,7 @@ export class WorldData {
 
 
     public async readShallow() {
-        // console.debug("#HERELINE WorldData read ");
+        console.debug("#HERELINE WorldData readShallow ");
         if (this.planetary_system.id) {
             // console.time("#time WorldData " + this.name + " read");
             // console.debug("#HERELINE WorldData read this.id", this.id);
@@ -59,7 +59,7 @@ export class WorldData {
     }
 
     public async readDeep() {
-        // console.debug("#HERELINE WorldData read ");
+        console.debug("#HERELINE WorldData readDeep ");
         if (this.planetary_system.id) {
             // console.time("#time WorldData " + this.name + " read");
             // console.debug("#HERELINE WorldData read this.id", this.id);

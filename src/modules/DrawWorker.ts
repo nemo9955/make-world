@@ -60,15 +60,17 @@ export class DrawWorker {
         if (event?.data?.config && this.config)
             this.config.copy(event.data.config as Config)
 
-        switch (event.data.message as MessageType) {
+        const message_ = (event.data.message as MessageType);
+        switch (message_) {
             case MessageType.InitWorker:
                 this.init(); break;
             case MessageType.InitCanvas:
                 this.init_canvas(event); break;
             case MessageType.Resize:
                 this.resize(event); break;
-            case MessageType.RefreshDB:
-                this.refresh_db(event); break;
+            case MessageType.RefreshDBDeep:
+            case MessageType.RefreshDBShallow:
+                this.refresh_db(event, message_); break;
             case MessageType.RefreshCamera:
                 this.refresh_camera(event); break;
             case MessageType.RefreshConfig:
@@ -94,12 +96,17 @@ export class DrawWorker {
         this.draw_world.camera.updateProjectionMatrix()
     }
 
-    public async refresh_db(event?: MessageEvent) {
-        console.debug("#HERELINE DrawWorker refresh_db this.dbm.idb ready", !!this.dbm.idb);
+    public async refresh_db(event: MessageEvent, refreshType: MessageType) {
+        console.debug("#HERELINE DrawWorker refresh_db this.dbm.idb ready", !!this.dbm.idb, refreshType);
         if (!this.dbm.idb) return;
 
         console.time("#time DrawWorker refresh_db");
-        await this.world.readDeep();
+
+        if (refreshType == MessageType.RefreshDBDeep)
+            await this.world.readDeep();
+        if (refreshType == MessageType.RefreshDBShallow)
+            await this.world.readShallow();
+
         this.update();
         console.timeEnd("#time DrawWorker refresh_db");
     }
