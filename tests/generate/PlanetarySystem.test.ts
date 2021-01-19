@@ -1,5 +1,6 @@
 // import * as PlanetarySystem from "../.././src/generate/PlanetarySystem"
 import { PlanetarySystem } from "../.././src/generate/PlanetarySystem"
+import { SpaceFactory } from "../../src/generate/SpaceFactory";
 
 // https://jestjs.io/docs/en/expect
 
@@ -7,22 +8,25 @@ console.debug = jest.fn() // supress debugg logs
 console.time = jest.fn()
 
 test('Sample Habitable', () => {
+    var spaceFactory = new SpaceFactory();
     for (let index = 0; index < 100; index++) {
-        var system = new PlanetarySystem().genStar(); // empty defaults to habitable
+        var system = new PlanetarySystem();
+        spaceFactory.genStar(system, system); // empty defaults to habitable
         expect(["F", "G", "K"]).toContain(system.getStars()[0].sclass);
 
-        var orbits_dists = system.genOrbitsSimple().satelites
+        spaceFactory.genOrbitsSimple(system, system)
+        var orbits_dists = system.satelites
         expect(orbits_dists.length).toBeGreaterThanOrEqual(5)
     }
 });
 
 
 test('Clone 1', () => {
+    var spaceFactory = new SpaceFactory();
     for (let index = 0; index < 10; index++) {
-        var system_orig = new PlanetarySystem()
-        system_orig.genStar(); // empty defaults to habitable
-        // system_orig.genOrbitsSimple();
-        system_orig.genOrbitsUniform();
+        var system_orig = new PlanetarySystem();
+        spaceFactory.genStar(system_orig, system_orig); // empty defaults to habitable
+        spaceFactory.genOrbitsUniform(system_orig, system_orig);
 
         var system_copy = new PlanetarySystem().copyDeep(system_orig)
 

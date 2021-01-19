@@ -29,6 +29,7 @@ export class DataBaseManager {
     public async open() {
         this.idb = await openDB(this.TABLE_NAME, 1, {
             upgrade(db) {
+                // TODO, make generic container with ID-able objects
                 if (!db.objectStoreNames.contains(DataBaseManager.PLANET_SYSTEM)) {
                     const store = db.createObjectStore(DataBaseManager.PLANET_SYSTEM, { keyPath: 'id', autoIncrement: false });
                     // store.createIndex('id', 'id');

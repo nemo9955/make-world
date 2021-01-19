@@ -11,7 +11,7 @@ export class Config {
     innerWidth: number
     innerHeight: number
 
-    timeUpdSpeed = 10;
+    timeUpdSpeed = 3;
 
     WorldPlanetarySystemID: number
 

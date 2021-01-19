@@ -152,33 +152,48 @@ export class WorldGui {
         plsys_tp.addInput(this.manager.world.planetary_system.orbits_limit_out, 'km', { label: "orbits_limit_out" });
 
         this.pane.addButton({ title: 'genStar' }).on('click', () => {
-            this.manager.world.planetary_system.genStar();
-            this.manager.world.planetary_system.genOrbitsSimple();
+            var plsys = this.manager.world.planetary_system
+            this.manager.world.spaceFactory.genStar(plsys,plsys)
+            // this.manager.world.planetary_system.genStar();
+            // this.manager.world.planetary_system.genOrbitsSimple();
             this.regenerate();
         });
 
         this.pane.addButton({ title: 'genPTypeStarts' }).on('click', () => {
-            this.manager.world.planetary_system.genPTypeStarts();
-            this.manager.world.planetary_system.genOrbitsSimple();
+            var plsys = this.manager.world.planetary_system
+            this.manager.world.spaceFactory.genPTypeStarts(plsys,plsys)
+            // this.manager.world.planetary_system.genPTypeStarts();
+            // this.manager.world.planetary_system.genOrbitsSimple();
             this.regenerate();
         });
 
         this.pane.addButton({ title: 'genDebugg' }).on('click', () => {
-            this.manager.world.planetary_system.genStar("sun");
-            this.manager.world.planetary_system.genOrbitsUniform();
+            var plsys = this.manager.world.planetary_system
+            this.manager.world.spaceFactory.genDebugg(plsys,plsys)
+            // this.manager.world.planetary_system.genStar("sun");
+            // this.manager.world.planetary_system.genOrbitsUniform();
             this.refreshDeep();
         });
 
         this.pane.addButton({ title: 'genOrbitsSimple' }).on('click', () => {
-            this.manager.world.planetary_system.genOrbitsSimple(); this.refreshDeep();
+            var plsys = this.manager.world.planetary_system
+            this.manager.world.spaceFactory.genOrbitsSimple(plsys,plsys)
+            // this.manager.world.planetary_system.genOrbitsSimple();
+            this.refreshDeep();
         });
 
         this.pane.addButton({ title: 'genOrbitsUniform' }).on('click', () => {
-            this.manager.world.planetary_system.genOrbitsUniform(); this.refreshDeep();
+            var plsys = this.manager.world.planetary_system
+            this.manager.world.spaceFactory.genOrbitsUniform(plsys,plsys)
+            // this.manager.world.planetary_system.genOrbitsUniform();
+            this.refreshDeep();
         });
 
         this.pane.addButton({ title: 'genOrbitsSimpleMoons' }).on('click', () => {
-            this.manager.world.planetary_system.genOrbitsSimpleMoons(); this.refreshDeep();
+            var plsys = this.manager.world.planetary_system
+            this.manager.world.spaceFactory.genOrbitsSimpleMoons(plsys,plsys)
+            // this.manager.world.planetary_system.genOrbitsSimpleMoons();
+            this.refreshDeep();
         });
 
         plsys_tp.expanded = false

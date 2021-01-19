@@ -4,10 +4,13 @@ import { DataBaseManager, STransaction } from "./DataBaseManager";
 import * as Convert from "../utils/Convert"
 
 import { Config } from "./Config"
+import { SpaceFactory } from "../generate/SpaceFactory";
 
 // TODO read&write function WITH and WITHOUT structure change
 // WITHOUT structure change is just update or variables values
 // WITH represents a refresh/regen
+
+// TODO Planet Star Orbit and such objects to be stored directly in DB and referenced by some UUID
 
 export class WorldData {
 
@@ -15,6 +18,8 @@ export class WorldData {
 
     planetary_system: PlanetarySystem;
     dbm: DataBaseManager;
+
+    spaceFactory = new SpaceFactory();
 
     constructor(name: string) {
         this.name = name;
@@ -32,16 +37,12 @@ export class WorldData {
     public init() {
         // console.debug("#HERELINE WorldData init");
         this.planetary_system.init()
-        this.planetary_system.genStar("sun")
-        // this.planetary_system.genStar()
-        this.planetary_system.genOrbitsSimpleMoons()
-        // this.planetary_system.genOrbitsUniform()
-        // this.planetary_system.genOrbitsSimple()
+        this.spaceFactory.genStartingPlanetSystem(this.planetary_system)
     }
 
 
     public async readShallow() {
-        console.debug("#HERELINE WorldData readShallow ");
+        // console.debug("#HERELINE WorldData readShallow ");
         if (this.planetary_system.id) {
             // console.time("#time WorldData " + this.name + " read");
             // console.debug("#HERELINE WorldData read this.id", this.id);

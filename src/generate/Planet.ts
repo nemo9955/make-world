@@ -11,6 +11,9 @@ import { ObjectPool } from "../utils/ObjectPool";
 // https://youtu.be/t6i6TPsqvaM?t=257
 // https://www.youtube.com/watch?v=Evq7n2cCTlg&ab_channel=Artifexian
 
+// TODO generate some predefined planet compositions
+// // random size and composition (water, rock, iron) and get mass and density based on proportions, etc
+// TODO calc inner and outer limit
 
 export class Planet implements OrbitingElement {
 
@@ -62,7 +65,7 @@ export class Planet implements OrbitingElement {
 
 
     public addSat(sat_: OrbitingElement) { this.orbit.addSat(sat_) }
-    public clearAllSats() { this.orbit.clearAllSats() }
+    public clearSatelites() { this.orbit.clearSatelites() }
 
 
     // GRAVEYARD ZONE :
