@@ -110,6 +110,7 @@ export class WorldGui {
         this.pane.addInput(this.manager.config, 'do_draw_loop').on('change', () => { this.refreshShallow(true); });
         this.pane.addInput(this.manager.config, 'do_update_loop').on('change', () => { this.refreshShallow(true); });
         this.pane.addInput(this.manager.config, 'do_main_loop').on('change', () => { this.refreshShallow(true); });
+        this.pane.addInput(this.manager.config, 'follow_pointed_orbit').on('change', () => { this.refreshShallow(true); });
         this.pane.addInput(this.manager.config, 'timeUpdSpeed', { min: 0, max: 100, });
 
 

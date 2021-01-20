@@ -11,6 +11,8 @@ export class Config {
     innerWidth: number
     innerHeight: number
 
+    follow_pointed_orbit: boolean = false
+
     timeUpdSpeed = 3;
 
     WorldPlanetarySystemID: number

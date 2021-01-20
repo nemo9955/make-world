@@ -10,10 +10,12 @@ import { DrawWorld } from "./DrawWorld"
 
 import { Config, MessageType } from "./Config"
 import { Intervaler, Ticker } from "../utils/Time"
+import { SharedData } from "./SharedData";
 
 export const READ_DB_INTERVAL = 10
 
 export class DrawWorker {
+    shared_data = new SharedData();
     draw_world: DrawWorld
     db_read_itv = new Intervaler();
 
@@ -44,10 +46,12 @@ export class DrawWorker {
 
 
     public spread_objects() {
+        // TODO make generic function ???
         this.world.planetary_system.id = this.config.WorldPlanetarySystemID
 
         var to_spread: any[] = [this.world, this.draw_world]
         for (const object_ of to_spread) {
+            if (object_.config === null) object_.shared_data = this.shared_data
             if (object_.config === null) object_.config = this.config
             if (object_.world === null) object_.world = this.world
             if (object_.dbm === null) object_.dbm = this.dbm

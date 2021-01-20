@@ -17,6 +17,7 @@ import { ObjectPool } from "../utils/ObjectPool";
 import { OrbitingElement, Orbit } from "../generate/Orbit";
 import { Planet } from "../generate/Planet";
 import { Star } from "../generate/Star";
+import { SharedData } from "./SharedData";
 
 // https://orbitalmechanics.info/
 
@@ -33,9 +34,15 @@ export function make_camera(width_: number, height_: number) {
 }
 
 export class DrawWorld {
+    shared_data: SharedData = null;
     world: WorldData;
     canvasOffscreen: any;
     config: Config;
+
+
+
+    mouse = new THREE.Vector2();
+    raycaster = new THREE.Raycaster();
 
     scene: THREE.Scene;
     camera: THREE.PerspectiveCamera;
@@ -63,7 +70,7 @@ export class DrawWorld {
         this.config = null;
         this.world = null;
 
-
+        this.raycaster.params.Line.threshold = 1000000 * 10;
 
         this.tjs_pool_lines = new ObjectPool<THREE.Line>(() => {
             const geometry = new THREE.BufferGeometry()
@@ -175,46 +182,6 @@ export class DrawWorld {
 
 
 
-
-
-
-
-
-
-    public update() {
-        // console.debug("#HERELINE DrawWorld 143 ");
-        console.time("#time DrawWorld update");
-
-
-        this.hab_zone.geometry = new THREE.RingGeometry(
-            this.world.planetary_system.hab_zone_in.km,
-            this.world.planetary_system.hab_zone_out.km,
-            15, 1);
-
-        this.frost_zone.geometry = new THREE.RingGeometry(
-            this.world.planetary_system.frost_line.km,
-            this.world.planetary_system.orbits_limit_out.km,
-            15, 1);
-
-
-        while (this.orb_lines.length > 0)
-            this.tjs_pool_lines.free(this.orb_lines.pop());
-        while (this.orb_planets.length > 0)
-            this.tjs_pool_orbobjects.free(this.orb_planets.pop());
-        while (this.orb_groups.length > 0)
-            this.tjs_pool_groups.free(this.orb_groups.pop());
-        while (this.satelits_gr.length > 0)
-            this.tjs_pool_groups.free(this.satelits_gr.pop());
-
-        while (this.orb_objects.length > 0)
-            this.orb_objects.pop().free();
-
-        this.popOrbits(this.world.planetary_system.satelites, this.scene, this.scene)
-
-
-        console.timeEnd("#time DrawWorld update");
-    }
-
     _xAxis = new THREE.Vector3(1, 0, 0);
     _yAxis = new THREE.Vector3(0, 1, 0);
     _zAxis = new THREE.Vector3(0, 0, 1);
@@ -309,7 +276,7 @@ export class DrawWorld {
             all_obj.orbitObject = orbobject_
             all_obj.ellipse = ellipse_
             all_obj.orbline_group = orbline_gr_
-            all_obj.satelits = orbobj_gr_
+            all_obj.satelites = orbobj_gr_
             all_obj.parent = position_root_
 
             orbit_line_.userData = all_obj
@@ -410,6 +377,39 @@ export class DrawWorld {
 
     }
 
+    public update() {
+        // console.debug("#HERELINE DrawWorld 143 ");
+        console.time("#time DrawWorld update");
+
+
+        this.hab_zone.geometry = new THREE.RingGeometry(
+            this.world.planetary_system.hab_zone_in.km,
+            this.world.planetary_system.hab_zone_out.km,
+            15, 1);
+
+        this.frost_zone.geometry = new THREE.RingGeometry(
+            this.world.planetary_system.frost_line.km,
+            this.world.planetary_system.orbits_limit_out.km,
+            15, 1);
+
+
+        while (this.orb_lines.length > 0)
+            this.tjs_pool_lines.free(this.orb_lines.pop());
+        while (this.orb_planets.length > 0)
+            this.tjs_pool_orbobjects.free(this.orb_planets.pop());
+        while (this.orb_groups.length > 0)
+            this.tjs_pool_groups.free(this.orb_groups.pop());
+        while (this.satelits_gr.length > 0)
+            this.tjs_pool_groups.free(this.satelits_gr.pop());
+
+        while (this.orb_objects.length > 0)
+            this.orb_objects.pop().free();
+
+        this.popOrbits(this.world.planetary_system.satelites, this.scene, this.scene)
+
+        console.timeEnd("#time DrawWorld update");
+    }
+
 
     public draw() {
         for (let index = 0; index < this.satelits_gr.length; index++) {
@@ -441,6 +441,25 @@ export class DrawWorld {
             orbline_gr_.position.copy(parent_.position)
             orbobj_gr_.position.copy(this.tmpv3)
         }
+
+        if (this.config.follow_pointed_orbit)
+            if (this.shared_data.mousex != 0 && this.shared_data.mousey != 0) {
+                this.mouse.x = (this.shared_data.mousex / this.canvasOffscreen.width) * 2 - 1;
+                this.mouse.y = - (this.shared_data.mousey / this.canvasOffscreen.height) * 2 + 1;
+                // console.log("this.mouse", this.mouse);
+
+                this.raycaster.setFromCamera(this.mouse, this.camera);
+                const intersects = this.raycaster.intersectObjects(this.orb_lines, false);
+                // const intersects = this.raycaster.intersectObjects(this.scene.children, true);
+                if (intersects.length > 0) {
+                    var orb_ = intersects[0]
+                    var targ_ = orb_.object.userData.satelites
+                    // console.log("orb_", orb_);
+                    // console.log("targ_", targ_);
+                    this.camera.lookAt(targ_.position)
+                }
+
+            }
 
         this.renderer.render(this.scene, this.camera);
     }

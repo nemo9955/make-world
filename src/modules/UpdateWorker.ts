@@ -19,11 +19,13 @@ import * as Units from "../utils/Units"
 
 
 import { Intervaler, Ticker } from "../utils/Time"
+import { SharedData } from "./SharedData";
 
 
 export const WRITE_DB_INTERVAL = 10
 
 export class UpdateWorker {
+    shared_data = new SharedData();
 
     world: WorldData;
     config: Config;
@@ -51,10 +53,12 @@ export class UpdateWorker {
     }
 
     public spread_objects() {
+        // TODO make generic function ???
         this.world.planetary_system.id = this.config.WorldPlanetarySystemID
 
         var to_spread: any[] = [this.world, this.update_world]
         for (const object_ of to_spread) {
+            if (object_.config === null) object_.shared_data = this.shared_data
             if (object_.config === null) object_.config = this.config
             if (object_.world === null) object_.world = this.world
             if (object_.dbm === null) object_.dbm = this.dbm

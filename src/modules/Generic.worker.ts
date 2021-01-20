@@ -8,15 +8,19 @@ const ctx: Worker = self as any;
 import { DrawWorker } from "./DrawWorker";
 import { UpdateWorker } from "./UpdateWorker";
 
-var work_instance = null
+var work_instance: any = null
 
 ctx.addEventListener("message", (event) => {
     if (work_instance === null) {
         switch (event.data.create) {
             case "DrawWorker":
-                work_instance = new DrawWorker(ctx); break;
+                work_instance = new DrawWorker(ctx);
+                work_instance.shared_data.initShared(event.data.sab)
+                break;
             case "UpdateWorker":
-                work_instance = new UpdateWorker(ctx); break;
+                work_instance = new UpdateWorker(ctx);
+                work_instance.shared_data.initShared(event.data.sab)
+                break;
             default:
                 throw new Error("Type of worker not defined or none provided: " + event.data.create);
         }

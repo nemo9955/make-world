@@ -14,6 +14,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 import { make_camera } from "./DrawWorld"
 import { Ticker } from "../utils/Time";
+import { SharedData } from "./SharedData";
 
 export const CAM_MOVED_INTERVAL = 100
 
@@ -32,13 +33,15 @@ export class MainManager {
     controls: OrbitControls;
     update_tick: Ticker;
 
+    shared_data = new SharedData();
+
     constructor() {
         this.dbm = new DataBaseManager();
         this.world = new WorldData("MainManager");
         this.gui = new WorldGui();
         this.config = new Config();
 
-        // TODO Ations will need to tell everyone of cases when an readDeep will be need
+        // TODO Actions will need to tell everyone of cases when an readDeep will be need
         // Usual var updates will be ok readShallow, structure changes need readDeep
         this.update_tick = new Ticker(false, this.readShallow.bind(this), 100)
     }
@@ -47,6 +50,8 @@ export class MainManager {
         this.resize()
         this.spread_objects()
         window.addEventListener('resize', this.resize.bind(this));
+
+        this.initSharedData()
 
         this.dbm.init().then(() => {
             this.world.init();
@@ -76,6 +81,12 @@ export class MainManager {
             if (object_.world === null) object_.world = this.world
             if (object_.dbm === null) object_.dbm = this.dbm
         }
+    }
+
+    public initSharedData() {
+        // console.log("window.isSecureContext", window.isSecureContext);
+        // TODO make dedicated post to UPDATE/set the shared_data to workers
+        this.shared_data.initMain();
     }
 
     public async readDeep() {
@@ -124,7 +135,7 @@ export class MainManager {
 
     public init_draw_worker() {
         this.draw_worker = new GenericWorkerInstance();
-        this.draw_worker.postMessage({ create: "DrawWorker" });
+        this.draw_worker.postMessage({ create: "DrawWorker", sab: this.shared_data.sab });
 
         this.draw_worker.addEventListener("message", async (event) => {
             this.get_message(this.draw_worker, event)
@@ -138,7 +149,7 @@ export class MainManager {
 
     public init_update_worker() {
         this.update_worker = new GenericWorkerInstance();
-        this.update_worker.postMessage({ create: "UpdateWorker" });
+        this.update_worker.postMessage({ create: "UpdateWorker", sab: this.shared_data.sab });
 
         this.update_worker.addEventListener("message", async (event) => {
             this.get_message(this.update_worker, event)
@@ -193,7 +204,7 @@ export class MainManager {
 
         body.style.margin = "0"
 
-        const canvas: any = document.createElement('canvas');
+        const canvas = document.createElement('canvas');
         canvas.id = "CursorLayer";
         // canvas.style.zIndex = "8";
         canvas.style.position = "absolute";
@@ -202,6 +213,24 @@ export class MainManager {
         canvas.height = window.innerHeight - Units.CANVAS_SUBSTRACT_PIXELS;
         body.appendChild(canvas);
 
+
+        // console.log("canvas", canvas);
+        // "mousedown" "mouseenter" "mouseleave" "mousemove" "mouseout" "mouseover" "mouseup":
+        canvas.addEventListener('mousemove', (evt) => {
+            var rect = canvas.getBoundingClientRect();
+            this.shared_data.mousex = evt.clientX - rect.left;
+            this.shared_data.mousey = evt.clientY - rect.top;
+        }, false);
+        canvas.addEventListener('mouseleave', () => {
+            this.shared_data.mousex = null;
+            this.shared_data.mousey = null;
+        }, false);
+
+
+        // TODO FIXME WA pass some more raw input to the worker rather than this lame camera copying
+        // TODO FIXME WA pass some more raw input to the worker rather than this lame camera copying
+        // TODO FIXME WA pass some more raw input to the worker rather than this lame camera copying
+        // TODO FIXME WA pass some more raw input to the worker rather than this lame camera copying
         this.camera = make_camera(this.config.innerWidth, this.config.innerHeight);
         this.controls = new OrbitControls(this.camera, canvas);
         // this.camera.position.set(0, 20, 100);
@@ -212,7 +241,6 @@ export class MainManager {
         var canvasOffscreen = canvas.transferControlToOffscreen();
         canvasOffscreen.width = window.innerWidth - Units.CANVAS_SUBSTRACT_PIXELS;
         canvasOffscreen.height = window.innerHeight - Units.CANVAS_SUBSTRACT_PIXELS;
-
 
         this.draw_worker.postMessage({
             message: MessageType.InitCanvas,
