@@ -7,6 +7,7 @@ import { Uniform } from "three";
 import * as Units from "../utils/Units"
 import * as Convert from "../utils/Convert"
 import { PlanetarySystem } from "./PlanetarySystem";
+import { WorldData } from "../modules/WorldData";
 
 
 // https://www.youtube.com/watch?v=J5xU-8Kb63Y&list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&index=11&ab_channel=Artifexian
@@ -202,7 +203,7 @@ export class SpaceFactory {
     public genOrbitsSimpleMoons(plsys: PlanetarySystem, root: OrbitingElement) {
         this.genOrbitsSimple(plsys, root);
 
-        for (const orbit_ of root.satelites) {
+        for (const orbit_ of root.getSats()) {
 
             // console.log("orbit_.semimajor_axis.au", orbit_.semimajor_axis.au);
 
@@ -319,7 +320,10 @@ export class SpaceFactory {
                 break;
         }
 
-        root.satelites.sort((a, b) => a.semimajor_axis.value - b.semimajor_axis.value);
+
+        // root.satelites.sort((a, b) =>
+        //     WorldData.instance.stdBObjMap.get(a).semimajor_axis.value -
+        //     WorldData.instance.stdBObjMap.get(b).semimajor_axis.value);
         console.debug("this.orbit.satelites.length", root.satelites.length);
 
         return this;

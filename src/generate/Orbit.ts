@@ -4,6 +4,8 @@ import * as Random from "../utils/Random"
 import * as Units from "../utils/Units"
 import * as Convert from "../utils/Convert"
 import { ObjectPool } from "../utils/ObjectPool";
+import { Identifiable } from "../modules/DataBaseManager";
+import { orbit_types_, WorldData } from "../modules/WorldData";
 
 
 
@@ -21,7 +23,7 @@ https://jtauber.github.io/orbits/019.html
 
 */
 
-export interface OrbitingElement {
+export interface OrbitingElement extends Identifiable {
     readonly mean_longitude: Convert.NumberAngle;
     readonly longitude_ascending_node: Convert.NumberAngle;
     readonly argument_of_perihelion: Convert.NumberAngle;
@@ -31,18 +33,19 @@ export interface OrbitingElement {
     readonly focal_distance: Convert.NumberLength;
 
     readonly eccentricity: number;
-    readonly satelites: OrbitingElement[];
+    readonly satelites: number[];
     readonly orbit: Orbit;
     readonly type: string;
 
     free(): void;
-    addSat(sat_: OrbitingElement): void;
     clearSatelites(): void;
+    addSat(sat_: OrbitingElement): void;
+    getSats(): OrbitingElement[];
 
 }
 
 
-export class Orbit implements OrbitingElement {
+export class Orbit implements OrbitingElement, Identifiable {
 
     public id: number = null;
     type: string = null;
@@ -101,24 +104,31 @@ export class Orbit implements OrbitingElement {
     //     this.focal_distance.value = this.calc_focal_distance()
     // }
 
-    public satelites: Array<OrbitingElement> = null;
+    public satelites: Array<number> = null;
 
 
 
-    static orbit_types_ = {}
     public get orbit() { return this; }
 
 
     constructor() {
-        this.id = Math.ceil(Math.random() * 100000) + 10000
-        this.satelites = new Array<any>();
+        this.id = WorldData?.instance?.getFreeID();
+        this.satelites = new Array<number>();
         // console.log("this.constructor", this.constructor);
         this.type = this.constructor.name;
     }
 
+    public getSats(): OrbitingElement[] {
+        var satObjs: OrbitingElement[] = []
+        for (const sid of this.satelites)
+            satObjs.push(WorldData.instance.stdBObjMap.get(sid))
+        return satObjs
+    }
+
     public addSat(sat_: OrbitingElement) {
         sat_.orbit.depth = this.depth + 1
-        this.satelites.push(sat_)
+        this.satelites.push(sat_.id)
+        WorldData.instance.addSat(sat_)
     }
 
 
@@ -211,16 +221,21 @@ export class Orbit implements OrbitingElement {
     }
 
 
-    public copyDeep(source_: Orbit) {
+    public copyDeep(source_: OrbitingElement) {
         Convert.copyDeep(this, source_)
 
-        this.clearNonStars();
-        for (let index = 0; index < source_.satelites.length; index++) {
-            const orbit_src_: any = source_.satelites[index]
+        // this.clearNonStars();
+        // this.clearSatelites();
+        // for (let index = 0; index < source_.satelites.length; index++) {
+        //     const sid = source_.satelites[index]
 
-            var obj_ = Orbit.orbit_types_[orbit_src_.type].new().copyDeep(orbit_src_)
-            this.satelites.push(obj_);
-        }
+        //     var obj_ = orbit_types_[iterator.type].new()
+
+
+        //     console.log("orbit_types_", orbit_types_);
+        //     var obj_ = orbit_types_[orbit_src_.type].new().copyDeep(orbit_src_)
+        //     this.satelites.push(obj_);
+        // }
         return this;
     }
 
@@ -232,17 +247,19 @@ export class Orbit implements OrbitingElement {
 
     public clearSatelites() {
         while (this.satelites.length > 0)
-            this.satelites.pop().free()
+            WorldData.instance.free(this.satelites.pop())
     }
 
     public clearNonStars() {
         var count = 0;
         while (this.satelites.length > count) {
-            if (this.satelites[this.satelites.length - 1].type === "Star") {
+            var lastId = this.satelites[this.satelites.length - 1]
+            var lastObj = WorldData.instance.stdBObjMap.get(lastId)
+            if (lastObj.type === "Star") {
                 count++;
                 continue;
             }
-            this.satelites.pop().free()
+            WorldData.instance.free(this.satelites.pop())
         }
     }
 
@@ -283,7 +300,5 @@ export class Orbit implements OrbitingElement {
         // Orbit.pool_.free(item)
     }, 0);
 }
-
-Orbit.orbit_types_["Orbit"] = Orbit
 
 

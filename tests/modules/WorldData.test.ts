@@ -18,6 +18,7 @@ function make_world_test(db_name: string) {
 }
 
 test('Clone 1', async () => {
+    // TODO FIXME this is awkward because there are 2 instances in the same scope
     var wdata_orig = make_world_test("world_table_wd_clone_1");
     var wdata_copy = make_world_test("world_table_wd_clone_1");
 

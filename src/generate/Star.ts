@@ -5,6 +5,8 @@ import * as Units from "../utils/Units"
 import * as Convert from "../utils/Convert"
 import { OrbitingElement, Orbit } from "./Orbit";
 import { ObjectPool } from "../utils/ObjectPool";
+import { Identifiable } from "../modules/DataBaseManager";
+import { WorldData } from "../modules/WorldData";
 
 // Artifexian : https://www.youtube.com/watch?v=x55nxxaWXAM
 // https://en.wikipedia.org/wiki/Stellar_classification
@@ -18,7 +20,9 @@ import { ObjectPool } from "../utils/ObjectPool";
 // K	3,700–5,200 K	light orange	pale yellow orange	0.45–0.8 M☉	0.7–0.96 R☉	0.08–0.6 L☉	Very weak	12.1%
 // M	2,400–3,700 K	orange red	light orange red	0.08–0.45 M☉	≤ 0.7 R☉	≤ 0.08 L☉	Very weak	76.45%
 
-export class Star implements OrbitingElement {
+export class Star implements OrbitingElement, Identifiable {
+    public id: number=null;
+    type: string = null;
 
     sclass: string;
     luminosity = new Convert.NumberRadiantFlux();
@@ -51,11 +55,9 @@ export class Star implements OrbitingElement {
 
 
     public orbit: Orbit;
-    public id: number;
-    type: string = null;
     constructor() {
         this.type = this.constructor.name;
-        this.id = Math.ceil(Math.random() * 100000) + 10000
+        this.id = WorldData?.instance?.getFreeID();
 
         this.orbit = Orbit.new();
         // this.orbit.used_by = this;
@@ -218,6 +220,13 @@ export class Star implements OrbitingElement {
     }
 
 
+    public getSats(): OrbitingElement[] {
+        var satObjs: OrbitingElement[] = []
+        for (const sid of this.satelites)
+            satObjs.push(WorldData.instance.stdBObjMap.get(sid))
+        return satObjs
+    }
+
     public addSat(sat_: OrbitingElement) { this.orbit.addSat(sat_) }
 
     public copyDeep(source_: Star) {
@@ -237,5 +246,3 @@ export class Star implements OrbitingElement {
     public static new() { return Star.clone() }
     public static pool_ = new ObjectPool<Star>(() => new Star(), (item: Star) => { }, 0);
 }
-
-Orbit.orbit_types_["Star"] = Star

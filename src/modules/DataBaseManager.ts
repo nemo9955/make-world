@@ -2,6 +2,10 @@
 import { openDB, deleteDB, wrap, unwrap, IDBPDatabase, IDBPTransaction, IDBPObjectStore, StoreKey, StoreValue } from 'idb';
 
 
+export interface Identifiable {
+    id: number;
+}
+
 export class STransaction {
     public tx: IDBPTransaction<unknown, [string]>;
     public store: IDBPObjectStore<unknown, [string], string>;
@@ -14,7 +18,7 @@ export class STransaction {
 export class DataBaseManager {
     idb: IDBPDatabase<unknown>;
 
-    public static PLANET_SYSTEM = "planet_system";
+    public static STANDARD_OBJECTS = "STANDARD_OBJECTS";
     public TABLE_NAME = "world_table";
 
     constructor() {
@@ -30,10 +34,10 @@ export class DataBaseManager {
         this.idb = await openDB(this.TABLE_NAME, 1, {
             upgrade(db) {
                 // TODO, make generic container with ID-able objects
-                if (!db.objectStoreNames.contains(DataBaseManager.PLANET_SYSTEM)) {
-                    const store = db.createObjectStore(DataBaseManager.PLANET_SYSTEM, { keyPath: 'id', autoIncrement: false });
+                if (!db.objectStoreNames.contains(DataBaseManager.STANDARD_OBJECTS)) {
+                    const store = db.createObjectStore(DataBaseManager.STANDARD_OBJECTS, { keyPath: 'id', autoIncrement: false });
                     // store.createIndex('id', 'id');
-                    // console.log("createObjectStore ", PLANET_SYSTEM);
+                    // console.log("createObjectStore ", STANDARD_OBJECTS);
                 }
             }
         });

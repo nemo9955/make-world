@@ -8,8 +8,8 @@
     },
     "include": [
         "src/**/*",
-        "tests/**/*",
-        "snipets/**/*"
+        // "tests/**/*",
+        // "snipets/**/*"
     ],
     "exclude": [
         "node_modules"

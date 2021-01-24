@@ -2,7 +2,7 @@
 
 
 export function percent() {
-    return Math.random()*100
+    return Math.random() * 100
 }
 
 export function random_float_clamp(min: number, max: number) {

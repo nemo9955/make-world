@@ -5,6 +5,8 @@ import * as Units from "../utils/Units"
 import * as Convert from "../utils/Convert"
 import { OrbitingElement, Orbit } from "./Orbit";
 import { ObjectPool } from "../utils/ObjectPool";
+import { Identifiable } from "../modules/DataBaseManager";
+import { WorldData } from "../modules/WorldData";
 
 
 // TODO more proper and complex planets and moons generation
@@ -15,7 +17,7 @@ import { ObjectPool } from "../utils/ObjectPool";
 // // random size and composition (water, rock, iron) and get mass and density based on proportions, etc
 // TODO calc inner and outer limit
 
-export class Planet implements OrbitingElement {
+export class Planet implements OrbitingElement, Identifiable {
 
     public id: number = null;
     type: string = null;
@@ -36,7 +38,7 @@ export class Planet implements OrbitingElement {
 
 
     constructor() {
-        this.id = Math.ceil(Math.random() * 100000) + 10000
+        this.id = WorldData?.instance?.getFreeID();
 
         this.type = this.constructor.name;
         this.orbit = Orbit.new();
@@ -63,6 +65,13 @@ export class Planet implements OrbitingElement {
     }
 
 
+
+    public getSats(): OrbitingElement[] {
+        var satObjs: OrbitingElement[] = []
+        for (const sid of this.satelites)
+            satObjs.push(WorldData.instance.stdBObjMap.get(sid))
+        return satObjs
+    }
 
     public addSat(sat_: OrbitingElement) { this.orbit.addSat(sat_) }
     public clearSatelites() { this.orbit.clearSatelites() }
@@ -97,5 +106,4 @@ export class Planet implements OrbitingElement {
     }, 0);
 
 }
-Orbit.orbit_types_["Planet"] = Planet
 

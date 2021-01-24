@@ -90,10 +90,18 @@ export function copyShallow(target_: any, source_: any) {
     }
 }
 
+const BASIC_OBJECTS = ["number", "boolean", "string"]
+
 export function copyDeep(target_: any, source_: any) {
     for (const key in source_) {
         // if (key.startsWith("__") && key.endsWith("__")) continue;
         if (source_[key]?.__proto__.constructor.name === "Array") {
+            var type_ = typeof source_[key][0] // TODO will cause issues on mixed types arrays
+            if (BASIC_OBJECTS.includes(type_)) {
+                target_[key] = [...source_[key]] // if it is a basic array , can be copied
+            } else {
+                continue; // to be done explicitly by the user
+            }
             continue; // to be done explicitly by the user
         } else if (typeof target_?.[key]?.['copyDeep'] === "function") {
             target_[key]['copyDeep'](source_[key]);

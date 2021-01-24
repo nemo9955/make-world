@@ -6,17 +6,21 @@ import * as Random from "../utils/Random"
 import { Uniform } from "three";
 import * as Units from "../utils/Units"
 import * as Convert from "../utils/Convert"
+import { Identifiable } from "../modules/DataBaseManager";
+import { WorldData } from "../modules/WorldData";
 
 
 // https://www.youtube.com/watch?v=J5xU-8Kb63Y&list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&index=11&ab_channel=Artifexian
 
 
-
-export class PlanetarySystem implements OrbitingElement {
+export class PlanetarySystem implements OrbitingElement, Identifiable {
     id: number = null;
-    type: string;
+    type: string = null;
     // star: Star;
 
+    // public getWorldData: () => WorldData; // to be set from outside by WorldData
+    // public get worldData() { return this.getWorldData(); } // avoid having an instance for the DB
+    public get worldData() { return WorldData.instance; } // avoid having an instance for the DB
 
     public orbit: Orbit;
     public get mean_longitude() { return this.orbit.mean_longitude; }
@@ -40,34 +44,22 @@ export class PlanetarySystem implements OrbitingElement {
     public readonly orbits_limit_in = new Convert.NumberLength();
     public readonly orbits_limit_out = new Convert.NumberLength();
 
-    private stars = new Array<Star>();
+    // TODO store as IDs
+    private stars = new Array<number>();
 
     constructor() {
         // this.star = new Star();
-        this.orbit = Orbit.new();
         this.type = this.constructor.name;
+        this.orbit = Orbit.new();
     }
 
 
     init() {
-        this.id = Math.ceil(Math.random() * 10000) + 1000
+        this.id = WorldData?.instance?.getFreeID();
     }
 
     public copyDeep(source_: any) {
-        this.clearSatelites()
         Convert.copyDeep(this, source_)
-
-        // TODO TMP dirty way to populate stars until proper ID refs are in
-        this.stars.length = 0
-        for (const star_src_ of source_.stars) {
-            for (const star_inst_ of this.satelites) {
-                if (star_inst_ instanceof Star)
-                    if (star_inst_.id === star_src_.id)
-                        this.stars.push(star_inst_)
-            }
-        }
-
-
         return this;
     }
 
@@ -78,6 +70,12 @@ export class PlanetarySystem implements OrbitingElement {
 
 
 
+    public getSats(): OrbitingElement[] {
+        var satObjs: OrbitingElement[] = []
+        for (const sid of this.satelites)
+            satObjs.push(WorldData.instance.stdBObjMap.get(sid))
+        return satObjs
+    }
 
 
     public clearSatelites() {
@@ -87,13 +85,18 @@ export class PlanetarySystem implements OrbitingElement {
     public addSat(sat_: OrbitingElement) {
         this.orbit.addSat(sat_);
         if (sat_ instanceof Star)
-            this.stars.push(sat_)
+            this.stars.push(sat_.id)
     }
 
     public free(): void { return; }
     public getStars(): Star[] {
-        return this.stars
+        var starObjs: Star[] = []
+        for (const sid of this.satelites) {
+            var obj_ = WorldData.instance.stdBObjMap.get(sid)
+            if (obj_ instanceof Star)
+                starObjs.push(obj_)
+        }
+        return starObjs
     }
-
 
 }

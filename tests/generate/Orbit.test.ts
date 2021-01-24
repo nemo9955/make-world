@@ -1,6 +1,7 @@
 // import * as Orbit from "../.././src/generate/Orbit"
 import { Orbit } from "../.././src/generate/Orbit"
 import { Planet } from "../../src/generate/Planet";
+import { WorldData } from "../../src/modules/WorldData";
 
 // https://jestjs.io/docs/en/expect
 
@@ -97,6 +98,7 @@ test('Test Ellipse 845-159', () => {
 
 
 test('Copy 1', () => {
+    var wd = new WorldData("test")
     var orig_ = new Orbit();
     var copy = new Orbit().copyDeep(orig_);
 
@@ -105,11 +107,12 @@ test('Copy 1', () => {
 
 
 test('Copy 2', () => {
+    var wd = new WorldData("test")
     var orig_ = new Orbit();
 
     var test_orb_ = Orbit.new().randomUniform();
     test_orb_.semimajor_axis.div(1)
-    orig_.satelites.push(test_orb_)
+    orig_.addSat(test_orb_)
 
     var copy_ = new Orbit().copyDeep(orig_);
 
@@ -118,6 +121,7 @@ test('Copy 2', () => {
 });
 
 test('Copy 3', () => {
+    var wd = new WorldData("test")
     var orig_ = new Orbit();
 
     var test_pl_ = Planet.new()
@@ -125,15 +129,15 @@ test('Copy 3', () => {
     test_pl_.semimajor_axis.div(1)
     test_pl_.radius.km = 1000
     test_pl_.mass.kg = 1000
-    orig_.satelites.push(test_pl_)
+    orig_.addSat(test_pl_)
 
     var copy_ = new Orbit().copyDeep(orig_);
 
     expect(orig_).toMatchObject(copy_)
     expect(copy_).toMatchObject(orig_)
 
-    expect((copy_.satelites[0] as Planet).get_radius().km).toBe(1000)
-    expect((copy_.satelites[0] as Planet).radius.km).toBe(1000)
-    expect((copy_.satelites[0] as Planet).mass.kg).toBe(1000)
+    expect((copy_.getSats()[0] as Planet).get_radius().km).toBe(1000)
+    expect((copy_.getSats()[0] as Planet).radius.km).toBe(1000)
+    expect((copy_.getSats()[0] as Planet).mass.kg).toBe(1000)
 });
 

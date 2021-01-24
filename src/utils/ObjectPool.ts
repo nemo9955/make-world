@@ -12,8 +12,8 @@ export class ObjectPool<T> {
     count: number;
     isObjectPool: boolean;
 
-    create: () => T
-    reset: (item: T) => void
+    create: () => T;
+    reset: (item: T) => void;
 
     constructor(create_func: () => T, reset_func: (item: T) => void, initialSize?: number) {
         this.create = create_func

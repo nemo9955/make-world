@@ -379,7 +379,7 @@ export class DrawWorld {
 
 
 
-            this.popOrbits(orb_dist.satelites, root_, orbobj_gr_)
+            this.popOrbits(orb_dist.getSats(), root_, orbobj_gr_)
             // this.popOrbits(orb_dist.satelites, orbobj_gr_)
 
             // console.log("orb_dist", orb_dist);
@@ -422,7 +422,7 @@ export class DrawWorld {
         while (this.orb_objects.length > 0)
             this.orb_objects.pop().free();
 
-        this.popOrbits(this.world.planetary_system.satelites, this.scene, this.scene)
+        this.popOrbits(this.world.planetary_system.getSats(), this.scene, this.scene)
 
         console.timeEnd("#time DrawWorld update");
     }
