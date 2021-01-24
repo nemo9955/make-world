@@ -9,12 +9,12 @@ import GenericWorkerInstance from "worker-loader!./Generic.worker.ts";
 import { Config, MessageType } from "./Config"
 
 import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 
 import { make_camera } from "./DrawWorld"
 import { Ticker } from "../utils/Time";
 import { SharedData } from "./SharedData";
+import { EventsManager } from "./EventsManager";
 
 export const CAM_MOVED_INTERVAL = 100
 
@@ -29,17 +29,18 @@ export class MainManager {
     config: Config;
     dbm: DataBaseManager;
 
-    camera: THREE.PerspectiveCamera;
-    controls: OrbitControls;
     update_tick: Ticker;
 
     shared_data = new SharedData();
+    evmng: EventsManager;
 
     constructor() {
         this.dbm = new DataBaseManager();
         this.world = new WorldData("MainManager");
         this.gui = new WorldGui();
         this.config = new Config();
+
+        this.evmng = new EventsManager();
 
         // TODO Actions will need to tell everyone of cases when an readDeep will be need
         // Usual var updates will be ok readShallow, structure changes need readDeep
@@ -208,6 +209,7 @@ export class MainManager {
         canvas.id = "CursorLayer";
         // canvas.style.zIndex = "8";
         canvas.style.position = "absolute";
+        canvas.tabIndex = 0; // so canvas can get keydown events
         canvas.style.border = "1px solid";
         canvas.width = window.innerWidth - Units.CANVAS_SUBSTRACT_PIXELS;
         canvas.height = window.innerHeight - Units.CANVAS_SUBSTRACT_PIXELS;
@@ -227,16 +229,9 @@ export class MainManager {
         }, false);
 
 
-        // TODO FIXME WA pass some more raw input to the worker rather than this lame camera copying
-        // TODO FIXME WA pass some more raw input to the worker rather than this lame camera copying
-        // TODO FIXME WA pass some more raw input to the worker rather than this lame camera copying
-        // TODO FIXME WA pass some more raw input to the worker rather than this lame camera copying
-        this.camera = make_camera(this.config.innerWidth, this.config.innerHeight);
-        this.controls = new OrbitControls(this.camera, canvas);
-        // this.camera.position.set(0, 20, 100);
-        // this.camera_update();
-        this.controls.addEventListener("change", this.camera_moved.bind(this))
-        // this.controls.addEventListener("end", this.camera_print.bind(this))
+        // TODO have a more dynamic ID-based way of propagating events
+        this.evmng.addOrbitCtrlEvents(canvas, canvas.id, this.draw_worker)
+
 
         var canvasOffscreen = canvas.transferControlToOffscreen();
         canvasOffscreen.width = window.innerWidth - Units.CANVAS_SUBSTRACT_PIXELS;
@@ -245,28 +240,11 @@ export class MainManager {
         this.draw_worker.postMessage({
             message: MessageType.InitCanvas,
             config: this.config,
-            canvas: canvasOffscreen
+            canvas: canvasOffscreen,
+            canvas_id: canvas.id,
         }, [canvasOffscreen]);
     }
 
-    public camera_moved() {
-        // clearTimeout(this.cam_timeout);
-        // this.cam_timeout = setTimeout(() => {
-        // console.log(this.camera.position);
-        this.draw_worker.postMessage({
-            message: MessageType.RefreshCamera,
-            position: this.camera.position,
-            up: this.camera.up,
-            r: [
-                this.camera.rotation.x,
-                this.camera.rotation.y,
-                this.camera.rotation.z,
-            ],
-            // cam_rot: this.camera.rotation,
-        });
-
-        // }, CAM_MOVED_INTERVAL);
-    }
 
 
 }

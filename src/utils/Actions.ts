@@ -1,17 +1,4 @@
-
-
-// export class Action {
-
-//     manager: ActionsManager = null;
-//     name: string = null;
-//     data: any = null;
-
-//     // constructor() { }
-
-// }
-
 type ActionCallback = (data?: any, name?: string, manager?: ActionsManager) => void;
-
 
 export class ActionsManager {
 
@@ -26,6 +13,7 @@ export class ActionsManager {
         if (this.hasAction(actName, actCallback) === false) {
             // console.log("actCallback", actCallback);
             this.callbacks[actName].push(actCallback);
+            // console.debug("#HERELINE Actions addAction ", actName, this.callbacks[actName]);
         }
 
     }
@@ -48,13 +36,13 @@ export class ActionsManager {
     }
 
     public callAction(actName: string, data: any = null) {
-        if (this.callbacks[actName] === undefined)
-            return;
+        if (this.callbacks[actName] === undefined) return;
 
-        const callbacks_copy = new Array<ActionCallback>(this.callbacks[actName])
+        const callbacks_copy = [...this.callbacks[actName]]
         for (let index = 0; index < callbacks_copy.length; index++) {
-            const cb_ = callbacks_copy[index][0];
+            const cb_ = callbacks_copy[index];
             cb_(data, actName, this)
+            // if (data?.stopAfterMe === true) break;
         }
     }
 
@@ -62,9 +50,9 @@ export class ActionsManager {
         if (this.callbacks[actName] === undefined)
             return;
 
-        const callbacks_copy = new Array<ActionCallback>(this.callbacks[actName])
+        const callbacks_copy = [...this.callbacks[actName]]
         for (let index = 0; index < callbacks_copy.length; index++) {
-            const cb_ = callbacks_copy[index][0];
+            const cb_ = callbacks_copy[index];
             setTimeout(() => {
                 cb_(data, actName, this)
             }, 0)

@@ -11,6 +11,7 @@ import { DrawWorld } from "./DrawWorld"
 import { Config, MessageType } from "./Config"
 import { Intervaler, Ticker } from "../utils/Time"
 import { SharedData } from "./SharedData";
+import { WorkerDOM } from "../utils/WorkerDOM";
 
 export const READ_DB_INTERVAL = 10
 
@@ -75,13 +76,19 @@ export class DrawWorker {
             case MessageType.RefreshDBDeep:
             case MessageType.RefreshDBShallow:
                 this.refresh_db(event, message_); break;
-            case MessageType.RefreshCamera:
-                this.refresh_camera(event); break;
             case MessageType.RefreshConfig:
                 this.update(); break;
+            case MessageType.Event:
+                this.callEvent(event.data.event, event.data.event_id); break;
             default:
                 console.warn("DEFAULT not implemented !"); break
         }
+    }
+
+
+    callEvent(event: any, event_id: any) {
+        // console.log("event_id, event", event_id, event);
+        this.draw_world.fakeDOM.dispatchEvent(event)
     }
 
     public init_canvas(event?: MessageEvent) {
@@ -90,6 +97,7 @@ export class DrawWorker {
         this.draw_world.init()
         this.ready_to_draw = true;
         this.worker.postMessage({ message: MessageType.Ready, from: "DrawWorker" });
+        this.resize();
     }
 
     public refresh_camera(event?: MessageEvent) {
@@ -98,6 +106,7 @@ export class DrawWorker {
         this.draw_world.camera.up.copy(event.data.up)
         this.draw_world.camera.rotation.set(event.data.r[0], event.data.r[1], event.data.r[2])
         this.draw_world.camera.updateProjectionMatrix()
+        // console.log("this.draw_world.camera.position", this.draw_world.camera.position);
     }
 
     public async refresh_db(event: MessageEvent, refreshType: MessageType) {
@@ -123,6 +132,9 @@ export class DrawWorker {
         this.draw_world.renderer.setSize(
             this.config.innerWidth - Units.CANVAS_SUBSTRACT_PIXELS,
             this.config.innerHeight - Units.CANVAS_SUBSTRACT_PIXELS, false)
+
+        this.draw_world.fakeDOM.clientWidth = this.config.innerWidth - Units.CANVAS_SUBSTRACT_PIXELS
+        this.draw_world.fakeDOM.clientHeight = this.config.innerHeight - Units.CANVAS_SUBSTRACT_PIXELS
 
     }
 

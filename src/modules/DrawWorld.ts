@@ -18,9 +18,9 @@ import { OrbitingElement, Orbit } from "../generate/Orbit";
 import { Planet } from "../generate/Planet";
 import { Star } from "../generate/Star";
 import { SharedData } from "./SharedData";
+import { WorkerDOM } from "../utils/WorkerDOM";
 
 // https://orbitalmechanics.info/
-
 
 export function make_camera(width_: number, height_: number) {
     var camera = new THREE.PerspectiveCamera(75, width_ / height_, 0.1, 1000000000000);
@@ -119,12 +119,29 @@ export class DrawWorld {
 
     }
 
+    fakeDOM = new WorkerDOM();
     public init() {
         console.debug("#HERELINE DrawWorld init ");
 
         this.scene = new THREE.Scene();
         this.camera = make_camera(this.config.innerWidth, this.config.innerHeight);
 
+        // events set in src/modules/EventsManager.ts -> addOrbitCtrlEvents
+        this.controls = new OrbitControls(this.camera, this.fakeDOM); ////////////////////////////////////
+
+        // this.fakeDOM.addEventListener("keydown", (event_) => {
+        //     console.log("!!!!!!!!!! event_", event_);
+        //     console.log("!!!!!!!!!! this.camera.position", this.camera.position);
+        // })
+
+        // this.fakeDOM.addEventListener("pointerup", (event_) => {
+        //     console.log("!!!!!!!!!! this.camera", this.camera.position, this.camera);
+        // })
+
+        // console.log("--- this.camera", this.camera);
+        // this.controls.addEventListener("change", () => {
+        //     console.log("this.camera", this.camera);
+        // })
 
         this.tjs_pool_lines.expand(20);
         this.tjs_pool_orbobjects.expand(20);
@@ -456,7 +473,9 @@ export class DrawWorld {
                     var targ_ = orb_.object.userData.satelites
                     // console.log("orb_", orb_);
                     // console.log("targ_", targ_);
-                    this.camera.lookAt(targ_.position)
+                    // this.camera.lookAt(targ_.position)
+                    this.controls.target = targ_.position
+                    // TODO set a shared data variable with the ID of the selected/focused WORLD thing (orbit,planet,cell,etc.)
                 }
 
             }

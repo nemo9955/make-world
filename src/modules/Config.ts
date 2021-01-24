@@ -23,13 +23,13 @@ export class Config {
 }
 
 export enum MessageType {
+    Event = "Event",
     Ready = "Ready",
     InitWorker = "InitWorker",
     InitCanvas = "InitCanvas",
     RefreshDBDeep = "RefreshDBDeep",
     RefreshDBShallow = "RefreshDBShallow",
     RefreshConfig = "RefreshConfig",
-    RefreshCamera = "RefreshCamera",
     MakeCanvas = "MakeCanvas",
     Resize = "Resize"
 }
