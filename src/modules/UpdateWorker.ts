@@ -22,7 +22,6 @@ import { Intervaler, Ticker } from "../utils/Time"
 import { SharedData } from "./SharedData";
 
 
-export const WRITE_DB_INTERVAL = 10
 
 export class UpdateWorker {
     shared_data = new SharedData();
@@ -42,7 +41,7 @@ export class UpdateWorker {
         this.world = new WorldData("UpdateWorker");
         this.config = new Config();
         this.update_world = new UpdateWorld();
-        this.update_tick = new Ticker(false, this.update_loop.bind(this), 100)
+        this.update_tick = new Ticker(false, this.update_loop.bind(this), Units.LOOP_INTERVAL)
     }
 
     public init() {

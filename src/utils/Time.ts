@@ -63,6 +63,8 @@ export class Ticker {
         }
     }
 
+    // TODO add posibility of random delay for first start
+    // so update/draw
     public updateState(state: boolean) {
         if (state) this.start();
         else this.stop();

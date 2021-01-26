@@ -16,8 +16,6 @@ import { Ticker } from "../utils/Time";
 import { SharedData } from "./SharedData";
 import { EventsManager } from "./EventsManager";
 
-export const CAM_MOVED_INTERVAL = 100
-
 export class MainManager {
     cam_timeout: any = null;
 
@@ -44,7 +42,7 @@ export class MainManager {
 
         // TODO Actions will need to tell everyone of cases when an readDeep will be need
         // Usual var updates will be ok readShallow, structure changes need readDeep
-        this.update_tick = new Ticker(false, this.readShallow.bind(this), 100)
+        this.update_tick = new Ticker(false, this.readShallow.bind(this), Units.LOOP_INTERVAL)
     }
 
     public async init() {

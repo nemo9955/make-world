@@ -9,8 +9,10 @@ export const SOLAR_LUMINOSITY = 3.828 * Math.pow(10, 26) // W (watt)
 
 export const ASTRONOMICAL_UNIT_KM = 149597870700.0 / 1000.0// m -> Km
 
-
 export const AU_TO_SR = ASTRONOMICAL_UNIT_KM / SOLAR_RADIUS_KM
 
 
+
 export const CANVAS_SUBSTRACT_PIXELS = 2
+
+export const LOOP_INTERVAL = 100

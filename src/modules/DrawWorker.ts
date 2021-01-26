@@ -13,7 +13,6 @@ import { Intervaler, Ticker } from "../utils/Time"
 import { SharedData } from "./SharedData";
 import { WorkerDOM } from "../utils/WorkerDOM";
 
-export const READ_DB_INTERVAL = 10
 
 export class DrawWorker {
     shared_data = new SharedData();
@@ -35,7 +34,7 @@ export class DrawWorker {
         this.world = new WorldData("DrawWorker");
         this.config = new Config();
         this.draw_world = new DrawWorld();
-        this.draw_tick = new Ticker(false, this.draw.bind(this), 100)
+        this.draw_tick = new Ticker(false, this.draw.bind(this), Units.LOOP_INTERVAL)
     }
 
     public init() {
