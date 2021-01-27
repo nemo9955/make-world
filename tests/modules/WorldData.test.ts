@@ -28,7 +28,7 @@ test('Clone 1', async () => {
         // console.log("wdata_orig.id, wdata_copy.id", wdata_orig.id, wdata_copy.id);
     }).then(() => {
         // console.log("wdata_orig.dbm.idb", wdata_orig.dbm.idb);
-        return wdata_orig.write()
+        return wdata_orig.writeDeep()
     }).then(() => {
         return wdata_copy.dbm.open()
     }).then(() => {

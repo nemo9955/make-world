@@ -295,6 +295,7 @@ export class DrawWorld {
             all_obj.orbline_group = orbline_gr_
             all_obj.satelites = orbobj_gr_
             all_obj.parent = position_root_
+            all_obj.orbitElement = orb_dist
 
             orbit_line_.userData = all_obj
             orbobject_.userData = all_obj
@@ -432,7 +433,7 @@ export class DrawWorld {
         for (let index = 0; index < this.satelits_gr.length; index++) {
             const orbobj_gr_ = this.satelits_gr[index];
             var pl_orb_crv = (orbobj_gr_.userData.ellipse as THREE.EllipseCurve)
-            var orb_obj = this.orb_objects[index]
+            var orb_obj = (orbobj_gr_.userData.orbitElement as OrbitingElement)
 
             var orbline_gr_ = (orbobj_gr_.userData.orbline_group as THREE.Group)
             var parent_ = (orbobj_gr_.userData.parent as THREE.Object3D)
@@ -472,9 +473,9 @@ export class DrawWorld {
                     var orb_ = intersects[0]
                     var targ_ = orb_.object.userData.satelites
                     // console.log("orb_", orb_);
-                    // console.log("targ_", targ_);
+                    console.log("targ_", targ_);
                     // this.camera.lookAt(targ_.position)
-                    this.controls.target = targ_.position
+                    // this.controls.target = targ_.position
                     // TODO set a shared data variable with the ID of the selected/focused WORLD thing (orbit,planet,cell,etc.)
                 }
 

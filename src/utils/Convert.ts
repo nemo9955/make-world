@@ -71,9 +71,10 @@ export function copy(target_: any, source_: any) { copyDeep(target_, source_) }
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/typeof
 // https://stackoverflow.com/questions/31538010/test-if-a-variable-is-a-primitive-rather-than-an-object
 
-export function copyShallow(target_: any, source_: any) {
+export function copyShallow(target_: any, source_: any, skipId = false) {
     for (const key in source_) {
         // if (key.startsWith("__") && key.endsWith("__")) continue;
+        if (skipId && key === "id") continue;
         if (source_[key]?.__proto__.constructor.name === "Array") {
             for (const ar_key in target_[key])
                 if (typeof target_?.[key]?.[ar_key]?.['copyShallow'] === "function")
@@ -92,9 +93,10 @@ export function copyShallow(target_: any, source_: any) {
 
 const BASIC_OBJECTS = ["number", "boolean", "string"]
 
-export function copyDeep(target_: any, source_: any) {
+export function copyDeep(target_: any, source_: any, skipId = false) {
     for (const key in source_) {
         // if (key.startsWith("__") && key.endsWith("__")) continue;
+        if (skipId && key === "id") continue;
         if (source_[key]?.__proto__.constructor.name === "Array") {
             var type_ = typeof source_[key][0] // TODO will cause issues on mixed types arrays
             if (BASIC_OBJECTS.includes(type_)) {

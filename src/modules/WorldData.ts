@@ -34,6 +34,7 @@ export class WorldData {
     planetary_system: PlanetarySystem;
 
     stdBObjMap = new Map<number, any>();
+    stdBObjDelIds = []
 
     dbm: DataBaseManager;
 
@@ -64,6 +65,7 @@ export class WorldData {
 
     free(id_: number) {
         this.stdBObjMap.delete(id_)
+        this.stdBObjDelIds.push(id_)
     }
 
     addSat(sat_: OrbitingElement) {
@@ -79,7 +81,7 @@ export class WorldData {
             // console.time("#time WorldData " + this.name + " read");
             // console.debug("#HERELINE WorldData read this.id", this.id);
 
-
+            // TODO FIXME DB not properly syncked while regenerating orbits
 
             var data_ps = this.dbm.transaction(DataBaseManager.STANDARD_OBJECTS, "readonly");
             var all = await data_ps.store.getAll()
@@ -91,7 +93,13 @@ export class WorldData {
                 if (iterator.type == "PlanetarySystem") {
                     this.planetary_system.copyShallow(iterator)
                 } else {
-                    this.stdBObjMap.get(iterator.id).copyShallow(iterator)
+                    const newLocal = this.stdBObjMap.get(iterator.id);
+                    if (!newLocal) {
+                        console.warn("this.stdBObjMap", this.stdBObjMap);
+                        console.warn("this", this);
+                        console.warn("iterator", iterator);
+                    }
+                    newLocal.copyShallow(iterator);
                 }
                 // console.log("this.stdBObjMap.get(iterator.id)", this.stdBObjMap.get(iterator.id));
             }
@@ -121,6 +129,8 @@ export class WorldData {
             var all = [...all_orig]
             // console.log("all", all);
 
+            this.stdBObjMap.clear()
+
             // console.log("orbit_types_", orbit_types_);
             for (const iterator of all) {
                 // console.log("iterator", iterator);
@@ -136,7 +146,13 @@ export class WorldData {
                 if (iterator.type == "PlanetarySystem") {
                     // this.planetary_system.copyDeep(iterator)
                 } else {
-                    this.stdBObjMap.get(iterator.id).copyDeep(iterator)
+                    const newLocal = this.stdBObjMap.get(iterator.id);
+                    if (!newLocal) {
+                        console.warn("this.stdBObjMap", this.stdBObjMap);
+                        console.warn("this", this);
+                        console.warn("iterator", iterator);
+                    }
+                    newLocal.copyDeep(iterator);
                 }
                 // console.log("this.stdBObjMap.get(iterator.id)", this.stdBObjMap.get(iterator.id));
             }
@@ -154,17 +170,27 @@ export class WorldData {
         return Promise.reject("NO ID : " + this.planetary_system.id);
     }
 
-    public async write() {
-        // console.time("#time WorldData " + this.name + " write");
-        // console.debug("#HERELINE WorldData write this.id", this.id);
+
+
+
+    public async writeDeep() {
+        // console.time("#time WorldData " + this.name + " writeDeep");
+        // console.debug("#HERELINE WorldData writeDeep this.id", this.id);
 
         var data_ps = this.dbm.transaction(DataBaseManager.STANDARD_OBJECTS, "readwrite");
-        await data_ps.store.put(this.planetary_system)
 
+        await data_ps.store.clear();
+        // while (this.stdBObjDelIds.length > 0) {
+        //     // remove deteleted objects from DB
+        //     var toDel = this.stdBObjDelIds.pop()
+        //     data_ps.store.delete(toDel)
+        // }
+
+        await data_ps.store.put(this.planetary_system)
         // console.log("this.stdBObjMap", this.stdBObjMap);
         for (const iterator of this.stdBObjMap.values()) {
             // console.log("iterator", iterator);
-            data_ps.store.put(iterator)
+            await data_ps.store.put(iterator)
         }
         // this.stdBObjMap.forEach((obj_)=>{
         //     console.log("obj_", obj_);
@@ -176,7 +202,41 @@ export class WorldData {
 
         await data_ps.done()
 
-        // console.timeEnd("#time WorldData " + this.name + " write");
+        // console.timeEnd("#time WorldData " + this.name + " writeDeep");
+        // return data_ps.done()
+        return Promise.resolve();
+    }
+
+    public async writeShallow() {
+        // console.time("#time WorldData " + this.name + " writeShallow");
+        // console.debug("#HERELINE WorldData writeShallow this.id", this.id);
+
+        var data_ps = this.dbm.transaction(DataBaseManager.STANDARD_OBJECTS, "readwrite");
+
+        // await data_ps.store.clear();
+        // while (this.stdBObjDelIds.length > 0) {
+        //     // remove deteleted objects from DB
+        //     var toDel = this.stdBObjDelIds.pop()
+        //     data_ps.store.delete(toDel)
+        // }
+
+        await data_ps.store.put(this.planetary_system)
+        // console.log("this.stdBObjMap", this.stdBObjMap);
+        for (const iterator of this.stdBObjMap.values()) {
+            // console.log("iterator", iterator);
+             data_ps.store.put(iterator)
+        }
+        // this.stdBObjMap.forEach((obj_)=>{
+        //     console.log("obj_", obj_);
+        // })
+        // for (const iterator in this.stdBObjMap) {
+        //     console.log("iterator", iterator);
+        //     data_ps.store.put(iterator)
+        // }
+
+        await data_ps.done()
+
+        // console.timeEnd("#time WorldData " + this.name + " writeShallow");
         // return data_ps.done()
         return Promise.resolve();
     }

@@ -244,6 +244,12 @@ export class Orbit implements OrbitingElement, Identifiable {
         return this;
     }
 
+    public copyLogic(source_: this) {
+        Convert.copyShallow(this, source_, true)
+        return this;
+    }
+
+
 
     public clearSatelites() {
         while (this.satelites.length > 0)
@@ -285,7 +291,7 @@ export class Orbit implements OrbitingElement, Identifiable {
         // console.log("free this", this);
         Orbit.pool_.free(this)
     }
-    public clone() { return Orbit.clone().copyDeep(this) }
+    public clone() { return Orbit.clone().copyLogic(this) }
     public static new() { return Orbit.clone() }
     public static clone() {
         // var orb_ = Orbit.pool_.get()

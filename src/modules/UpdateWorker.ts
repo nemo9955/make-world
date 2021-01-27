@@ -112,7 +112,8 @@ export class UpdateWorker {
 
         // if (this.db_read_itv.check(WRITE_DB_INTERVAL)) {
         // this.refresh_db();
-        this.world.write();
+        // this.world.write(); // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        this.world.writeShallow(); // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         // }
     }
 

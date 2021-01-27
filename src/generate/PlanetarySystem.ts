@@ -68,6 +68,11 @@ export class PlanetarySystem implements OrbitingElement, Identifiable {
         return this;
     }
 
+    public copyLogic(source_: this) {
+        Convert.copyShallow(this, source_, true)
+        return this;
+    }
+
 
 
     public getSats(): OrbitingElement[] {

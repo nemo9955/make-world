@@ -100,7 +100,7 @@ export class MainManager {
         // console.time("#time MainManager write");
         this.update_tick.updateState(this.config.do_main_loop)
 
-        await this.world.write();
+        await this.world.writeDeep();
 
         this.draw_worker.postMessage({
             message: MessageType.RefreshDBDeep,
@@ -118,7 +118,7 @@ export class MainManager {
         // console.time("#time MainManager write");
         this.update_tick.updateState(this.config.do_main_loop)
 
-        await this.world.write();
+        await this.world.writeShallow();
 
         this.draw_worker.postMessage({
             message: MessageType.RefreshDBShallow,

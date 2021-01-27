@@ -64,6 +64,10 @@ export class Planet implements OrbitingElement, Identifiable {
         return this;
     }
 
+    public copyLogic(source_: this) {
+        Convert.copyShallow(this, source_, true)
+        return this;
+    }
 
 
     public getSats(): OrbitingElement[] {
@@ -94,7 +98,7 @@ export class Planet implements OrbitingElement, Identifiable {
         // console.log("free this", this);
         Planet.pool_.free(this);
     }
-    public clone() { return Planet.clone().copyDeep(this) }
+    public clone() { return Planet.clone().copyLogic(this) }
     public static clone() {
         // return Planet.pool_.get()
         return Planet.pool_.create() // TODO FIXME ideally to use get //////////////////////////////////////////////////////////

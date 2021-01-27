@@ -238,10 +238,16 @@ export class Star implements OrbitingElement, Identifiable {
         return this;
     }
 
+    public copyLogic(source_: this) {
+        Convert.copyShallow(this, source_, true)
+        return this;
+    }
+
+
     public clearSatelites() { this.orbit.clearSatelites() }
     // GRAVEYARD ZONE :
     public free() { return; }
-    public clone() { return Star.clone().copyDeep(this) }
+    public clone() { return Star.clone().copyLogic(this) }
     public static clone() { return Star.pool_.create() } // TODO FIXME ideally to use get
     public static new() { return Star.clone() }
     public static pool_ = new ObjectPool<Star>(() => new Star(), (item: Star) => { }, 0);

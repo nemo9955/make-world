@@ -39,7 +39,8 @@ export class SpaceFactory {
         // this.genStar(plsys, plsys, "sun")
         this.genStar(plsys, plsys, "habitable")
         // plsys.genStar()
-        this.genOrbitsSimpleMoons(plsys, plsys)
+        // this.genOrbitsSimpleMoons(plsys, plsys)
+        this.genOrbitsUniform(plsys, plsys)
         // plsys.genOrbitsSimple()
     }
 
@@ -48,7 +49,8 @@ export class SpaceFactory {
 
         root.orbit.clearNonStars();
 
-        var orb_size = Random.random_int_clamp(6, 8)
+        // var orb_size = Random.random_int_clamp(6, 8)
+        var orb_size = 1
 
         var last_orbit = plsys.orbits_limit_in.clone()
         for (let index = 0; index < orb_size; index++) {
@@ -65,21 +67,21 @@ export class SpaceFactory {
         orb_dist.semimajor_axis.copy(plsys.orbits_limit_out).mul(1.5)
         root.addSat(orb_dist)
 
-        var last_orb = Orbit.new().randomSane();
-        last_orb.semimajor_axis.copy(plsys.orbits_limit_out).mul(0.4)
-        orb_dist.addSat(last_orb)
+        // var last_orb = Orbit.new().randomSane();
+        // last_orb.semimajor_axis.copy(plsys.orbits_limit_out).mul(0.4)
+        // orb_dist.addSat(last_orb)
 
-        var last_orb = Orbit.new().randomSane();
-        last_orb.semimajor_axis.copy(plsys.orbits_limit_out).mul(0.4)
-        orb_dist.addSat(last_orb)
+        // var last_orb = Orbit.new().randomSane();
+        // last_orb.semimajor_axis.copy(plsys.orbits_limit_out).mul(0.4)
+        // orb_dist.addSat(last_orb)
 
-        var last_last_orb = Orbit.new().randomSane();
-        last_last_orb.semimajor_axis.copy(plsys.orbits_limit_out).mul(0.2)
-        last_orb.addSat(last_last_orb)
+        // var last_last_orb = Orbit.new().randomSane();
+        // last_last_orb.semimajor_axis.copy(plsys.orbits_limit_out).mul(0.2)
+        // last_orb.addSat(last_last_orb)
 
-        var last_last_orb = Orbit.new().randomSane();
-        last_last_orb.semimajor_axis.copy(plsys.orbits_limit_out).mul(0.2)
-        last_orb.addSat(last_last_orb)
+        // var last_last_orb = Orbit.new().randomSane();
+        // last_last_orb.semimajor_axis.copy(plsys.orbits_limit_out).mul(0.2)
+        // last_orb.addSat(last_last_orb)
 
 
         // var sangle = 0
@@ -117,10 +119,10 @@ export class SpaceFactory {
             var planet1_ = Planet.new()
             planet1_.orbit.randomSane()
             planet1_.semimajor_axis.copy(par_maj_axis)
-            planet1_.semimajor_axis.value /= 20
-            planet1_.radius.value = 30; // TODO FIXME does not reset on pool refresh somewhere
+            planet1_.semimajor_axis.value /= 30
+            planet1_.radius.value = 15; // TODO FIXME does not reset on pool refresh somewhere
 
-            var planet2_ = Planet.new().copyShallow(planet1_)
+            var planet2_ = planet1_.clone()
             planet2_.mean_longitude.deg += 180;
 
             orbit_.addSat(planet1_)
@@ -203,6 +205,8 @@ export class SpaceFactory {
     public genOrbitsSimpleMoons(plsys: PlanetarySystem, root: OrbitingElement) {
         this.genOrbitsSimple(plsys, root);
 
+        var moon_prev_orb = new Convert.NumberLength();
+
         for (const orbit_ of root.getSats()) {
 
             // console.log("orbit_.semimajor_axis.au", orbit_.semimajor_axis.au);
@@ -221,20 +225,26 @@ export class SpaceFactory {
                 moons_total = Random.random_int_clamp(2, 3);
             }
             else {
-                moons_total = Random.random_int_clamp(2, 5);
+                moons_total = Random.random_int_clamp(3, 4);
             }
 
             // console.log("moons_total", moons_total);
+
+            // TODO calculate proper min and max orbits of a planet
+            moon_prev_orb.copy(orbit_.semimajor_axis);
+            // moon_prev_orb.value /= Random.random_float_clamp(7, 8)
+            moon_prev_orb.value /= 15
 
             for (let index = 0; index < moons_total; index++) {
                 // var orb_dist = Planet.new().randomUniform();
                 var orb_dist = Planet.new()
                 orb_dist.orbit.randomSane();
-                orb_dist.semimajor_axis.copy(orbit_.semimajor_axis)
-                orb_dist.semimajor_axis.value /= 3
-                orb_dist.semimajor_axis.value /= Random.random_float_clamp(3, 4)
+                orb_dist.orbit.semimajor_axis.copy(moon_prev_orb)
                 orb_dist.orbit.updateMajEcc();
                 orbit_.addSat(orb_dist)
+
+                // moon_prev_orb.value *= Random.random_float_clamp(1.5, 1.6)
+                moon_prev_orb.value *= 1.5
             }
 
 
@@ -321,9 +331,9 @@ export class SpaceFactory {
         }
 
 
-        // root.satelites.sort((a, b) =>
-        //     WorldData.instance.stdBObjMap.get(a).semimajor_axis.value -
-        //     WorldData.instance.stdBObjMap.get(b).semimajor_axis.value);
+        root.satelites.sort((a, b) =>
+            WorldData.instance.stdBObjMap.get(a).semimajor_axis.value -
+            WorldData.instance.stdBObjMap.get(b).semimajor_axis.value);
         console.debug("this.orbit.satelites.length", root.satelites.length);
 
         return this;
