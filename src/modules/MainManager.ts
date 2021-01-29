@@ -19,9 +19,11 @@ import { EventsManager } from "./EventsManager";
 export class MainManager {
     cam_timeout: any = null;
 
-    draw_worker: GenericWorkerInstance
-    update_worker: GenericWorkerInstance
+    draw_worker: GenericWorkerInstance;
+    update_worker: GenericWorkerInstance;
     gui: WorldGui;
+
+    workers: GenericWorkerInstance[] = [];
 
     world: WorldData;
     config: Config;
@@ -42,7 +44,7 @@ export class MainManager {
 
         // TODO Actions will need to tell everyone of cases when an readDeep will be need
         // Usual var updates will be ok readShallow, structure changes need readDeep
-        this.update_tick = new Ticker(false, this.readShallow.bind(this), Units.LOOP_INTERVAL)
+        this.update_tick = new Ticker(false, this.readShallow.bind(this), Units.LOOP_INTERVAL, Units.LOOP_INTERVAL * 1)
     }
 
     public async init() {
@@ -96,44 +98,44 @@ export class MainManager {
         await this.world.readShallow();
     }
 
-    public async writeDeep() {
+    public writeDeep() {
         // console.time("#time MainManager write");
-        this.update_tick.updateState(this.config.do_main_loop)
 
-        await this.world.writeDeep();
+        // await this.world.writeDeep();
+        var prom_ = this.world.writeDeep().then(() => {
+            for (const worker_ of this.workers) {
+                worker_.postMessage({
+                    message: MessageType.RefreshDBDeep,
+                    config: this.config
+                });
+            }
+        })
 
-        this.draw_worker.postMessage({
-            message: MessageType.RefreshDBDeep,
-            config: this.config
-        });
-
-        this.update_worker.postMessage({
-            message: MessageType.RefreshDBDeep,
-            config: this.config
-        });
         // console.timeEnd("#time MainManager write");
+        return prom_;
     }
 
-    public async writeShallow() {
+    public writeShallow() {
         // console.time("#time MainManager write");
         this.update_tick.updateState(this.config.do_main_loop)
 
-        await this.world.writeShallow();
+        // await this.world.writeShallow();
+        var prom_ = this.world.writeShallow().then(() => {
+            for (const worker_ of this.workers) {
+                worker_.postMessage({
+                    message: MessageType.RefreshDBShallow,
+                    config: this.config
+                });
+            }
+        })
 
-        this.draw_worker.postMessage({
-            message: MessageType.RefreshDBShallow,
-            config: this.config
-        });
-
-        this.update_worker.postMessage({
-            message: MessageType.RefreshDBShallow,
-            config: this.config
-        });
         // console.timeEnd("#time MainManager write");
+        return prom_;
     }
 
     public init_draw_worker() {
         this.draw_worker = new GenericWorkerInstance();
+        this.workers.push(this.draw_worker);
         this.draw_worker.postMessage({ create: "DrawWorker", sab: this.shared_data.sab });
 
         this.draw_worker.addEventListener("message", async (event) => {
@@ -148,6 +150,7 @@ export class MainManager {
 
     public init_update_worker() {
         this.update_worker = new GenericWorkerInstance();
+        this.workers.push(this.update_worker);
         this.update_worker.postMessage({ create: "UpdateWorker", sab: this.shared_data.sab });
 
         this.update_worker.addEventListener("message", async (event) => {

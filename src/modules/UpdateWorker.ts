@@ -41,7 +41,7 @@ export class UpdateWorker {
         this.world = new WorldData("UpdateWorker");
         this.config = new Config();
         this.update_world = new UpdateWorld();
-        this.update_tick = new Ticker(false, this.update_loop.bind(this), Units.LOOP_INTERVAL)
+        this.update_tick = new Ticker(false, this.update_loop.bind(this), Units.LOOP_INTERVAL, Units.LOOP_INTERVAL*0.1)
     }
 
     public init() {

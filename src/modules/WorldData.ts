@@ -76,17 +76,15 @@ export class WorldData {
 
 
     public async readShallow() {
+        return this.readDeep(); // TODO WA FIXME
         // console.debug("#HERELINE WorldData readShallow ");
         if (this.planetary_system.id) {
             // console.time("#time WorldData " + this.name + " read");
             // console.debug("#HERELINE WorldData read this.id", this.id);
-
             // TODO FIXME DB not properly syncked while regenerating orbits
-
             var data_ps = this.dbm.transaction(DataBaseManager.STANDARD_OBJECTS, "readonly");
             var all = await data_ps.store.getAll()
             // console.log("SHA all", all);
-
             // console.log("orbit_types_", orbit_types_);
             for (const iterator of all) {
                 // console.log("iterator", iterator);
@@ -105,7 +103,6 @@ export class WorldData {
             }
             await data_ps.done()
 
-
             // var data_ps = this.dbm.transaction(DataBaseManager.STANDARD_OBJECTS, "readonly");
             // var ps_db = await data_ps.store.get(this.planetary_system.id)
             // await data_ps.done()
@@ -119,7 +116,7 @@ export class WorldData {
     }
 
     public async readDeep() {
-        console.debug("#HERELINE WorldData readDeep ");
+        // console.debug("#HERELINE WorldData readDeep ");
         if (this.planetary_system.id) {
             // console.time("#time WorldData " + this.name + " read");
             // console.debug("#HERELINE WorldData read this.id", this.id);
@@ -186,11 +183,13 @@ export class WorldData {
         //     data_ps.store.delete(toDel)
         // }
 
-        await data_ps.store.put(this.planetary_system)
+        data_ps.store.put(this.planetary_system)
+        // await data_ps.store.put(this.planetary_system)
         // console.log("this.stdBObjMap", this.stdBObjMap);
         for (const iterator of this.stdBObjMap.values()) {
             // console.log("iterator", iterator);
-            await data_ps.store.put(iterator)
+            data_ps.store.put(iterator)
+            // await data_ps.store.put(iterator)
         }
         // this.stdBObjMap.forEach((obj_)=>{
         //     console.log("obj_", obj_);
@@ -220,11 +219,11 @@ export class WorldData {
         //     data_ps.store.delete(toDel)
         // }
 
-        await data_ps.store.put(this.planetary_system)
+        data_ps.store.put(this.planetary_system)
         // console.log("this.stdBObjMap", this.stdBObjMap);
         for (const iterator of this.stdBObjMap.values()) {
             // console.log("iterator", iterator);
-             data_ps.store.put(iterator)
+            data_ps.store.put(iterator)
         }
         // this.stdBObjMap.forEach((obj_)=>{
         //     console.log("obj_", obj_);

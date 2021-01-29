@@ -34,7 +34,7 @@ export class DrawWorker {
         this.world = new WorldData("DrawWorker");
         this.config = new Config();
         this.draw_world = new DrawWorld();
-        this.draw_tick = new Ticker(false, this.draw.bind(this), Units.LOOP_INTERVAL)
+        this.draw_tick = new Ticker(false, this.draw.bind(this), Units.LOOP_INTERVAL,Units.LOOP_INTERVAL*0.6)
     }
 
     public init() {

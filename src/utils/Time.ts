@@ -32,13 +32,17 @@ export class Ticker {
     public enabled: boolean;
     public timeout_val: NodeJS.Timeout;
 
-    public tick_interval: number;
     public tick_function: any
+    public tick_interval: number;
+    public delay_interval: number;
+    public used_delay: number;
 
-    constructor(enabled = false, tick_function = null, tick_interval = 100) {
+    constructor(enabled = false, tick_function = null, tick_interval = 100, delay_interval = 0) {
         this.enabled = enabled
         this.timeout_val = null
         this.tick_function = tick_function
+        this.delay_interval = delay_interval
+        this.used_delay = this.delay_interval
         this.tick_interval = tick_interval
     }
 
@@ -46,26 +50,29 @@ export class Ticker {
         this.tick_function()
     }
 
+    // TODO FIXME check if there is a recursivity issue
     public start() {
+        this.enabled = true;
         if (this.timeout_val === null) {
             this.timeout_val = setTimeout(() => {
                 this.timeout_val = null;
+                this.used_delay = 0;
                 this.start();
                 this.tick();
-            }, this.tick_interval);
+            }, this.tick_interval + this.used_delay);
         }
     }
 
     public stop() {
+        this.enabled = false;
         if (this.timeout_val !== null) {
             clearTimeout(this.timeout_val)
             this.timeout_val = null;
         }
     }
 
-    // TODO add posibility of random delay for first start
-    // so update/draw
     public updateState(state: boolean) {
+        if (state == this.enabled) return;
         if (state) this.start();
         else this.stop();
     }

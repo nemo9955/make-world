@@ -59,14 +59,14 @@ export class WorldGui {
 
     public refresh_instant(skip_pane_refresh, extra: MessageType) {
         // console.debug("#HERELINE WorldGui refresh_instant ");
-        var promise: Promise<void> = null;
+        var prom_: Promise<void> = null;
 
         if (extra == MessageType.RefreshDBDeep)
-            promise = this.manager.writeDeep()
+            prom_ = this.manager.writeDeep()
         if (extra == MessageType.RefreshDBShallow)
-            promise = this.manager.writeShallow()
+            prom_ = this.manager.writeShallow()
 
-        promise.then(() => {
+        prom_.then(() => {
             if (!skip_pane_refresh)
                 this.refresh_gui();
         })
@@ -91,12 +91,15 @@ export class WorldGui {
     }
 
     public refreshDeep(skip_pane_refresh = false) {
+        // TODO ignore user input while refresh is in progress !!!
         // console.debug("#HERELINE WorldGui refresh ");
         // if (this.refresh_inval.check(REFRESH_CALL_INTERVAL)) {
         this.refresh_instant(skip_pane_refresh, MessageType.RefreshDBDeep);
         // }
     }
+
     public refreshShallow(skip_pane_refresh = true) {
+        // TODO ignore user input while refresh is in progress !!!
         // console.debug("#HERELINE WorldGui refresh ");
         if (this.refresh_inval.check(REFRESH_CALL_INTERVAL)) {
             this.refresh_instant(skip_pane_refresh, MessageType.RefreshDBShallow);

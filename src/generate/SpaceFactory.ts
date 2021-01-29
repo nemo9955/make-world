@@ -39,8 +39,8 @@ export class SpaceFactory {
         // this.genStar(plsys, plsys, "sun")
         this.genStar(plsys, plsys, "habitable")
         // plsys.genStar()
-        // this.genOrbitsSimpleMoons(plsys, plsys)
-        this.genOrbitsUniform(plsys, plsys)
+        this.genOrbitsSimpleMoons(plsys, plsys)
+        // this.genOrbitsUniform(plsys, plsys)
         // plsys.genOrbitsSimple()
     }
 
