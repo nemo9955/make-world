@@ -12,6 +12,9 @@ export const ASTRONOMICAL_UNIT_KM = 149597870700.0 / 1000.0// m -> Km
 export const AU_TO_SR = ASTRONOMICAL_UNIT_KM / SOLAR_RADIUS_KM
 
 
+export const EARTH_MASS_KG = 5.9722 * Math.pow(10, 24) // Kg
+
+
 
 export const CANVAS_SUBSTRACT_PIXELS = 2
 

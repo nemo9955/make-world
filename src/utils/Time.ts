@@ -1,5 +1,5 @@
 
-export function wait(ms: number) {
+export function waitBlocking(ms: number) {
     var start = new Date().getTime();
     var end = start;
     while (end < start + ms) {
@@ -71,9 +71,10 @@ export class Ticker {
         }
     }
 
-    public updateState(state: boolean) {
-        if (state == this.enabled) return;
-        if (state) this.start();
+    public updateState(setEnable: boolean) {
+        // this.tick(); // !!!!!!!!!!!!!!!!!!!!!!!!! TMP TOFO FIXME WA REMOVE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        if (setEnable == this.enabled) return;
+        if (setEnable) this.start();
         else this.stop();
     }
 

@@ -1,11 +1,13 @@
 // import * as Star from "../../src/generate/Star"
 import { Star } from "../../src/generate/Star"
+import { WorldData } from "../../src/modules/WorldData";
 
 // https://jestjs.io/docs/en/expect
 
 
 test('Test Star class G', () => {
-    var star = new Star().makeClassG(1);
+    var wd = new WorldData("test")
+    var star = new Star(wd).makeClassG(1);
     expect(star.sclass).toBe("G");
     expect(star.mass.sm).toBe(1);
     expect(star.radius.sr).toBe(1);

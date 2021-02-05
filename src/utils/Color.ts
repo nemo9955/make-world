@@ -33,13 +33,10 @@ export class Color {
 
     public copyDeep(source_: any) { this.copyShallow(source_) }
     public copyShallow(source_: any) {
-        // console.log("source_", source_);
         if (source_._value)
             this._value.copy(source_._value)
         else
             this._value.copy(source_)
-        // console.log("this._value", this._value);
-        // console.log("this", this);
     }
 
     public get r(): number { return this._value.r; }

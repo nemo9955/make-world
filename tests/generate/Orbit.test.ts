@@ -13,7 +13,7 @@ test('Test Ellipse ALT 1-1', () => {
     var maj = 1
     var min = 1
     var ecc = 0
-    var ell = new Orbit();
+    var ell = new Orbit(null);
 
     ell.semimajor_axis.km = maj;
     ell.eccentricity = ecc;
@@ -25,7 +25,7 @@ test('Test Ellipse ALT 2-1', () => {
     var maj = 2
     var min = 1
     var ecc = 0.8660254037844386
-    var ell = new Orbit();
+    var ell = new Orbit(null);
 
     ell.semimajor_axis.km = maj;
     ell.eccentricity = ecc;
@@ -38,7 +38,7 @@ test('Test Ellipse 1-1', () => {
     var maj = 1
     var min = 1
     var ecc = 0
-    var ell = new Orbit();
+    var ell = new Orbit(null);
     ell.set_axis(maj, min); expect(ell.eccentricity).toBeCloseTo(ecc);
     ell.set_major_ecc(maj, ecc); expect(ell.semiminor_axis.km).toBeCloseTo(min);
     ell.set_minor_ecc(min, ecc); expect(ell.semimajor_axis.km).toBeCloseTo(maj);
@@ -48,7 +48,7 @@ test('Test Ellipse 2-1', () => {
     var maj = 2
     var min = 1
     var ecc = 0.8660254037844386
-    var ell = new Orbit();
+    var ell = new Orbit(null);
 
     ell.set_axis(maj, min);
     expect(ell.eccentricity).toBeCloseTo(ecc);
@@ -64,10 +64,11 @@ test('Test Ellipse 2-1', () => {
 });
 
 test('Test Ellipse 845-159', () => {
+    var wd = new WorldData("test")
     var maj = 845
     var min = 159
     var ecc = 0.9821373003261777
-    var ell = new Orbit();
+    var ell = new Orbit(wd);
 
 
     ell.set_axis(maj, min);
@@ -99,8 +100,8 @@ test('Test Ellipse 845-159', () => {
 
 test('Copy 1', () => {
     var wd = new WorldData("test")
-    var orig_ = new Orbit();
-    var copy = new Orbit().copyDeep(orig_);
+    var orig_ = new Orbit(wd);
+    var copy = new Orbit(wd).copyDeep(orig_);
 
     expect(orig_).toMatchObject(copy)
 });
@@ -108,13 +109,13 @@ test('Copy 1', () => {
 
 test('Copy 2', () => {
     var wd = new WorldData("test")
-    var orig_ = new Orbit();
+    var orig_ = new Orbit(wd);
 
-    var test_orb_ = Orbit.new().randomUniform();
+    var test_orb_ = new Orbit(wd).randomUniform();
     test_orb_.semimajor_axis.div(1)
     orig_.addSat(test_orb_)
 
-    var copy_ = new Orbit().copyDeep(orig_);
+    var copy_ = new Orbit(wd).copyDeep(orig_);
 
     expect(orig_).toMatchObject(copy_)
     expect(copy_).toMatchObject(orig_)
@@ -122,21 +123,18 @@ test('Copy 2', () => {
 
 test('Copy 3', () => {
     var wd = new WorldData("test")
-    var orig_ = new Orbit();
+    var orig_ = new Orbit(wd);
 
-    var test_pl_ = Planet.new()
-    test_pl_.orbit.randomUniform();
-    test_pl_.semimajor_axis.div(1)
+    var test_pl_ = new Planet(wd)
     test_pl_.radius.km = 1000
     test_pl_.mass.kg = 1000
     orig_.addSat(test_pl_)
 
-    var copy_ = new Orbit().copyDeep(orig_);
+    var copy_ = new Orbit(wd).copyDeep(orig_);
 
     expect(orig_).toMatchObject(copy_)
     expect(copy_).toMatchObject(orig_)
 
-    expect((copy_.getSats()[0] as Planet).get_radius().km).toBe(1000)
     expect((copy_.getSats()[0] as Planet).radius.km).toBe(1000)
     expect((copy_.getSats()[0] as Planet).mass.kg).toBe(1000)
 });

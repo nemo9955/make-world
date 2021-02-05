@@ -12,7 +12,7 @@ import * as THREE from "three";
 
 
 import { make_camera } from "./DrawWorld"
-import { Ticker } from "../utils/Time";
+import { Ticker, waitBlocking } from "../utils/Time";
 import { SharedData } from "./SharedData";
 import { EventsManager } from "./EventsManager";
 
@@ -27,24 +27,22 @@ export class MainManager {
 
     world: WorldData;
     config: Config;
-    dbm: DataBaseManager;
 
-    update_tick: Ticker;
+    ticker: Ticker;
 
     shared_data = new SharedData();
     evmng: EventsManager;
 
     constructor() {
-        this.dbm = new DataBaseManager();
         this.world = new WorldData("MainManager");
         this.gui = new WorldGui();
         this.config = new Config();
 
         this.evmng = new EventsManager();
 
-        // TODO Actions will need to tell everyone of cases when an readDeep will be need
+        // TODO Actions will need to tell everyone of cases when a readDeep will be need
         // Usual var updates will be ok readShallow, structure changes need readDeep
-        this.update_tick = new Ticker(false, this.readShallow.bind(this), Units.LOOP_INTERVAL, Units.LOOP_INTERVAL * 1)
+        this.ticker = new Ticker(false, this.readShallow.bind(this), Units.LOOP_INTERVAL, Units.LOOP_INTERVAL * 1.9)
     }
 
     public async init() {
@@ -54,16 +52,15 @@ export class MainManager {
 
         this.initSharedData()
 
-        this.dbm.init().then(() => {
-            this.world.init();
+        this.world.init().then(() => {
             this.config.WorldPlanetarySystemID = this.world.planetary_system.id;
             this.gui.init();
         }).then(() => {
-            this.writeDeep();
+            return this.writeDeep();
         }).then(() => {
-            this.init_draw_worker();
             this.init_update_worker();
-            this.update_tick.updateState(this.config.do_main_loop);
+            this.init_draw_worker();
+            this.refreshConfig()
         })
 
         // // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -80,7 +77,6 @@ export class MainManager {
             if (object_.manager === null) object_.manager = this
             if (object_.config === null) object_.config = this.config
             if (object_.world === null) object_.world = this.world
-            if (object_.dbm === null) object_.dbm = this.dbm
         }
     }
 
@@ -88,6 +84,31 @@ export class MainManager {
         // console.log("window.isSecureContext", window.isSecureContext);
         // TODO make dedicated post to UPDATE/set the shared_data to workers
         this.shared_data.initMain();
+    }
+
+    public async refreshConfig() {
+        this.ticker.updateState(this.config.do_main_loop) // TODO FIXME ENABLE TEST !!!!!!!!!!!!!!!!!
+
+        for (const worker_ of this.workers) {
+            // waitBlocking(50); // TODO TMP !!!!!!!!!!!!!!
+            console.log("MainManager writeDeep postMessage ", worker_.name);
+            worker_.postMessage({
+                message: MessageType.RefreshConfig,
+                config: this.config
+            });
+        }
+    }
+
+
+    public pauseAll() {
+        this.ticker.stop();
+        for (const worker_ of this.workers) {
+            // waitBlocking(50); // TODO TMP !!!!!!!!!!!!!!
+            console.log("MainManager pauseAll postMessage ", worker_.name);
+            worker_.postMessage({
+                message: MessageType.Pause
+            });
+        }
     }
 
     public async readDeep() {
@@ -98,47 +119,46 @@ export class MainManager {
         await this.world.readShallow();
     }
 
-    public writeDeep() {
-        // console.time("#time MainManager write");
+    public async writeDeep() {
+        console.time("#time MainManager writeDeep");
 
-        // await this.world.writeDeep();
-        var prom_ = this.world.writeDeep().then(() => {
-            for (const worker_ of this.workers) {
-                worker_.postMessage({
-                    message: MessageType.RefreshDBDeep,
-                    config: this.config
-                });
-            }
-        })
+        await this.world.writeDeep();
 
-        // console.timeEnd("#time MainManager write");
-        return prom_;
+        for (const worker_ of this.workers) {
+            // waitBlocking(50); // TODO TMP !!!!!!!!!!!!!!
+            console.log("MainManager writeDeep postMessage ", worker_.name);
+            worker_.postMessage({
+                message: MessageType.RefreshDBDeep,
+                config: this.config
+            });
+        }
+        console.timeEnd("#time MainManager writeDeep");
     }
 
-    public writeShallow() {
-        // console.time("#time MainManager write");
-        this.update_tick.updateState(this.config.do_main_loop)
+    public async writeShallow() {
+        console.time("#time MainManager writeShallow");
 
-        // await this.world.writeShallow();
-        var prom_ = this.world.writeShallow().then(() => {
-            for (const worker_ of this.workers) {
-                worker_.postMessage({
-                    message: MessageType.RefreshDBShallow,
-                    config: this.config
-                });
-            }
-        })
+        await this.world.writeShallow();
 
-        // console.timeEnd("#time MainManager write");
-        return prom_;
+        for (const worker_ of this.workers) {
+            // waitBlocking(50); // TODO TMP !!!!!!!!!!!!!!
+            console.log("MainManager writeShallow postMessage ", worker_.name);
+            worker_.postMessage({
+                message: MessageType.RefreshDBShallow,
+                config: this.config
+            });
+        }
+
+        console.timeEnd("#time MainManager writeShallow");
     }
 
     public init_draw_worker() {
         this.draw_worker = new GenericWorkerInstance();
+        this.draw_worker.name = "DrawWorker"
         this.workers.push(this.draw_worker);
         this.draw_worker.postMessage({ create: "DrawWorker", sab: this.shared_data.sab });
 
-        this.draw_worker.addEventListener("message", async (event) => {
+        this.draw_worker.addEventListener("message", (event) => {
             this.get_message(this.draw_worker, event)
         });
 
@@ -150,10 +170,11 @@ export class MainManager {
 
     public init_update_worker() {
         this.update_worker = new GenericWorkerInstance();
+        this.update_worker.name = "UpdateWorker"
         this.workers.push(this.update_worker);
         this.update_worker.postMessage({ create: "UpdateWorker", sab: this.shared_data.sab });
 
-        this.update_worker.addEventListener("message", async (event) => {
+        this.update_worker.addEventListener("message", (event) => {
             this.get_message(this.update_worker, event)
         });
 
@@ -164,27 +185,32 @@ export class MainManager {
     }
 
 
-    public refresh_workers(the_worker: GenericWorkerInstance) {
+    public refreshWorkers(the_worker: GenericWorkerInstance) {
         the_worker.postMessage({
             message: MessageType.RefreshDBDeep,
             config: this.config
         });
     }
 
-    public get_message(the_worker: Worker, event: MessageEvent) {
-        console.debug("#HERELINE MainManager get_message ", event.data.message);
+    public get_message(the_worker: GenericWorkerInstance, event: MessageEvent) {
+        // console.debug("#HERELINE MainManager get_message ", event.data.message, the_worker.name);
 
         switch (event.data.message as MessageType) {
             case MessageType.Ready:
-                this.refresh_workers(the_worker)
-                break;
+                this.refreshWorkers(the_worker); break;
+            case MessageType.RefreshConfig:
+                this.refreshConfig(); break;
+            case MessageType.RefreshDBShallow:
+                this.readShallow(); break;
+            case MessageType.RefreshDBDeep:
+                this.readDeep(); break;
             case MessageType.MakeCanvas:
-                this.init_worker_canvas()
-                break;
+                this.init_worker_canvas(); break;
             default:
                 console.warn("DEFAULT not implemented !"); break
         }
     }
+
 
 
     public resize() {

@@ -3,7 +3,8 @@ import { Color } from "../utils/Color"
 import * as Random from "../utils/Random"
 import * as Units from "../utils/Units"
 import * as Convert from "../utils/Convert"
-import { OrbitingElement, Orbit } from "./Orbit";
+import { Orbit } from "./Orbit";
+import { OrbitingElement } from "./OrbitingElement";
 import { ObjectPool } from "../utils/ObjectPool";
 import { Identifiable } from "../modules/DataBaseManager";
 import { WorldData } from "../modules/WorldData";
@@ -20,10 +21,7 @@ import { WorldData } from "../modules/WorldData";
 // K	3,700–5,200 K	light orange	pale yellow orange	0.45–0.8 M☉	0.7–0.96 R☉	0.08–0.6 L☉	Very weak	12.1%
 // M	2,400–3,700 K	orange red	light orange red	0.08–0.45 M☉	≤ 0.7 R☉	≤ 0.08 L☉	Very weak	76.45%
 
-export class Star implements OrbitingElement, Identifiable {
-    public id: number=null;
-    type: string = null;
-
+export class Star extends OrbitingElement {
     sclass: string;
     luminosity = new Convert.NumberRadiantFlux();
     temperature = new Convert.NumberTemperature();
@@ -39,31 +37,12 @@ export class Star implements OrbitingElement, Identifiable {
     // public set diameter(value: any) { this.mass.copy(value.div(2)); }
 
 
-    public get mean_longitude() { return this.orbit.mean_longitude; }
-    public get longitude_ascending_node() { return this.orbit.longitude_ascending_node; }
-    public get argument_of_perihelion() { return this.orbit.argument_of_perihelion; }
-    public get inclination() { return this.orbit.inclination; }
-    public get semimajor_axis() { return this.orbit.semimajor_axis; }
-    public get semiminor_axis() { return this.orbit.semiminor_axis; }
-    public get focal_distance() { return this.orbit.focal_distance; }
-    public get satelites() { return this.orbit.satelites; }
-    public get eccentricity() { return this.orbit.eccentricity; }
 
 
-
-
-
-
-    public orbit: Orbit;
-    constructor() {
-        this.type = this.constructor.name;
-        this.id = WorldData?.instance?.getFreeID();
-
-        this.orbit = Orbit.new();
-        // this.orbit.used_by = this;
-        this.orbit.used_by = this.id;
-
+    constructor(worldData: WorldData) {
+        super(worldData);
         this.color = new Color();
+        this.type = this.constructor.name;
     }
 
     private setFromMass(mass?: number) {
@@ -219,36 +198,5 @@ export class Star implements OrbitingElement, Identifiable {
         return this.makeClassG(); // Like the Sun
     }
 
-
-    public getSats(): OrbitingElement[] {
-        var satObjs: OrbitingElement[] = []
-        for (const sid of this.satelites)
-            satObjs.push(WorldData.instance.stdBObjMap.get(sid))
-        return satObjs
-    }
-
-    public addSat(sat_: OrbitingElement) { this.orbit.addSat(sat_) }
-
-    public copyDeep(source_: Star) {
-        Convert.copyDeep(this, source_)
-        return this;
-    }
-    public copyShallow(source_: Star) {
-        Convert.copyShallow(this, source_)
-        return this;
-    }
-
-    public copyLogic(source_: this) {
-        Convert.copyShallow(this, source_, true)
-        return this;
-    }
-
-
-    public clearSatelites() { this.orbit.clearSatelites() }
-    // GRAVEYARD ZONE :
-    public free() { return; }
-    public clone() { return Star.clone().copyLogic(this) }
-    public static clone() { return Star.pool_.create() } // TODO FIXME ideally to use get
-    public static new() { return Star.clone() }
-    public static pool_ = new ObjectPool<Star>(() => new Star(), (item: Star) => { }, 0);
+    public clone() { return new Star(this.getWorldData()).copyLogic(this) }
 }

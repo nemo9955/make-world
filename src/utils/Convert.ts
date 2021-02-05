@@ -16,6 +16,14 @@ export function smToKg(from: number): number {
 }
 
 
+export function kgToEm(from: number): number {
+    return from / Units.EARTH_MASS_KG;
+}
+export function emToKg(from: number): number {
+    return from * Units.EARTH_MASS_KG;
+}
+
+
 export function kmToAu(from: number): number {
     return from / Units.ASTRONOMICAL_UNIT_KM;
 }
@@ -67,6 +75,10 @@ export function clamp(value: number, min: number, max: number): number {
 
 export function copy(target_: any, source_: any) { copyDeep(target_, source_) }
 
+export function sphereVolume(radius: number) {
+    return 4 * Math.PI * radius * radius
+}
+
 
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/typeof
 // https://stackoverflow.com/questions/31538010/test-if-a-variable-is-a-primitive-rather-than-an-object
@@ -85,6 +97,8 @@ export function copyShallow(target_: any, source_: any, skipId = false) {
             target_[key]['copyShallow'](source_[key]);
             // } else if (typeof target_?.[key]?.['copy'] === "function") {
             //     target_[key]['copy'](source_[key]);
+        } else if (typeof source_?.[key] === "function") {
+            continue; // don't copy functions
         } else {
             target_[key] = source_[key];
         }
@@ -109,6 +123,8 @@ export function copyDeep(target_: any, source_: any, skipId = false) {
             target_[key]['copyDeep'](source_[key]);
             // } else if (typeof target_?.[key]?.['copy'] === "function") {
             //     target_[key]['copy'](source_[key]);
+        } else if (typeof source_?.[key] === "function") {
+            continue; // don't copy functions
         } else {
             target_[key] = source_[key];
         }
@@ -193,18 +209,46 @@ export class NumberLength extends NumberConverter {
     public clone() { return new NumberLength(this.value); }
     public get km(): number { return this.value; }
     public set km(value: number) { this.value = value; }
+    public get Mm(): number { return this.value / 1000; }
+    public set Mm(value: number) { this.value = value * 1000; }
     public get au(): number { return kmToAu(this.value); }
     public set au(value: number) { this.value = auToKm(value); }
     public get sr(): number { return kmToSr(this.value); }
     public set sr(value: number) { this.value = srToKm(value); }
 }
 
+export class NumberVolume extends NumberConverter {
+    public clone() { return new NumberLength(this.value); }
+    public get km3(): number { return this.value; }
+    public set km3(value: number) { this.value = value; }
+    public get m3(): number { return this.value * 1000000000; }
+    public set m3(value: number) { this.value = value / 1000000000; }
+    public setSphere(radius: NumberLength) { this.km3 = sphereVolume(radius.km) }
+}
+
 export class NumberMass extends NumberConverter {
     public clone() { return new NumberMass(this.value); }
     public get kg(): number { return this.value; }
     public set kg(value: number) { this.value = value; }
+    public get Mg(): number { return this.value / 1000; }
+    public set Mg(value: number) { this.value = value * 1000; }
+    public get Gg(): number { return this.value / 1000000; }
+    public set Gg(value: number) { this.value = value * 1000000; }
+    public get Tg(): number { return this.value / 1000000000; }
+    public set Tg(value: number) { this.value = value * 1000000000; }
+    public get Xg(): number { return this.value / Math.pow(10,27); }
+    public set Xg(value: number) { this.value = value * Math.pow(10,27); }
     public get sm(): number { return kgToSm(this.value); }
     public set sm(value: number) { this.value = smToKg(value); }
+    public get em(): number { return kgToEm(this.value); }
+    public set em(value: number) { this.value = emToKg(value); }
+}
+
+export class NumberDensity extends NumberConverter {
+    public clone() { return new NumberDensity(this.value); }
+    public get si(): number { return this.value; }
+    public set si(value: number) { this.value = value; }
+    public setSi(mass: NumberMass, volume: NumberVolume) { this.si = mass.kg / volume.m3 }
 }
 
 export class NumberAngle extends NumberConverter {

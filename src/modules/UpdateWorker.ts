@@ -28,28 +28,27 @@ export class UpdateWorker {
 
     world: WorldData;
     config: Config;
-    dbm: DataBaseManager;
     worker: Worker;
 
     db_read_itv = new Intervaler();
     update_world: UpdateWorld;
-    update_tick: Ticker;
+    ticker: Ticker;
 
     constructor(worker: Worker) {
         this.worker = worker;
-        this.dbm = new DataBaseManager();
         this.world = new WorldData("UpdateWorker");
         this.config = new Config();
         this.update_world = new UpdateWorld();
-        this.update_tick = new Ticker(false, this.update_loop.bind(this), Units.LOOP_INTERVAL, Units.LOOP_INTERVAL*0.1)
+        this.ticker = new Ticker(false, this.refreshShallow.bind(this), Units.LOOP_INTERVAL, Units.LOOP_INTERVAL * 0.1)
     }
 
     public init() {
         this.spread_objects()
-        this.dbm.open().then(() => {
+        this.world.initWorker().then(() => {
             this.worker.postMessage({ message: MessageType.Ready, from: "UpdateWorker" });
         })
     }
+
 
     public spread_objects() {
         // TODO make generic function ???
@@ -60,7 +59,6 @@ export class UpdateWorker {
             if (object_.config === null) object_.shared_data = this.shared_data
             if (object_.config === null) object_.config = this.config
             if (object_.world === null) object_.world = this.world
-            if (object_.dbm === null) object_.dbm = this.dbm
         }
     }
 
@@ -74,47 +72,64 @@ export class UpdateWorker {
         switch (message_) {
             case MessageType.InitWorker:
                 this.init(); break;
+            case MessageType.Pause:
+                this.pause(); break;
             case MessageType.RefreshDBDeep:
             case MessageType.RefreshDBShallow:
-                this.refresh_db(event, message_); break;
+                this.refreshDb(event, message_); break;
             case MessageType.RefreshConfig:
-                this.update(); break;
+                this.refreshConfig(); break;
             default:
                 console.warn("DEFAULT not implemented !"); break
         }
     }
 
+    public async pause() {
+        this.ticker.stop();
+    }
 
-    public async refresh_db(event: MessageEvent, refreshType: MessageType) {
-        console.debug("#HERELINE UpdateWorker refresh_db this.dbm.idb ready", !!this.dbm.idb, refreshType);
-        if (!this.dbm.idb) return;
+    public async refreshConfig() {
+        this.ticker.updateState(this.config.do_update_loop)
+    }
 
+    public async refreshDb(event: MessageEvent, refreshType: MessageType) {
+        console.debug("#HERELINE UpdateWorker refreshDb ready", refreshType);
+        console.time("#time UpdateWorker refreshDb " + refreshType);
+
+        await this.refreshConfig();
+
+        var prom: Promise<void> = null
         if (refreshType == MessageType.RefreshDBDeep)
-            await this.world.readDeep();
+            prom = this.refreshDeep();
         if (refreshType == MessageType.RefreshDBShallow)
-            await this.world.readShallow();
+            prom = this.refreshShallow();
 
-        this.update();
+        await prom.finally(() => {
+            console.timeEnd("#time UpdateWorker refreshDb " + refreshType);
+        })
     }
 
 
-
-    private update() {
-        console.debug("#HERELINE UpdateWorker update ");
-        console.time("#time UpdateWorker update");
-
-        this.update_tick.updateState(this.config.do_update_loop)
-        console.timeEnd("#time UpdateWorker update");
-    }
-
-    private update_loop() {
+    private async refreshDeep() {
+        console.debug("#HERELINE UpdateWorker refreshDeep");
+        await this.world.readDeep();
         this.update_world.update();
+        await this.world.writeShallow();
+        this.tellMainToUpdate();
+    }
 
-        // if (this.db_read_itv.check(WRITE_DB_INTERVAL)) {
-        // this.refresh_db();
-        // this.world.write(); // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        this.world.writeShallow(); // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        // }
+    private async refreshShallow() {
+        // console.debug("#HERELINE UpdateWorker refreshShallow");
+        await this.world.readShallow();
+        this.update_world.update();
+        await this.world.writeShallow();
+        this.tellMainToUpdate();
+    }
+
+    private tellMainToUpdate() {
+        // console.debug("#HERELINE UpdateWorker tellMainToUpdate");
+        // TODO tell more exactly what and how to update !!!!
+        this.worker.postMessage({ message: MessageType.RefreshDBShallow });
     }
 
 

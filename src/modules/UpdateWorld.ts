@@ -23,8 +23,10 @@ export class UpdateWorld {
         this.world = null;
     }
 
-    update() {
+    public update() {
+        // console.debug("#HERELINE UpdateWorld update ", this.world.planetary_system.time.universal);
         this.world.planetary_system.time.universal += 1000000 * this.config.timeUpdSpeed;
+        // console.log("this.world.planetary_system.time.universal", this.world.planetary_system.time.universal);
     }
 
 }

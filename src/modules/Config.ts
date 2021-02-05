@@ -7,13 +7,13 @@ import * as Convert from "../utils/Convert"
 export class Config {
     do_draw_loop: boolean = true
     do_update_loop: boolean = true
-    do_main_loop: boolean = true
+    do_main_loop: boolean = false // leave false
     innerWidth: number
     innerHeight: number
 
     follow_pointed_orbit: boolean = false
 
-    timeUpdSpeed = 3;
+    timeUpdSpeed = 4;
 
     WorldPlanetarySystemID: number
 
@@ -25,6 +25,8 @@ export class Config {
 export enum MessageType {
     Event = "Event",
     Ready = "Ready",
+    Play = "Play",
+    Pause = "Pause",
     InitWorker = "InitWorker",
     InitCanvas = "InitCanvas",
     RefreshDBDeep = "RefreshDBDeep",

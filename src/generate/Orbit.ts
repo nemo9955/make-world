@@ -6,6 +6,7 @@ import * as Convert from "../utils/Convert"
 import { ObjectPool } from "../utils/ObjectPool";
 import { Identifiable } from "../modules/DataBaseManager";
 import { orbit_types_, WorldData } from "../modules/WorldData";
+import { OrbitingElement } from "./OrbitingElement";
 
 
 
@@ -23,38 +24,10 @@ https://jtauber.github.io/orbits/019.html
 
 */
 
-export interface OrbitingElement extends Identifiable {
-    readonly mean_longitude: Convert.NumberAngle;
-    readonly longitude_ascending_node: Convert.NumberAngle;
-    readonly argument_of_perihelion: Convert.NumberAngle;
-    readonly inclination: Convert.NumberAngle;
-    readonly semimajor_axis: Convert.NumberLength;
-    readonly semiminor_axis: Convert.NumberLength;
-    readonly focal_distance: Convert.NumberLength;
 
-    readonly eccentricity: number;
-    readonly satelites: number[];
-    readonly orbit: Orbit;
-    readonly type: string;
+export class Orbit extends OrbitingElement {
 
-    free(): void;
-    clearSatelites(): void;
-    addSat(sat_: OrbitingElement): void;
-    getSats(): OrbitingElement[];
-
-}
-
-
-export class Orbit implements OrbitingElement, Identifiable {
-
-    public id: number = null;
-    type: string = null;
-    public used_by: number = null;
-    depth: number = 0;
-
-
-
-    public readonly mean_longitude = new Convert.NumberAngle();
+    public readonly mean_longitude = new Convert.NumberAngle(0);
 
 
     // Right Ascension of Ascending Node
@@ -104,31 +77,13 @@ export class Orbit implements OrbitingElement, Identifiable {
     //     this.focal_distance.value = this.calc_focal_distance()
     // }
 
-    public satelites: Array<number> = null;
 
 
-
-    public get orbit() { return this; }
-
-
-    constructor() {
-        this.id = WorldData?.instance?.getFreeID();
+    constructor(worldData: WorldData) {
+        super(worldData);
         this.satelites = new Array<number>();
         // console.log("this.constructor", this.constructor);
         this.type = this.constructor.name;
-    }
-
-    public getSats(): OrbitingElement[] {
-        var satObjs: OrbitingElement[] = []
-        for (const sid of this.satelites)
-            satObjs.push(WorldData.instance.stdBObjMap.get(sid))
-        return satObjs
-    }
-
-    public addSat(sat_: OrbitingElement) {
-        sat_.orbit.depth = this.depth + 1
-        this.satelites.push(sat_.id)
-        WorldData.instance.addSat(sat_)
     }
 
 
@@ -220,91 +175,8 @@ export class Orbit implements OrbitingElement, Identifiable {
         // return this.semiminor_axis.value * this._eccentricity
     }
 
-
-    public copyDeep(source_: OrbitingElement) {
-        Convert.copyDeep(this, source_)
-
-        // this.clearNonStars();
-        // this.clearSatelites();
-        // for (let index = 0; index < source_.satelites.length; index++) {
-        //     const sid = source_.satelites[index]
-
-        //     var obj_ = orbit_types_[iterator.type].new()
-
-
-        //     console.log("orbit_types_", orbit_types_);
-        //     var obj_ = orbit_types_[orbit_src_.type].new().copyDeep(orbit_src_)
-        //     this.satelites.push(obj_);
-        // }
-        return this;
-    }
-
-    public copyShallow(source_: Orbit) {
-        Convert.copyShallow(this, source_)
-        return this;
-    }
-
-    public copyLogic(source_: this) {
-        Convert.copyShallow(this, source_, true)
-        return this;
-    }
-
-
-
-    public clearSatelites() {
-        while (this.satelites.length > 0)
-            WorldData.instance.free(this.satelites.pop())
-    }
-
-    public clearNonStars() {
-        var count = 0;
-        while (this.satelites.length > count) {
-            var lastId = this.satelites[this.satelites.length - 1]
-            var lastObj = WorldData.instance.stdBObjMap.get(lastId)
-            if (lastObj.type === "Star") {
-                count++;
-                continue;
-            }
-            WorldData.instance.free(this.satelites.pop())
-        }
-    }
-
-
-    // GRAVEYARD ZONE :
-    public free() {
-        return;
-        if (this.used_by != null) {
-            console.error("Cannot free a used Orbit !!!! ", this, Orbit.pool_);
-            return;
-        }
-
-        if (this.type != "Orbit") {
-            // console.groupCollapsed();
-            // console.error("Free not same type ", this);
-            console.error("Free not same type ", this, Orbit.pool_);
-            // console.trace("Free not same type ", this);
-            // console.groupEnd();
-            // throw new Error("Free not same type");
-            return;
-        }
-        this.clearNonStars();
-        // console.log("free this", this);
-        Orbit.pool_.free(this)
-    }
-    public clone() { return Orbit.clone().copyLogic(this) }
-    public static new() { return Orbit.clone() }
-    public static clone() {
-        // var orb_ = Orbit.pool_.get()
-        var orb_ = Orbit.pool_.create() // TODO FIXME ideally to use get //////////////////////////////////////////////////////////
-        // console.log("orb_ ", orb_ );
-        return orb_
-    }
-    public static pool_ = new ObjectPool<Orbit>(() => new Orbit(), (item: Orbit) => {
-        // console.log("item", item);
-        // item.clearNonStars();
-        item.depth = 0;
-        // Orbit.pool_.free(item)
-    }, 0);
+    public free() { return; }
+    public clone() { return new Orbit(this.getWorldData()).copyLogic(this) }
 }
 
 

@@ -10,9 +10,9 @@ console.time = jest.fn()
 
 test('Sample Habitable', () => {
     var wd = new WorldData("test")
-    var spaceFactory = new SpaceFactory();
+    var spaceFactory = new SpaceFactory(wd);
     for (let index = 0; index < 100; index++) {
-        var system = new PlanetarySystem();
+        var system = new PlanetarySystem(wd);
         spaceFactory.genStar(system, system); // empty defaults to habitable
         expect(["F", "G", "K"]).toContain(system.getStars()[0].sclass);
 
@@ -25,13 +25,13 @@ test('Sample Habitable', () => {
 
 test('Clone 1', () => {
     var wd = new WorldData("test")
-    var spaceFactory = new SpaceFactory();
+    var spaceFactory = new SpaceFactory(wd);
     for (let index = 0; index < 10; index++) {
-        var system_orig = new PlanetarySystem();
+        var system_orig = new PlanetarySystem(wd);
         spaceFactory.genStar(system_orig, system_orig); // empty defaults to habitable
         spaceFactory.genOrbitsSimpleMoons(system_orig, system_orig);
 
-        var system_copy = new PlanetarySystem().copyDeep(system_orig)
+        var system_copy = new PlanetarySystem(wd).copyDeep(system_orig)
 
         expect(system_copy).toMatchObject(system_orig)
         expect(system_orig).toMatchObject(system_copy)
