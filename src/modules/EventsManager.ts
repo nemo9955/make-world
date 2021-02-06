@@ -28,7 +28,7 @@ export class EventsManager {
     }
 
 
-    genericRedirect(event_name: string, canvas: HTMLCanvasElement, canvas_id: any, worker: GenericWorkerInstance) {
+    genericRedirect(event_name: string, canvas: HTMLElement, canvas_id: any, worker: GenericWorkerInstance) {
         // console.log("event_name", event_name);
         canvas.addEventListener(event_name, (evt_) => {
             var basic_event = this.getBasicEvent(evt_)
@@ -42,7 +42,7 @@ export class EventsManager {
         });
     }
 
-    conditionalRedirect(event_do: string, event_in: string, event_out: string, canvas: HTMLCanvasElement, canvas_id: any, worker: GenericWorkerInstance) {
+    conditionalRedirect(event_do: string, event_in: string, event_out: string, canvas: HTMLElement, canvas_id: any, worker: GenericWorkerInstance) {
         var ev_do_fun = (evt_) => {
             var basic_event = this.getBasicEvent(evt_)
             basic_event["event_id"] = canvas_id;
@@ -79,7 +79,12 @@ export class EventsManager {
         });
     }
 
-    addOrbitCtrlEvents(canvas: HTMLCanvasElement, canvas_id: any, worker: GenericWorkerInstance) {
+    public addResizeEvents(canvas: HTMLElement, canvas_id: any, worker: GenericWorkerInstance) {
+        this.genericRedirect("resize", canvas, canvas_id, worker)
+    }
+
+
+    public addOrbitCtrlEvents(canvas: HTMLElement, canvas_id: any, worker: GenericWorkerInstance) {
 
         // disable right-click context on canvas ... TODO do cool stuff !!!!
         canvas.addEventListener("contextmenu", (evt_) => { evt_.preventDefault() });

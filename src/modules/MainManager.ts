@@ -3,15 +3,9 @@ import { WorldData } from "./WorldData"
 import { WorldGui } from "./WorldGui"
 import { DataBaseManager } from "./DataBaseManager"
 import * as Units from "../utils/Units"
-
 import GenericWorkerInstance from "worker-loader!./Generic.worker.ts";
-
 import { Config, MessageType } from "./Config"
-
 import * as THREE from "three";
-
-
-import { make_camera } from "./DrawWorld"
 import { Ticker, waitBlocking } from "../utils/Time";
 import { SharedData } from "./SharedData";
 import { EventsManager } from "./EventsManager";
@@ -46,10 +40,7 @@ export class MainManager {
     }
 
     public async init() {
-        this.resize()
         this.spread_objects()
-        window.addEventListener('resize', this.resize.bind(this));
-
         this.initSharedData()
 
         this.world.init().then(() => {
@@ -212,21 +203,7 @@ export class MainManager {
     }
 
 
-
-    public resize() {
-        this.config.innerWidth = window.innerWidth;
-        this.config.innerHeight = window.innerHeight;
-
-        if (this.draw_worker)
-            this.draw_worker.postMessage({
-                message: MessageType.Resize,
-                config: this.config
-            });
-    }
-
     public init_worker_canvas() {
-        this.config.innerWidth = window.innerWidth;
-        this.config.innerHeight = window.innerHeight;
 
         var body = document.getElementsByTagName("body")[0];
 
@@ -237,9 +214,7 @@ export class MainManager {
         // canvas.style.zIndex = "8";
         canvas.style.position = "absolute";
         canvas.tabIndex = 0; // so canvas can get keydown events
-        canvas.style.border = "1px solid";
-        canvas.width = window.innerWidth - Units.CANVAS_SUBSTRACT_PIXELS;
-        canvas.height = window.innerHeight - Units.CANVAS_SUBSTRACT_PIXELS;
+        // canvas.style.border = "1px solid";
         body.appendChild(canvas);
 
 
@@ -255,14 +230,22 @@ export class MainManager {
             this.shared_data.mousey = null;
         }, false);
 
+        var canvasOffscreen = canvas.transferControlToOffscreen();
+        var canvasResize = () => {
+            canvasOffscreen.width = window.innerWidth - Units.CANVAS_SUBSTRACT_PIXELS;
+            canvasOffscreen.height = window.innerHeight - Units.CANVAS_SUBSTRACT_PIXELS;
+
+            var fakeResizeEvent: any = new Event("resize");
+            fakeResizeEvent.width = canvasOffscreen.width
+            fakeResizeEvent.height = canvasOffscreen.height
+            canvas.dispatchEvent(fakeResizeEvent);
+        }
+        window.addEventListener('resize', canvasResize.bind(this));
+        canvasResize();
 
         // TODO have a more dynamic ID-based way of propagating events
         this.evmng.addOrbitCtrlEvents(canvas, canvas.id, this.draw_worker)
-
-
-        var canvasOffscreen = canvas.transferControlToOffscreen();
-        canvasOffscreen.width = window.innerWidth - Units.CANVAS_SUBSTRACT_PIXELS;
-        canvasOffscreen.height = window.innerHeight - Units.CANVAS_SUBSTRACT_PIXELS;
+        this.evmng.addResizeEvents(canvas, canvas.id, this.draw_worker)
 
         this.draw_worker.postMessage({
             message: MessageType.InitCanvas,

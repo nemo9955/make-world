@@ -8,8 +8,8 @@ export class Config {
     do_draw_loop: boolean = true
     do_update_loop: boolean = false
     do_main_loop: boolean = false // leave false
-    innerWidth: number
-    innerHeight: number
+    // innerWidth: number
+    // innerHeight: number
 
     follow_pointed_orbit: boolean = false
 
@@ -33,5 +33,4 @@ export enum MessageType {
     RefreshDBShallow = "RefreshDBShallow",
     RefreshConfig = "RefreshConfig",
     MakeCanvas = "MakeCanvas",
-    Resize = "Resize"
 }

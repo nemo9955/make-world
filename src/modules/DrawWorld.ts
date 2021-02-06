@@ -24,16 +24,6 @@ import { SpaceGroup } from "../generate/SpaceGroup";
 
 // https://orbitalmechanics.info/
 
-export function make_camera(width_: number, height_: number) {
-    var camera = new THREE.PerspectiveCamera(75, width_ / height_, 0.1, 1000000000000);
-    // camera.position.y = 3;
-    camera.position.y = Convert.auToKm(5);
-    // camera.position.y = Convert.auToKm(40);
-    // camera.position.y = Convert.auToKm(50);
-    // camera.position.y = Convert.auToKm(80);
-    camera.lookAt(0, 0, 0)
-    return camera
-}
 
 type ThreeUserData = {
     orbLine?: THREE.Object3D,
@@ -52,8 +42,7 @@ export class DrawWorld {
     world: WorldData;
     canvasOffscreen: any;
     config: Config;
-
-
+    fakeDOM = new WorkerDOM();
 
     mouse = new THREE.Vector2();
     raycaster = new THREE.Raycaster();
@@ -139,47 +128,48 @@ export class DrawWorld {
             item?.parent?.remove(item)
             item.clear()
         }, 0)
-
-
-
     }
 
-    fakeDOM = new WorkerDOM();
+
+    public resize(event_: any) {
+        // console.debug("#HERELINE DrawWorld resize", event_);
+        this.canvasOffscreen.width = event_.width
+        this.canvasOffscreen.height = event_.height
+        this.fakeDOM.clientWidth = event_.width
+        this.fakeDOM.clientHeight = event_.height
+
+        this.camera.aspect = event_.width / event_.height;
+        this.camera.updateProjectionMatrix();
+        this.renderer.setSize(event_.width, event_.height, false)
+    }
+
+
     public init() {
         console.debug("#HERELINE DrawWorld init ");
 
         this.scene = new THREE.Scene();
-        this.camera = make_camera(this.config.innerWidth, this.config.innerHeight);
+        this.camera = new THREE.PerspectiveCamera(75,
+            this.canvasOffscreen.width / this.canvasOffscreen.height, 0.1, 1000000000000);
+        this.camera.position.y = Convert.auToKm(5);
+        // this.camera.position.y = Convert.auToKm(40);
+        // this.camera.position.y = Convert.auToKm(50);
+        // this.camera.position.y = Convert.auToKm(80);
+        this.camera.lookAt(0, 0, 0)
 
         // events set in src/modules/EventsManager.ts -> addOrbitCtrlEvents
-        this.controls = new OrbitControls(this.camera, this.fakeDOM); ////////////////////////////////////
-
-        // this.fakeDOM.addEventListener("keydown", (event_) => {
-        //     console.log("!!!!!!!!!! event_", event_);
-        //     console.log("!!!!!!!!!! this.camera.position", this.camera.position);
-        // })
-
-        // this.fakeDOM.addEventListener("pointerup", (event_) => {
-        //     console.log("!!!!!!!!!! this.camera", this.camera.position, this.camera);
-        // })
-
-        // console.log("--- this.camera", this.camera);
-        // this.controls.addEventListener("change", () => {
-        //     console.log("this.camera", this.camera);
-        // })
+        this.controls = new OrbitControls(this.camera, this.fakeDOM);
+        this.fakeDOM.addEventListener("resize", (event_) => { this.resize(event_); })
 
         this.tjs_pool_lines.expand(20);
         this.tjs_pool_orbobjects.expand(20);
         this.tjs_pool_groups.expand(50);
 
-        // this.renderer = new THREE.WebGLRenderer();
         this.renderer = new THREE.WebGLRenderer({
             canvas: this.canvasOffscreen,
             antialias: true,
             logarithmicDepthBuffer: true,
         });
-        // this.renderer.setSize(this.config.innerWidth, this.config.innerHeight);
-        // document.body.appendChild(this.renderer.domElement);
+        this.resize(this.canvasOffscreen); // lazy use canvas since params same as Event ...
 
         var ambcolo = 0.2
         const light_am = new THREE.AmbientLight(new THREE.Color(ambcolo, ambcolo, ambcolo)); // soft white light
@@ -323,7 +313,7 @@ export class DrawWorld {
     }
 
     public updatePlanet(orbitingElement_: Planet, sphereMesh_: THREE.Mesh) {
-        var visible_planet_size = orbitingElement_.radius.km * 2 * 1000000*2;
+        var visible_planet_size = orbitingElement_.radius.km * 2 * 1000000 * 2;
 
         // var parentOrbit = orbitingElement_.getParentOrbit();
         // if (parentOrbit) {

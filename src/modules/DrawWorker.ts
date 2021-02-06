@@ -69,8 +69,6 @@ export class DrawWorker {
                 this.pause(); break;
             case MessageType.InitCanvas:
                 this.init_canvas(event); break;
-            case MessageType.Resize:
-                this.resize(event); break;
             case MessageType.RefreshDBDeep:
             case MessageType.RefreshDBShallow:
                 this.refreshDb(event, message_); break;
@@ -94,7 +92,7 @@ export class DrawWorker {
         this.draw_world.canvasOffscreen = event.data.canvas;
         this.draw_world.init()
         this.worker.postMessage({ message: MessageType.Ready, from: "DrawWorker" });
-        this.resize();
+        // this.resize();
     }
 
     // public refresh_camera(event?: MessageEvent) {
@@ -105,20 +103,6 @@ export class DrawWorker {
     //     this.draw_world.camera.updateProjectionMatrix()
     //     // console.log("this.draw_world.camera.position", this.draw_world.camera.position);
     // }
-
-    public resize(event?: MessageEvent) {
-        console.debug("#HERELINE DrawWorker resize ");
-
-        this.draw_world.camera.aspect = this.config.innerWidth / this.config.innerHeight;
-        this.draw_world.camera.updateProjectionMatrix();
-        this.draw_world.renderer.setSize(
-            this.config.innerWidth - Units.CANVAS_SUBSTRACT_PIXELS,
-            this.config.innerHeight - Units.CANVAS_SUBSTRACT_PIXELS, false)
-
-        // TODO levereage WorkerDOM in order to more easilly manage resize events
-        this.draw_world.fakeDOM.clientWidth = this.config.innerWidth - Units.CANVAS_SUBSTRACT_PIXELS
-        this.draw_world.fakeDOM.clientHeight = this.config.innerHeight - Units.CANVAS_SUBSTRACT_PIXELS
-    }
 
 
     public async pause() {
