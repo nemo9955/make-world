@@ -7,7 +7,7 @@ import { Orbit } from "./Orbit";
 import { OrbitingElement } from "./OrbitingElement";
 import { ObjectPool } from "../utils/ObjectPool";
 import { Identifiable } from "../modules/DataBaseManager";
-import { WorldData } from "../modules/WorldData";
+import { orbit_types_, WorldData } from "../modules/WorldData";
 
 // Artifexian : https://www.youtube.com/watch?v=x55nxxaWXAM
 // https://en.wikipedia.org/wiki/Stellar_classification
@@ -25,24 +25,27 @@ export class Star extends OrbitingElement {
     sclass: string;
     luminosity = new Convert.NumberRadiantFlux();
     temperature = new Convert.NumberTemperature();
-    public readonly lifetime = new Convert.NumberTime();
+    lifetime = new Convert.NumberTime();
 
     color: Color;
 
 
-    public readonly radius = new Convert.NumberLength();
-    public readonly mass = new Convert.NumberMass();
-    // public _diameter = new Convert.NumberLength();
-    // public get diameter(): any { return this._diameter.copy(this.radius).mul(2); }
-    // public set diameter(value: any) { this.mass.copy(value.div(2)); }
+    radius = new Convert.NumberLength();
+    mass = new Convert.NumberMass();
 
 
 
 
     constructor(worldData: WorldData) {
         super(worldData);
-        this.color = new Color();
         this.type = this.constructor.name;
+
+        this.color = new Color();
+    }
+
+
+    public getMass(): Convert.NumberMass {
+        return this.mass;
     }
 
     private setFromMass(mass?: number) {

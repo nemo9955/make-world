@@ -115,6 +115,7 @@ export class DrawWorker {
             this.config.innerWidth - Units.CANVAS_SUBSTRACT_PIXELS,
             this.config.innerHeight - Units.CANVAS_SUBSTRACT_PIXELS, false)
 
+        // TODO levereage WorkerDOM in order to more easilly manage resize events
         this.draw_world.fakeDOM.clientWidth = this.config.innerWidth - Units.CANVAS_SUBSTRACT_PIXELS
         this.draw_world.fakeDOM.clientHeight = this.config.innerHeight - Units.CANVAS_SUBSTRACT_PIXELS
     }
@@ -133,29 +134,32 @@ export class DrawWorker {
         console.time("#time DrawWorker refresh_db " + refreshType);
 
         await this.refreshConfig();
+        var doSpecial = false;
 
         var prom: Promise<void> = null
         if (refreshType == MessageType.RefreshDBDeep)
-            prom = this.refreshDeep()
+            prom = this.refreshDeep(doSpecial)
         if (refreshType == MessageType.RefreshDBShallow)
-            prom = this.refreshShallow()
+            prom = this.refreshShallow(doSpecial)
 
         await prom.finally(() => {
             console.timeEnd("#time DrawWorker refresh_db " + refreshType);
         })
     }
 
-    private async refreshDeep() {
+    private async refreshDeep(doSpecial = true) {
         console.debug("#HERELINE DrawWorker refreshDeep");
         await this.world.readDeep();
         this.draw_world.updateDeep();
-        this.draw_world.draw();
+        if (doSpecial)
+            this.draw_world.draw();
     }
 
-    private async refreshShallow() {
+    private async refreshShallow(doSpecial = true) {
         // console.debug("#HERELINE DrawWorker refreshShallow");
         await this.world.readShallow();
-        this.draw_world.draw();
+        if (doSpecial)
+            this.draw_world.draw();
     }
 
 

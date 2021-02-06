@@ -10,6 +10,7 @@ import { Orbit } from "../generate/Orbit";
 import { Planet } from "../generate/Planet";
 import { Star } from "../generate/Star";
 import { OrbitingElement } from "../generate/OrbitingElement";
+import { SpaceGroup } from "../generate/SpaceGroup";
 
 // TODO read&write function WITH and WITHOUT structure change
 // WITHOUT structure change is just update or variables values
@@ -19,11 +20,11 @@ import { OrbitingElement } from "../generate/OrbitingElement";
 
 
 export var orbit_types_ = {};
-
 orbit_types_["PlanetarySystem"] = PlanetarySystem
 orbit_types_["Orbit"] = Orbit
 orbit_types_["Planet"] = Planet
 orbit_types_["Star"] = Star
+orbit_types_["SpaceGroup"] = SpaceGroup
 
 
 export class WorldData {

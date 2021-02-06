@@ -185,28 +185,28 @@ export class WorldGui {
         this.pane.addButton({ title: 'genDebugg' }).on('click', () => {
             this.manager.pauseAll()
             var plsys = this.manager.world.planetary_system
-            this.manager.world.spaceFactory.genDebugg(plsys, plsys)
+            this.manager.world.spaceFactory.genDebugg(plsys, plsys.root())
             this.refreshDeep();
         });
 
         this.pane.addButton({ title: 'genOrbitsSimple' }).on('click', () => {
             this.manager.pauseAll()
             var plsys = this.manager.world.planetary_system
-            this.manager.world.spaceFactory.genOrbitsSimple(plsys, plsys)
+            this.manager.world.spaceFactory.genOrbitsSimple(plsys, plsys.root())
             this.refreshDeep();
         });
 
         this.pane.addButton({ title: 'genOrbitsUniform' }).on('click', () => {
             this.manager.pauseAll()
             var plsys = this.manager.world.planetary_system
-            this.manager.world.spaceFactory.genOrbitsUniform(plsys, plsys)
+            this.manager.world.spaceFactory.genOrbitsUniform(plsys, plsys.root())
             this.refreshDeep();
         });
 
         this.pane.addButton({ title: 'genOrbitsSimpleMoons' }).on('click', () => {
             this.manager.pauseAll()
             var plsys = this.manager.world.planetary_system
-            this.manager.world.spaceFactory.genOrbitsSimpleMoons(plsys, plsys)
+            this.manager.world.spaceFactory.genOrbitsSimpleMoons(plsys, plsys.root())
             this.refreshDeep();
         });
 

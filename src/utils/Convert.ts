@@ -38,6 +38,35 @@ export function srToKm(from: number): number {
     return from * Units.SOLAR_RADIUS_KM;
 }
 
+export function kmToEr(from: number): number {
+    return from / Units.EARTH_RADIUS_KM;
+}
+export function erToKm(from: number): number {
+    return from * Units.EARTH_RADIUS_KM;
+}
+
+export function kmToJupr(from: number): number {
+    return from / Units.JUPITER_RADIUS_KM;
+}
+export function juprToKm(from: number): number {
+    return from * Units.JUPITER_RADIUS_KM;
+}
+
+export function kgToJupm(from: number): number {
+    return from / Units.JUPITER_MASS_KG;
+}
+export function jupmToKg(from: number): number {
+    return from * Units.JUPITER_MASS_KG;
+}
+
+export function jupEarthMass(from: number): number {
+    return from * Units.JUPITER_TO_EARTH_MASS;
+}
+export function earthJupMass(from: number): number {
+    return from / Units.JUPITER_TO_EARTH_MASS;
+}
+
+
 export function auToSr(from: number): number {
     return from * Units.AU_TO_SR;
 }
@@ -175,7 +204,7 @@ export function true_anomaly_rev(t: number, ecc: number) {
 
 // TODO Use ActionsManager to add listeners for NumberConverter value changes
 
-export class NumberConverter {
+export abstract class NumberConverter {
     // public readonly action = new ActionsManager();
 
     value: number
@@ -185,7 +214,7 @@ export class NumberConverter {
         this.type = this.constructor.name
     }
 
-    public clone() { return new NumberConverter(this.value); }
+    abstract clone(): any;
 
     public copyDeep(source_: NumberConverter | number) { this.copy(source_) }
     public copyShallow(source_: NumberConverter | number) { this.copy(source_) }
@@ -215,6 +244,10 @@ export class NumberLength extends NumberConverter {
     public set au(value: number) { this.value = auToKm(value); }
     public get sr(): number { return kmToSr(this.value); }
     public set sr(value: number) { this.value = srToKm(value); }
+    public get er(): number { return kmToEr(this.value); }
+    public set er(value: number) { this.value = erToKm(value); }
+    public get jupr(): number { return kmToJupr(this.value); }
+    public set jupr(value: number) { this.value = juprToKm(value); }
 }
 
 export class NumberVolume extends NumberConverter {
@@ -236,19 +269,23 @@ export class NumberMass extends NumberConverter {
     public set Gg(value: number) { this.value = value * 1000000; }
     public get Tg(): number { return this.value / 1000000000; }
     public set Tg(value: number) { this.value = value * 1000000000; }
-    public get Xg(): number { return this.value / Math.pow(10,27); }
-    public set Xg(value: number) { this.value = value * Math.pow(10,27); }
+    public get Xg(): number { return this.value / Math.pow(10, 27); }
+    public set Xg(value: number) { this.value = value * Math.pow(10, 27); }
     public get sm(): number { return kgToSm(this.value); }
     public set sm(value: number) { this.value = smToKg(value); }
     public get em(): number { return kgToEm(this.value); }
     public set em(value: number) { this.value = emToKg(value); }
+    public get jupm(): number { return kgToJupm(this.value); }
+    public set jupm(value: number) { this.value = jupmToKg(value); }
 }
 
 export class NumberDensity extends NumberConverter {
     public clone() { return new NumberDensity(this.value); }
     public get si(): number { return this.value; }
     public set si(value: number) { this.value = value; }
-    public setSi(mass: NumberMass, volume: NumberVolume) { this.si = mass.kg / volume.m3 }
+    public setSiVolume(mass: NumberMass, volume: NumberVolume) { this.si = mass.kg / volume.m3 }
+    public setSiRadius(mass: NumberMass, radius: NumberLength) { this.si = mass.kg / sphereVolume(radius.km) }
+    public setSiRadiusArtifexian(mass: NumberMass, radius: NumberLength) { this.si = mass.kg / Math.pow(radius.km, 3) }
 }
 
 export class NumberAngle extends NumberConverter {

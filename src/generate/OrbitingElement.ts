@@ -9,6 +9,7 @@ import type { Orbit } from "./Orbit";
 import type { Planet } from "./Planet";
 import type { Star } from "./Star";
 import type { PlanetarySystem } from "./PlanetarySystem";
+import type { SpaceGroup } from "./SpaceGroup";
 
 
 // https://stackoverflow.com/a/65337891/2948519
@@ -58,11 +59,58 @@ export class OrbitingElement implements Identifiable {
         }
     }
 
+    public root(): OrbitingElement {
+        if (this.satelites.length == 1)
+            return this.getSatIndex(0);
+        return null;
+    }
+
+
+
+    public getParents(): OrbitingElement[] {
+        var parents: OrbitingElement[] = []
+        // get parent orbit, excluding self if an Orbit
+        var lastParent = this.getParent();
+        while (true) {
+            if (!lastParent) break;
+            parents.push(lastParent)
+            lastParent = lastParent.getParent();
+        }
+        return parents;
+    }
+
+
+    public getAllSats(): OrbitingElement[] {
+        var satObjs = this.getSats();
+        var stillLooking = true;
+
+        while (stillLooking) {
+            stillLooking = false;
+            for (const sat_ of satObjs) {
+                for (const chsat_ of sat_.getSats()) {
+                    if (satObjs.includes(chsat_) == false) {
+                        stillLooking = true;
+                        satObjs.push(chsat_)
+                    }
+                }
+            }
+        }
+        return satObjs
+    }
+
+    public hasStar(): boolean {
+        if (this.type === "Star") return true;
+        for (const sat_ of this.getSats()) {
+            if (sat_.type === "Star") return true;
+            if (sat_.hasStar()) return true;
+        }
+        return false
+    }
+
+
     public clearNonStars() {
         for (const sat_ of this.getSats()) {
-            if (sat_.type === "Star") continue;
-            if (sat_.satelites.length > 0 &&
-                sat_.getSatIndex(0).type === "Star") continue;
+            if (sat_.hasStar()) continue;
             sat_.remove();
         }
     }
@@ -100,6 +148,36 @@ export class OrbitingElement implements Identifiable {
         this.getWorldData().setOrbElem(sat_)
     }
 
+    // public setOrbiting(sat_: OrbitingElement) {
+    //     this.orbitingId = sat_.id;
+    // }
+    // public getOrbiting(): OrbitingElement {
+    //     if (this.orbitingId)
+    //         return this.getWorldData().stdBObjMap.get(this.orbitingId)
+    //     return this.getParentSolid();
+    // }
+
+    public getMass(): Convert.NumberMass {
+        // By default, there is no mass !!!
+        return null;
+    }
+
+    public getParentMass(): Convert.NumberMass {
+        // get parent orbit, excluding self if an Orbit
+        var parent_: OrbitingElement = this.getParent();
+        while (true) {
+            if (!parent_) return null;
+            if (parent_.getMass()) return parent_.getMass();
+            parent_ = parent_.getParent();
+        }
+    }
+
+    public compute() { }
+    public computeAll() {
+        for (const sat_ of this.getAllSats()) {
+            sat_.compute();
+        }
+    }
 
     public getParent(): this {
         return this.getWorldData().stdBObjMap.get(this.parentId)

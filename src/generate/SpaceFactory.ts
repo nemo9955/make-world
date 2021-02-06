@@ -9,6 +9,7 @@ import * as Units from "../utils/Units"
 import * as Convert from "../utils/Convert"
 import { PlanetarySystem } from "./PlanetarySystem";
 import { WorldData } from "../modules/WorldData";
+import { SpaceGroup } from "./SpaceGroup";
 
 
 // https://www.youtube.com/watch?v=J5xU-8Kb63Y&list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&index=11&ab_channel=Artifexian
@@ -49,9 +50,10 @@ export class SpaceFactory {
         // this.genStar(plsys, plsys, "sun")
         this.genStar(plsys, plsys, "habitable")
         // plsys.genStar()
-        // this.genOrbitsSimple(plsys, plsys)
-        // this.genOrbitsUniform(plsys, plsys)
-        this.genOrbitsSimpleMoons(plsys, plsys)
+        // this.genOrbitsSimple(plsys, plsys.root())
+        // this.genOrbitsUniform(plsys, plsys.root())
+        this.genOrbitsSimpleMoons(plsys, plsys.root())
+        plsys.computeAll();
     }
 
 
@@ -60,8 +62,14 @@ export class SpaceFactory {
         // this.manager.world.planetary_system.genStar("sun");
         // this.manager.world.planetary_system.genOrbitsUniform();
         this.genStar(plsys, plsys, "sun")
-        this.genOrbitsUniform(plsys, plsys)
+        this.genOrbitsUniform(plsys, plsys.root())
+        plsys.computeAll();
     }
+
+
+
+
+
 
 
     public genOrbitsUniform(plsys: PlanetarySystem, root: OrbitingElement) {
@@ -130,47 +138,44 @@ export class SpaceFactory {
     }
 
 
-    public getOrbitElem(par_maj_axis: Convert.NumberLength) {
+    public getOrbitElem(smajax: Convert.NumberLength, plsys: PlanetarySystem) {
 
-        if (Random.percent() < 40) {
+        if (Random.percent() < 40 && smajax.au > 0.7) {
             // binary planets
+            var group_ = new SpaceGroup(this.getWorldData())
+            group_.combineChildrenMass = true;
+
             var orbit_ = new Orbit(this.getWorldData())
-            orbit_.randomSane();
-            orbit_.semimajor_axis.copy(par_maj_axis)
-            orbit_.updateMajEcc()
+            orbit_.randomForMainOrbit(smajax, plsys);
 
-            var orbit1_ = new Orbit(this.getWorldData())
-            orbit1_.randomSane()
-            orbit1_.semimajor_axis.copy(par_maj_axis)
-            orbit1_.semimajor_axis.value /= 30
-            orbit1_.updateMajEcc()
-
-            var orbit2_ = orbit1_.clone()
-            orbit2_.mean_longitude.deg += 180;
-
+            var orbit1_ = new Orbit(this.getWorldData());
+            orbit1_.randomForClusters(2, smajax, plsys);
             var planet1_ = new Planet(this.getWorldData())
-            planet1_.radius.value = 5; // TMP make easier to se
+            planet1_.randomBinaryOrbit(0, orbit_.semimajor_axis, plsys)
             orbit1_.addSat(planet1_)
+            group_.addSat(orbit1_)
 
+            var orbit2_ = orbit1_.clone();
+            orbit2_.mean_longitude.deg += 180;
             var planet2_ = new Planet(this.getWorldData())
-            planet2_.radius.value = 6; // TMP make easier to se
+            planet2_.randomBinaryOrbit(1, orbit_.semimajor_axis, plsys)
             orbit2_.addSat(planet2_)
+            group_.addSat(orbit2_)
 
-            orbit_.addSat(orbit1_)
-            orbit_.addSat(orbit2_)
-            // console.log("planet1_", planet1_.radius.value, planet1_);
-            // console.log("planet2_", planet2_.radius.value, planet2_);
+            orbit_.addSat(group_)
             return orbit_
         } else {
 
             var orbit_ = new Orbit(this.getWorldData())
-            orbit_.randomSane();
-            orbit_.semimajor_axis.copy(par_maj_axis)
+            orbit_.randomForMainOrbit(smajax, plsys);
+
             var planet_ = new Planet(this.getWorldData())
-            planet_.radius.value = 0.25; // TMP make easier to se
+            planet_.randomMainOrbit(orbit_.semimajor_axis, plsys)
+
             orbit_.addSat(planet_)
             orbit_.updateMajEcc()
             return orbit_
+
         }
     }
 
@@ -180,12 +185,17 @@ export class SpaceFactory {
         // console.debug("this.getWorldData().stdBObjMap", this.getWorldData().stdBObjMap);
         // console.debug("root.satelites.length,root.satelites", root.satelites.length, root.satelites);
 
+        var group_ = new SpaceGroup(this.getWorldData())
+        group_.combineChildrenMass = true;
+
         var star1_ = new Star(this.getWorldData())
         star1_.genHabitableStar()
 
         var star2_ = new Star(this.getWorldData())
         star2_.genHabitableStar()
 
+        // star1_.setOrbiting(star2_)
+        // star2_.setOrbiting(star1_)
 
         var orbit1_ = new Orbit(this.getWorldData())
         orbit1_.randomSane();
@@ -198,15 +208,16 @@ export class SpaceFactory {
         orbit2_.addSat(star2_)
 
 
-        root.addSat(orbit1_)
-        root.addSat(orbit2_)
+        group_.addSat(orbit1_)
+        group_.addSat(orbit2_)
+        root.addSat(group_)
 
 
         plsys.time.universal = 0
 
         // TODO check is just adding these values is "good enough" or implement proper
         var stars_lum_ = star1_.luminosity.clone().add(star2_.luminosity.value)
-        var stars_mass_ = star1_.mass.clone().add(star2_.mass.value)
+        var stars_mass_ = group_.getMass().clone();
 
         plsys.hab_zone.au = Math.sqrt(stars_lum_.watt);
         plsys.hab_zone_in.au = plsys.hab_zone.au * 0.95;
@@ -286,15 +297,15 @@ export class SpaceFactory {
             moon_prev_orb.value /= 15
 
             for (let index = 0; index < moons_total; index++) {
-                // var orb_dist = new Planet(this.getWorldData()).randomUniform();
                 var orb_dist = new Orbit(this.getWorldData())
                 orb_dist.randomSane();
                 orb_dist.semimajor_axis.copy(moon_prev_orb)
                 orb_dist.updateMajEcc();
 
                 var planet_ = new Planet(this.getWorldData())
-                orb_dist.addSat(planet_);
+                // planet_.radius.value = 0.25;
 
+                orb_dist.addSat(planet_);
                 orbit_.addSat(orb_dist)
 
                 // moon_prev_orb.value *= Random.random_float_clamp(1.5, 1.6)
@@ -341,7 +352,7 @@ export class SpaceFactory {
             }
 
             if (is_valid) {
-                var orb_dist = this.getOrbitElem(last_orbit)
+                var orb_dist = this.getOrbitElem(last_orbit, plsys)
                 // var orb_dist = new Orbit(this.getWorldData()).randomSane();
                 // orb_dist.semimajor_axis = last_orbit
                 root.addSat(orb_dist)
@@ -369,7 +380,7 @@ export class SpaceFactory {
             }
 
             if (is_valid) {
-                var orb_dist = this.getOrbitElem(last_orbit)
+                var orb_dist = this.getOrbitElem(last_orbit, plsys)
                 // var orb_dist = new Orbit(this.getWorldData()).randomSane();
                 // orb_dist.semimajor_axis = last_orbit
                 root.addSat(orb_dist)

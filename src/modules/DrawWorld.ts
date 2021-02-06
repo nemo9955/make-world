@@ -20,6 +20,7 @@ import { Star } from "../generate/Star";
 import { SharedData } from "./SharedData";
 import { WorkerDOM } from "../utils/WorkerDOM";
 import { OrbitingElement } from "../generate/OrbitingElement";
+import { SpaceGroup } from "../generate/SpaceGroup";
 
 // https://orbitalmechanics.info/
 
@@ -38,8 +39,9 @@ type ThreeUserData = {
     orbLine?: THREE.Object3D,
     orbLineGr?: THREE.Group,
     orbEllipseCurve?: THREE.EllipseCurve,
-    sphereMesh?: any,
-    sphereMeshGr?: any,
+    sphereMesh?: THREE.Mesh,
+    sphereMeshGr?: THREE.Group,
+    genericGr?: THREE.Group,
     orbitingElement: OrbitingElement,
     parent: THREE.Object3D,
 }
@@ -297,32 +299,8 @@ export class DrawWorld {
         sphereMeshGr_.visible = true
 
 
-        var visible_planet_size = 100000000 * 1
-
-        var parentOrbit = orbitingElement_.getParentOrbit();
-        if (parentOrbit) {
-            var parentOrbGr = this.orbElemToGroup.get(parentOrbit);
-            var parentOrbUserData = (parentOrbGr.userData as ThreeUserData);
-            var orbEllipseCurve_ = parentOrbUserData.orbEllipseCurve
-            visible_planet_size = orbEllipseCurve_.getLength() / 50;
-        }
-
-        visible_planet_size *= orbitingElement_.radius.value; // TODO FIXME REMOVE !!!!!!!!!!!!!!!!!!!!!!!!!
-
-        // TODO TMP WA set the planet size so it is easy to see, not realist .....
-        // if (orbitingElement_.orbit.depth == 1) visible_planet_size = orbEllipseCurve_.getLength() / 200;
-        // console.log("orb_dist , radius.value", (orb_dist as Planet).radius.value, orb_dist);
-        // visible_planet_size *= (orb_dist as Planet).radius.value
-        (sphereMesh_.material as THREE.MeshStandardMaterial).color.setRGB(0.0, 0.6, 0.0);
-
-        // var visible_planet_size = Math.sqrt(ellipse_.getLength()) * 1000
-        // var visible_planet_size = Math.sqrt(ellipse_.getLength())*100
-        // var visible_planet_size = 70000 * Math.pow((index + 3) * 1.4, 3)
-        // planet_.geometry = new THREE.SphereGeometry(visible_planet_size, 5, 5);
-        // planet_.geometry.scale(visible_planet_size, visible_planet_size, visible_planet_size)
-        sphereMesh_.scale.setScalar(visible_planet_size)
-
-
+        // console.log("orbitingElement_.radius.km", orbitingElement_.radius.km);
+        this.updatePlanet(orbitingElement_, sphereMesh_);
 
         var all_obj: ThreeUserData = {
             sphereMesh: sphereMesh_,
@@ -342,6 +320,34 @@ export class DrawWorld {
         sphereMeshGr_.rotation.set(0, 0, 0)
 
         return sphereMeshGr_;
+    }
+
+    public updatePlanet(orbitingElement_: Planet, sphereMesh_: THREE.Mesh) {
+        var visible_planet_size = orbitingElement_.radius.km * 2 * 1000000*2;
+
+        // var parentOrbit = orbitingElement_.getParentOrbit();
+        // if (parentOrbit) {
+        //     var parentOrbGr = this.orbElemToGroup.get(parentOrbit);
+        //     var parentOrbUserData = (parentOrbGr.userData as ThreeUserData);
+        //     var orbEllipseCurve_ = parentOrbUserData.orbEllipseCurve
+        //     visible_planet_size = orbEllipseCurve_.getLength() / 50;
+        // }
+
+
+        // TODO TMP WA set the planet size so it is easy to see, not realist .....
+        // if (orbitingElement_.orbit.depth == 1) visible_planet_size = orbEllipseCurve_.getLength() / 200;
+        // console.log("orb_dist , radius.value", (orb_dist as Planet).radius.value, orb_dist);
+        // visible_planet_size *= (orb_dist as Planet).radius.value
+        (sphereMesh_.material as THREE.MeshStandardMaterial).color.setRGB(0.0, 0.6, 0.0);
+
+        // var visible_planet_size = Math.sqrt(ellipse_.getLength()) * 1000
+        // var visible_planet_size = Math.sqrt(ellipse_.getLength())*100
+        // var visible_planet_size = 70000 * Math.pow((index + 3) * 1.4, 3)
+        // planet_.geometry = new THREE.SphereGeometry(visible_planet_size, 5, 5);
+        // planet_.geometry.scale(visible_planet_size, visible_planet_size, visible_planet_size)
+        sphereMesh_.scale.setScalar(visible_planet_size)
+
+
     }
 
     public handleStar(element_: Star, parent_: THREE.Object3D, root_: THREE.Object3D) {
@@ -376,8 +382,9 @@ export class DrawWorld {
         return sphereMeshGr_;
     }
 
+
+
     public updateStar(orbitingElement_: Star, sphereMesh_: THREE.Mesh) {
-        var visible_planet_size = orbitingElement_.radius.km * 2 * 10
         var sun_color = orbitingElement_.color.getRgb().formatHex();
         (sphereMesh_.material as THREE.MeshStandardMaterial).color.set(sun_color)
 
@@ -385,6 +392,7 @@ export class DrawWorld {
         // this.sun.geometry.scale(sun_size,sun_size,sun_size)
         // this.sun.geometry = new THREE.SphereGeometry(sun_size, 5, 5);
         // this.sun.scale.set(sun_size, sun_size, sun_size)
+        var visible_planet_size = orbitingElement_.radius.km * 2 * 10
 
         // var visible_planet_size = Math.sqrt(ellipse_.getLength()) * 1000
         // var visible_planet_size = Math.sqrt(ellipse_.getLength())*100
@@ -394,6 +402,24 @@ export class DrawWorld {
         sphereMesh_.scale.setScalar(visible_planet_size);
     }
 
+    public handleSpaceGroup(element_: SpaceGroup, parent_: THREE.Object3D, root_: THREE.Object3D) {
+        const spaceGroupGr_ = this.tjs_pool_groups.get()
+        var orbitingElement_ = element_;
+
+        var all_obj: ThreeUserData = {
+            genericGr: spaceGroupGr_,
+            parent: parent_,
+            orbitingElement: orbitingElement_,
+        };
+        spaceGroupGr_.userData = all_obj
+
+        root_.add(spaceGroupGr_)
+
+        spaceGroupGr_.rotation.set(0, 0, 0)
+        spaceGroupGr_.position.set(0, 0, 0)
+
+        return spaceGroupGr_;
+    }
 
 
     public popOrbits(satelites_: Array<OrbitingElement>, parent_: THREE.Object3D, root_: THREE.Object3D) {
@@ -409,6 +435,8 @@ export class DrawWorld {
                     elementGr = this.handlePlanet(orbitingElement_ as Planet, parent_, root_); break;
                 case "Star":
                     elementGr = this.handleStar(orbitingElement_ as Star, parent_, root_); break;
+                case "SpaceGroup":
+                    elementGr = this.handleSpaceGroup(orbitingElement_ as SpaceGroup, parent_, root_); break;
                 default:
                     console.error("orbitingElement_", orbitingElement_);
                     throw new Error("NOT IMPLEMENTED !!!!!!!!");
@@ -434,7 +462,6 @@ export class DrawWorld {
     public updateDeep() {
         // console.debug("#HERELINE DrawWorld 143 ");
         console.time("#time DrawWorld updateDeep");
-
 
         this.hab_zone.geometry = new THREE.RingGeometry(
             this.world.planetary_system.hab_zone_in.km,
@@ -463,7 +490,7 @@ export class DrawWorld {
 
         this.popOrbits(this.world.planetary_system.getSats(), this.scene, this.scene)
 
-        console.timeEnd("#time DrawWorld update");
+        console.timeEnd("#time DrawWorld updateDeep");
     }
 
 
@@ -518,7 +545,10 @@ export class DrawWorld {
             if (orbitingElement_ instanceof Star) {
                 var sphereMesh_ = userData.sphereMesh
                 this.updateStar(orbitingElement_, sphereMesh_)
-           }
+            } else if (orbitingElement_ instanceof Planet) {
+                var sphereMesh_ = userData.sphereMesh
+                this.updatePlanet(orbitingElement_, sphereMesh_)
+            }
         }
 
         if (this.config.follow_pointed_orbit)

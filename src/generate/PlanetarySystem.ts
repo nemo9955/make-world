@@ -8,7 +8,7 @@ import { Uniform } from "three";
 import * as Units from "../utils/Units"
 import * as Convert from "../utils/Convert"
 import { Identifiable } from "../modules/DataBaseManager";
-import { WorldData } from "../modules/WorldData";
+import { orbit_types_, WorldData } from "../modules/WorldData";
 
 
 // https://www.youtube.com/watch?v=J5xU-8Kb63Y&list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&index=11&ab_channel=Artifexian
@@ -28,8 +28,9 @@ export class PlanetarySystem extends OrbitingElement {
 
     constructor(worldData: WorldData) {
         super(worldData);
-        this.id = null;
         this.type = this.constructor.name;
+
+        this.id = null;
     }
 
     public getStars(): Star[] {

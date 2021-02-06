@@ -7,6 +7,7 @@ import { ObjectPool } from "../utils/ObjectPool";
 import { Identifiable } from "../modules/DataBaseManager";
 import { orbit_types_, WorldData } from "../modules/WorldData";
 import { OrbitingElement } from "./OrbitingElement";
+import type { PlanetarySystem } from "./PlanetarySystem";
 
 
 
@@ -81,9 +82,10 @@ export class Orbit extends OrbitingElement {
 
     constructor(worldData: WorldData) {
         super(worldData);
+        this.type = this.constructor.name;
+
         this.satelites = new Array<number>();
         // console.log("this.constructor", this.constructor);
-        this.type = this.constructor.name;
     }
 
 
@@ -121,6 +123,51 @@ export class Orbit extends OrbitingElement {
         this.updateMajEcc()
         return this;
     }
+
+    public randomForMainOrbit(smajax: Convert.NumberLength, plsys: PlanetarySystem) {
+        var ecc_ = Random.random_float_clamp(0.01, 0.2);
+        this.inclination.deg = Random.random_float_clamp(0, 5)
+
+        if (plsys.hab_zone_in.value <= smajax.value)
+            if (smajax.value <= plsys.hab_zone_out.value)
+                ecc_ = Random.random_float_clamp(0.01, 0.02);
+
+        if (smajax.value >= plsys.frost_line.value) {
+            ecc_ = Random.random_float_clamp(0.1, 0.2);
+            this.inclination.deg = Random.random_float_clamp(5, 10)
+        }
+
+        if (smajax.value >= plsys.orbits_limit_out.value * 0.7) {
+            ecc_ = Random.random_float_clamp(0.3, 0.4);
+            this.inclination.deg = Random.random_float_clamp(5, 20)
+        }
+
+        this.set_major_ecc(smajax, ecc_)
+
+        this.argument_of_perihelion.deg = Random.random_float_clamp(0, 360)
+        this.longitude_ascending_node.deg = Random.random_float_clamp(0, 360)
+
+        this.updateMajEcc()
+        return this;
+    }
+
+
+
+    public randomForClusters(clusterSize: number, smajax: Convert.NumberLength, plsys: PlanetarySystem) {
+        this.argument_of_perihelion.deg = Random.random_float_clamp(0, 360)
+        this.longitude_ascending_node.deg = Random.random_float_clamp(0, 360)
+
+        this.inclination.deg = Random.random_float_clamp(5, 6)
+        var ecc_ = Random.random_float_clamp(0.01, 0.05);
+        var orbitSize = smajax.clone().div(Random.random_float_clamp(60, 70)).mul(clusterSize)
+
+        this.set_major_ecc(orbitSize, ecc_)
+        this.updateMajEcc()
+
+        return this;
+    }
+
+
 
     public set_axis(semimajor: number | Convert.NumberLength, semiminor: number | Convert.NumberLength) {
         this.semimajor_axis.copy(semimajor);

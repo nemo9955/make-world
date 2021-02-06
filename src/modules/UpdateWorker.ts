@@ -97,12 +97,13 @@ export class UpdateWorker {
         console.time("#time UpdateWorker refreshDb " + refreshType);
 
         await this.refreshConfig();
+        var doSpecial = false;
 
         var prom: Promise<void> = null
         if (refreshType == MessageType.RefreshDBDeep)
-            prom = this.refreshDeep();
+            prom = this.refreshDeep(doSpecial);
         if (refreshType == MessageType.RefreshDBShallow)
-            prom = this.refreshShallow();
+            prom = this.refreshShallow(doSpecial);
 
         await prom.finally(() => {
             console.timeEnd("#time UpdateWorker refreshDb " + refreshType);
@@ -110,20 +111,24 @@ export class UpdateWorker {
     }
 
 
-    private async refreshDeep() {
+    private async refreshDeep(doSpecial = true) {
         console.debug("#HERELINE UpdateWorker refreshDeep");
         await this.world.readDeep();
-        this.update_world.update();
-        await this.world.writeShallow();
-        this.tellMainToUpdate();
+        if (doSpecial) {
+            this.update_world.update();
+            await this.world.writeShallow();
+            this.tellMainToUpdate();
+        }
     }
 
-    private async refreshShallow() {
+    private async refreshShallow(doSpecial = true) {
         // console.debug("#HERELINE UpdateWorker refreshShallow");
         await this.world.readShallow();
-        this.update_world.update();
-        await this.world.writeShallow();
-        this.tellMainToUpdate();
+        if (doSpecial) {
+            this.update_world.update();
+            await this.world.writeShallow();
+            this.tellMainToUpdate();
+        }
     }
 
     private tellMainToUpdate() {
