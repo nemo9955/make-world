@@ -25,6 +25,9 @@ export class Star extends OrbitingElement {
     sclass: string;
     luminosity = new Convert.NumberRadiantFlux();
     temperature = new Convert.NumberTemperature();
+
+    // https://en.wikipedia.org/wiki/Stellar_evolution
+    // total lifetime of the Star
     lifetime = new Convert.NumberTime();
 
     color: Color;
@@ -54,7 +57,7 @@ export class Star extends OrbitingElement {
         this.luminosity.watt = Math.pow(mass, 3);
         this.radius.sr = Math.pow(mass, 0.74);
         this.temperature.kelvin = Math.pow(mass, 0.505);
-        this.lifetime.universal = Math.pow(mass, -2.5);
+        this.lifetime.eby = Math.pow(mass, -2.5) * 10;
     }
 
     public makeClassO(mass?: number) {

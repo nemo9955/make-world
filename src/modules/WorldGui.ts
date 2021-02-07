@@ -125,7 +125,7 @@ export class WorldGui {
         this.pane.addInput(this.manager.config, 'do_update_loop').on('change', () => { this.refreshConfig(); });
         // this.pane.addInput(this.manager.config, 'do_main_loop').on('change', () => { this.refreshConfig(); });
         this.pane.addInput(this.manager.config, 'follow_pointed_orbit').on('change', () => { this.refreshConfig(); });
-        this.pane.addInput(this.manager.config, 'timeUpdSpeed', { min: 0, max: 100, });
+        this.pane.addInput(this.manager.config, 'timeUpdSpeed', { min: 0, max: 1 });
 
 
 
@@ -148,7 +148,7 @@ export class WorldGui {
             star_tp.addInput(element, 'sclass');
             star_tp.addInput(element.luminosity, 'watt', { label: "watt" });
             star_tp.addInput(element.temperature, 'kelvin', { label: "kelvin" });
-            star_tp.addInput(element.lifetime, 'universal', { label: "universal" });
+            star_tp.addInput(element.lifetime, 'eby', { label: "life bln" });
 
             star_tp.addInput(element.mass, 'Xg', { label: "mass" });
             star_tp.addInput(element.radius, 'Mm', { label: "radius" });

@@ -44,6 +44,7 @@ export class PlanetarySystem extends OrbitingElement {
 
     init() {
         this.id = this.getWorldData()?.getFreeID();
+        this.time.eby = 4; // start at 4 Billion Earth years
     }
 
 

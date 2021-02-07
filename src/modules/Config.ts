@@ -13,7 +13,7 @@ export class Config {
 
     follow_pointed_orbit: boolean = false
 
-    timeUpdSpeed = 4;
+    timeUpdSpeed = 0.01;
 
     WorldPlanetarySystemID: number
 

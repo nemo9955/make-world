@@ -300,8 +300,10 @@ export class NumberAngle extends NumberConverter {
 
 export class NumberTime extends NumberConverter {
     public clone() { return new NumberTime(this.value); }
-    public get universal(): number { return this.value; }
-    public set universal(value: number) { this.value = value; }
+    public get ey(): number { return this.value; } // earth years
+    public set ey(value: number) { this.value = value; } // earth years
+    public get eby(): number { return this.value / Math.pow(10, 9); } // earth billion years
+    public set eby(value: number) { this.value = value * Math.pow(10, 9); } // earth billion years
 }
 
 

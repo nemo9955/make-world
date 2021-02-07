@@ -273,6 +273,11 @@ export class DrawWorld {
         orbLineGr_.rotateZ(orbitingElement_.longitude_ascending_node.rad); // not working with rotateY(orb_dist.inclination.rad)
 
 
+        // var orb_len = orbEllipseCurve_.getLength()
+        // var ellPerim1 = orbitingElement_.calcPerimeter1()
+        // var ellPerim2 = orbitingElement_.calcPerimeter2()
+        // var ellPerim3 = orbitingElement_.calcPerimeter3()
+        // console.log("orb_len, ellPerim1, ellPerim2, ellPerim3", orb_len, ellPerim1, ellPerim2, ellPerim3);
 
         return orbLineGr_;
 
@@ -502,12 +507,13 @@ export class DrawWorld {
             var parentOrbGr = this.orbElemToGroup.get(parentOrbit);
             var parentOrbUserData = (parentOrbGr.userData as ThreeUserData);
             var orbEllipseCurve_ = parentOrbUserData.orbEllipseCurve
-            var orbLineGr_ = parentOrbUserData.orbLineGr
             var orbLine_ = parentOrbUserData.orbLine
 
-            var orb_len = orbEllipseCurve_.getLength()
-            var time_orb = this.world.planetary_system.time.universal % orb_len
-            var time_orb_proc = time_orb / orb_len
+            // var orb_len = orbEllipseCurve_.getLength()
+            // var orb_len = parentOrbit.perimeter.km
+            var orb_per = parentOrbit.orbitalPeriod
+            var time_orb = this.world.planetary_system.time.ey % orb_per.ey
+            var time_orb_proc = time_orb / orb_per.ey
             time_orb_proc += parentOrbit.mean_longitude.rev
             var true_theta = Convert.true_anomaly_rev(time_orb_proc, parentOrbit.eccentricity)
             // true_theta = 0 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -523,7 +529,7 @@ export class DrawWorld {
 
 
     public draw() {
-        // console.debug("#HERELINE DrawWorld draw ", this.world.planetary_system.time.universal);
+        // console.debug("#HERELINE DrawWorld draw ", this.world.planetary_system.time.ey);
 
         for (const iterator of this.orbElemToGroup.values()) {
             this.calculatePos(iterator);

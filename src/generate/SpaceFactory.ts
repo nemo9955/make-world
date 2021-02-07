@@ -73,7 +73,7 @@ export class SpaceFactory {
 
 
     public genOrbitsUniform(plsys: PlanetarySystem, root: OrbitingElement) {
-        plsys.time.universal = 0
+        plsys.time.value = 0
 
         root.clearNonStars();
 
@@ -213,7 +213,7 @@ export class SpaceFactory {
         root.addSat(group_)
 
 
-        plsys.time.universal = 0
+        plsys.time.value = 0
 
         // TODO check is just adding these values is "good enough" or implement proper
         var stars_lum_ = star1_.luminosity.clone().add(star2_.luminosity.value)
@@ -248,7 +248,7 @@ export class SpaceFactory {
 
         root.addSat(star_)
 
-        plsys.time.universal = 0
+        plsys.time.value = 0
 
         plsys.hab_zone.au = Math.sqrt(star_.luminosity.watt);
         plsys.hab_zone_in.au = plsys.hab_zone.au * 0.95;
@@ -328,7 +328,7 @@ export class SpaceFactory {
     }
 
     public genOrbitsSimple(plsys: PlanetarySystem, root: OrbitingElement) {
-        plsys.time.universal = 0
+        plsys.time.value = 0
 
         root.clearNonStars();
 

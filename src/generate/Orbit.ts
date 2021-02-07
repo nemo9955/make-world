@@ -11,20 +11,17 @@ import type { PlanetarySystem } from "./PlanetarySystem";
 
 
 
-// TODO Make Convert.Number* types read-only to make life simpler
-// So no getters and setters are needed which complicates things
-
-// TODO Make Orbits and similar data-driven
-// have the data in the object and the functions as static ones that accept as paramt the data structure
-// skip the need to instantiate objects that will be in a high number
-
 /*
 https://www.amsat.org/keplerian-elements-tutorial/
 http://www.planetaryorbits.com/kepler-laws-orbital-elements.html
 https://jtauber.github.io/orbits/019.html
 
-*/
+mean distance :
+    https://www.jstor.org/stable/2689506?seq=1
+    http://www.planetaryorbits.com/kepler-laws-orbital-elements.html
+    https://en.wikipedia.org/wiki/Kepler%27s_laws_of_planetary_motion#Third_law
 
+*/
 
 export class Orbit extends OrbitingElement {
 
@@ -67,18 +64,8 @@ export class Orbit extends OrbitingElement {
 
     public readonly semiminor_axis = new Convert.NumberLength();
     public readonly focal_distance = new Convert.NumberLength();
-
-    // public get semimajor_axis() { return this.semimajor_axis; }
-    // public get semiminor_axis() { return this.semiminor_axis; }
-    // public get focal_distance() { return this.focal_distance; }
-
-    // public set semimajor_axis(value) {
-    //     this.semimajor_axis.copy(value);
-    //     this.semiminor_axis.value = this.calc_semiminor_axis()
-    //     this.focal_distance.value = this.calc_focal_distance()
-    // }
-
-
+    public readonly perimeter = new Convert.NumberLength();
+    public readonly orbitalPeriod = new Convert.NumberTime();
 
     constructor(worldData: WorldData) {
         super(worldData);
@@ -88,10 +75,46 @@ export class Orbit extends OrbitingElement {
         // console.log("this.constructor", this.constructor);
     }
 
+    public calcPerimeter1() {
+        // https://www.geeksforgeeks.org/perimeter-of-an-ellipse/
+        return 2 * Math.PI * Math.sqrt((Math.pow(this.semimajor_axis.value, 2) + Math.pow(this.semiminor_axis.value, 2)) / 2)
+    }
+
+    public calcPerimeter2() {
+        // apr 2 https://www.mathsisfun.com/geometry/ellipse-perimeter.html
+        return Math.PI * (
+            (3 * (this.semimajor_axis.value + this.semiminor_axis.value))
+            - Math.sqrt(
+                ((3 * this.semimajor_axis.value) + this.semiminor_axis.value)
+                * (this.semimajor_axis.value + (3 * this.semiminor_axis.value))
+            )
+        )
+    }
+
+    public calcPerimeter3() {
+        // apr 3 https://www.mathsisfun.com/geometry/ellipse-perimeter.html
+        var hhh = Math.pow(this.semimajor_axis.value - this.semiminor_axis.value, 2)
+            / Math.pow(this.semimajor_axis.value + this.semiminor_axis.value, 2);
+        return Math.PI
+            * (this.semimajor_axis.value + this.semiminor_axis.value)
+            * (1 + (
+                (3 * hhh)
+                / (10 + Math.sqrt(4 - (3 * hhh)))
+            ))
+    }
+
+    public calcOrbitalPeriod() {
+        // T ² = a ³
+        // orbital period of a planet (T)
+        // mean distance of the planet to the sun (a)
+        return Math.sqrt(Math.pow(this.semimajor_axis.au, 3))
+    }
 
     public updateMajEcc() {
-        this.semiminor_axis.value = this.calc_semiminor_axis()
-        this.focal_distance.value = this.calc_focal_distance()
+        this.semiminor_axis.value = this.calc_semiminor_axis();
+        this.focal_distance.value = this.calc_focal_distance();
+        this.perimeter.value = (this.calcPerimeter1() + this.calcPerimeter2() + this.calcPerimeter3()) / 3;
+        this.orbitalPeriod.ey = this.calcOrbitalPeriod();
     }
 
 
@@ -179,6 +202,8 @@ export class Orbit extends OrbitingElement {
         }
         this.eccentricity = this.calc_eccentricity()
         this.focal_distance.value = this.calc_focal_distance()
+        this.perimeter.value = (this.calcPerimeter1() + this.calcPerimeter2() + this.calcPerimeter3()) / 3;
+        this.orbitalPeriod.ey = this.calcOrbitalPeriod();
     }
 
 
@@ -187,6 +212,8 @@ export class Orbit extends OrbitingElement {
         this.eccentricity = eccentricity;
         this.semiminor_axis.value = this.calc_semiminor_axis()
         this.focal_distance.value = this.calc_focal_distance()
+        this.perimeter.value = (this.calcPerimeter1() + this.calcPerimeter2() + this.calcPerimeter3()) / 3;
+        this.orbitalPeriod.ey = this.calcOrbitalPeriod();
         if (this.semimajor_axis.value < this.semiminor_axis.value) {
             console.error("this.semimajor_axis.value, this.semiminor_axis.value", this.semimajor_axis.value, this.semiminor_axis.value)
             throw new Error("Major axis is smaller that Minor axis!");
@@ -198,6 +225,8 @@ export class Orbit extends OrbitingElement {
         this.eccentricity = eccentricity;
         this.semimajor_axis.value = this.calc_semimajor_axis()
         this.focal_distance.value = this.calc_focal_distance()
+        this.perimeter.value = (this.calcPerimeter1() + this.calcPerimeter2() + this.calcPerimeter3()) / 3;
+        this.orbitalPeriod.ey = this.calcOrbitalPeriod();
         if (this.semimajor_axis.value < this.semiminor_axis.value) {
             console.error("this.semimajor_axis.value, this.semiminor_axis.value", this.semimajor_axis.value, this.semiminor_axis.value)
             throw new Error("Major axis is smaller that Minor axis!");
