@@ -9,6 +9,7 @@ import * as Units from "../utils/Units"
 import * as Convert from "../utils/Convert"
 import { Identifiable } from "../modules/DataBaseManager";
 import { orbit_types_, WorldData } from "../modules/WorldData";
+import * as Tweakpane from "tweakpane/dist/tweakpane.js"
 
 
 // https://www.youtube.com/watch?v=J5xU-8Kb63Y&list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&index=11&ab_channel=Artifexian
@@ -29,8 +30,6 @@ export class PlanetarySystem extends OrbitingElement {
     constructor(worldData: WorldData) {
         super(worldData);
         this.type = this.constructor.name;
-
-        this.id = null;
     }
 
     public getStars(): Star[] {
@@ -42,9 +41,14 @@ export class PlanetarySystem extends OrbitingElement {
         return starObjs
     }
 
+    protected genId() {
+        this.id = -1;
+    }
+
     init() {
-        this.id = this.getWorldData()?.getFreeID();
-        this.time.eby = 4; // start at 4 Billion Earth years
+        this.id = this.getWorldData().getFreeID(); // gen again after WorldData sets getFreeID
+        this.time.eby = 5; // start at 5 Billion Earth years
+        this.getWorldData().setOrbElem(this)
     }
 
 

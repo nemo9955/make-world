@@ -8,8 +8,11 @@ import { DataBaseManager } from "../.././src/modules/DataBaseManager"
 
 require("fake-indexeddb/auto");
 
+console.debug = jest.fn() // supress debugg logs
+console.time = jest.fn()
+
 test('Basic 1', async () => {
-    var dbm = new DataBaseManager();
+    var dbm = new DataBaseManager("test_db_mng");
     dbm.TABLE_NAME = "world_table_dbm_basic_1"
 
     return dbm.init().then(async () => {

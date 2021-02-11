@@ -15,11 +15,11 @@ ctx.addEventListener("message", (event) => {
         switch (event.data.create) {
             case "DrawWorker":
                 work_instance = new DrawWorker(ctx);
-                work_instance.shared_data.initShared(event.data.sab)
+                work_instance.sharedData.initShared(event.data.sab)
                 break;
             case "UpdateWorker":
                 work_instance = new UpdateWorker(ctx);
-                work_instance.shared_data.initShared(event.data.sab)
+                work_instance.sharedData.initShared(event.data.sab)
                 break;
             default:
                 throw new Error("Type of worker not defined or none provided: " + event.data.create);

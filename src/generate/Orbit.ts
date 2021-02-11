@@ -8,6 +8,7 @@ import { Identifiable } from "../modules/DataBaseManager";
 import { orbit_types_, WorldData } from "../modules/WorldData";
 import { OrbitingElement } from "./OrbitingElement";
 import type { PlanetarySystem } from "./PlanetarySystem";
+import * as Tweakpane from "tweakpane/dist/tweakpane.js"
 
 
 

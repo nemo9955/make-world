@@ -11,6 +11,7 @@ import { Planet } from "../generate/Planet";
 import { Star } from "../generate/Star";
 import { OrbitingElement } from "../generate/OrbitingElement";
 import { SpaceGroup } from "../generate/SpaceGroup";
+import { SharedData } from "./SharedData";
 
 // TODO read&write function WITH and WITHOUT structure change
 // WITHOUT structure change is just update or variables values
@@ -36,7 +37,7 @@ export class WorldData {
 
     dbm: DataBaseManager;
 
-
+    sharedData: SharedData = null;
     spaceFactory: SpaceFactory;
 
     constructor(name: string) {
@@ -48,20 +49,12 @@ export class WorldData {
         // console.log("this.planetary_system.getWorldData()", this.planetary_system.getWorldData());
     }
 
-    getFreeID() {
-        // TODO FIXME it is possible to return 2+ same ID before the elements are written in map
-        var id_ = null;
-        do {
-            id_ = Math.ceil(Math.random() * 10000000) + 1000000
-        } while (this.stdBObjMap.has(id_));
-        return id_;
-    }
-
     public init() {
         console.debug("#HERELINE WorldData init");
         this.planetary_system.init()
-        this.spaceFactory.genStartingPlanetSystem(this.planetary_system)
+        this.planetary_system.setWorldData(this);
         this.setOrbElem(this.planetary_system)
+        this.spaceFactory.genStartingPlanetSystem(this.planetary_system)
         return this.dbm.init();
     }
 
@@ -70,11 +63,22 @@ export class WorldData {
         return this.dbm.open()
     }
 
-    free(id_: number) {
+    public static wdMaxId = -10;
+    public getFreeID() {
+        if (!this.sharedData) return WorldData.wdMaxId--;
+        // if (!this.sharedData) return Math.ceil(Math.random() * 10000) + 1000;
+        var id_ = this.sharedData.maxId++;
+        // do {
+        //     id_ = Math.ceil(Math.random() * 10000000) + 1000000
+        // } while (this.stdBObjMap.has(id_));
+        return id_;
+    }
+
+    public free(id_: number) {
         this.stdBObjMap.delete(id_)
     }
 
-    setOrbElem(sat_: OrbitingElement) {
+    public setOrbElem(sat_: OrbitingElement) {
         // TODO do some sanity checks !!!!!
         // console.log("sat_", sat_);
         this.stdBObjMap.set(sat_.id, sat_)

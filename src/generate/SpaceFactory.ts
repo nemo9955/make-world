@@ -10,6 +10,7 @@ import * as Convert from "../utils/Convert"
 import { PlanetarySystem } from "./PlanetarySystem";
 import { WorldData } from "../modules/WorldData";
 import { SpaceGroup } from "./SpaceGroup";
+import * as Tweakpane from "tweakpane/dist/tweakpane.js"
 
 
 // https://www.youtube.com/watch?v=J5xU-8Kb63Y&list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&index=11&ab_channel=Artifexian
@@ -49,6 +50,7 @@ export class SpaceFactory {
     public genStartingPlanetSystem(plsys: PlanetarySystem) {
         // this.genStar(plsys, plsys, "sun")
         this.genStar(plsys, plsys, "habitable")
+        // console.log("plsys.getAllSats()", plsys.getAllSats());
         // plsys.genStar()
         // this.genOrbitsSimple(plsys, plsys.root())
         // this.genOrbitsUniform(plsys, plsys.root())
@@ -247,7 +249,6 @@ export class SpaceFactory {
         }
 
         root.addSat(star_)
-
         plsys.time.value = 0
 
         plsys.hab_zone.au = Math.sqrt(star_.luminosity.watt);
@@ -262,6 +263,7 @@ export class SpaceFactory {
 
     public genOrbitsSimpleMoons(plsys: PlanetarySystem, root: OrbitingElement) {
         this.genOrbitsSimple(plsys, root);
+        plsys.computeAll();//////////////////////////////////////////////////////////////////////////////////////////////
 
         var moon_prev_orb = new Convert.NumberLength();
 
@@ -303,13 +305,13 @@ export class SpaceFactory {
                 orb_dist.updateMajEcc();
 
                 var planet_ = new Planet(this.getWorldData())
-                // planet_.radius.value = 0.25;
+                planet_.makeMoon(orb_dist.semimajor_axis, orbit_.semimajor_axis, plsys);
 
                 orb_dist.addSat(planet_);
                 orbit_.addSat(orb_dist)
 
                 // moon_prev_orb.value *= Random.random_float_clamp(1.5, 1.6)
-                moon_prev_orb.value *= 1.5
+                moon_prev_orb.value *= 1.3
             }
 
 

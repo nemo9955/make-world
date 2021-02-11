@@ -11,7 +11,7 @@ export class Config {
     // innerWidth: number
     // innerHeight: number
 
-    follow_pointed_orbit: boolean = false
+    follow_pointed_orbit: "none" | "imediate" | "auto" = "auto";
 
     timeUpdSpeed = 0.01;
 

@@ -9,6 +9,7 @@ import { orbit_types_, WorldData } from "../modules/WorldData";
 import { Orbit } from "./Orbit";
 import { OrbitingElement } from "./OrbitingElement";
 import { PlanetarySystem } from "./PlanetarySystem";
+import * as Tweakpane from "tweakpane/dist/tweakpane.js"
 
 // https://en.wikipedia.org/wiki/List_of_gravitationally_rounded_objects_of_the_Solar_System
 
@@ -21,28 +22,52 @@ import { PlanetarySystem } from "./PlanetarySystem";
 // // random size and composition (water, rock, iron) and get mass and density based on proportions, etc
 // TODO calc inner and outer limit
 
+
 export class Planet extends OrbitingElement {
 
     public readonly orbLimitOut = new Convert.NumberLength(); // hill sphere
     public readonly orbLimitIn = new Convert.NumberLength(); // roche limit
 
     public readonly radius = new Convert.NumberLength();
-    public readonly mass = new Convert.NumberMass();
+    public readonly mass = new Convert.NumberBigMass();
     public readonly density = new Convert.NumberDensity();
 
+    public readonly color: Color;
+
+    public isMoon?: boolean = false;
+    public planetType: string = "UNKNOWN";
 
 
     constructor(worldData: WorldData) {
         super(worldData);
         this.type = this.constructor.name;
 
+
+        this.color = new Color();
         this.radius.value = 1;
         this.mass.value = 1;
         this.density.value = 1;
     }
 
 
+    public makeMoon(smajax: Convert.NumberLength, smajaxParent: Convert.NumberLength, plsys: PlanetarySystem) {
+        this.color.set_color("DarkGrey")
+        this.planetType = "Moon";
+        this.isMoon = true;
+
+        this.mass.em = Random.random_float_clamp(0.01, 0.02);
+        this.radius.er = Random.random_float_clamp(0.1, 0.3);
+        // this.surfaceGravity = Random.random_float_clamp(0.68,1.5);
+
+
+        // this.surfaceGravity = this.mass.em / (this.radius.er * this.radius.er) // calculated
+        this.density.setSiRadiusYotta(this.mass, this.radius);
+    }
+
     public makeEarthLike() {
+        this.color.set_color("blue")
+        this.planetType = "Normal";
+
         // ver 1 : https://youtu.be/RxbIoIM_Uck?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=64
         this.mass.em = Random.random_float_clamp(0.4, 2.35);
         this.radius.er = Random.random_float_clamp(0.78, 1.25);
@@ -53,24 +78,30 @@ export class Planet extends OrbitingElement {
         // this.radius.er = Random.random_float_clamp(0.5, 1.5);
         // this.surfaceGravity = Random.random_float_clamp(0.4,1.6);
 
-        console.log("this.radius.km", this.radius.km, "makeEarthLike");
+        // console.log("this.radius.km", this.radius.km, "makeEarthLike");
 
         // this.surfaceGravity = this.mass.em / (this.radius.er * this.radius.er) // calculated
-        this.density.setSiRadius(this.mass, this.radius);
+        this.density.setSiRadiusYotta(this.mass, this.radius);
     }
 
 
     public makeDwarf() {
+        this.color.set_color("MistyRose")
+        this.planetType = "Dwarf";
+
         // https://youtu.be/XEIsZjQ_OdU?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=67
         this.mass.em = Random.random_float_clamp(0.0001, 0.1);
 
         this.radius.er = Random.random_float_clamp(0.03, 0.5); // CHECK what is the max
 
         // this.surfaceGravity = this.mass.em / (this.radius.er * this.radius.er) // calculated
-        this.density.setSiRadius(this.mass, this.radius);
+        this.density.setSiRadiusYotta(this.mass, this.radius);
     }
 
     public makeGassGiant() {
+        this.color.set_color("DarkGoldenRod")
+        this.planetType = "GassGiant";
+
         // https://youtu.be/80oQBGD7g34?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=22
         // 13 Jupiter Mass == 13 * 317.8 Earth Mass
         this.mass.jupm = Random.random_float_clamp(2, 13);
@@ -79,10 +110,13 @@ export class Planet extends OrbitingElement {
         this.radius.jupr = Random.random_float_clamp(0.9, 1.1); // Add SOME wiggle
 
         // this.surfaceGravity = this.mass.em / (this.radius.er * this.radius.er) // calculated
-        this.density.setSiRadius(this.mass, this.radius);
+        this.density.setSiRadiusYotta(this.mass, this.radius);
     }
 
     public makePuffyGiantPlanet() {
+        this.color.set_color("DarkCyan")
+        this.planetType = "PuffyGiantPlanet";
+
         // https://youtu.be/80oQBGD7g34?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=22
         // https://youtu.be/80oQBGD7g34?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=98
         this.mass.em = Random.random_float_clamp(10, Convert.jupEarthMass(2));
@@ -91,17 +125,20 @@ export class Planet extends OrbitingElement {
         this.radius.jupr = Random.random_float_clamp(1, 3); // CHECK what is the max
 
         // this.surfaceGravity = this.mass.em / (this.radius.er * this.radius.er) // calculated
-        this.density.setSiRadius(this.mass, this.radius);
+        this.density.setSiRadiusYotta(this.mass, this.radius);
     }
 
     public makeGassDwarf() {
+        this.color.set_color("Crimson")
+        this.planetType = "GassDwarf";
+
         // https://youtu.be/80oQBGD7g34?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=179
         this.mass.em = Random.random_float_clamp(1, 20);
 
         this.radius.er = Random.random_float_clamp(2, 5); // CHECK what is the max
 
         // this.surfaceGravity = this.mass.em / (this.radius.er * this.radius.er) // calculated
-        this.density.setSiRadius(this.mass, this.radius);
+        this.density.setSiRadiusYotta(this.mass, this.radius);
     }
 
 
@@ -132,20 +169,20 @@ export class Planet extends OrbitingElement {
 
         picks.push({ min: -minOrb, max: maxOrb * 200, chance: 0.0001, pick: this.makeEarthLike.bind(this) })
 
-        // if (["all", "hab"].filter(x => tags.includes(x))) {
-        //     picks.push({ min: plsys.hab_zone_in.au, max: plsys.hab_zone_out.au, chance: 1000000, pick: this.makeEarthLike.bind(this) })
-        //     picks.push({ min: minOrb, max: habOrb * 2, chance: 3, pick: this.makeEarthLike.bind(this) })
-        // }
-        // if (["all", "nohab"].filter(x => tags.includes(x)))
-        //     picks.push({ min: 0, max: 0, chance: 1, pick: this.makeDwarf.bind(this) })
-        // if (["all", "nohab"].filter(x => tags.includes(x)))
-        //     picks.push({ min: minOrb, max: frostOrb * 0.6, chance: 1, pick: this.makePuffyGiantPlanet.bind(this) })
-        // if (["all", "nohab"].filter(x => tags.includes(x)))
-        //     picks.push({ min: frostOrb * 0.6, max: frostOrb * 2, chance: 1, pick: this.makeGassGiant.bind(this) })
-        // if (["all", "nohab"].filter(x => tags.includes(x)))
-        //     picks.push({ min: frostOrb, max: maxOrb * 2, chance: 5, pick: this.makeGassGiant.bind(this) })
-        // if (["all", "nohab"].filter(x => tags.includes(x)))
-        //     picks.push({ min: frostOrb * 0.6, max: maxOrb * 2, chance: 6, pick: this.makeGassDwarf.bind(this) })
+        if (["all", "hab"].filter(x => tags.includes(x))) {
+            picks.push({ min: plsys.hab_zone_in.au, max: plsys.hab_zone_out.au, chance: 1000000, pick: this.makeEarthLike.bind(this) })
+            picks.push({ min: minOrb, max: habOrb * 2, chance: 3, pick: this.makeEarthLike.bind(this) })
+        }
+        if (["all", "nohab"].filter(x => tags.includes(x)))
+            picks.push({ min: 0, max: 0, chance: 1, pick: this.makeDwarf.bind(this) })
+        if (["all", "nohab"].filter(x => tags.includes(x)))
+            picks.push({ min: minOrb, max: frostOrb * 0.6, chance: 1, pick: this.makePuffyGiantPlanet.bind(this) })
+        if (["all", "nohab"].filter(x => tags.includes(x)))
+            picks.push({ min: frostOrb * 0.6, max: frostOrb * 2, chance: 1, pick: this.makeGassGiant.bind(this) })
+        if (["all", "nohab"].filter(x => tags.includes(x)))
+            picks.push({ min: frostOrb, max: maxOrb * 2, chance: 5, pick: this.makeGassGiant.bind(this) })
+        if (["all", "nohab"].filter(x => tags.includes(x)))
+            picks.push({ min: frostOrb * 0.6, max: maxOrb * 2, chance: 6, pick: this.makeGassDwarf.bind(this) })
 
         var pickedMake = Random.pickChanceOverlaping(smajax.au, picks)
         return pickedMake.pick();
@@ -154,7 +191,13 @@ export class Planet extends OrbitingElement {
 
     public compute() {
         var orbit_ = this.getDirectOrbit();
-        var parentMass = this.getParentMass().clone();
+        var parentMass = this.getParentMass();
+        if (!parentMass) {
+            console.warn("this.getParents()", this.getParents());
+            console.log("this", this);
+            // console.log("this.getWorldData().stdBObjMap", this.getWorldData().stdBObjMap);
+        }
+        parentMass = parentMass.clone();
 
         var minMass = this.mass.value
         var maxMass = parentMass.value
@@ -180,10 +223,17 @@ export class Planet extends OrbitingElement {
         return this;
     }
 
-    public getMass(): Convert.NumberMass {
+    public getMass(): Convert.NumberBigMass {
         return this.mass;
     }
 
+    public populateSelectGUI(slectPane: Tweakpane) {
+        super.populateSelectGUI(slectPane);
+        slectPane.addInput(this.color, 'value', { label: "color" })
+        slectPane.addInput(this.radius, 'km', { label: "radius km" });
+        slectPane.addInput(this.mass, 'Yg', { label: "mass Yg" });
+        slectPane.addMonitor(this, "planetType");
+    }
 
     public clone() { return new Planet(this.getWorldData()).copyLogic(this) }
 

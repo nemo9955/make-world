@@ -1,7 +1,7 @@
 
 import { WorldData } from "./WorldData"
 import { WorldGui } from "./WorldGui"
-import { DataBaseManager } from "./DataBaseManager"
+import { DataBaseManager, Identifiable } from "./DataBaseManager"
 import * as Units from "../utils/Units"
 import GenericWorkerInstance from "worker-loader!./Generic.worker.ts";
 import { Config, MessageType } from "./Config"
@@ -9,6 +9,7 @@ import * as THREE from "three";
 import { Ticker, waitBlocking } from "../utils/Time";
 import { SharedData } from "./SharedData";
 import { EventsManager } from "./EventsManager";
+import { OrbitingElement } from "../generate/OrbitingElement";
 
 export class MainManager {
     cam_timeout: any = null;
@@ -24,24 +25,25 @@ export class MainManager {
 
     ticker: Ticker;
 
-    shared_data = new SharedData();
+    sharedData = new SharedData();
     evmng: EventsManager;
 
     constructor() {
         this.world = new WorldData("MainManager");
         this.gui = new WorldGui();
         this.config = new Config();
-
         this.evmng = new EventsManager();
 
         // TODO Actions will need to tell everyone of cases when a readDeep will be need
         // Usual var updates will be ok readShallow, structure changes need readDeep
-        this.ticker = new Ticker(false, this.readShallow.bind(this), Units.LOOP_INTERVAL, Units.LOOP_INTERVAL * 1.9)
+        this.ticker = new Ticker(false, this.loopCheck.bind(this), Units.LOOP_INTERVAL, Units.LOOP_INTERVAL * 1.9)
     }
 
     public async init() {
-        this.spread_objects()
-        this.initSharedData()
+        this.sharedData.initMain();
+        this.spread_objects();
+        // console.log("window.isSecureContext", window.isSecureContext);
+        // TODO make dedicated post to UPDATE/set the sharedData to workers
 
         this.world.init().then(() => {
             this.config.WorldPlanetarySystemID = this.world.planetary_system.id;
@@ -65,17 +67,13 @@ export class MainManager {
     public spread_objects() {
         var to_spread: any[] = [this.world, this.gui]
         for (const object_ of to_spread) {
-            if (object_.manager === null) object_.manager = this
-            if (object_.config === null) object_.config = this.config
-            if (object_.world === null) object_.world = this.world
+            if (object_.sharedData === null) object_.sharedData = this.sharedData;
+            if (object_.manager === null) object_.manager = this;
+            if (object_.config === null) object_.config = this.config;
+            if (object_.world === null) object_.world = this.world;
         }
     }
 
-    public initSharedData() {
-        // console.log("window.isSecureContext", window.isSecureContext);
-        // TODO make dedicated post to UPDATE/set the shared_data to workers
-        this.shared_data.initMain();
-    }
 
     public async refreshConfig() {
         this.ticker.updateState(this.config.do_main_loop) // TODO FIXME ENABLE TEST !!!!!!!!!!!!!!!!!
@@ -100,6 +98,19 @@ export class MainManager {
                 message: MessageType.Pause
             });
         }
+    }
+
+    lastSelected: Identifiable = null;
+
+    public loopCheck() {
+        // if ((this.lastHover?.id === undefined && this.sharedData.hoverId !== null)
+        //     || this.lastHover?.id != this.sharedData.hoverId) {
+
+        //     this.lastHover = this.world.stdBObjMap.get(this.sharedData.hoverId)
+        //     // console.log("this.lastHover?.id", this.lastHover?.id);
+        //     // console.log("this.sharedData.hoverId", this.sharedData.hoverId);
+
+        // }
     }
 
     public async readDeep() {
@@ -147,7 +158,7 @@ export class MainManager {
         this.draw_worker = new GenericWorkerInstance();
         this.draw_worker.name = "DrawWorker"
         this.workers.push(this.draw_worker);
-        this.draw_worker.postMessage({ create: "DrawWorker", sab: this.shared_data.sab });
+        this.draw_worker.postMessage({ create: "DrawWorker", sab: this.sharedData.sab });
 
         this.draw_worker.addEventListener("message", (event) => {
             this.get_message(this.draw_worker, event)
@@ -163,7 +174,7 @@ export class MainManager {
         this.update_worker = new GenericWorkerInstance();
         this.update_worker.name = "UpdateWorker"
         this.workers.push(this.update_worker);
-        this.update_worker.postMessage({ create: "UpdateWorker", sab: this.shared_data.sab });
+        this.update_worker.postMessage({ create: "UpdateWorker", sab: this.sharedData.sab });
 
         this.update_worker.addEventListener("message", (event) => {
             this.get_message(this.update_worker, event)
@@ -222,18 +233,18 @@ export class MainManager {
         // "mousedown" "mouseenter" "mouseleave" "mousemove" "mouseout" "mouseover" "mouseup":
         canvas.addEventListener('mousemove', (evt) => {
             var rect = canvas.getBoundingClientRect();
-            this.shared_data.mousex = evt.clientX - rect.left;
-            this.shared_data.mousey = evt.clientY - rect.top;
+            this.sharedData.mousex = evt.clientX - rect.left;
+            this.sharedData.mousey = evt.clientY - rect.top;
         }, false);
         canvas.addEventListener('mouseleave', () => {
-            this.shared_data.mousex = null;
-            this.shared_data.mousey = null;
+            this.sharedData.mousex = null;
+            this.sharedData.mousey = null;
         }, false);
 
         var canvasOffscreen = canvas.transferControlToOffscreen();
         var canvasResize = () => {
-            canvasOffscreen.width = window.innerWidth - Units.CANVAS_SUBSTRACT_PIXELS;
-            canvasOffscreen.height = window.innerHeight - Units.CANVAS_SUBSTRACT_PIXELS;
+            canvasOffscreen.width = window.innerWidth;
+            canvasOffscreen.height = window.innerHeight;
 
             var fakeResizeEvent: any = new Event("resize");
             fakeResizeEvent.width = canvasOffscreen.width
@@ -242,6 +253,18 @@ export class MainManager {
         }
         window.addEventListener('resize', canvasResize.bind(this));
         canvasResize();
+
+
+        var selectListener = (evt_: Event) => {
+            evt_.preventDefault();
+            if (this.sharedData.selectedId !== this.sharedData.hoverId) {
+
+                this.sharedData.selectedId = this.sharedData.hoverId;
+                this.lastSelected = this.world.stdBObjMap.get(this.sharedData.selectedId)
+                this.gui.selectOrbElement(this.lastSelected as OrbitingElement);
+            }
+        };
+        canvas.addEventListener("contextmenu", selectListener.bind(this));
 
         // TODO have a more dynamic ID-based way of propagating events
         this.evmng.addOrbitCtrlEvents(canvas, canvas.id, this.draw_worker)

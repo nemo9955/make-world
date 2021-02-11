@@ -8,6 +8,7 @@ import { OrbitingElement } from "./OrbitingElement";
 import { ObjectPool } from "../utils/ObjectPool";
 import { Identifiable } from "../modules/DataBaseManager";
 import { orbit_types_, WorldData } from "../modules/WorldData";
+import * as Tweakpane from "tweakpane/dist/tweakpane.js"
 
 // Artifexian : https://www.youtube.com/watch?v=x55nxxaWXAM
 // https://en.wikipedia.org/wiki/Stellar_classification
@@ -23,18 +24,18 @@ import { orbit_types_, WorldData } from "../modules/WorldData";
 
 export class Star extends OrbitingElement {
     sclass: string;
-    luminosity = new Convert.NumberRadiantFlux();
-    temperature = new Convert.NumberTemperature();
+    public readonly luminosity = new Convert.NumberRadiantFlux();
+    public readonly temperature = new Convert.NumberTemperature();
 
     // https://en.wikipedia.org/wiki/Stellar_evolution
     // total lifetime of the Star
-    lifetime = new Convert.NumberTime();
+    public readonly lifetime = new Convert.NumberTime();
 
-    color: Color;
+    public readonly color: Color;
 
 
-    radius = new Convert.NumberLength();
-    mass = new Convert.NumberMass();
+    public readonly radius = new Convert.NumberLength();
+    public readonly mass = new Convert.NumberBigMass();
 
 
 
@@ -47,7 +48,7 @@ export class Star extends OrbitingElement {
     }
 
 
-    public getMass(): Convert.NumberMass {
+    public getMass(): Convert.NumberBigMass {
         return this.mass;
     }
 
@@ -202,6 +203,20 @@ export class Star extends OrbitingElement {
             return this.makeClassF();
 
         return this.makeClassG(); // Like the Sun
+    }
+
+
+
+    public populateSelectGUI(slectPane: Tweakpane) {
+        super.populateSelectGUI(slectPane);
+        slectPane.addInput(this.color, 'value', { label: "color" })
+        slectPane.addInput(this.radius, 'km', { label: "radius km" });
+        slectPane.addInput(this.mass, 'Yg', { label: "mass Yg" });
+
+        slectPane.addInput(this, 'sclass');
+        slectPane.addInput(this.luminosity, 'watt', { label: "luminosity watt" });
+        slectPane.addInput(this.temperature, 'kelvin', { label: "temperature kelvin" });
+        slectPane.addInput(this.lifetime, 'eby', { label: "lifetime eby" });
     }
 
     public clone() { return new Star(this.getWorldData()).copyLogic(this) }

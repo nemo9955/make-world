@@ -10,10 +10,11 @@ import { WorldData } from "../../src/modules/WorldData";
 // http://www.ambrsoft.com/TrigoCalc/Circles2/Ellipse/Ellipse.htm
 
 test('Test Ellipse ALT 1-1', () => {
+    var wd = new WorldData("test")
     var maj = 1
     var min = 1
     var ecc = 0
-    var ell = new Orbit(null);
+    var ell = new Orbit(wd);
 
     ell.semimajor_axis.km = maj;
     ell.eccentricity = ecc;
@@ -22,10 +23,11 @@ test('Test Ellipse ALT 1-1', () => {
 });
 
 test('Test Ellipse ALT 2-1', () => {
+    var wd = new WorldData("test")
     var maj = 2
     var min = 1
     var ecc = 0.8660254037844386
-    var ell = new Orbit(null);
+    var ell = new Orbit(wd);
 
     ell.semimajor_axis.km = maj;
     ell.eccentricity = ecc;
@@ -35,20 +37,22 @@ test('Test Ellipse ALT 2-1', () => {
 });
 
 test('Test Ellipse 1-1', () => {
+    var wd = new WorldData("test")
     var maj = 1
     var min = 1
     var ecc = 0
-    var ell = new Orbit(null);
+    var ell = new Orbit(wd);
     ell.set_axis(maj, min); expect(ell.eccentricity).toBeCloseTo(ecc);
     ell.set_major_ecc(maj, ecc); expect(ell.semiminor_axis.km).toBeCloseTo(min);
     ell.set_minor_ecc(min, ecc); expect(ell.semimajor_axis.km).toBeCloseTo(maj);
 });
 
 test('Test Ellipse 2-1', () => {
+    var wd = new WorldData("test")
     var maj = 2
     var min = 1
     var ecc = 0.8660254037844386
-    var ell = new Orbit(null);
+    var ell = new Orbit(wd);
 
     ell.set_axis(maj, min);
     expect(ell.eccentricity).toBeCloseTo(ecc);
@@ -135,7 +139,7 @@ test('Copy 3', () => {
     expect(orig_).toMatchObject(copy_)
     expect(copy_).toMatchObject(orig_)
 
-    expect((copy_.getSats()[0] as Planet).radius.km).toBe(1000)
-    expect((copy_.getSats()[0] as Planet).mass.kg).toBe(1000)
+    expect((copy_.getSats()[0] as Planet).radius.km).toBeCloseTo(1000)
+    expect((copy_.getSats()[0] as Planet).mass.kg).toBeCloseTo(1000)
 });
 

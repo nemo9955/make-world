@@ -87,7 +87,7 @@ export class EventsManager {
     public addOrbitCtrlEvents(canvas: HTMLElement, canvas_id: any, worker: GenericWorkerInstance) {
 
         // disable right-click context on canvas ... TODO do cool stuff !!!!
-        canvas.addEventListener("contextmenu", (evt_) => { evt_.preventDefault() });
+        // canvas.addEventListener("contextmenu", (evt_) => { evt_.preventDefault() });
 
         // this.genericRedirect("keydown", canvas, canvas_id, worker)
 

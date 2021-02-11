@@ -38,7 +38,7 @@ type ThreeUserData = {
 
 
 export class DrawWorld {
-    shared_data: SharedData = null;
+    sharedData: SharedData = null;
     world: WorldData;
     canvasOffscreen: any;
     config: Config;
@@ -68,9 +68,6 @@ export class DrawWorld {
     tjs_pool_orbobjects: ObjectPool<THREE.Mesh>;
     tjs_pool_groups: ObjectPool<THREE.Group>;
 
-
-    orbElemToGroup = new Map<OrbitingElement, any>();
-
     _xAxis = new THREE.Vector3(1, 0, 0);
     _yAxis = new THREE.Vector3(0, 1, 0);
     _zAxis = new THREE.Vector3(0, 0, 1);
@@ -79,6 +76,11 @@ export class DrawWorld {
     tmpv3_2 = new THREE.Vector3(0, 0, 0);
     tmpv2 = new THREE.Vector2(0, 0);
 
+    selectedPrevPos = new THREE.Vector3(0, 0, 0);
+    orbElemToGroup = new Map<OrbitingElement, any>();
+    hoverSphere: THREE.Mesh;
+    lastSelectedId: number = 0;
+    selectedThing: THREE.Object3D = null;
 
     constructor() {
         this.config = null;
@@ -156,9 +158,23 @@ export class DrawWorld {
         // this.camera.position.y = Convert.auToKm(80);
         this.camera.lookAt(0, 0, 0)
 
+
+        const geometryHoverSphere = new THREE.SphereGeometry(1);
+        const materialHoverSphere = new THREE.MeshBasicMaterial({ color: new THREE.Color("red"), side: THREE.DoubleSide });
+        materialHoverSphere.transparent = true;
+        materialHoverSphere.opacity = 0.5;
+        this.hoverSphere = new THREE.Mesh(geometryHoverSphere, materialHoverSphere);
+        this.hoverSphere.visible = false;
+        this.scene.add(this.hoverSphere);
+
+
         // events set in src/modules/EventsManager.ts -> addOrbitCtrlEvents
         this.controls = new OrbitControls(this.camera, this.fakeDOM);
+        this.controls.enablePan = false;
         this.fakeDOM.addEventListener("resize", (event_) => { this.resize(event_); })
+        this.controls.addEventListener("change", this.cameraMoved.bind(this))
+        this.cameraMoved();
+
 
         this.tjs_pool_lines.expand(20);
         this.tjs_pool_orbobjects.expand(20);
@@ -182,6 +198,15 @@ export class DrawWorld {
         this.scene.add(light_pt);
 
         this.update_not();
+    }
+
+    distToTarget = 0;
+    private cameraMoved() {
+        this.distToTarget = this.camera.position.distanceTo(this.controls.target)
+        this.distToTarget /= 10 ** 9
+
+        this.raycaster.params.Line.threshold = this.distToTarget * 1000000 * 10;
+        this.hoverSphere.scale.setScalar(this.raycaster.params.Line.threshold)
     }
 
     public update_not() {
@@ -318,7 +343,19 @@ export class DrawWorld {
     }
 
     public updatePlanet(orbitingElement_: Planet, sphereMesh_: THREE.Mesh) {
-        var visible_planet_size = orbitingElement_.radius.km * 2 * 1000000 * 2;
+        var planetColor = orbitingElement_.color.getRgb().formatHex();
+        (sphereMesh_.material as THREE.MeshStandardMaterial).color.set(planetColor)
+
+        var visible_planet_size = orbitingElement_.radius.km * 2;
+
+
+        // TODO to see planets better
+        if (orbitingElement_.radius.km < 15)
+            visible_planet_size *= 100000 * 6;
+        else if (orbitingElement_.radius.km < 100)
+            visible_planet_size *= 100000 * 2;
+        else
+            visible_planet_size *= 20;
 
         // var parentOrbit = orbitingElement_.getParentOrbit();
         // if (parentOrbit) {
@@ -333,7 +370,7 @@ export class DrawWorld {
         // if (orbitingElement_.orbit.depth == 1) visible_planet_size = orbEllipseCurve_.getLength() / 200;
         // console.log("orb_dist , radius.value", (orb_dist as Planet).radius.value, orb_dist);
         // visible_planet_size *= (orb_dist as Planet).radius.value
-        (sphereMesh_.material as THREE.MeshStandardMaterial).color.setRGB(0.0, 0.6, 0.0);
+        // (sphereMesh_.material as THREE.MeshStandardMaterial).color.setRGB(0.0, 0.6, 0.0);
 
         // var visible_planet_size = Math.sqrt(ellipse_.getLength()) * 1000
         // var visible_planet_size = Math.sqrt(ellipse_.getLength())*100
@@ -531,6 +568,10 @@ export class DrawWorld {
     public draw() {
         // console.debug("#HERELINE DrawWorld draw ", this.world.planetary_system.time.ey);
 
+        if (this.selectedThing) {
+            this.selectedPrevPos.copy(this.selectedThing.position)
+        }
+
         for (const iterator of this.orbElemToGroup.values()) {
             this.calculatePos(iterator);
 
@@ -547,26 +588,69 @@ export class DrawWorld {
             }
         }
 
-        if (this.config.follow_pointed_orbit)
-            if (this.shared_data.mousex != 0 && this.shared_data.mousey != 0) {
-                this.mouse.x = (this.shared_data.mousex / this.canvasOffscreen.width) * 2 - 1;
-                this.mouse.y = - (this.shared_data.mousey / this.canvasOffscreen.height) * 2 + 1;
+        this.hoverSphere.visible = false;
+        if (this.config.follow_pointed_orbit !== "none") {
+            if (this.sharedData.mousex != 0 && this.sharedData.mousey != 0) {
+                this.mouse.x = (this.sharedData.mousex / this.canvasOffscreen.width) * 2 - 1;
+                this.mouse.y = - (this.sharedData.mousey / this.canvasOffscreen.height) * 2 + 1;
                 // console.log("this.mouse", this.mouse);
 
+                var allIntersect = [...this.orb_lines, ...this.orb_planets]
                 this.raycaster.setFromCamera(this.mouse, this.camera);
-                const intersects = this.raycaster.intersectObjects(this.orb_lines, false);
+                const intersects = this.raycaster.intersectObjects(allIntersect, false);
                 // const intersects = this.raycaster.intersectObjects(this.scene.children, true);
                 if (intersects.length > 0) {
+                    this.hoverSphere.visible = true;
                     var orb_ = intersects[0]
-                    var targ_ = orb_.object.userData.satelites
-                    // console.log("orb_", orb_);
-                    console.log("targ_", targ_);
+                    this.hoverSphere.position.copy(orb_.point)
+                    var targ_ = orb_.object.parent.userData as ThreeUserData
+                    // console.log("targ_", targ_);
+                    this.sharedData.hoverId = targ_.orbitingElement.id
                     // this.camera.lookAt(targ_.position)
                     // this.controls.target = targ_.position
                     // TODO set a shared data variable with the ID of the selected/focused WORLD thing (orbit,planet,cell,etc.)
+                } else {
+                    this.sharedData.hoverId = null;
                 }
-
             }
+        }
+
+
+        if (this.selectedThing) {
+            this.selectedPrevPos.sub(this.selectedThing.position);//reuse Vec3 for delta
+            this.camera.position.sub(this.selectedPrevPos);
+            // this.camera.lookAt(this.selectedThing.position)
+            this.selectedPrevPos.copy(this.selectedThing.position);
+        }
+
+        // https://stackoverflow.com/questions/37482231/camera-position-changes-in-three-orbitcontrols-in-three-js
+        // https://stackoverflow.com/questions/53292145/forcing-orbitcontrols-to-navigate-around-a-moving-object-almost-working
+        // https://github.com/mrdoob/three.js/pull/16374#issuecomment-489773834
+
+        if (this.lastSelectedId != this.sharedData.selectedId) {
+            this.lastSelectedId = this.sharedData.selectedId;
+            // console.log("this.lastSelectedId", this.lastSelectedId);
+            var selOrbElem = this.world.stdBObjMap.get(this.lastSelectedId) as OrbitingElement
+            if (selOrbElem) {
+                var fosusElem = selOrbElem;
+                if (this.config.follow_pointed_orbit === "auto") {
+                    var firstSat = selOrbElem.getSatIndex(0) // better focuss on Sat
+                    if (firstSat && selOrbElem instanceof Orbit) fosusElem = firstSat; // better focuss on Sat
+                }
+                var orbElemGr = this.orbElemToGroup.get(fosusElem) as THREE.Object3D;
+                // console.log("orbElemGr", orbElemGr);
+                this.selectedThing = orbElemGr;
+                this.controls.target = orbElemGr.position
+                this.camera.lookAt(orbElemGr.position)
+                // orbElemGr.add(this.camera)
+            } else {
+                this.selectedThing = null;
+                this.controls.target = this.scene.position;
+                this.camera.lookAt(this.scene.position)
+                // this.scene.add(this.camera)
+            }
+            this.cameraMoved();
+        }
 
         this.renderer.render(this.scene, this.camera);
     }

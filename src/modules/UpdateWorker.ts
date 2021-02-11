@@ -24,7 +24,7 @@ import { SharedData } from "./SharedData";
 
 
 export class UpdateWorker {
-    shared_data = new SharedData();
+    sharedData = new SharedData();
 
     world: WorldData;
     config: Config;
@@ -56,7 +56,7 @@ export class UpdateWorker {
 
         var to_spread: any[] = [this.world, this.update_world]
         for (const object_ of to_spread) {
-            if (object_.config === null) object_.shared_data = this.shared_data
+            if (object_.config === null) object_.sharedData = this.sharedData
             if (object_.config === null) object_.config = this.config
             if (object_.world === null) object_.world = this.world
         }

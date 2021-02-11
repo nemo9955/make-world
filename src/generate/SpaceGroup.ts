@@ -7,6 +7,7 @@ import { ObjectPool } from "../utils/ObjectPool";
 import { Identifiable } from "../modules/DataBaseManager";
 import { orbit_types_, WorldData } from "../modules/WorldData";
 import { OrbitingElement } from "./OrbitingElement";
+import * as Tweakpane from "tweakpane/dist/tweakpane.js"
 
 
 import type { Orbit } from "./Orbit";
@@ -23,7 +24,7 @@ import type { PlanetarySystem } from "./PlanetarySystem";
 export class SpaceGroup extends OrbitingElement {
 
     public combineChildrenMass = true;
-    private tmp_mass = new Convert.NumberMass();
+    private tmp_mass = new Convert.NumberBigMass();
 
     constructor(worldData: WorldData) {
         super(worldData);
@@ -32,7 +33,7 @@ export class SpaceGroup extends OrbitingElement {
     }
 
 
-    public getMass(): Convert.NumberMass {
+    public getMass(): Convert.NumberBigMass {
         if (this.combineChildrenMass == false) return null;
         this.tmp_mass.value = 0;
         for (const sat_ of this.getAllSats()) {

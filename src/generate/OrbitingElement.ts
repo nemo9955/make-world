@@ -4,6 +4,7 @@ import * as Convert from "../utils/Convert"
 import { ObjectPool } from "../utils/ObjectPool";
 import { Identifiable } from "../modules/DataBaseManager";
 import { orbit_types_, WorldData } from "../modules/WorldData";
+import * as Tweakpane from "tweakpane/dist/tweakpane.js"
 
 import type { Orbit } from "./Orbit";
 import type { Planet } from "./Planet";
@@ -29,14 +30,25 @@ export class OrbitingElement implements Identifiable {
         (this as any).__proto__.getWorldData = () => { return worldData };
     */
     public getWorldData(): WorldData { throw new Error("Function needs to be re-defined in constructor."); }
+    public setWorldData(worldData: WorldData) {
+        // (this as any).__proto__.worldData = worldData;
+        // (this as any).__proto__.protoWorldWata = worldData;
+        // Object.getPrototypeOf(this).protoWorldWata = worldData;
+        // (this as any).__proto__.getWorldData = () => { return (this as any).__proto__.protoWorldWata; };
+        (this as any).__proto__.getWorldData = () => { return worldData; };
+    }
+    // public getWorldData(): WorldData { return (this as any).__proto__.protoWorldWata; }
+    // public getWorldData(): WorldData { return Object.getPrototypeOf(this).protoWorldWata; }
+
 
     constructor(worldData: WorldData) {
-        // (this as any).__proto__.worldData = worldData;
-        (this as any).__proto__.getWorldData = () => { return worldData; };
-        this.id = this.getWorldData()?.getFreeID();
+        this.setWorldData(worldData);
+        this.genId();
     }
 
-
+    protected genId() {
+        this.id = this.getWorldData().getFreeID();
+    }
 
     public copyDeep(source_: this) {
         Convert.copyDeep(this, source_)
@@ -157,17 +169,17 @@ export class OrbitingElement implements Identifiable {
     //     return this.getParentSolid();
     // }
 
-    public getMass(): Convert.NumberMass {
+    public getMass(): Convert.NumberBigMass {
         // By default, there is no mass !!!
         return null;
     }
 
-    public getParentMass(): Convert.NumberMass {
+    public getParentMass(): Convert.NumberBigMass {
         // get parent orbit, excluding self if an Orbit
         var parent_: OrbitingElement = this.getParent();
         while (true) {
             if (!parent_) return null;
-            if (parent_.getMass()) return parent_.getMass();
+            if (parent_.getMass() != null && parent_.getMass()) return parent_.getMass();
             parent_ = parent_.getParent();
         }
     }
@@ -179,7 +191,7 @@ export class OrbitingElement implements Identifiable {
         }
     }
 
-    public getParent(): this {
+    public getParent(): OrbitingElement {
         return this.getWorldData().stdBObjMap.get(this.parentId)
     }
 
@@ -206,6 +218,14 @@ export class OrbitingElement implements Identifiable {
             parentOrbit = this.getWorldData().stdBObjMap.get(parentOrbit.parentId)
         }
     }
+
+
+    public populateSelectGUI(slectPane: Tweakpane) {
+        console.log("#HERELINE OrbitingElement populateSelectGUI ");
+        slectPane.addMonitor(this, "id");
+        slectPane.addMonitor(this, "type");
+    }
+
 
     // public getMainOrbit(): Orbit {
     //     // ignore first orbit if a binary or similar
