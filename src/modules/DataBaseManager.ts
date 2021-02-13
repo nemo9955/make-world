@@ -7,18 +7,9 @@ export interface Identifiable {
     id: number;
 }
 
-// export class STransaction {
-//     public tx: IDBPTransaction<unknown, [string]>;
-//     public store: IDBPObjectStore<unknown, [string], string>;
-//     constructor() { }
-//     public async done() {
-//         return await this.tx.done
-//     }
-// }
-
 export class DataBaseManager {
-    name: string;
-    idb: IDBPDatabase<unknown>;
+    public readonly name: string;
+    public idb: IDBPDatabase<unknown>;
 
     public static STANDARD_OBJECTS = "STANDARD_OBJECTS";
     public TABLE_NAME = "world_table";
@@ -57,19 +48,6 @@ export class DataBaseManager {
         console.debug("#HERELINE DataBaseManager " + this.name + " delete ");
         return deleteDB(this.TABLE_NAME)
     }
-
-
-    // public transaction(obj_store: string, type: IDBTransactionMode = "readonly") {
-    //     var data = new STransaction();
-    //     // console.log("this.idb", this.idb);
-    //     // console.log("this.idb.transaction", this.idb.transaction);
-    //     data.tx = this.idb.transaction(obj_store, type);
-    //     data.store = data.tx.objectStore(obj_store);
-    //     // console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-
-    //     return data
-    // }
-
 
 
 }

@@ -225,6 +225,7 @@ export class DrawWorld {
         material_hab.opacity = 0.3
         this.hab_zone = new THREE.Mesh(geometry_hab, material_hab);
         this.hab_zone.rotateX(Convert.degToRad(-90))
+        this.hab_zone.position.y = -10000000
         this.scene.add(this.hab_zone);
 
         const geometry_fro = new THREE.RingGeometry(10, 50, 15, 1);
@@ -233,6 +234,7 @@ export class DrawWorld {
         material_fro.opacity = 0.1
         this.frost_zone = new THREE.Mesh(geometry_fro, material_fro);
         this.frost_zone.rotateX(Convert.degToRad(-90))
+        this.frost_zone.position.y = -10000000
         this.scene.add(this.frost_zone);
 
     }

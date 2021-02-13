@@ -191,6 +191,7 @@ export class Planet extends OrbitingElement {
 
 
     public compute() {
+        super.compute();
         var orbit_ = this.getDirectOrbit();
         var parentMass = this.getParentMass();
         if (!parentMass) {
@@ -233,6 +234,7 @@ export class Planet extends OrbitingElement {
         slectPane.addInput(this.radius, 'km', { label: "radius km" });
         slectPane.addInput(this.mass, 'Yg', { label: "mass Yg" });
         slectPane.addMonitor(this, "planetType");
+        slectPane.addMonitor(this, "isInHabZone");
         super.guiSelect(slectPane, gui);
     }
 

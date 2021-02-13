@@ -7,7 +7,7 @@ export type OverlapingData = {
     pick: any
 }
 
-export function percent() {
+export function randPercent() {
     return Math.random() * 100
 }
 

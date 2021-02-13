@@ -26,6 +26,7 @@ export class OrbitingElement implements Identifiable {
     public satelites: number[] = [];
     public parentId: number = null;
 
+    public isInHabZone = false;
 
     /*
     to be set from outside by WorldData
@@ -113,6 +114,15 @@ export class OrbitingElement implements Identifiable {
         return satObjs
     }
 
+    public getAllOrbits(): Orbit[] {
+        var orbitObjs: Orbit[] = [];
+        for (const sat_ of this.getAllSats()) {
+            if (sat_.type === "Orbit")
+                orbitObjs.push(sat_ as Orbit)
+        }
+        return orbitObjs
+    }
+
     public hasStar(): boolean {
         if (this.type === "Star") return true;
         for (const sat_ of this.getSats()) {
@@ -157,7 +167,8 @@ export class OrbitingElement implements Identifiable {
     // }
 
     public addSat(sat_: OrbitingElement) {
-        sat_.depth = this.depth + 1
+        sat_.isInHabZone = this.isInHabZone; // not reliable here
+        sat_.depth = this.depth + 1;
         sat_.parentId = this.id;
         this.satelites.push(sat_.id)
         this.getWorldData().setOrbElem(sat_)
@@ -187,7 +198,12 @@ export class OrbitingElement implements Identifiable {
         }
     }
 
-    public compute() { }
+    public compute() {
+        for (const par_ of this.getParents())
+            if (par_.isInHabZone) this.isInHabZone = true;
+
+    }
+
     public computeAll() {
         for (const sat_ of this.getAllSats()) {
             sat_.compute();

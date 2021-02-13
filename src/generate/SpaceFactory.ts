@@ -12,6 +12,8 @@ import { WorldData } from "../modules/WorldData";
 import { SpaceGroup } from "./SpaceGroup";
 import * as Tweakpane from "tweakpane/dist/tweakpane.js"
 import { WorldGui } from "../modules/WorldGui";
+import { Config } from "../modules/Config";
+import { tree } from "d3";
 
 
 // https://www.youtube.com/watch?v=J5xU-8Kb63Y&list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&index=11&ab_channel=Artifexian
@@ -22,15 +24,10 @@ import { WorldGui } from "../modules/WorldGui";
 // https://medium.com/amazing-science/why-dont-moons-have-moons-c15171471864
 
 
-export class SpaceConfig {
-
-
-}
-
-
 export class SpaceFactory {
 
-    public worldData: WorldData
+    public worldData: WorldData;
+    public config: Config = null;
 
     public getWorldData(): WorldData { return this.worldData; }
 
@@ -39,14 +36,6 @@ export class SpaceFactory {
     }
 
 
-
-    // spaceConf: SpaceFactoryConfig = null;
-    public spaceConf: SpaceConfig = new SpaceConfig();
-
-    // TODO things to add, with parameters being in SpaceConfig!
-    // genMainOrbits ... bool ensure_habitable
-    // // make just the main orbits and add after
-    // addMoons ... number how_many , bool make_harmonics
 
     public genStartingPlanetSystem(plsys: PlanetarySystem) {
         // this.genStar(plsys, plsys, "sun")
@@ -143,7 +132,7 @@ export class SpaceFactory {
 
     public getOrbitElem(smajax: Convert.NumberLength, plsys: PlanetarySystem) {
 
-        if (Random.percent() < 40 && smajax.au > 0.7) {
+        if (Random.randPercent() < 40 && smajax.au > 0.7) {
             // binary planets
             var group_ = new SpaceGroup(this.getWorldData())
             group_.combineChildrenMass = true;
@@ -263,6 +252,7 @@ export class SpaceFactory {
 
     public genOrbitsSimpleMoons(plsys: PlanetarySystem, root: OrbitingElement) {
         this.genOrbitsSimple(plsys, root);
+        root.computeAll();
 
         var moon_prev_orb = new Convert.NumberLength();
 
@@ -271,24 +261,29 @@ export class SpaceFactory {
             if (sat_ instanceof Orbit === false) continue;
             var orbit_: Orbit = sat_ as Orbit
             var orbObject_ = orbit_.root(); // what moons will orbit
+            var forceMinMoon = false;
 
+            if (orbit_.isInHabZone && this.config.genEnsureMoonInHabZone)
+                forceMinMoon = true;
             // console.log("orbit_.semimajor_axis.au", orbit_.semimajor_axis.au);
 
-            if (orbit_.semimajor_axis.au < 0.6)
+            if (orbit_.semimajor_axis.value < plsys.hab_zone_in.value * 0.6)
                 continue; // skip small orbits
-            if (Random.percent() < 20)
+            if (Random.randPercent() < 20 && forceMinMoon == false)
                 continue; // only some to have moons
 
             var moons_total = 0
-
-            if (orbit_.semimajor_axis.au < 2) {
+            if (orbit_.semimajor_axis.au < 2)
                 moons_total = Random.random_int_clamp(1, 2);
-            }
-            else if (orbit_.semimajor_axis.au < 10) {
+            else if (orbit_.semimajor_axis.au < 10)
                 moons_total = Random.random_int_clamp(2, 3);
-            }
-            else {
+            else
                 moons_total = Random.random_int_clamp(3, 4);
+
+            if (forceMinMoon) {
+                moons_total = Random.random_int_clamp(1, 2);
+                if (orbObject_.type === "SpaceGroup")
+                    moons_total = Random.random_int_clamp(0, 1);
             }
 
             // console.log("moons_total", moons_total);
@@ -330,74 +325,140 @@ export class SpaceFactory {
         return instance
     }
 
+    public isPlsysValid(plsys: PlanetarySystem, root: OrbitingElement, attempsPercent: number) {
+
+        if (this.config.genEnsureCenteredInHabZone && attempsPercent < 0.7) {
+            var hasHab = false;
+            // TODO choose percent between min&max for better control
+            var pushNumber = 3; // to bring values closer to habZoneMed
+            var habZoneMed = (plsys.hab_zone_in.value + plsys.hab_zone_out.value) / 2;
+            var habZoneMin = (plsys.hab_zone_in.value + (habZoneMed * pushNumber)) / (pushNumber + 1);
+            var habZoneMax = ((habZoneMed * pushNumber) + plsys.hab_zone_out.value) / (pushNumber + 1);
+            // console.log("====== plsys.hab_zone_in.value, plsys.hab_zone_out.value", plsys.hab_zone_in.value, plsys.hab_zone_out.value);
+            // console.log("====== habZoneMin, habZoneMax", habZoneMin, habZoneMax);
+            // console.log("habZoneMed", habZoneMed);
+            for (const orb_ of root.getAllOrbits()) {
+                if (true // do not jusge formating ... it works
+                    && orb_.semimajor_axis.value > habZoneMin
+                    && orb_.semimajor_axis.value < habZoneMax
+                    // check also sminor to ensure whole orbit in hab zone
+                    && orb_.semiminor_axis.value > habZoneMin
+                    && orb_.semiminor_axis.value < habZoneMax
+                ) {
+                    orb_.isInHabZone = true;
+                    hasHab = true;
+                }
+                // console.log("orb_.semimajor_axis.value, orb_.semiminor_axis.value", hasHab, orb_.semimajor_axis.value, orb_.semiminor_axis.value);
+            }
+            if (hasHab == false) return false;
+        }
+
+
+        if (this.config.genEnsureInHabZone && attempsPercent < 0.8) {
+            // console.log("====== plsys.hab_zone_out.value, plsys.hab_zone_in.value", plsys.hab_zone_out.Gm, plsys.hab_zone_in.Gm);
+            var hasHab = false;
+            for (const orb_ of root.getAllOrbits()) {
+                if (true // do not jusge formating ... it works
+                    && orb_.semimajor_axis.value > plsys.hab_zone_in.value
+                    && orb_.semimajor_axis.value < plsys.hab_zone_out.value
+                    // check also sminor to ensure whole orbit in hab zone
+                    && orb_.semiminor_axis.value > plsys.hab_zone_in.value
+                    && orb_.semiminor_axis.value < plsys.hab_zone_out.value
+                ) {
+                    orb_.isInHabZone = true;
+                    hasHab = true;
+                }
+                // console.log("orb_.semimajor_axis.value, orb_.semiminor_axis.value", hasHab, orb_.semimajor_axis.Gm, orb_.semiminor_axis.Gm);
+            }
+            if (hasHab == false) return false;
+        }
+
+        return true;
+    }
+
     public genOrbitsSimple(plsys: PlanetarySystem, root: OrbitingElement) {
-        plsys.time.value = 0
+        const genMaxAttemps = 100;
+        var genAttemps = 0;
+        var attempsPercent = 0;
+        for (genAttemps = 0; genAttemps < genMaxAttemps; genAttemps++) {
+            attempsPercent = genAttemps / genMaxAttemps
+            // not a while(true) loop to prevent blocking the code
 
-        root.clearNonStars();
+            plsys.time.value = 0
+            root.clearNonStars();
+            var lfg_orbit = this.getLargestFrostGiantOrbit(plsys);
 
-        var lfg_orbit = this.getLargestFrostGiantOrbit(plsys);
+            var last_orbit = lfg_orbit.clone();
+            while (true) {
+                var is_valid = false;
+                var tmp_orbit = last_orbit.clone();
 
-        var last_orbit = lfg_orbit.clone();
-        while (true) {
-            var is_valid = false;
-            var tmp_orbit = last_orbit.clone();
+                for (let index = 0; index < 10; index++) {
+                    tmp_orbit.au = last_orbit.au / Random.random_float_clamp(1.4, 2)
 
-            for (let index = 0; index < 10; index++) {
-                tmp_orbit.au = last_orbit.au / Random.random_float_clamp(1.4, 2)
+                    if (Math.abs(tmp_orbit.au - last_orbit.au) < 0.15)
+                        continue
+                    if (tmp_orbit.au < plsys.orbits_limit_in.au)
+                        continue
+                    last_orbit = tmp_orbit;
+                    is_valid = true;
+                    break;
+                }
 
-                if (Math.abs(tmp_orbit.au - last_orbit.au) < 0.15)
-                    continue
-                if (tmp_orbit.au < plsys.orbits_limit_in.au)
-                    continue
-                last_orbit = tmp_orbit;
-                is_valid = true;
-                break;
+                if (is_valid) {
+                    var orb_dist = this.getOrbitElem(last_orbit, plsys)
+                    // var orb_dist = new Orbit(this.getWorldData()).randomSane();
+                    // orb_dist.semimajor_axis = last_orbit
+                    root.addSat(orb_dist)
+                }
+                else
+                    break;
             }
 
-            if (is_valid) {
-                var orb_dist = this.getOrbitElem(last_orbit, plsys)
-                // var orb_dist = new Orbit(this.getWorldData()).randomSane();
-                // orb_dist.semimajor_axis = last_orbit
-                root.addSat(orb_dist)
+            if (this.isPlsysValid(plsys, root, attempsPercent) == false)
+                continue;
+
+
+            last_orbit = lfg_orbit;
+            while (true) {
+                var is_valid = false;
+                var tmp_orbit = last_orbit.clone();
+
+                for (let index = 0; index < 10; index++) {
+                    tmp_orbit.au = last_orbit.au * Random.random_float_clamp(1.4, 2)
+
+                    if (Math.abs(tmp_orbit.au - last_orbit.au) < 0.15)
+                        continue
+                    if (tmp_orbit.au > plsys.orbits_limit_out.au)
+                        continue
+                    last_orbit = tmp_orbit;
+                    is_valid = true;
+                    break;
+                }
+
+                if (is_valid) {
+                    var orb_dist = this.getOrbitElem(last_orbit, plsys)
+                    // var orb_dist = new Orbit(this.getWorldData()).randomSane();
+                    // orb_dist.semimajor_axis = last_orbit
+                    root.addSat(orb_dist)
+
+                    // var orb_sat1 = new Orbit(this.getWorldData()).randomSane();
+                    // orb_sat1.semimajor_axis = last_orbit
+                    // orb_sat1.semimajor_axis.au *= 0.5
+                    // orb_sat1.updateMajEcc()
+                    // orb_dist.addSat(orb_sat1)
+                }
+                else
+                    break;
             }
-            else
-                break;
+
+            break;
         }
-        // this.star.satelites_km.reverse();
 
-        last_orbit = lfg_orbit;
-        while (true) {
-            var is_valid = false;
-            var tmp_orbit = last_orbit.clone();
-
-            for (let index = 0; index < 10; index++) {
-                tmp_orbit.au = last_orbit.au * Random.random_float_clamp(1.4, 2)
-
-                if (Math.abs(tmp_orbit.au - last_orbit.au) < 0.15)
-                    continue
-                if (tmp_orbit.au > plsys.orbits_limit_out.au)
-                    continue
-                last_orbit = tmp_orbit;
-                is_valid = true;
-                break;
-            }
-
-            if (is_valid) {
-                var orb_dist = this.getOrbitElem(last_orbit, plsys)
-                // var orb_dist = new Orbit(this.getWorldData()).randomSane();
-                // orb_dist.semimajor_axis = last_orbit
-                root.addSat(orb_dist)
-
-                // var orb_sat1 = new Orbit(this.getWorldData()).randomSane();
-                // orb_sat1.semimajor_axis = last_orbit
-                // orb_sat1.semimajor_axis.au *= 0.5
-                // orb_sat1.updateMajEcc()
-                // orb_dist.addSat(orb_sat1)
-            }
-            else
-                break;
+        if (attempsPercent > 0.1) {
+            console.warn(`Generating took quite a few attemps: ${attempsPercent} ${genAttemps} ${genMaxAttemps}`);
+            console.log("this", this);
         }
-
 
         // root.satelites.sort((a, b) =>
         //     this.getWorldData().stdBObjMap.get(a).semimajor_axis.value -

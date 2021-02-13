@@ -29,16 +29,17 @@ orbit_types_["SpaceGroup"] = SpaceGroup
 
 
 export class WorldData {
-    name: string;
+    public readonly name: string;
 
-    planetary_system: PlanetarySystem;
+    public planetary_system: PlanetarySystem;
 
-    stdBObjMap = new Map<number, any>();
+    public stdBObjMap = new Map<number, any>();
 
-    dbm: DataBaseManager;
+    public config: Config = null;
+    public dbm: DataBaseManager;
 
-    sharedData: SharedData = null;
-    spaceFactory: SpaceFactory;
+    public sharedData: SharedData = null;
+    public readonly spaceFactory: SpaceFactory;
 
     constructor(name: string) {
         this.name = name;
@@ -51,6 +52,7 @@ export class WorldData {
 
     public init() {
         console.debug("#HERELINE WorldData init");
+        this.spread_objects();
         this.planetary_system.init()
         // this.planetary_system.setWorldData(this);
         this.setOrbElem(this.planetary_system)
@@ -62,6 +64,17 @@ export class WorldData {
         console.debug("#HERELINE WorldData initWorker");
         return this.dbm.open()
     }
+
+    public spread_objects() {
+        var to_spread: any[] = [this.spaceFactory]
+        for (const object_ of to_spread) {
+            if (object_.sharedData === null) object_.sharedData = this.sharedData;
+            if (object_.config === null) object_.config = this.config;
+            if (object_.world === null) object_.world = this;
+        }
+    }
+
+
 
     public static wdMaxId = -10;
     public getFreeID() {
@@ -111,7 +124,7 @@ export class WorldData {
                     console.warn("this.stdBObjMap", this.stdBObjMap);
                     console.warn("this", this);
                     console.warn("iterator", iterator);
-                    debugger; /// TODO FIXME verry rare, non-breaking fail at start
+                    // debugger; /// TODO FIXME verry rare, non-breaking fail at start
                 }
                 newLocal.copyShallow(iterator);
             }
@@ -153,7 +166,7 @@ export class WorldData {
                     console.warn("this.stdBObjMap", this.stdBObjMap);
                     console.warn("this", this);
                     console.warn("iterator", iterator);
-                    debugger; /// TODO FIXME verry rare, non-breaking fail at start
+                    // debugger; /// TODO FIXME verry rare, non-breaking fail at start
                 }
                 newLocal.copyDeep(iterator);
             }

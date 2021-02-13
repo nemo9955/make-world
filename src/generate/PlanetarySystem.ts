@@ -15,6 +15,7 @@ import { WorldGui } from "../modules/WorldGui";
 
 // https://www.youtube.com/watch?v=J5xU-8Kb63Y&list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&index=11&ab_channel=Artifexian
 
+// Calendar https://quarkndagger.com/an-informative-worldbuilding-guide-to-calendar-creation/
 
 export class PlanetarySystem extends OrbitingElement {
 

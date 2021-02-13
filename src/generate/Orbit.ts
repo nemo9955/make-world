@@ -255,6 +255,13 @@ export class Orbit extends OrbitingElement {
 
     public free() { return; }
     public clone() { return new Orbit(this.getWorldData()).copyLogic(this) }
+
+
+    public guiSelect(slectPane: Tweakpane, gui: WorldGui) {
+        slectPane.addMonitor(this, "isInHabZone");
+        super.guiSelect(slectPane, gui);
+    }
+
 }
 
 
