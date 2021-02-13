@@ -62,7 +62,7 @@ export class Planet extends OrbitingElement {
 
 
         // this.surfaceGravity = this.mass.em / (this.radius.er * this.radius.er) // calculated
-        this.density.setSiRadiusYotta(this.mass, this.radius);
+        this.density.setMassRadius(this.mass, this.radius);
     }
 
     public makeEarthLike() {
@@ -82,7 +82,11 @@ export class Planet extends OrbitingElement {
         // console.log("this.radius.km", this.radius.km, "makeEarthLike");
 
         // this.surfaceGravity = this.mass.em / (this.radius.er * this.radius.er) // calculated
-        this.density.setSiRadiusYotta(this.mass, this.radius);
+        // this.density.setSiRadiusYotta(this.mass, this.radius);
+        this.density.setMassRadius(this.mass, this.radius);
+        // console.log("this.mass", this.mass);
+        // console.log("this.radius", this.radius);
+        // console.log("this.density", this.density);
     }
 
 
@@ -96,7 +100,7 @@ export class Planet extends OrbitingElement {
         this.radius.er = Random.random_float_clamp(0.03, 0.5); // CHECK what is the max
 
         // this.surfaceGravity = this.mass.em / (this.radius.er * this.radius.er) // calculated
-        this.density.setSiRadiusYotta(this.mass, this.radius);
+        this.density.setMassRadius(this.mass, this.radius);
     }
 
     public makeGassGiant() {
@@ -111,7 +115,7 @@ export class Planet extends OrbitingElement {
         this.radius.jupr = Random.random_float_clamp(0.9, 1.1); // Add SOME wiggle
 
         // this.surfaceGravity = this.mass.em / (this.radius.er * this.radius.er) // calculated
-        this.density.setSiRadiusYotta(this.mass, this.radius);
+        this.density.setMassRadius(this.mass, this.radius);
     }
 
     public makePuffyGiantPlanet() {
@@ -126,7 +130,7 @@ export class Planet extends OrbitingElement {
         this.radius.jupr = Random.random_float_clamp(1, 3); // CHECK what is the max
 
         // this.surfaceGravity = this.mass.em / (this.radius.er * this.radius.er) // calculated
-        this.density.setSiRadiusYotta(this.mass, this.radius);
+        this.density.setMassRadius(this.mass, this.radius);
     }
 
     public makeGassDwarf() {
@@ -139,7 +143,7 @@ export class Planet extends OrbitingElement {
         this.radius.er = Random.random_float_clamp(2, 5); // CHECK what is the max
 
         // this.surfaceGravity = this.mass.em / (this.radius.er * this.radius.er) // calculated
-        this.density.setSiRadiusYotta(this.mass, this.radius);
+        this.density.setMassRadius(this.mass, this.radius);
     }
 
 
@@ -233,6 +237,9 @@ export class Planet extends OrbitingElement {
         slectPane.addInput(this.color, 'value', { label: "color" })
         slectPane.addInput(this.radius, 'km', { label: "radius km" });
         slectPane.addInput(this.mass, 'Yg', { label: "mass Yg" });
+        slectPane.addMonitor(this.orbLimitIn, 'km', { label: "lim in" });
+        slectPane.addMonitor(this.orbLimitOut, 'km', { label: "lim out" });
+        slectPane.addMonitor(this.density, 'gcm3', { label: "density" });
         slectPane.addMonitor(this, "planetType");
         slectPane.addMonitor(this, "isInHabZone");
         super.guiSelect(slectPane, gui);

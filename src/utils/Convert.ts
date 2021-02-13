@@ -105,7 +105,23 @@ export function clamp(value: number, min: number, max: number): number {
 export function copy(target_: any, source_: any) { copyDeep(target_, source_) }
 
 export function sphereVolume(radius: number) {
-    return 4 * Math.PI * radius * radius
+    // return 4 * Math.PI * radius * radius
+    return (Math.PI * ((radius * 2) ** 3)) / 6
+}
+
+export function sphereVolumeBig(radius: number) {
+    // return 4 * Math.PI * radius * radius
+    const extraDec = 10 ** 20;
+    const extraPi = BigInt(4.0 / 3.0 * Math.PI * extraDec)
+    const radCube = (BigInt(radius) ** BigInt(3)) * BigInt(extraDec)
+    const bigResult = radCube * extraPi / BigInt(extraDec)
+    const result = Number(bigResult) / extraDec
+    // console.log("extraDec", extraDec);
+    // console.log("extraPi", extraPi);
+    // console.log("radCube", radCube);
+    // console.log("bigResult", bigResult);
+    // console.log("result", result);
+    return result;
 }
 
 
@@ -238,12 +254,16 @@ export class NumberLength extends NumberConverter {
     public clone() { return new NumberLength(this.value); }
     public get km(): number { return this.value; }
     public set km(value: number) { this.value = value; }
+    public get meter(): number { return this.value * 1000; }
+    public set meter(value: number) { this.value = value / 1000; }
     public get Mm(): number { return this.value / 1000; }
     public set Mm(value: number) { this.value = value * 1000; }
     public get Gm(): number { return this.value / 1000000; }
     public set Gm(value: number) { this.value = value * 1000000; }
     public get Tm(): number { return this.value / 1000000000; }
     public set Tm(value: number) { this.value = value * 1000000000; }
+    public get Zm(): number { return this.value / Math.pow(10, 18); }
+    public set Zm(value: number) { this.value = value * Math.pow(10, 18); }
     public get Ym(): number { return this.value / Math.pow(10, 21); }
     public set Ym(value: number) { this.value = value * Math.pow(10, 21); }
     public get au(): number { return kmToAu(this.value); }
@@ -260,8 +280,8 @@ export class NumberVolume extends NumberConverter {
     public clone() { return new NumberLength(this.value); }
     public get km3(): number { return this.value; }
     public set km3(value: number) { this.value = value; }
-    public get m3(): number { return this.value * 1000000000; }
-    public set m3(value: number) { this.value = value / 1000000000; }
+    public get m3(): number { return this.value * (10 ** 9); }
+    public set m3(value: number) { this.value = value / (10 ** 9); }
     public setSphere(radius: NumberLength) { this.km3 = sphereVolume(radius.km) }
 }
 
@@ -307,12 +327,15 @@ export class NumberBigMass extends NumberConverter {
 
 export class NumberDensity extends NumberConverter {
     public clone() { return new NumberDensity(this.value); }
-    public get si(): number { return this.value; }
-    public set si(value: number) { this.value = value; }
-    public setSiVolumeKilo(mass: NumberMass | NumberBigMass, volume: NumberVolume) { this.si = mass.kg / volume.m3 }
-    public setSiRadiusKilo(mass: NumberMass | NumberBigMass, radius: NumberLength) { this.si = mass.kg / sphereVolume(radius.km) }
-    public setSiRadiusYotta(mass: NumberMass | NumberBigMass, radius: NumberLength) { this.si = mass.Yg / sphereVolume(radius.Ym) }
-    public setSiRadiusArtifexian(mass: NumberMass | NumberBigMass, radius: NumberLength) { this.si = mass.kg / Math.pow(radius.km, 3) }
+    public get gcm3(): number { return this.value; }
+    public set gcm3(value: number) { this.value = value; }
+    public get kgm3(): number { return this.value * 1000; }
+    public set kgm3(value: number) { this.value = value / 1000; }
+    // public get YgZm3(): number { return this.value * (10 ** 45); }
+    // public set YgZm3(value: number) { this.value = value / (10 ** 45); }
+    public setMassRadius(mass: NumberMass | NumberBigMass, radius: NumberLength) { this.kgm3 = mass.kg / sphereVolume(radius.meter); }
+    public setMassVolume(mass: NumberMass | NumberBigMass, volume: NumberVolume) { this.kgm3 = mass.kg / volume.m3; }
+    // public setSiRadiusArtifexian(mass: NumberMass | NumberBigMass, radius: NumberLength) { this.si = mass.kg / Math.pow(radius.meter, 3); }
 }
 
 export class NumberAngle extends NumberConverter {

@@ -100,6 +100,7 @@ test('NumberAngle 1', () => {
 
 
 
+
 test('Convert angles 1', () => {
 
     expect(Convert.degToRad(1)).toBeCloseTo(0.0174532925, 8);
@@ -125,6 +126,51 @@ test('Convert angles 1', () => {
 
 });
 
+
+function toFixed(x) {
+    if (Math.abs(x) < 1.0) {
+        var e = parseInt(x.toString().split('e-')[1]);
+        if (e) {
+            x *= Math.pow(10, e - 1);
+            x = '0.' + (new Array(e)).join('0') + x.toString().substring(2);
+        }
+    } else {
+        var e = parseInt(x.toString().split('+')[1]);
+        if (e > 20) {
+            e -= 20;
+            x /= Math.pow(10, e);
+            x += (new Array(e + 1)).join('0');
+        }
+    }
+    return x;
+}
+test('Earth conversions 1', () => {
+    var mass1 = new Convert.NumberMass();
+    var radi1 = new Convert.NumberLength();
+    var volu1 = new Convert.NumberVolume();
+    var dens1 = new Convert.NumberDensity();
+    mass1.kg = 5.97237 * (10 ** 24);
+    radi1.km = 6371.0;
+    volu1.km3 = 1.08321 * (10 ** 12); // NOT THE VOLUME AS A SPHERE !!!
+    dens1.gcm3 = 5.514;
+
+    var densMR = new Convert.NumberDensity();
+    densMR.setMassRadius(mass1, radi1);
+    var densMV = new Convert.NumberDensity();
+    densMV.setMassVolume(mass1, volu1);
+
+    expect(dens1.gcm3).toBeCloseTo(densMR.gcm3);
+    expect(dens1.gcm3).toBeCloseTo(densMV.gcm3);
+
+    expect(dens1.kgm3).toBeCloseTo(densMR.kgm3, 0);
+    expect(dens1.kgm3).toBeCloseTo(densMV.kgm3, 0);
+
+    expect(volu1.km3).toBeCloseTo(volu1.m3 / (10 ** 9));
+    expect(volu1.m3).toBeCloseTo(volu1.km3 * (10 ** 9));
+
+    // divide by big number to move imprecision in decimal zone
+    expect(volu1.km3 / (10 ** 8)).toBeCloseTo(Convert.sphereVolumeBig(radi1.km) / (10 ** 8), 1);
+});
 
 
 

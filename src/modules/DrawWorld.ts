@@ -153,7 +153,7 @@ export class DrawWorld {
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(75,
             this.canvasOffscreen.width / this.canvasOffscreen.height, 0.1, 1000000000000);
-        this.camera.position.y = Convert.auToKm(5);
+        this.camera.position.y = Convert.auToKm(4);
         // this.camera.position.y = Convert.auToKm(40);
         // this.camera.position.y = Convert.auToKm(50);
         // this.camera.position.y = Convert.auToKm(80);
@@ -352,13 +352,15 @@ export class DrawWorld {
         var visible_planet_size = orbitingElement_.radius.km * 2;
 
 
-        // TODO to see planets better
-        if (orbitingElement_.radius.km < 15)
-            visible_planet_size *= 100000 * 6;
-        else if (orbitingElement_.radius.km < 100)
-            visible_planet_size *= 100000 * 2;
+        // TODO TMP to see planets better
+        if (orbitingElement_.radius.km < 3000)
+            visible_planet_size = (10 ** 6) * 3;
+        else if (orbitingElement_.radius.km < 15000)
+            visible_planet_size = (10 ** 6) * 5;
+        else if (orbitingElement_.radius.km < 40000)
+            visible_planet_size = (10 ** 6) * 10;
         else
-            visible_planet_size *= 20;
+            visible_planet_size = (10 ** 6) * 15;
 
         // var parentOrbit = orbitingElement_.getParentOrbit();
         // if (parentOrbit) {

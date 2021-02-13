@@ -259,6 +259,9 @@ export class Orbit extends OrbitingElement {
 
     public guiSelect(slectPane: Tweakpane, gui: WorldGui) {
         slectPane.addMonitor(this, "isInHabZone");
+        slectPane.addMonitor(this, "eccentricity");
+        slectPane.addMonitor(this.semimajor_axis, 'Gm', { label: "semimajor axis Gm" });
+        slectPane.addMonitor(this.orbitalPeriod, 'ey', { label: "orbital Period" });
         super.guiSelect(slectPane, gui);
     }
 

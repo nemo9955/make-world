@@ -17,8 +17,7 @@ import { tree } from "d3";
 
 
 // https://www.youtube.com/watch?v=J5xU-8Kb63Y&list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&index=11&ab_channel=Artifexian
-
-
+// MOONS : https://www.youtube.com/watch?reload=9&v=t6i6TPsqvaM&ab_channel=Artifexian
 
 // Why Don’t Moons Have Moons?
 // https://medium.com/amazing-science/why-dont-moons-have-moons-c15171471864
@@ -27,7 +26,7 @@ import { tree } from "d3";
 export class SpaceFactory {
 
     public worldData: WorldData;
-    public config: Config = null;
+    public config: Config = new Config();
 
     public getWorldData(): WorldData { return this.worldData; }
 
@@ -45,7 +44,6 @@ export class SpaceFactory {
         // this.genOrbitsSimple(plsys, plsys.root())
         // this.genOrbitsUniform(plsys, plsys.root())
         this.genOrbitsSimpleMoons(plsys, plsys.root())
-        plsys.computeAll();
     }
 
 
@@ -125,7 +123,7 @@ export class SpaceFactory {
         // }
 
 
-
+        root.computeAll();
         console.debug("root.satelites.length", root.satelites.length);
     }
 
@@ -313,6 +311,7 @@ export class SpaceFactory {
 
 
         }
+        root.computeAll();
     }
 
 
@@ -457,7 +456,7 @@ export class SpaceFactory {
 
         if (attempsPercent > 0.1) {
             console.warn(`Generating took quite a few attemps: ${attempsPercent} ${genAttemps} ${genMaxAttemps}`);
-            console.log("this", this);
+            console.warn("this", this);
         }
 
         // root.satelites.sort((a, b) =>
@@ -465,6 +464,7 @@ export class SpaceFactory {
         //     this.getWorldData().stdBObjMap.get(b).semimajor_axis.value);
         console.debug("this.orbit.satelites.length", root.satelites.length);
 
+        root.computeAll();
         return this;
     }
 

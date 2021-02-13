@@ -15,7 +15,7 @@ export const AU_TO_SR = ASTRONOMICAL_UNIT_KM / SOLAR_RADIUS_KM
 
 export const EARTH_MASS_KG = 5.9722 * Math.pow(10, 24) // Kg
 export const EARTH_MASS_YG = 5.9722 * Math.pow(10, 3) // Yg
-export const EARTH_RADIUS_KM = 6.371 // Km
+export const EARTH_RADIUS_KM = 6371.1 // Km
 
 
 export const JUPITER_MASS_KG = 1.8982 * Math.pow(10, 27) // Kg

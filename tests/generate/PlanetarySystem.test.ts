@@ -7,6 +7,7 @@ import { WorldData } from "../../src/modules/WorldData";
 
 console.debug = jest.fn() // supress debugg logs
 console.time = jest.fn()
+console.warn = jest.fn()
 
 test('Sample Habitable', () => {
     var wd = new WorldData("test")
@@ -16,8 +17,8 @@ test('Sample Habitable', () => {
         spaceFactory.genStar(system, system); // empty defaults to habitable
         expect(["F", "G", "K"]).toContain(system.getStars()[0].sclass);
 
-        spaceFactory.genOrbitsSimple(system, system)
-        var orbits_dists = system.getSats()
+        spaceFactory.genOrbitsSimple(system, system.root())
+        var orbits_dists = system.getAllOrbits()
         expect(orbits_dists.length).toBeGreaterThanOrEqual(5)
     }
 });
@@ -29,7 +30,7 @@ test('Clone 1', () => {
     for (let index = 0; index < 10; index++) {
         var system_orig = new PlanetarySystem(wd);
         spaceFactory.genStar(system_orig, system_orig); // empty defaults to habitable
-        spaceFactory.genOrbitsSimpleMoons(system_orig, system_orig);
+        spaceFactory.genOrbitsSimpleMoons(system_orig, system_orig.root());
 
         var system_copy = new PlanetarySystem(wd).copyDeep(system_orig)
 
