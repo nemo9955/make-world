@@ -5,17 +5,15 @@
 import * as Convert from "../utils/Convert"
 
 export class Config {
-    do_draw_loop: boolean = true
-    do_update_loop: boolean = false
-    do_main_loop: boolean = false // leave false
-    // innerWidth: number
-    // innerHeight: number
+    do_draw_loop: boolean = true;
+    do_update_loop: boolean = false;
+    do_main_loop: boolean = false; // leave false
 
     follow_pointed_orbit: "none" | "imediate" | "auto" = "auto";
 
+    WorldPlanetarySystemID: number;
+    globalIsReady: boolean = false; // global flag for when Tickers can run
     timeUpdSpeed = 0.01;
-
-    WorldPlanetarySystemID: number
 
     public copy(source_: Config) {
         Convert.copyShallow(this, source_)

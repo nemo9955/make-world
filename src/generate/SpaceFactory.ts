@@ -11,6 +11,7 @@ import { PlanetarySystem } from "./PlanetarySystem";
 import { WorldData } from "../modules/WorldData";
 import { SpaceGroup } from "./SpaceGroup";
 import * as Tweakpane from "tweakpane/dist/tweakpane.js"
+import { WorldGui } from "../modules/WorldGui";
 
 
 // https://www.youtube.com/watch?v=J5xU-8Kb63Y&list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&index=11&ab_channel=Artifexian
@@ -155,14 +156,14 @@ export class SpaceFactory {
             var planet1_ = new Planet(this.getWorldData())
             planet1_.randomBinaryOrbit(0, orbit_.semimajor_axis, plsys)
             orbit1_.addSat(planet1_)
-            group_.addSat(orbit1_)
+            group_.addToSpaceGroup(orbit1_)
 
             var orbit2_ = orbit1_.clone();
             orbit2_.mean_longitude.deg += 180;
             var planet2_ = new Planet(this.getWorldData())
             planet2_.randomBinaryOrbit(1, orbit_.semimajor_axis, plsys)
             orbit2_.addSat(planet2_)
-            group_.addSat(orbit2_)
+            group_.addToSpaceGroup(orbit2_)
 
             orbit_.addSat(group_)
             return orbit_
@@ -210,10 +211,9 @@ export class SpaceFactory {
         orbit2_.addSat(star2_)
 
 
-        group_.addSat(orbit1_)
-        group_.addSat(orbit2_)
+        group_.addToSpaceGroup(orbit1_)
+        group_.addToSpaceGroup(orbit2_)
         root.addSat(group_)
-
 
         plsys.time.value = 0
 
@@ -263,7 +263,6 @@ export class SpaceFactory {
 
     public genOrbitsSimpleMoons(plsys: PlanetarySystem, root: OrbitingElement) {
         this.genOrbitsSimple(plsys, root);
-        plsys.computeAll();//////////////////////////////////////////////////////////////////////////////////////////////
 
         var moon_prev_orb = new Convert.NumberLength();
 
@@ -271,6 +270,7 @@ export class SpaceFactory {
 
             if (sat_ instanceof Orbit === false) continue;
             var orbit_: Orbit = sat_ as Orbit
+            var orbObject_ = orbit_.root(); // what moons will orbit
 
             // console.log("orbit_.semimajor_axis.au", orbit_.semimajor_axis.au);
 
@@ -308,7 +308,8 @@ export class SpaceFactory {
                 planet_.makeMoon(orb_dist.semimajor_axis, orbit_.semimajor_axis, plsys);
 
                 orb_dist.addSat(planet_);
-                orbit_.addSat(orb_dist)
+                orbObject_.addSat(orb_dist)
+                // orbit_.addSat(orb_dist)
 
                 // moon_prev_orb.value *= Random.random_float_clamp(1.5, 1.6)
                 moon_prev_orb.value *= 1.3

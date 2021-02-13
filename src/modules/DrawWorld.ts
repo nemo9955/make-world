@@ -21,6 +21,7 @@ import { SharedData } from "./SharedData";
 import { WorkerDOM } from "../utils/WorkerDOM";
 import { OrbitingElement } from "../generate/OrbitingElement";
 import { SpaceGroup } from "../generate/SpaceGroup";
+import { PlanetarySystem } from "../generate/PlanetarySystem";
 
 // https://orbitalmechanics.info/
 
@@ -434,25 +435,19 @@ export class DrawWorld {
         sphereMesh_.scale.setScalar(visible_planet_size);
     }
 
-    public handleSpaceGroup(element_: SpaceGroup, parent_: THREE.Object3D, root_: THREE.Object3D) {
-        const spaceGroupGr_ = this.tjs_pool_groups.get()
-        var orbitingElement_ = element_;
-
+    public handleGenericElement(element_: OrbitingElement, parent_: THREE.Object3D, root_: THREE.Object3D) {
+        const genericGr_ = this.tjs_pool_groups.get()
         var all_obj: ThreeUserData = {
-            genericGr: spaceGroupGr_,
+            genericGr: genericGr_,
             parent: parent_,
-            orbitingElement: orbitingElement_,
+            orbitingElement: element_,
         };
-        spaceGroupGr_.userData = all_obj
-
-        root_.add(spaceGroupGr_)
-
-        spaceGroupGr_.rotation.set(0, 0, 0)
-        spaceGroupGr_.position.set(0, 0, 0)
-
-        return spaceGroupGr_;
+        genericGr_.userData = all_obj
+        root_.add(genericGr_)
+        genericGr_.rotation.set(0, 0, 0)
+        genericGr_.position.set(0, 0, 0)
+        return genericGr_;
     }
-
 
     public popOrbits(satelites_: Array<OrbitingElement>, parent_: THREE.Object3D, root_: THREE.Object3D) {
         for (let index = 0; index < satelites_.length; index++) {
@@ -468,7 +463,8 @@ export class DrawWorld {
                 case "Star":
                     elementGr = this.handleStar(orbitingElement_ as Star, parent_, root_); break;
                 case "SpaceGroup":
-                    elementGr = this.handleSpaceGroup(orbitingElement_ as SpaceGroup, parent_, root_); break;
+                case "PlanetarySystem":
+                    elementGr = this.handleGenericElement(orbitingElement_, parent_, root_); break;
                 default:
                     console.error("orbitingElement_", orbitingElement_);
                     throw new Error("NOT IMPLEMENTED !!!!!!!!");
@@ -520,7 +516,8 @@ export class DrawWorld {
 
         this.orbElemToGroup.clear()
 
-        this.popOrbits(this.world.planetary_system.getSats(), this.scene, this.scene)
+        this.popOrbits([this.world.planetary_system], this.scene, this.scene)
+        // this.popOrbits(this.world.planetary_system.getSats(), this.scene, this.scene)
 
         console.timeEnd("#time DrawWorld updateDeep");
     }

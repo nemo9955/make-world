@@ -51,6 +51,7 @@ export class MainManager {
         }).then(() => {
             return this.writeDeep();
         }).then(() => {
+            this.config.globalIsReady = true;
             this.init_update_worker();
             this.init_draw_worker();
             this.refreshConfig()
@@ -76,7 +77,7 @@ export class MainManager {
 
 
     public async refreshConfig() {
-        this.ticker.updateState(this.config.do_main_loop) // TODO FIXME ENABLE TEST !!!!!!!!!!!!!!!!!
+        this.ticker.updateState(this.config.do_main_loop && this.config.globalIsReady)
 
         for (const worker_ of this.workers) {
             // waitBlocking(50); // TODO TMP !!!!!!!!!!!!!!
@@ -90,6 +91,9 @@ export class MainManager {
 
 
     public pauseAll() {
+        this.sharedData.selectedId = null;
+        // this.config.globalIsReady = false;
+        this.gui.selectOrbElement(null);
         this.ticker.stop();
         for (const worker_ of this.workers) {
             // waitBlocking(50); // TODO TMP !!!!!!!!!!!!!!
@@ -100,7 +104,6 @@ export class MainManager {
         }
     }
 
-    lastSelected: Identifiable = null;
 
     public loopCheck() {
         // if ((this.lastHover?.id === undefined && this.sharedData.hoverId !== null)
@@ -259,9 +262,8 @@ export class MainManager {
             evt_.preventDefault();
             if (this.sharedData.selectedId !== this.sharedData.hoverId) {
 
-                this.sharedData.selectedId = this.sharedData.hoverId;
-                this.lastSelected = this.world.stdBObjMap.get(this.sharedData.selectedId)
-                this.gui.selectOrbElement(this.lastSelected as OrbitingElement);
+                var selected = this.world.stdBObjMap.get(this.sharedData.hoverId)
+                this.gui.selectOrbElement(selected as OrbitingElement);
             }
         };
         canvas.addEventListener("contextmenu", selectListener.bind(this));

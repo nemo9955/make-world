@@ -9,6 +9,7 @@ import { ObjectPool } from "../utils/ObjectPool";
 import { Identifiable } from "../modules/DataBaseManager";
 import { orbit_types_, WorldData } from "../modules/WorldData";
 import * as Tweakpane from "tweakpane/dist/tweakpane.js"
+import { WorldGui } from "../modules/WorldGui";
 
 // Artifexian : https://www.youtube.com/watch?v=x55nxxaWXAM
 // https://en.wikipedia.org/wiki/Stellar_classification
@@ -206,18 +207,18 @@ export class Star extends OrbitingElement {
     }
 
 
-
-    public populateSelectGUI(slectPane: Tweakpane) {
-        super.populateSelectGUI(slectPane);
-        slectPane.addInput(this.color, 'value', { label: "color" })
-        slectPane.addInput(this.radius, 'km', { label: "radius km" });
-        slectPane.addInput(this.mass, 'Yg', { label: "mass Yg" });
-
-        slectPane.addInput(this, 'sclass');
-        slectPane.addInput(this.luminosity, 'watt', { label: "luminosity watt" });
-        slectPane.addInput(this.temperature, 'kelvin', { label: "temperature kelvin" });
-        slectPane.addInput(this.lifetime, 'eby', { label: "lifetime eby" });
-    }
-
     public clone() { return new Star(this.getWorldData()).copyLogic(this) }
+
+
+        public guiSelect(slectPane: Tweakpane, gui: WorldGui) {
+            slectPane.addInput(this.color, 'value', { label: "color" })
+            slectPane.addInput(this.radius, 'km', { label: "radius km" });
+            slectPane.addInput(this.mass, 'Yg', { label: "mass Yg" });
+
+            slectPane.addInput(this, 'sclass');
+            slectPane.addInput(this.luminosity, 'watt', { label: "luminosity watt" });
+            slectPane.addInput(this.temperature, 'kelvin', { label: "temperature kelvin" });
+            slectPane.addInput(this.lifetime, 'eby', { label: "lifetime eby" });
+            super.guiSelect(slectPane, gui);
+        }
 }

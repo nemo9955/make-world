@@ -8,12 +8,14 @@ import { Identifiable } from "../modules/DataBaseManager";
 import { orbit_types_, WorldData } from "../modules/WorldData";
 import { OrbitingElement } from "./OrbitingElement";
 import * as Tweakpane from "tweakpane/dist/tweakpane.js"
+import { WorldGui } from "../modules/WorldGui";
 
 
 import type { Orbit } from "./Orbit";
 import type { Planet } from "./Planet";
 import type { Star } from "./Star";
 import type { PlanetarySystem } from "./PlanetarySystem";
+import { FolderApi } from "tweakpane/dist/types/api/folder";
 // import type { SpaceGroup } from "./SpaceGroup";
 
 
@@ -25,6 +27,7 @@ export class SpaceGroup extends OrbitingElement {
 
     public combineChildrenMass = true;
     private tmp_mass = new Convert.NumberBigMass();
+    public groupedSatelites: number[] = [];
 
     constructor(worldData: WorldData) {
         super(worldData);
@@ -32,11 +35,36 @@ export class SpaceGroup extends OrbitingElement {
 
     }
 
+    public addToSpaceGroup(sat_: OrbitingElement) {
+        this.groupedSatelites.push(sat_.id)
+        this.addSat(sat_)
+    }
+
+    public getAllGroupedSats(): OrbitingElement[] {
+        var satObjs: OrbitingElement[] = [];
+        var stillLooking = true;
+
+        for (const sid of this.groupedSatelites)
+            satObjs.push(this.getWorldData().stdBObjMap.get(sid))
+
+        while (stillLooking) {
+            stillLooking = false;
+            for (const sat_ of satObjs) {
+                for (const chsat_ of sat_.getSats()) {
+                    if (satObjs.includes(chsat_) == false) {
+                        stillLooking = true;
+                        satObjs.push(chsat_)
+                    }
+                }
+            }
+        }
+        return satObjs
+    }
 
     public getMass(): Convert.NumberBigMass {
         if (this.combineChildrenMass == false) return null;
         this.tmp_mass.value = 0;
-        for (const sat_ of this.getAllSats()) {
+        for (const sat_ of this.getAllGroupedSats()) {
             if (sat_.getMass() === null) continue;
             this.tmp_mass.value += sat_.getMass().value;
         }
@@ -44,5 +72,17 @@ export class SpaceGroup extends OrbitingElement {
     }
 
     public clone() { return new SpaceGroup(this.getWorldData()).copyLogic(this) }
+
+    protected guiPopSelectChildren(slectPane: Tweakpane, gui: WorldGui, generalAct: FolderApi) {
+        this.getSats().forEach((sat_, index) => {
+            var title = ` ${sat_.type} ${sat_.id}`
+            if (this.groupedSatelites.includes(sat_.id))
+                title += ` (gr ${this.id})`
+            generalAct.addButton({ title: title }).on('click', () => {
+                gui.selectOrbElement(sat_);
+            });
+        });
+    }
+
 
 }

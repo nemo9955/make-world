@@ -4,13 +4,16 @@ import * as Convert from "../utils/Convert"
 import { ObjectPool } from "../utils/ObjectPool";
 import { Identifiable } from "../modules/DataBaseManager";
 import { orbit_types_, WorldData } from "../modules/WorldData";
-import * as Tweakpane from "tweakpane/dist/tweakpane.js"
+
+import { FolderApi } from "tweakpane/dist/types/api/folder";
+import type Tweakpane from "tweakpane";
 
 import type { Orbit } from "./Orbit";
 import type { Planet } from "./Planet";
 import type { Star } from "./Star";
 import type { PlanetarySystem } from "./PlanetarySystem";
 import type { SpaceGroup } from "./SpaceGroup";
+import { WorldGui } from "../modules/WorldGui";
 
 
 // https://stackoverflow.com/a/65337891/2948519
@@ -220,16 +223,29 @@ export class OrbitingElement implements Identifiable {
     }
 
 
-    public populateSelectGUI(slectPane: Tweakpane) {
-        console.log("#HERELINE OrbitingElement populateSelectGUI ");
-        slectPane.addMonitor(this, "id");
-        slectPane.addMonitor(this, "type");
+    protected guiPopSelectChildren(slectPane: Tweakpane, gui: WorldGui, generalAct: FolderApi) {
+        this.getSats().forEach((sat_, index) => {
+            var title = `${sat_.type} ${sat_.id}`
+            generalAct.addButton({ title: title }).on('click', () => {
+                gui.selectOrbElement(sat_);
+            });
+        });
     }
 
 
-    // public getMainOrbit(): Orbit {
-    //     // ignore first orbit if a binary or similar
-    //     return null;
-    // }
+    public guiSelect(slectPane: Tweakpane, gui: WorldGui) {
+        console.debug("#HERELINE OrbitingElement populateSelectGUI ");
+        slectPane.addMonitor(this, "id", { index: 2 });
+        slectPane.addMonitor(this, "type", { index: 3 });
+
+        const generalAct = slectPane.addFolder({ title: 'Select', expanded: true, index: 10000 });
+        var parent = this.getParent();
+        if (parent)
+            generalAct.addButton({ title: `Parent ${parent.type} ${parent.id}` }).on('click', () => {
+                gui.selectOrbElement(parent);
+            });
+        this.guiPopSelectChildren(slectPane, gui, generalAct)
+    }
+
 
 }

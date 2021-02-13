@@ -24,9 +24,8 @@ export class SharedData {
         return value;
     }
 
-    private setNumberRaw(value) { return value; }
-
-    private getNumberRaw(value) { return value; }
+    private setNumberRaw(value: number) { return value; }
+    private getNumberRaw(value: number) { return value; }
 
     public get mousex() { return this.getNumber(this.ia[0]); }
     public set mousex(value) { this.ia[0] = this.setNumber(value); }
@@ -39,8 +38,8 @@ export class SharedData {
     public get selectedId() { return this.getNumberRaw(this.ia[3]); }
     public set selectedId(value) { this.ia[3] = this.setNumberRaw(value); }
 
-    public get maxId() { return this.getNumberRaw(this.ia[3]); }
-    public set maxId(value) { this.ia[3] = this.setNumberRaw(value); }
+    public get maxId() { return this.getNumberRaw(this.ia[4]); }
+    public set maxId(value) { this.ia[4] = this.setNumberRaw(value); }
 
     constructor() {
     }
@@ -50,7 +49,7 @@ export class SharedData {
         this.ia = new Float64Array(this.sab);
         for (const index in this.ia)
             this.ia[index] = NULL_NUMBER;
-        this.maxId = 10 ;
+        this.maxId = 10;
     }
 
     public initShared(sab_: SharedArrayBuffer) {

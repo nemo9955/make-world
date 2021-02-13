@@ -110,7 +110,7 @@ export class DrawWorker {
     }
 
     public async refreshConfig() {
-        this.ticker.updateState(this.config.do_draw_loop)
+        this.ticker.updateState(this.config.do_draw_loop && this.config.globalIsReady)
     }
 
     public async refreshDb(event: MessageEvent, refreshType: MessageType) {
@@ -118,7 +118,7 @@ export class DrawWorker {
         console.time("#time DrawWorker refresh_db " + refreshType);
 
         await this.refreshConfig();
-        var doSpecial = false;
+        var doSpecial = !false;
 
         var prom: Promise<void> = null
         if (refreshType == MessageType.RefreshDBDeep)

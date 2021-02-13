@@ -10,6 +10,7 @@ import { Orbit } from "./Orbit";
 import { OrbitingElement } from "./OrbitingElement";
 import { PlanetarySystem } from "./PlanetarySystem";
 import * as Tweakpane from "tweakpane/dist/tweakpane.js"
+import { WorldGui } from "../modules/WorldGui";
 
 // https://en.wikipedia.org/wiki/List_of_gravitationally_rounded_objects_of_the_Solar_System
 
@@ -227,12 +228,12 @@ export class Planet extends OrbitingElement {
         return this.mass;
     }
 
-    public populateSelectGUI(slectPane: Tweakpane) {
-        super.populateSelectGUI(slectPane);
+    public guiSelect(slectPane: Tweakpane, gui: WorldGui) {
         slectPane.addInput(this.color, 'value', { label: "color" })
         slectPane.addInput(this.radius, 'km', { label: "radius km" });
         slectPane.addInput(this.mass, 'Yg', { label: "mass Yg" });
         slectPane.addMonitor(this, "planetType");
+        super.guiSelect(slectPane, gui);
     }
 
     public clone() { return new Planet(this.getWorldData()).copyLogic(this) }

@@ -89,7 +89,7 @@ export class UpdateWorker {
     }
 
     public async refreshConfig() {
-        this.ticker.updateState(this.config.do_update_loop)
+        this.ticker.updateState(this.config.do_update_loop && this.config.globalIsReady)
     }
 
     public async refreshDb(event: MessageEvent, refreshType: MessageType) {

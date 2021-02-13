@@ -52,7 +52,7 @@ export class WorldData {
     public init() {
         console.debug("#HERELINE WorldData init");
         this.planetary_system.init()
-        this.planetary_system.setWorldData(this);
+        // this.planetary_system.setWorldData(this);
         this.setOrbElem(this.planetary_system)
         this.spaceFactory.genStartingPlanetSystem(this.planetary_system)
         return this.dbm.init();
@@ -111,6 +111,7 @@ export class WorldData {
                     console.warn("this.stdBObjMap", this.stdBObjMap);
                     console.warn("this", this);
                     console.warn("iterator", iterator);
+                    debugger; /// TODO FIXME verry rare, non-breaking fail at start
                 }
                 newLocal.copyShallow(iterator);
             }
@@ -152,6 +153,7 @@ export class WorldData {
                     console.warn("this.stdBObjMap", this.stdBObjMap);
                     console.warn("this", this);
                     console.warn("iterator", iterator);
+                    debugger; /// TODO FIXME verry rare, non-breaking fail at start
                 }
                 newLocal.copyDeep(iterator);
             }
