@@ -162,8 +162,8 @@ export class DrawWorld {
 
         const geometryHoverSphere = new THREE.SphereGeometry(1);
         const materialHoverSphere = new THREE.MeshBasicMaterial({ color: new THREE.Color("red"), side: THREE.DoubleSide });
-        materialHoverSphere.transparent = true;
-        materialHoverSphere.opacity = 0.5;
+        // materialHoverSphere.transparent = true;
+        // materialHoverSphere.opacity = 0.5;
         this.hoverSphere = new THREE.Mesh(geometryHoverSphere, materialHoverSphere);
         this.hoverSphere.visible = false;
         this.scene.add(this.hoverSphere);
@@ -206,8 +206,8 @@ export class DrawWorld {
         this.distToTarget = this.camera.position.distanceTo(this.controls.target)
         this.distToTarget /= 10 ** 9
 
-        this.raycaster.params.Line.threshold = this.distToTarget * 1000000 * 10;
-        this.hoverSphere.scale.setScalar(this.raycaster.params.Line.threshold)
+        this.raycaster.params.Line.threshold = this.distToTarget * 1000000 * 20;
+        this.hoverSphere.scale.setScalar(this.raycaster.params.Line.threshold / 2)
     }
 
     public update_not() {

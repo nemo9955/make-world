@@ -50,14 +50,16 @@ export class WorldData {
         // console.log("this.planetary_system.getWorldData()", this.planetary_system.getWorldData());
     }
 
-    public init() {
+    public async init() {
         console.debug("#HERELINE WorldData init");
-        this.spread_objects();
-        this.planetary_system.init()
-        // this.planetary_system.setWorldData(this);
-        this.setOrbElem(this.planetary_system)
-        this.spaceFactory.genStartingPlanetSystem(this.planetary_system)
-        return this.dbm.init();
+        return this.dbm.init().then(() => {
+            console.debug(`#HERELINE WorldData ${this.name} init then`);
+            this.spread_objects();
+            this.planetary_system.init();
+            // this.planetary_system.setWorldData(this);
+            this.setOrbElem(this.planetary_system);
+            this.spaceFactory.genStartingPlanetSystem(this.planetary_system);
+        })
     }
 
     public initWorker() {
@@ -124,7 +126,6 @@ export class WorldData {
                     console.warn("this.stdBObjMap", this.stdBObjMap);
                     console.warn("this", this);
                     console.warn("iterator", iterator);
-                    // debugger; /// TODO FIXME verry rare, non-breaking fail at start
                 }
                 newLocal.copyShallow(iterator);
             }
@@ -166,7 +167,6 @@ export class WorldData {
                     console.warn("this.stdBObjMap", this.stdBObjMap);
                     console.warn("this", this);
                     console.warn("iterator", iterator);
-                    // debugger; /// TODO FIXME verry rare, non-breaking fail at start
                 }
                 newLocal.copyDeep(iterator);
             }

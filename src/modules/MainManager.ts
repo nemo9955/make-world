@@ -51,9 +51,9 @@ export class MainManager {
         }).then(() => {
             return this.writeDeep();
         }).then(() => {
-            this.config.globalIsReady = true;
             this.init_update_worker();
             this.init_draw_worker();
+            this.config.globalIsReady = true;
             this.refreshConfig()
         })
 
