@@ -40,9 +40,9 @@ type ThreeUserData = {
 
 export class DrawWorld {
     sharedData: SharedData = null;
-    world: WorldData;
-    canvasOffscreen: any;
-    config: Config;
+    world: WorldData = null;
+    canvasOffscreen: OffscreenCanvas = null;
+    config: Config = null;
     fakeDOM = new WorkerDOM();
 
     mouse = new THREE.Vector2();
@@ -198,20 +198,6 @@ export class DrawWorld {
         light_pt.position.set(-ptltpos, ptltpos, ptltpos);
         this.scene.add(light_pt);
 
-        this.update_not();
-    }
-
-    distToTarget = 0;
-    private cameraMoved() {
-        this.distToTarget = this.camera.position.distanceTo(this.controls.target)
-        this.distToTarget /= 10 ** 9
-
-        this.raycaster.params.Line.threshold = this.distToTarget * 1000000 * 20;
-        this.hoverSphere.scale.setScalar(this.raycaster.params.Line.threshold / 2)
-    }
-
-    public update_not() {
-
         // this.sun = new THREE.Mesh(
         //     new THREE.SphereGeometry(1, 5, 5),
         //     new THREE.MeshStandardMaterial({ color: new THREE.Color(0.6, 0.6, 0.0) })
@@ -236,9 +222,16 @@ export class DrawWorld {
         this.frost_zone.rotateX(Convert.degToRad(-90))
         this.frost_zone.position.y = -10000000
         this.scene.add(this.frost_zone);
-
     }
 
+    distToTarget = 0;
+    private cameraMoved() {
+        this.distToTarget = this.camera.position.distanceTo(this.controls.target)
+        this.distToTarget /= 10 ** 9
+
+        this.raycaster.params.Line.threshold = this.distToTarget * 1000000 * 20;
+        this.hoverSphere.scale.setScalar(this.raycaster.params.Line.threshold / 2)
+    }
 
 
     public handleOrbit(element_: Orbit, parent_: THREE.Object3D, root_: THREE.Object3D) {

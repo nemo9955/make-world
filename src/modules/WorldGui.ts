@@ -45,6 +45,7 @@ export class WorldGui {
         MailElem.style.zIndex = "100"; // put GUI at the front
         MailElem.style.top = "0px"
         MailElem.style.right = "0px"
+        MailElem.style.position = "fixed";
 
         this.initSelection()
 
@@ -60,7 +61,7 @@ export class WorldGui {
         var selectElem: HTMLElement = this.slectPane.containerElem_
         selectElem.className = "SelectionDiv"
         selectElem.style.zIndex = "200";
-        selectElem.style.position = "absolute"
+        selectElem.style.position = "fixed"
         selectElem.style.bottom = "0px"
         selectElem.style.right = "0px"
         selectElem.style.width = "256px"
@@ -88,10 +89,11 @@ export class WorldGui {
         this.mainPane.dispose();
     }
 
-    public regenerate() {
-        this.clear()
-        this.init()
-        this.refreshDeep(true)
+    public regenerate(doRefresh = true) {
+        this.clear();
+        this.init();
+        if (doRefresh)
+            this.refreshDeep(true);
     }
 
     public refreshInstant(skip_pane_refresh, extra: MessageType) {
@@ -171,6 +173,11 @@ export class WorldGui {
         this.mainPane.addInput(this.manager.config, 'timeUpdSpeed', { min: 0, max: 1 });
 
 
+        this.manager.focusableThings.forEach((elem_, index) => {
+            this.mainPane.addButton({ title: `Focus ${elem_.id}` }).on('click', () => {
+                elem_.focus();
+            });
+        });
 
         this.mainPane.addButton({ title: 'regen' }).on('click', () => {
             this.regenerate();
@@ -225,13 +232,6 @@ export class WorldGui {
             this.regenerate();
         });
 
-        this.mainPane.addButton({ title: 'genDebugg' }).on('click', () => {
-            this.manager.pauseAll()
-            var plsys = this.manager.world.planetary_system
-            this.manager.world.spaceFactory.genDebugg(plsys, plsys.root())
-            this.refreshDeep();
-        });
-
         this.mainPane.addButton({ title: 'genOrbitsSimple' }).on('click', () => {
             this.manager.pauseAll()
             var plsys = this.manager.world.planetary_system
@@ -239,12 +239,18 @@ export class WorldGui {
             this.refreshDeep();
         });
 
-        this.mainPane.addButton({ title: 'genOrbitsUniform' }).on('click', () => {
-            this.manager.pauseAll()
-            var plsys = this.manager.world.planetary_system
-            this.manager.world.spaceFactory.genOrbitsUniform(plsys, plsys.root())
-            this.refreshDeep();
-        });
+        // this.mainPane.addButton({ title: 'genDebugg' }).on('click', () => {
+        //     this.manager.pauseAll()
+        //     var plsys = this.manager.world.planetary_system
+        //     this.manager.world.spaceFactory.genDebugg(plsys, plsys.root())
+        //     this.refreshDeep();
+        // });
+        // this.mainPane.addButton({ title: 'genOrbitsUniform' }).on('click', () => {
+        //     this.manager.pauseAll()
+        //     var plsys = this.manager.world.planetary_system
+        //     this.manager.world.spaceFactory.genOrbitsUniform(plsys, plsys.root())
+        //     this.refreshDeep();
+        // });
 
         this.mainPane.addButton({ title: 'genOrbitsSimpleMoons' }).on('click', () => {
             this.manager.pauseAll()
@@ -252,6 +258,13 @@ export class WorldGui {
             this.manager.world.spaceFactory.genOrbitsSimpleMoons(plsys, plsys.root())
             this.refreshDeep();
         });
+
+        // this.mainPane.addButton({ title: 'Pop out cancas' }).on('click', () => {
+        //     console.warn(this, this.manager);
+        //     // var dataURL = this.manager.canvasObj.toDataURL("image/png");
+        //     // var newTab = window.open(dataURL, 'Image');
+        //     // newTab.focus();
+        // });
 
         this.refresh_gui(true)
     }

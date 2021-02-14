@@ -10,6 +10,7 @@ import { Ticker, waitBlocking } from "../utils/Time";
 import { SharedData } from "./SharedData";
 import { EventsManager } from "./EventsManager";
 import { OrbitingElement } from "../generate/OrbitingElement";
+import { DrawWorker } from "./DrawWorker";
 
 export class MainManager {
     cam_timeout: any = null;
@@ -27,6 +28,8 @@ export class MainManager {
 
     sharedData = new SharedData();
     evmng: EventsManager;
+
+    focusableThings: HTMLElement[] = [];
 
     constructor() {
         this.world = new WorldData("MainManager");
@@ -210,74 +213,12 @@ export class MainManager {
             case MessageType.RefreshDBDeep:
                 this.readDeep(); break;
             case MessageType.MakeCanvas:
-                this.init_worker_canvas(); break;
+                DrawWorker.initDrawWorkerCanvas(this, the_worker, event);
+                this.gui.regenerate(false);
+                break;
             default:
                 console.warn("DEFAULT not implemented !"); break
         }
-    }
-
-
-    public init_worker_canvas() {
-
-        var body = document.getElementsByTagName("body")[0];
-
-        body.style.margin = "0"
-
-        const canvas = document.createElement('canvas');
-        canvas.id = "CursorLayer";
-        // canvas.style.zIndex = "8";
-        canvas.style.position = "absolute";
-        canvas.tabIndex = 0; // so canvas can get keydown events
-        // canvas.style.border = "1px solid";
-        body.appendChild(canvas);
-
-
-        // console.log("canvas", canvas);
-        // "mousedown" "mouseenter" "mouseleave" "mousemove" "mouseout" "mouseover" "mouseup":
-        canvas.addEventListener('mousemove', (evt) => {
-            var rect = canvas.getBoundingClientRect();
-            this.sharedData.mousex = evt.clientX - rect.left;
-            this.sharedData.mousey = evt.clientY - rect.top;
-        }, false);
-        canvas.addEventListener('mouseleave', () => {
-            this.sharedData.mousex = null;
-            this.sharedData.mousey = null;
-        }, false);
-
-        var canvasOffscreen = canvas.transferControlToOffscreen();
-        var canvasResize = () => {
-            canvasOffscreen.width = window.innerWidth;
-            canvasOffscreen.height = window.innerHeight;
-
-            var fakeResizeEvent: any = new Event("resize");
-            fakeResizeEvent.width = canvasOffscreen.width
-            fakeResizeEvent.height = canvasOffscreen.height
-            canvas.dispatchEvent(fakeResizeEvent);
-        }
-        window.addEventListener('resize', canvasResize.bind(this));
-        canvasResize();
-
-
-        var selectListener = (evt_: Event) => {
-            evt_.preventDefault();
-            if (this.sharedData.selectedId !== this.sharedData.hoverId) {
-
-                var selected = this.world.stdBObjMap.get(this.sharedData.hoverId)
-                this.gui.selectOrbElement(selected as OrbitingElement);
-            }
-        };
-        canvas.addEventListener("contextmenu", selectListener.bind(this));
-
-        // TODO have a more dynamic ID-based way of propagating events
-        this.evmng.addOrbitCtrlEvents(canvas, canvas.id, this.draw_worker)
-        this.evmng.addResizeEvents(canvas, canvas.id, this.draw_worker)
-
-        this.draw_worker.postMessage({
-            message: MessageType.InitCanvas,
-            config: this.config,
-            canvas: canvasOffscreen,
-            canvas_id: canvas.id,
-        }, [canvasOffscreen]);
     }
 
 

@@ -106,4 +106,10 @@ export class EventsManager {
 
     }
 
+    public addEventsD3Canvas(canvas: HTMLElement, canvas_id: any, worker: GenericWorkerInstance) {
+        this.genericRedirect("pointerdown", canvas, canvas_id, worker)
+        this.genericRedirect("pointerup", canvas, canvas_id, worker)
+
+    }
+
 }

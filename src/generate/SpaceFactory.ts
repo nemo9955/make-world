@@ -46,20 +46,13 @@ export class SpaceFactory {
         this.genOrbitsSimpleMoons(plsys, plsys.root())
     }
 
-
-
-    public genDebugg(plsys: PlanetarySystem, root: OrbitingElement) {
-        // this.manager.world.planetary_system.genStar("sun");
-        // this.manager.world.planetary_system.genOrbitsUniform();
-        this.genStar(plsys, plsys, "sun")
-        this.genOrbitsUniform(plsys, plsys.root())
-        plsys.computeAll();
-    }
-
-
-
-
-
+    // public genDebugg(plsys: PlanetarySystem, root: OrbitingElement) {
+    //     // this.manager.world.planetary_system.genStar("sun");
+    //     // this.manager.world.planetary_system.genOrbitsUniform();
+    //     this.genStar(plsys, plsys, "sun")
+    //     this.genOrbitsUniform(plsys, plsys.root())
+    //     // plsys.computeAll();
+    // }
 
 
     public genOrbitsUniform(plsys: PlanetarySystem, root: OrbitingElement) {
