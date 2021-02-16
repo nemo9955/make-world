@@ -21,16 +21,16 @@ import { PlanetarySystem } from "../generate/PlanetarySystem";
 
 
 
-export class DrawD3Stats {
-    sharedData: SharedData = null;
-    world: WorldData = null;
-    canvasOffscreen: OffscreenCanvas = null;
-    config: Config = null;
-    fakeDOM = new WorkerDOM();
+export class DrawD3Plsys {
+    public readonly type = this.constructor.name;
+    public sharedData: SharedData = null;
+    public world: WorldData = null;
+    public canvasOffscreen: OffscreenCanvas = null;
+    public config: Config = null;
+    public fakeDOM = new WorkerDOM();
 
 
     constructor() {
-
     }
 
 

@@ -6,13 +6,13 @@ import * as Units from "../utils/Units"
 
 import { DataBaseManager } from "./DataBaseManager"
 import { WorldData } from "./WorldData"
-import { DrawWorld } from "./DrawWorld"
+import { DrawThreePlsys } from "./DrawThreePlsys"
 
 import { Config, MessageType } from "./Config"
 import { Intervaler, Ticker } from "../utils/Time"
 import { SharedData } from "./SharedData";
 import { WorkerDOM } from "../utils/WorkerDOM";
-import { DrawD3Stats } from "./DrawD3Stats";
+import { DrawD3Plsys } from "./DrawD3Plsys";
 import { MainManager } from "./MainManager";
 import type GenericWorkerInstance from "worker-loader!./Generic.worker.ts";
 import { OrbitingElement } from "../generate/OrbitingElement";
@@ -21,9 +21,10 @@ import { OrbitingElement } from "../generate/OrbitingElement";
 const SCROLL_THING_SIZE = 20
 
 export class DrawWorker {
+    public readonly type = this.constructor.name;
     sharedData = new SharedData();
-    drawThreePlsysReal: DrawWorld;
-    drawD3Stats: DrawD3Stats;
+    drawThreePlsys: DrawThreePlsys;
+    drawD3Plsys: DrawD3Plsys;
     db_read_itv = new Intervaler();
 
     world: WorldData;
@@ -36,10 +37,10 @@ export class DrawWorker {
     constructor(worker: Worker) {
         this.worker = worker;
 
-        this.world = new WorldData("DrawWorker");
+        this.world = new WorldData(this.type);
         this.config = new Config();
-        this.drawThreePlsysReal = new DrawWorld();
-        this.drawD3Stats = new DrawD3Stats();
+        this.drawThreePlsys = new DrawThreePlsys();
+        this.drawD3Plsys = new DrawD3Plsys();
         this.ticker = new Ticker(false, this.refreshShallow.bind(this), Units.LOOP_INTERVAL, Units.LOOP_INTERVAL * 0.6)
     }
 
@@ -55,7 +56,7 @@ export class DrawWorker {
         // TODO make generic function ???
         this.world.planetary_system.id = this.config.WorldPlanetarySystemID
 
-        var to_spread: any[] = [this.world, this.drawThreePlsysReal, this.drawD3Stats]
+        var to_spread: any[] = [this.world, this.drawThreePlsys, this.drawD3Plsys]
         for (const object_ of to_spread) {
             if (object_.config === null) object_.sharedData = this.sharedData
             if (object_.config === null) object_.config = this.config
@@ -92,25 +93,25 @@ export class DrawWorker {
 
     callEvent(event: any, event_id: any) {
         // console.log("event_id, event", event_id, event);
-        if (event_id === "DrawThreePlsysRealCanvas")
-            this.drawThreePlsysReal.fakeDOM.dispatchEvent(event);
+        if (event_id === "DrawThreePlsysCanvas")
+            this.drawThreePlsys.fakeDOM.dispatchEvent(event);
         else
-            this.drawD3Stats.fakeDOM.dispatchEvent(event);
+            this.drawD3Plsys.fakeDOM.dispatchEvent(event);
     }
 
     public init_canvas(event?: MessageEvent) {
         console.debug("#HERELINE DrawWorker init_canvas ", event.data.canvas_id);
-        if (event.data.canvas_id === "DrawThreePlsysRealCanvas") {
-            this.drawThreePlsysReal.canvasOffscreen = event.data.canvas;
-            this.drawThreePlsysReal.init()
+        if (event.data.canvas_id === "DrawThreePlsysCanvas") {
+            this.drawThreePlsys.canvasOffscreen = event.data.canvas;
+            this.drawThreePlsys.init()
         } else {
-            this.drawD3Stats.canvasOffscreen = event.data.canvas;
-            this.drawD3Stats.init()
+            this.drawD3Plsys.canvasOffscreen = event.data.canvas;
+            this.drawD3Plsys.init()
         }
 
-        var allCanv = [this.drawD3Stats.canvasOffscreen, this.drawThreePlsysReal.canvasOffscreen]
+        var allCanv = [this.drawD3Plsys.canvasOffscreen, this.drawThreePlsys.canvasOffscreen]
         if (allCanv.every(canv_ => canv_)) {
-            this.worker.postMessage({ message: MessageType.Ready, from: "DrawWorker" });
+            this.worker.postMessage({ message: MessageType.Ready, from: this.type });
         }
     }
 
@@ -143,10 +144,10 @@ export class DrawWorker {
     private async refreshDeep(doSpecial = true) {
         console.debug("#HERELINE DrawWorker refreshDeep");
         await this.world.readDeep();
-        this.drawThreePlsysReal.updateDeep();
+        this.drawThreePlsys.updateDeep();
         if (doSpecial) {
-            this.drawThreePlsysReal.draw();
-            this.drawD3Stats.draw();
+            this.drawThreePlsys.draw();
+            this.drawD3Plsys.draw();
         }
     }
 
@@ -154,8 +155,8 @@ export class DrawWorker {
         // console.debug("#HERELINE DrawWorker refreshShallow");
         await this.world.readShallow();
         if (doSpecial) {
-            this.drawThreePlsysReal.draw();
-            this.drawD3Stats.draw();
+            this.drawThreePlsys.draw();
+            this.drawD3Plsys.draw();
         }
     }
 
@@ -165,11 +166,11 @@ export class DrawWorker {
     }
 
 
-    public static initThreePlsysReal(mngr: MainManager, the_worker: GenericWorkerInstance, event: MessageEvent) {
+    private static initThreePlsysReal(mngr: MainManager, the_worker: GenericWorkerInstance, event: MessageEvent) {
         var body = document.getElementsByTagName("body")[0];
         body.style.margin = "0"
         const canvas = document.createElement('canvas');
-        canvas.id = "DrawThreePlsysRealCanvas";
+        canvas.id = "DrawThreePlsysCanvas";
         canvas.tabIndex = 0; // so canvas can get keydown events
         // canvas.style.position = "absolute";
         // canvas.style.zIndex = "8";
@@ -236,7 +237,7 @@ export class DrawWorker {
         }, [canvasOffscreen]);
     }
 
-    public static initD3Stats(mngr: MainManager, the_worker: GenericWorkerInstance, event: MessageEvent) {
+    private static initD3Stats(mngr: MainManager, the_worker: GenericWorkerInstance, event: MessageEvent) {
 
         var body = document.getElementsByTagName("body")[0];
         body.style.margin = "0"

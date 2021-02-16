@@ -38,11 +38,12 @@ type ThreeUserData = {
 }
 
 
-export class DrawWorld {
+export class DrawThreePlsys {
+    public readonly type = this.constructor.name;
     sharedData: SharedData = null;
     world: WorldData = null;
-    canvasOffscreen: OffscreenCanvas = null;
     config: Config = null;
+    canvasOffscreen: OffscreenCanvas = null;
     fakeDOM = new WorkerDOM();
 
     mouse = new THREE.Vector2();
@@ -84,9 +85,6 @@ export class DrawWorld {
     selectedThing: THREE.Object3D = null;
 
     constructor() {
-        this.config = null;
-        this.world = null;
-
         this.raycaster.params.Line.threshold = 1000000 * 10;
 
         this.tjs_pool_lines = new ObjectPool<THREE.Line>(() => {
