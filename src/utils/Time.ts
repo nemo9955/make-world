@@ -72,7 +72,7 @@ export class Ticker {
     }
 
     public updateState(setEnable: boolean) {
-        // this.tick(); // !!!!!!!!!!!!!!!!!!!!!!!!! TMP TOFO FIXME WA REMOVE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // console.warn(`#HERELINE Time updateState setEnable ${setEnable} `);
         if (setEnable == this.enabled) return;
         if (setEnable) this.start();
         else this.stop();

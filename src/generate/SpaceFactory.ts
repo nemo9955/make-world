@@ -208,6 +208,7 @@ export class SpaceFactory {
         plsys.orbits_limit_in.au = 0.1 * stars_mass_.sm
         plsys.orbits_limit_out.au = 40 * stars_mass_.sm
         plsys.frost_line.au = 4.85 * plsys.hab_zone.au
+        root.computeAll();
     }
 
     public genStar(plsys: PlanetarySystem, root: OrbitingElement, type?: string) {
@@ -238,6 +239,7 @@ export class SpaceFactory {
         plsys.orbits_limit_in.au = 0.1 * star_.mass.sm
         plsys.orbits_limit_out.au = 40 * star_.mass.sm
         plsys.frost_line.au = 4.85 * plsys.hab_zone.au
+        root.computeAll();
     }
 
 

@@ -20,19 +20,33 @@ import { OrbitingElement } from "../generate/OrbitingElement";
 
 const SCROLL_THING_SIZE = 20
 
+export interface DrawWorkerInstance {
+    readonly type: string;
+    sharedData: SharedData;
+    world: WorldData;
+    canvasOffscreen: OffscreenCanvas;
+    config: Config;
+    fakeDOM: WorkerDOM;
+
+    init(event: MessageEvent): void;
+    updateDeep(): void;
+    draw(): void;
+}
+
 export class DrawWorker {
     public readonly type = this.constructor.name;
     sharedData = new SharedData();
-    drawThreePlsys: DrawThreePlsys;
-    drawD3Plsys: DrawD3Plsys;
     db_read_itv = new Intervaler();
+    world: WorldData = null;
+    config: Config = null;
+    worker: Worker = null;
+    ticker: Ticker = null;
 
-    world: WorldData;
-    config: Config;
+    mapDraws = new Map<any, DrawWorkerInstance>();
+    listDraws: DrawWorkerInstance[] = null;
+    drawThreePlsys: DrawThreePlsys = null;
+    drawD3Plsys: DrawD3Plsys = null;
 
-    worker: Worker;
-
-    ticker: Ticker
 
     constructor(worker: Worker) {
         this.worker = worker;
@@ -41,6 +55,7 @@ export class DrawWorker {
         this.config = new Config();
         this.drawThreePlsys = new DrawThreePlsys();
         this.drawD3Plsys = new DrawD3Plsys();
+        this.listDraws = [this.drawThreePlsys, this.drawD3Plsys];
         this.ticker = new Ticker(false, this.refreshShallow.bind(this), Units.LOOP_INTERVAL, Units.LOOP_INTERVAL * 0.6)
     }
 
@@ -56,11 +71,11 @@ export class DrawWorker {
         // TODO make generic function ???
         this.world.planetary_system.id = this.config.WorldPlanetarySystemID
 
-        var to_spread: any[] = [this.world, this.drawThreePlsys, this.drawD3Plsys]
+        var to_spread: any[] = [this.world, ...this.listDraws]
         for (const object_ of to_spread) {
-            if (object_.config === null) object_.sharedData = this.sharedData
-            if (object_.config === null) object_.config = this.config
-            if (object_.world === null) object_.world = this.world
+            if (object_.config === null) object_.sharedData = this.sharedData;
+            if (object_.config === null) object_.config = this.config;
+            if (object_.world === null) object_.world = this.world;
         }
     }
 
@@ -93,24 +108,28 @@ export class DrawWorker {
 
     callEvent(event: any, event_id: any) {
         // console.log("event_id, event", event_id, event);
-        if (event_id === "DrawThreePlsysCanvas")
-            this.drawThreePlsys.fakeDOM.dispatchEvent(event);
-        else
-            this.drawD3Plsys.fakeDOM.dispatchEvent(event);
+        var drawRedirect = this.mapDraws.get(event_id);
+        drawRedirect.fakeDOM.dispatchEvent(event);
     }
 
-    public init_canvas(event?: MessageEvent) {
+    public init_canvas(event: MessageEvent) {
         console.debug("#HERELINE DrawWorker init_canvas ", event.data.canvas_id);
-        if (event.data.canvas_id === "DrawThreePlsysCanvas") {
-            this.drawThreePlsys.canvasOffscreen = event.data.canvas;
-            this.drawThreePlsys.init()
-        } else {
-            this.drawD3Plsys.canvasOffscreen = event.data.canvas;
-            this.drawD3Plsys.init()
+
+        switch (event.data.canvas_id) {
+            case "DrawThreePlsysCanvas":
+                this.drawThreePlsys.init(event);
+                this.mapDraws.set(event.data.canvas_id, this.drawThreePlsys);
+                break;
+            case "DrawD3PlsysCanvas":
+                this.drawD3Plsys.init(event);
+                this.mapDraws.set(event.data.canvas_id, this.drawD3Plsys);
+                break;
+            default:
+                console.error("DEFAULT not implemented !", this, event);
+                break
         }
 
-        var allCanv = [this.drawD3Plsys.canvasOffscreen, this.drawThreePlsys.canvasOffscreen]
-        if (allCanv.every(canv_ => canv_)) {
+        if (this.listDraws.every(canv_ => canv_.canvasOffscreen)) {
             this.worker.postMessage({ message: MessageType.Ready, from: this.type });
         }
     }
@@ -124,8 +143,8 @@ export class DrawWorker {
     }
 
     public async refreshDb(event: MessageEvent, refreshType: MessageType) {
-        console.debug("#HERELINE DrawWorker refresh_db ready", refreshType);
-        console.time(`#time DrawWorker refresh_db ${refreshType} `);
+        console.debug(`#HERELINE ${this.type} refreshDb ${refreshType}`);
+        console.time(`#time ${this.type} refreshDb ${refreshType} `);
 
         await this.refreshConfig();
         var doSpecial = !false;
@@ -137,32 +156,30 @@ export class DrawWorker {
             prom = this.refreshShallow(doSpecial)
 
         await prom.finally(() => {
-            console.timeEnd(`#time DrawWorker refresh_db ${refreshType} `);
+            console.timeEnd(`#time ${this.type} refreshDb ${refreshType} `);
         })
     }
 
     private async refreshDeep(doSpecial = true) {
         console.debug("#HERELINE DrawWorker refreshDeep");
         await this.world.readDeep();
-        this.drawThreePlsys.updateDeep();
-        if (doSpecial) {
-            this.drawThreePlsys.draw();
-            this.drawD3Plsys.draw();
-        }
+        this.listDraws.forEach(draw_ => draw_.updateDeep());
+        if (doSpecial)
+            this.listDraws.forEach(draw_ => draw_.draw());
     }
 
     private async refreshShallow(doSpecial = true) {
         // console.debug("#HERELINE DrawWorker refreshShallow");
         await this.world.readShallow();
-        if (doSpecial) {
-            this.drawThreePlsys.draw();
-            this.drawD3Plsys.draw();
-        }
+        if (doSpecial)
+            this.listDraws.forEach(draw_ => draw_.draw());
     }
 
     public static initDrawWorkerCanvas(mngr: MainManager, the_worker: GenericWorkerInstance, event: MessageEvent) {
-        DrawWorker.initThreePlsysReal(mngr, the_worker, event);
         DrawWorker.initD3Stats(mngr, the_worker, event);
+        DrawWorker.initThreePlsysReal(mngr, the_worker, event);
+
+        // mngr.focusableThings[1].focus();
     }
 
 
@@ -175,8 +192,9 @@ export class DrawWorker {
         // canvas.style.position = "absolute";
         // canvas.style.zIndex = "8";
         // canvas.style.border = "1px solid";
+        // const div_ = document.createElement('div'); body.appendChild(div_); mngr.viewableThings.push(div_);
         body.appendChild(canvas);
-        mngr.focusableThings.push(canvas);
+        mngr.viewableThings.push(canvas);
 
         // Disable middle click scroll https://stackoverflow.com/a/30423436/2948519
         // document.body.onmousedown = function (e) { if (e.button === 1) return false; }
@@ -201,13 +219,14 @@ export class DrawWorker {
 
         var canvasOffscreen = canvas.transferControlToOffscreen();
         var canvasResize = () => {
-            canvasOffscreen.width = window.innerWidth - SCROLL_THING_SIZE;
-            canvasOffscreen.height = window.innerHeight;
-
             var fakeResizeEvent: any = new Event("resize");
-            fakeResizeEvent.width = canvasOffscreen.width
-            fakeResizeEvent.height = canvasOffscreen.height
+            fakeResizeEvent.width = window.innerWidth - SCROLL_THING_SIZE
+            fakeResizeEvent.height = window.innerHeight
             canvas.dispatchEvent(fakeResizeEvent);
+
+            // canvasOffscreen.width = fakeResizeEvent.width;
+            // canvasOffscreen.height = fakeResizeEvent.height;
+
             // console.log("initThreePlsysReal canvas", canvas);
         }
         // window.addEventListener('resize', canvasResize.bind(this));
@@ -242,13 +261,14 @@ export class DrawWorker {
         var body = document.getElementsByTagName("body")[0];
         body.style.margin = "0"
         const canvas = document.createElement('canvas');
-        canvas.id = "DrawD3StatsCanvas";
+        canvas.id = "DrawD3PlsysCanvas";
         // canvas.style.position = "absolute";
         canvas.tabIndex = 0; // so canvas can get keydown events
         // canvas.style.zIndex = "8";
         // canvas.style.border = "1px solid";
+        // const div_ = document.createElement('div'); body.appendChild(div_); mngr.viewableThings.push(div_);
         body.appendChild(canvas);
-        mngr.focusableThings.push(canvas);
+        mngr.viewableThings.push(canvas);
 
         // Disable middle click scroll https://stackoverflow.com/a/30423436/2948519
         // document.body.onmousedown = function (e) { if (e.button === 1) return false; }
@@ -261,15 +281,15 @@ export class DrawWorker {
 
         var canvasOffscreen = canvas.transferControlToOffscreen();
         var canvasResize = () => {
-            canvasOffscreen.width = window.innerWidth - SCROLL_THING_SIZE;
-            canvasOffscreen.height = window.innerHeight;
+            // canvasOffscreen.width = window.innerWidth - SCROLL_THING_SIZE;
+            // canvasOffscreen.height = window.innerHeight;
 
             // canvas.width = canvasOffscreen.width
             // canvas.height = canvasOffscreen.height
 
             var fakeResizeEvent: any = new Event("resize");
-            fakeResizeEvent.width = canvasOffscreen.width
-            fakeResizeEvent.height = canvasOffscreen.height
+            fakeResizeEvent.width = window.innerWidth - SCROLL_THING_SIZE;
+            fakeResizeEvent.height = window.innerHeight;
             canvas.dispatchEvent(fakeResizeEvent);
             // console.log("initD3Stats canvas", canvas);
         }

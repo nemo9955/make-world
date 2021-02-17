@@ -87,6 +87,8 @@ export class WorldGui {
     private clear() {
         this.mainPane.containerElem_.remove();
         this.mainPane.dispose();
+        this.slectPane.containerElem_.remove();
+        this.slectPane.dispose();
     }
 
     public regenerate(doRefresh = true) {
@@ -132,6 +134,7 @@ export class WorldGui {
     }
 
     public refreshDeep(skip_pane_refresh = false) {
+        this.selectOrbElement(null);
         // TODO ignore user input while refresh is in progress !!!
         // if (this.refresh_inval.check(REFRESH_CALL_INTERVAL)) {
         console.debug("#HERELINE WorldGui refreshDeep ");
@@ -173,9 +176,9 @@ export class WorldGui {
         this.mainPane.addInput(this.manager.config, 'timeUpdSpeed', { min: 0, max: 1 });
 
 
-        this.manager.focusableThings.forEach((elem_, index) => {
-            this.mainPane.addButton({ title: `Focus ${elem_.id}` }).on('click', () => {
-                elem_.focus();
+        this.manager.viewableThings.forEach((elem_, index) => {
+            this.mainPane.addButton({ title: `View ${elem_.id}` }).on('click', () => {
+                elem_.scrollIntoView();
             });
         });
 

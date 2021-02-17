@@ -30,7 +30,6 @@ export class Config {
         Convert.copyShallow(this, source_)
     }
 }
-
 export enum MessageType {
     Event = "Event",
     Ready = "Ready",
@@ -42,4 +41,15 @@ export enum MessageType {
     RefreshDBShallow = "RefreshDBShallow",
     RefreshConfig = "RefreshConfig",
     MakeCanvas = "MakeCanvas",
+}
+
+
+export enum WorkerState {
+    Paused,
+    Ready,
+    Running,
+}
+
+export declare type WorkerData = {
+    state: WorkerState
 }

@@ -1,6 +1,6 @@
 
 import { WorldData } from "./WorldData"
-import { DrawWorker } from "./DrawWorker"
+import { DrawWorker, DrawWorkerInstance } from "./DrawWorker"
 
 
 import * as THREE from "three";
@@ -38,7 +38,7 @@ type ThreeUserData = {
 }
 
 
-export class DrawThreePlsys {
+export class DrawThreePlsys implements DrawWorkerInstance {
     public readonly type = this.constructor.name;
     sharedData: SharedData = null;
     world: WorldData = null;
@@ -133,7 +133,7 @@ export class DrawThreePlsys {
 
 
     public resize(event_: any) {
-        // console.debug("#HERELINE DrawWorld resize", event_);
+        // console.debug("#HERELINE DrawThreePlsys resize", event_);
         this.canvasOffscreen.width = event_.width
         this.canvasOffscreen.height = event_.height
         this.fakeDOM.clientWidth = event_.width
@@ -145,8 +145,9 @@ export class DrawThreePlsys {
     }
 
 
-    public init() {
-        console.debug("#HERELINE DrawWorld init ");
+    public init(event: MessageEvent) {
+        this.canvasOffscreen = event.data.canvas;
+        console.debug(`#HERELINE ${this.type} init `);
 
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(75,
@@ -483,8 +484,8 @@ export class DrawThreePlsys {
     }
 
     public updateDeep() {
-        // console.debug("#HERELINE DrawWorld 143 ");
-        console.time("#time DrawWorld updateDeep");
+        // console.debug("#HERELINE "+this.type+" 143 ");
+        console.time(`#time ${this.type} updateDeep`);
 
         this.hab_zone.geometry = new THREE.RingGeometry(
             this.world.planetary_system.hab_zone_in.km,
@@ -514,7 +515,7 @@ export class DrawThreePlsys {
         this.popOrbits([this.world.planetary_system], this.scene, this.scene)
         // this.popOrbits(this.world.planetary_system.getSats(), this.scene, this.scene)
 
-        console.timeEnd("#time DrawWorld updateDeep");
+        console.timeEnd((`#time ${this.type} updateDeep`));
     }
 
 
@@ -558,7 +559,7 @@ export class DrawThreePlsys {
 
 
     public draw() {
-        // console.debug("#HERELINE DrawWorld draw ", this.world.planetary_system.time.ey);
+        // console.debug("#HERELINE "+this.type+" draw ", this.world.planetary_system.time.ey);
 
         if (this.selectedThing) {
             this.selectedPrevPos.copy(this.selectedThing.position)

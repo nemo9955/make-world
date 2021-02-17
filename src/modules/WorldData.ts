@@ -30,6 +30,7 @@ orbit_types_["SpaceGroup"] = SpaceGroup
 
 export class WorldData {
     public readonly name: string;
+    public readonly type = this.constructor.name;
 
     public planetary_system: PlanetarySystem;
 
@@ -83,9 +84,8 @@ export class WorldData {
         if (!this.sharedData) return WorldData.wdMaxId--;
         // if (!this.sharedData) return Math.ceil(Math.random() * 10000) + 1000;
         var id_ = this.sharedData.maxId++;
-        // do {
-        //     id_ = Math.ceil(Math.random() * 10000000) + 1000000
-        // } while (this.stdBObjMap.has(id_));
+        while (this.stdBObjMap.has(id_))
+            id_ = this.sharedData.maxId++;
         return id_;
     }
 
@@ -144,8 +144,8 @@ export class WorldData {
     }
 
     public async readDeep() {
-        console.debug("#HERELINE WorldData readDeep this.name", this.name);
-        console.time("#time WorldData " + this.name + " readDeep");
+        console.debug(`#HERELINE WorldData readDeep this.name${this.name}`);
+        console.time(`#time WorldData ${this.name} readDeep`);
 
         var data_ps = this.dbm.idb.transaction(DataBaseManager.STANDARD_OBJECTS, "readonly");
         this.stdBObjMap.clear()
@@ -172,7 +172,7 @@ export class WorldData {
             }
         }
         await data_ps.done.finally(() => {
-            console.timeEnd("#time WorldData " + this.name + " readDeep");
+            console.timeEnd(`#time WorldData ${this.name} readDeep`);
         })
     }
 
@@ -180,8 +180,8 @@ export class WorldData {
 
 
     public async writeDeep() {
-        console.debug("#HERELINE WorldData writeDeep this.name", this.name);
-        console.time("#time WorldData " + this.name + " writeDeep");
+        console.debug(`#HERELINE WorldData writeDeep this.name${this.name}`);
+        console.time(`#time WorldData ${this.name} writeDeep`);
 
         var data_ps = this.dbm.idb.transaction(DataBaseManager.STANDARD_OBJECTS, "readwrite");
 
@@ -194,7 +194,7 @@ export class WorldData {
 
         promises.push(data_ps.done)
         await Promise.all(promises).finally(() => {
-            console.timeEnd("#time WorldData " + this.name + " writeDeep");
+            console.timeEnd(`#time WorldData ${this.name} writeDeep`);
         })
     }
 

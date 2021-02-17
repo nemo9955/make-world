@@ -199,7 +199,9 @@ export class OrbitingElement implements Identifiable {
     }
 
     public compute() {
-        for (const par_ of this.getParents())
+        const parents = this.getParents();
+        this.depth = parents.length;
+        for (const par_ of parents)
             if (par_.isInHabZone) this.isInHabZone = true;
 
     }
@@ -253,6 +255,7 @@ export class OrbitingElement implements Identifiable {
         console.debug("#HERELINE OrbitingElement populateSelectGUI ");
         slectPane.addMonitor(this, "id", { index: 2 });
         slectPane.addMonitor(this, "type", { index: 3 });
+        slectPane.addMonitor(this, "depth", { index: 4 });
 
         const generalAct = slectPane.addFolder({ title: 'Select', expanded: true, index: 10000 });
         var parent = this.getParent();

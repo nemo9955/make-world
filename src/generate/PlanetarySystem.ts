@@ -54,6 +54,19 @@ export class PlanetarySystem extends OrbitingElement {
     }
 
 
+    private allElemsDepth(satObjs: OrbitingElement[], sat_: OrbitingElement): void {
+        if (satObjs.includes(sat_) == false)
+            satObjs.push(sat_);
+        for (const chsat_ of sat_.getSats()) {
+            this.allElemsDepth(satObjs, chsat_);
+        }
+    }
+
+    public getAllElems(): OrbitingElement[] {
+        var satObjs: OrbitingElement[] = [];
+        this.allElemsDepth(satObjs, this);
+        return satObjs
+    }
 
 
     public guiSelect(slectPane: Tweakpane, gui: WorldGui) {

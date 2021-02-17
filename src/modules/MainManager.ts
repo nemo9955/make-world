@@ -4,13 +4,16 @@ import { WorldGui } from "./WorldGui"
 import { DataBaseManager, Identifiable } from "./DataBaseManager"
 import * as Units from "../utils/Units"
 import GenericWorkerInstance from "worker-loader!./Generic.worker.ts";
-import { Config, MessageType } from "./Config"
+import { Config, MessageType, WorkerData, WorkerState } from "./Config"
 import * as THREE from "three";
 import { Ticker, waitBlocking } from "../utils/Time";
 import { SharedData } from "./SharedData";
 import { EventsManager } from "./EventsManager";
 import { OrbitingElement } from "../generate/OrbitingElement";
 import { DrawWorker } from "./DrawWorker";
+
+
+
 
 export class MainManager {
     cam_timeout: any = null;
@@ -20,6 +23,7 @@ export class MainManager {
     gui: WorldGui;
 
     workers: GenericWorkerInstance[] = [];
+    workersData = new Map<GenericWorkerInstance, WorkerData>()
 
     world: WorldData;
     config: Config;
@@ -29,7 +33,7 @@ export class MainManager {
     sharedData = new SharedData();
     evmng: EventsManager;
 
-    focusableThings: HTMLElement[] = [];
+    viewableThings: HTMLElement[] = [];
 
     constructor() {
         this.world = new WorldData("MainManager");
@@ -56,7 +60,7 @@ export class MainManager {
         }).then(() => {
             this.init_update_worker();
             this.init_draw_worker();
-            this.config.globalIsReady = true;
+            // this.config.globalIsReady = true;
             this.refreshConfig()
         })
 
@@ -94,15 +98,33 @@ export class MainManager {
 
 
     public pauseAll() {
-        this.sharedData.selectedId = null;
+        console.debug(`#HERELINE MainManager pauseAll `);
         // this.config.globalIsReady = false;
-        this.gui.selectOrbElement(null);
+        // this.gui.selectOrbElement(null);
         this.ticker.stop();
         for (const worker_ of this.workers) {
             // waitBlocking(50); // TODO TMP !!!!!!!!!!!!!!
-            console.log("MainManager pauseAll postMessage ", worker_.name);
+            this.workersData.get(worker_).state = WorkerState.Paused;
+            console.debug("MainManager pauseAll postMessage ", worker_.name);
             worker_.postMessage({
-                message: MessageType.Pause
+                message: MessageType.Pause,
+                config: this.config
+            });
+        }
+    }
+
+    public playAll(refreshType: MessageType) {
+        console.debug(`#HERELINE MainManager playAll `);
+        this.config.globalIsReady = true;
+        // this.gui.selectOrbElement(null);
+        this.ticker.updateState(this.config.do_main_loop && this.config.globalIsReady)
+        for (const worker_ of this.workers) {
+            // waitBlocking(50); // TODO TMP !!!!!!!!!!!!!!
+            this.workersData.get(worker_).state = WorkerState.Running;
+            console.debug("MainManager playAll postMessage ", worker_.name);
+            worker_.postMessage({
+                message: refreshType,
+                config: this.config
             });
         }
     }
@@ -132,14 +154,16 @@ export class MainManager {
 
         await this.world.writeDeep();
 
-        for (const worker_ of this.workers) {
-            // waitBlocking(50); // TODO TMP !!!!!!!!!!!!!!
-            console.log("MainManager writeDeep postMessage ", worker_.name);
-            worker_.postMessage({
-                message: MessageType.RefreshDBDeep,
-                config: this.config
-            });
-        }
+        // if (this.workers.every(work_ => this.workersData.get(work_).state >= WorkerState.Ready))
+        this.playAll(MessageType.RefreshDBDeep);
+        // for (const worker_ of this.workers) {
+        //     // waitBlocking(50); // TODO TMP !!!!!!!!!!!!!!
+        //     console.log("MainManager writeDeep postMessage ", worker_.name);
+        //     worker_.postMessage({
+        //         message: MessageType.RefreshDBDeep,
+        //         config: this.config
+        //     });
+        // }
         console.timeEnd("#time MainManager writeDeep");
     }
 
@@ -164,6 +188,7 @@ export class MainManager {
         this.draw_worker = new GenericWorkerInstance();
         this.draw_worker.name = "DrawWorker"
         this.workers.push(this.draw_worker);
+        this.workersData.set(this.draw_worker, { state: WorkerState.Paused })
         this.draw_worker.postMessage({ create: "DrawWorker", sab: this.sharedData.sab });
 
         this.draw_worker.addEventListener("message", (event) => {
@@ -180,6 +205,7 @@ export class MainManager {
         this.update_worker = new GenericWorkerInstance();
         this.update_worker.name = "UpdateWorker"
         this.workers.push(this.update_worker);
+        this.workersData.set(this.update_worker, { state: WorkerState.Paused })
         this.update_worker.postMessage({ create: "UpdateWorker", sab: this.sharedData.sab });
 
         this.update_worker.addEventListener("message", (event) => {
@@ -193,11 +219,19 @@ export class MainManager {
     }
 
 
-    public refreshWorkers(the_worker: GenericWorkerInstance) {
-        the_worker.postMessage({
-            message: MessageType.RefreshDBDeep,
-            config: this.config
-        });
+    private resumeWorkers(the_worker: GenericWorkerInstance) {
+        var workerData_ = this.workersData.get(the_worker)
+        workerData_.state = WorkerState.Ready
+
+        console.log("this.workersData", this.workersData);
+        if (this.workers.every(work_ => this.workersData.get(work_).state >= WorkerState.Ready)) {
+            this.playAll(MessageType.RefreshDBDeep);
+        }
+
+        // the_worker.postMessage({
+        //     message: MessageType.RefreshDBDeep,
+        //     config: this.config
+        // });
     }
 
     public get_message(the_worker: GenericWorkerInstance, event: MessageEvent) {
@@ -205,7 +239,7 @@ export class MainManager {
 
         switch (event.data.message as MessageType) {
             case MessageType.Ready:
-                this.refreshWorkers(the_worker); break;
+                this.resumeWorkers(the_worker); break;
             case MessageType.RefreshConfig:
                 this.refreshConfig(); break;
             case MessageType.RefreshDBShallow:
