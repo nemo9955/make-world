@@ -56,6 +56,7 @@ export class Planet extends OrbitingElement {
         this.planetType = "Moon";
         this.isMoon = true;
 
+        // TODO make Major moons and Minor moons and maybe ensure moon is smaller than planet
         this.mass.em = Random.random_float_clamp(0.01, 0.02);
         this.radius.er = Random.random_float_clamp(0.1, 0.3);
         // this.surfaceGravity = Random.random_float_clamp(0.68,1.5);
@@ -176,12 +177,12 @@ export class Planet extends OrbitingElement {
 
         if (["all", "hab"].filter(x => tags.includes(x))) {
             picks.push({ min: plsys.hab_zone_in.au, max: plsys.hab_zone_out.au, chance: 1000000, pick: this.makeEarthLike.bind(this) })
-            picks.push({ min: minOrb, max: habOrb * 2, chance: 3, pick: this.makeEarthLike.bind(this) })
+            picks.push({ min: minOrb, max: habOrb * 2, chance: 2, pick: this.makeEarthLike.bind(this) })
         }
         if (["all", "nohab"].filter(x => tags.includes(x)))
-            picks.push({ min: 0, max: 0, chance: 1, pick: this.makeDwarf.bind(this) })
+            picks.push({ min: minOrb, max: frostOrb * 0.6, chance: 3, pick: this.makeDwarf.bind(this) })
         if (["all", "nohab"].filter(x => tags.includes(x)))
-            picks.push({ min: minOrb, max: frostOrb * 0.6, chance: 1, pick: this.makePuffyGiantPlanet.bind(this) })
+            picks.push({ min: minOrb, max: frostOrb * 0.6, chance: 2, pick: this.makePuffyGiantPlanet.bind(this) })
         if (["all", "nohab"].filter(x => tags.includes(x)))
             picks.push({ min: frostOrb * 0.6, max: frostOrb * 2, chance: 1, pick: this.makeGassGiant.bind(this) })
         if (["all", "nohab"].filter(x => tags.includes(x)))
@@ -207,8 +208,9 @@ export class Planet extends OrbitingElement {
 
         var minMass = this.mass.value
         var maxMass = parentMass.value
-        if (minMass > maxMass)
-            throw new Error(`Cannot compute Hill Sphere, ${minMass} > ${maxMass} , ${this}`);
+        if (minMass > maxMass) {
+            console.warn(`Illogical Hill Sphere, ${minMass} > ${maxMass} `, this, parentMass);
+        }
 
         this.orbLimitOut.value = orbit_.semimajor_axis.value * Math.cbrt(minMass / (3 * maxMass))
 

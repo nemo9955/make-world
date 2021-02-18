@@ -22,6 +22,9 @@ import { tree } from "d3";
 // Why Don’t Moons Have Moons?
 // https://medium.com/amazing-science/why-dont-moons-have-moons-c15171471864
 
+// TODO for fun, at random, add seccond main planets to existing main orbits at L4 or L5 to first one
+// https://en.wikipedia.org/wiki/Lagrange_point#L4_and_L5
+
 
 export class SpaceFactory {
 
@@ -37,10 +40,11 @@ export class SpaceFactory {
 
 
     public genStartingPlanetSystem(plsys: PlanetarySystem) {
-        // this.genStar(plsys, plsys, "sun")
-        this.genStar(plsys, plsys, "habitable")
-        // console.log("plsys.getAllSats()", plsys.getAllSats());
-        // plsys.genStar()
+        if (Random.randPercent() < 60)
+            this.genStar(plsys, plsys, "habitable")
+        else
+            this.genPTypeStarts(plsys, plsys)
+
         // this.genOrbitsSimple(plsys, plsys.root())
         // this.genOrbitsUniform(plsys, plsys.root())
         this.genOrbitsSimpleMoons(plsys, plsys.root())
@@ -255,6 +259,7 @@ export class SpaceFactory {
             var orbit_: Orbit = sat_ as Orbit
             var orbObject_ = orbit_.root(); // what moons will orbit
             var forceMinMoon = false;
+            // TODO orbObject_ if mass (orbit_ parentMass?) is too small, no moons
 
             if (orbit_.isInHabZone && this.config.genEnsureMoonInHabZone)
                 forceMinMoon = true;
@@ -451,7 +456,7 @@ export class SpaceFactory {
 
         if (attempsPercent > 0.1) {
             console.warn(`Generating took quite a few attemps: ${attempsPercent} ${genAttemps} ${genMaxAttemps}`);
-            console.warn("this", this);
+            // console.warn("this", this);
         }
 
         // root.satelites.sort((a, b) =>

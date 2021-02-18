@@ -28,6 +28,10 @@ https://observablehq.com/@pstuffa/canvas-treemap
 
 */
 
+// TODO consider this as way to vizualize scale :
+// https://en.wikipedia.org/wiki/File:Lagrange_points_of_planets_relative_to_sun.svg
+
+
 export class DrawD3Plsys implements DrawWorkerInstance {
     public readonly type = this.constructor.name;
     public sharedData: SharedData = null;

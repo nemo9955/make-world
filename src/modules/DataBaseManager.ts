@@ -19,17 +19,21 @@ export class DataBaseManager {
         this.idb = null;
     }
 
-    public async init() {
-        console.debug("#HERELINE DataBaseManager " + this.name + " init ");
-        return this.delete()
-            .then(() => {
-                console.debug("#HERELINE DataBaseManager " + this.name + " init then  ");
-                return this.open();
-            })
+    public async init(keepDb: boolean) {
+        console.debug(`#HERELINE DataBaseManager ${this.name} init `);
+
+        var prom_: Promise<void> = null;
+        if (keepDb) prom_ = Promise.resolve();
+        else prom_ = this.delete()
+
+        return prom_.then(() => {
+            console.debug(`#HERELINE DataBaseManager ${this.name} init then  `);
+            return this.open();
+        })
     }
 
     public async open() {
-        console.debug("#HERELINE DataBaseManager " + this.name + " open ");
+        console.debug(`#HERELINE DataBaseManager ${this.name} open `);
         this.idb = await openDB(this.TABLE_NAME, 1, {
             upgrade(db) {
                 console.debug("#HERELINE DataBaseManager NOTHEN open upgrade ");

@@ -26,6 +26,8 @@ export class Config {
     genEnsureCenteredInHabZone = true;
     genEnsureMoonInHabZone = true;
 
+    keepDbAtPageRefresh = false; // EXPERIMENTAL
+
     public copy(source_: Config) {
         Convert.copyShallow(this, source_)
     }

@@ -53,13 +53,18 @@ export class WorldData {
 
     public async init() {
         console.debug("#HERELINE WorldData init");
-        return this.dbm.init().then(() => {
+        return this.dbm.init(this.config.keepDbAtPageRefresh).then(() => {
             console.debug(`#HERELINE WorldData ${this.name} init then`);
             this.spread_objects();
-            this.planetary_system.init();
-            // this.planetary_system.setWorldData(this);
-            this.setOrbElem(this.planetary_system);
-            this.spaceFactory.genStartingPlanetSystem(this.planetary_system);
+        }).then(() => {
+            if (this.config.keepDbAtPageRefresh) {
+                return this.readDeep();
+            } else {
+                this.planetary_system.init();
+                /////////// this.planetary_system.setWorldData(this);
+                /////////// this.setOrbElem(this.planetary_system);
+                this.spaceFactory.genStartingPlanetSystem(this.planetary_system);
+            }
         })
     }
 
@@ -123,9 +128,9 @@ export class WorldData {
             } else {
                 const newLocal = this.stdBObjMap.get(iterator.id);
                 if (!newLocal) {
-                    console.warn("this.stdBObjMap", this.stdBObjMap);
                     console.warn("this", this);
-                    console.warn("iterator", iterator);
+                    // console.warn("this.stdBObjMap", this.stdBObjMap);
+                    // console.warn("iterator", iterator);
                 }
                 newLocal.copyShallow(iterator);
             }

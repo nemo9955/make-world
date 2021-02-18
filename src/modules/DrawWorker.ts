@@ -176,8 +176,8 @@ export class DrawWorker {
     }
 
     public static initDrawWorkerCanvas(mngr: MainManager, the_worker: GenericWorkerInstance, event: MessageEvent) {
-        DrawWorker.initD3Stats(mngr, the_worker, event);
         DrawWorker.initThreePlsysReal(mngr, the_worker, event);
+        DrawWorker.initD3Stats(mngr, the_worker, event);
 
         // mngr.focusableThings[1].focus();
     }

@@ -26,6 +26,9 @@ import { PlanetarySystem } from "../generate/PlanetarySystem";
 // https://orbitalmechanics.info/
 
 
+// TODO use bigger length unit to draw so number are smaller
+// TOTO give some love to the Stars light and ambiant light
+
 type ThreeUserData = {
     orbLine?: THREE.Object3D,
     orbLineGr?: THREE.Group,

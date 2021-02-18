@@ -18,8 +18,6 @@ import { DrawWorker } from "./DrawWorker";
 export class MainManager {
     cam_timeout: any = null;
 
-    draw_worker: GenericWorkerInstance;
-    update_worker: GenericWorkerInstance;
     gui: WorldGui;
 
     workers: GenericWorkerInstance[] = [];
@@ -58,9 +56,8 @@ export class MainManager {
         }).then(() => {
             return this.writeDeep();
         }).then(() => {
-            this.init_update_worker();
-            this.init_draw_worker();
-            // this.config.globalIsReady = true;
+            this.initWorker("DrawWorker");
+            this.initWorker("UpdateWorker");
             this.refreshConfig()
         })
 
@@ -184,46 +181,28 @@ export class MainManager {
         console.timeEnd("#time MainManager writeShallow");
     }
 
-    public init_draw_worker() {
-        this.draw_worker = new GenericWorkerInstance();
-        this.draw_worker.name = "DrawWorker"
-        this.workers.push(this.draw_worker);
-        this.workersData.set(this.draw_worker, { state: WorkerState.Paused })
-        this.draw_worker.postMessage({ create: "DrawWorker", sab: this.sharedData.sab });
+    public initWorker(workerType: string) {
+        var worker_ = new GenericWorkerInstance();
+        worker_.name = workerType
+        this.workers.push(worker_);
+        this.workersData.set(worker_, { state: WorkerState.Paused })
+        worker_.postMessage({ create: workerType, sab: this.sharedData.sab });
 
-        this.draw_worker.addEventListener("message", (event) => {
-            this.get_message(this.draw_worker, event)
+        worker_.addEventListener("message", (event) => {
+            this.get_message(worker_, event)
         });
 
-        this.draw_worker.postMessage({
+        worker_.postMessage({
             message: MessageType.InitWorker,
             config: this.config
         });
     }
-
-    public init_update_worker() {
-        this.update_worker = new GenericWorkerInstance();
-        this.update_worker.name = "UpdateWorker"
-        this.workers.push(this.update_worker);
-        this.workersData.set(this.update_worker, { state: WorkerState.Paused })
-        this.update_worker.postMessage({ create: "UpdateWorker", sab: this.sharedData.sab });
-
-        this.update_worker.addEventListener("message", (event) => {
-            this.get_message(this.update_worker, event)
-        });
-
-        this.update_worker.postMessage({
-            message: MessageType.InitWorker,
-            config: this.config
-        });
-    }
-
 
     private resumeWorkers(the_worker: GenericWorkerInstance) {
         var workerData_ = this.workersData.get(the_worker)
         workerData_.state = WorkerState.Ready
 
-        console.log("this.workersData", this.workersData);
+        // console.log("this.workersData", this.workersData);
         if (this.workers.every(work_ => this.workersData.get(work_).state >= WorkerState.Ready)) {
             this.playAll(MessageType.RefreshDBDeep);
         }
