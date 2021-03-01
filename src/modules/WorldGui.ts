@@ -194,8 +194,8 @@ export class WorldGui {
     }
 
     public init_star() {
-        for (let index = 0; index < this.manager.world.planetary_system.getStars().length; index++) {
-            const element = this.manager.world.planetary_system.getStars()[index];
+        for (let index = 0; index < this.manager.world.planetarySystem.getStars().length; index++) {
+            const element = this.manager.world.planetarySystem.getStars()[index];
 
             const star_tp = this.mainPane.addFolder({ title: `Star ${index}`, expanded: false });
             star_tp.addInput(element, 'sclass');
@@ -215,7 +215,7 @@ export class WorldGui {
 
 
         this.mainPane.addButton({ title: 'Select Planet System' }).on('click', () => {
-            this.selectOrbElement(this.manager.world.planetary_system);
+            this.selectOrbElement(this.manager.world.planetarySystem);
         });
 
 
@@ -223,21 +223,21 @@ export class WorldGui {
 
         this.mainPane.addButton({ title: 'genStar' }).on('click', () => {
             this.manager.pauseAll()
-            var plsys = this.manager.world.planetary_system
+            var plsys = this.manager.world.planetarySystem
             this.manager.world.spaceFactory.genStar(plsys, plsys)
             this.regenerate();
         });
 
         this.mainPane.addButton({ title: 'genPTypeStarts' }).on('click', () => {
             this.manager.pauseAll()
-            var plsys = this.manager.world.planetary_system
+            var plsys = this.manager.world.planetarySystem
             this.manager.world.spaceFactory.genPTypeStarts(plsys, plsys)
             this.regenerate();
         });
 
         this.mainPane.addButton({ title: 'genOrbitsSimple' }).on('click', () => {
             this.manager.pauseAll()
-            var plsys = this.manager.world.planetary_system
+            var plsys = this.manager.world.planetarySystem
             this.manager.world.spaceFactory.genOrbitsSimple(plsys, plsys.root())
             this.refreshDeep();
         });
@@ -257,7 +257,7 @@ export class WorldGui {
 
         this.mainPane.addButton({ title: 'genOrbitsSimpleMoons' }).on('click', () => {
             this.manager.pauseAll()
-            var plsys = this.manager.world.planetary_system
+            var plsys = this.manager.world.planetarySystem
             this.manager.world.spaceFactory.genOrbitsSimpleMoons(plsys, plsys.root())
             this.refreshDeep();
         });

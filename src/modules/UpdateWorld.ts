@@ -25,7 +25,7 @@ export class UpdateWorld {
 
     public update() {
         // console.debug("#HERELINE UpdateWorld update ", this.world.planetary_system.time.ey);
-        this.world.planetary_system.time.ey +=  this.config.timeUpdSpeed;
+        this.world.planetarySystem.time.ey +=  this.config.timeUpdSpeed;
         // console.log("this.world.planetary_system.time.ey", this.world.planetary_system.time.ey);
     }
 

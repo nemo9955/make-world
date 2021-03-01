@@ -71,13 +71,14 @@ export class DrawD3Plsys implements DrawWorkerInstance {
     public updateDeep() {
         console.debug(`#HERELINE ${this.type} updateDeep `);
         this.drawOnce();
-        // this.drawOnce();
-        // this.drawOnce();
+    }
 
+    public updateShallow() {
+        this.drawOnce();
     }
 
     public draw() {
-        // this.drawOnce();
+        // No real-time draw is needed
     }
 
     public drawOnce() {
@@ -101,7 +102,7 @@ export class DrawD3Plsys implements DrawWorkerInstance {
 
         var nodeSize = 17;
 
-        const allElems = this.world.planetary_system.getAllElems()
+        const allElems = this.world.planetarySystem.getAllElems()
         // nodes.forEach((node, index) => {
         allElems.forEach((node, index) => {
             // context.save(); // For clipping the text

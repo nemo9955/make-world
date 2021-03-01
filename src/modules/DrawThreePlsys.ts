@@ -88,7 +88,7 @@ export class DrawThreePlsys implements DrawWorkerInstance {
     selectedThing: THREE.Object3D = null;
 
     constructor() {
-        this.raycaster.params.Line.threshold = 1000000 * 10;
+        this.raycaster.params.Line.threshold = 10; // DRAWUNIT
 
         this.tjs_pool_lines = new ObjectPool<THREE.Line>(() => {
             const geometry = new THREE.BufferGeometry()
@@ -107,7 +107,7 @@ export class DrawThreePlsys implements DrawWorkerInstance {
         this.tjs_pool_orbobjects = new ObjectPool<THREE.Mesh>(() => {
             const item = new THREE.Mesh(
                 new THREE.SphereGeometry(1, 5, 5),
-                new THREE.MeshStandardMaterial({ color: new THREE.Color() })
+                new THREE.MeshStandardMaterial()
             );
             // item.material.transparent = true
             // item.material.opacity = 0.5
@@ -115,6 +115,7 @@ export class DrawThreePlsys implements DrawWorkerInstance {
             return item;
         }, (item) => {
             // console.log("item THREE.Mesh", item);
+            item.material = new THREE.MeshStandardMaterial();
             item.visible = false;
             item.scale.setScalar(1);
             item?.parent?.remove(item)
@@ -154,11 +155,11 @@ export class DrawThreePlsys implements DrawWorkerInstance {
 
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(75,
-            this.canvasOffscreen.width / this.canvasOffscreen.height, 0.1, 1000000000000);
-        this.camera.position.y = Convert.auToKm(4);
-        // this.camera.position.y = Convert.auToKm(40);
-        // this.camera.position.y = Convert.auToKm(50);
-        // this.camera.position.y = Convert.auToKm(80);
+            this.canvasOffscreen.width / this.canvasOffscreen.height, 0.1, 10000000000); // DRAWUNIT
+        this.camera.position.y = Convert.auToGm(4); // DRAWUNIT
+        // this.camera.position.y = Convert.auToGm(40);
+        // this.camera.position.y = Convert.auToGm(50);
+        // this.camera.position.y = Convert.auToGm(80);
         this.camera.lookAt(0, 0, 0)
 
 
@@ -190,15 +191,9 @@ export class DrawThreePlsys implements DrawWorkerInstance {
         });
         this.resize(this.canvasOffscreen); // lazy use canvas since params same as Event ...
 
-        var ambcolo = 0.2
+        var ambcolo = 0.8
         const light_am = new THREE.AmbientLight(new THREE.Color(ambcolo, ambcolo, ambcolo)); // soft white light
         this.scene.add(light_am);
-
-        var ptlicolo = 0.1
-        const light_pt = new THREE.PointLight(new THREE.Color(ptlicolo, ptlicolo, ptlicolo), 10, Convert.auToKm(800));
-        var ptltpos = Convert.auToKm(50);
-        light_pt.position.set(-ptltpos, ptltpos, ptltpos);
-        this.scene.add(light_pt);
 
         // this.sun = new THREE.Mesh(
         //     new THREE.SphereGeometry(1, 5, 5),
@@ -207,32 +202,33 @@ export class DrawThreePlsys implements DrawWorkerInstance {
         // this.sun.position.set(0, 0, 0);
         // this.scene.add(this.sun);
 
-        const geometry_hab = new THREE.RingGeometry(1, 5, 15, 1);
+        const geometry_hab = new THREE.RingGeometry(1, 5, 50, 1);
         const material_hab = new THREE.MeshBasicMaterial({ color: new THREE.Color("green"), side: THREE.DoubleSide });
         material_hab.transparent = true
         material_hab.opacity = 0.3
         this.hab_zone = new THREE.Mesh(geometry_hab, material_hab);
         this.hab_zone.rotateX(Convert.degToRad(-90))
-        this.hab_zone.position.y = -10000000
+        this.hab_zone.position.y = -10 // DRAWUNIT
         this.scene.add(this.hab_zone);
 
-        const geometry_fro = new THREE.RingGeometry(10, 50, 15, 1);
+        const geometry_fro = new THREE.RingGeometry(10, 50, 50, 1);
         const material_fro = new THREE.MeshBasicMaterial({ color: new THREE.Color("cyan"), side: THREE.DoubleSide });
         material_fro.transparent = true
         material_fro.opacity = 0.1
         this.frost_zone = new THREE.Mesh(geometry_fro, material_fro);
         this.frost_zone.rotateX(Convert.degToRad(-90))
-        this.frost_zone.position.y = -10000000
+        this.frost_zone.position.y = -10 // DRAWUNIT
         this.scene.add(this.frost_zone);
     }
 
     distToTarget = 0;
     private cameraMoved() {
         this.distToTarget = this.camera.position.distanceTo(this.controls.target)
-        this.distToTarget /= 10 ** 9
+        this.distToTarget /= 10 ** 3// DRAWUNIT
 
-        this.raycaster.params.Line.threshold = this.distToTarget * 1000000 * 20;
+        this.raycaster.params.Line.threshold = this.distToTarget * 20; // DRAWUNIT
         this.hoverSphere.scale.setScalar(this.raycaster.params.Line.threshold / 2)
+        // console.log("this.camera.position", this.camera.position);
     }
 
 
@@ -251,15 +247,20 @@ export class DrawThreePlsys implements DrawWorkerInstance {
 
 
 
-        var orbEllipseCurve_ = new THREE.EllipseCurve(
+        var orbEllipseCurve_ = new THREE.EllipseCurve(  // DRAWUNIT
             // 0, 0, //// at the center of the ellipse
-            -orbitingElement_.focal_distance.km * 1, 0, //// correct focus placement, consideting 0 rotation is at periapsis
-            orbitingElement_.semimajor_axis.km, orbitingElement_.semiminor_axis.km,           // xRadius, yRadius
+            -orbitingElement_.focal_distance.Gm * 1, 0, //// correct focus placement, consideting 0 rotation is at periapsis
+            orbitingElement_.semimajor_axis.Gm, orbitingElement_.semiminor_axis.Gm,           // xRadius, yRadius
             0, 2 * Math.PI,  // aStartAngle, aEndAngle
             false,           // aClockwise
             0                // aRotation
         );
-        const points: any[] = orbEllipseCurve_.getPoints(50);
+
+        var pointsResolution = 100;
+        // if (orbitingElement_.semiminor_axis.value > this.world.planetarySystem.frost_line.value)
+        pointsResolution = 200;
+
+        const points: any[] = orbEllipseCurve_.getPoints(pointsResolution);
         orbLine_.geometry.setFromPoints(points);
 
         var all_obj: ThreeUserData = {
@@ -284,7 +285,7 @@ export class DrawThreePlsys implements DrawWorkerInstance {
 
 
         orbLineGr_.getWorldPosition(this.tmpv3_2)
-        this.tmpv3_2.y += 100000000000
+        this.tmpv3_2.y += 100 // DRAWUNIT
         orbLineGr_.lookAt(this.tmpv3_2)
         ////////// orbline_gr_.rotateOnWorldAxis(this._yAxis, Convert.degToRad(90)); // put 0deg of argument_of_perihelion in the right starting place
         orbLineGr_.rotateZ(Convert.degToRad(90)); // put 0deg of argument_of_perihelion in the right starting place
@@ -317,7 +318,7 @@ export class DrawThreePlsys implements DrawWorkerInstance {
         sphereMeshGr_.visible = true
 
 
-        // console.log("orbitingElement_.radius.km", orbitingElement_.radius.km);
+        // console.log("orbitingElement_.radius.Gm", orbitingElement_.radius.Gm);
         this.updatePlanet(orbitingElement_, sphereMesh_);
 
         var all_obj: ThreeUserData = {
@@ -344,18 +345,18 @@ export class DrawThreePlsys implements DrawWorkerInstance {
         var planetColor = orbitingElement_.color.getRgb().formatHex();
         (sphereMesh_.material as THREE.MeshStandardMaterial).color.set(planetColor)
 
-        var visible_planet_size = orbitingElement_.radius.km * 2;
+        var visible_planet_size = orbitingElement_.radius.Gm * 2; // DRAWUNIT
 
 
-        // TODO TMP to see planets better
+        // TODO TMP to see planets better  // DRAWUNIT but not really
         if (orbitingElement_.radius.km < 3000)
-            visible_planet_size = (10 ** 6) * 3;
+            visible_planet_size = 3;
         else if (orbitingElement_.radius.km < 15000)
-            visible_planet_size = (10 ** 6) * 5;
+            visible_planet_size = 5;
         else if (orbitingElement_.radius.km < 40000)
-            visible_planet_size = (10 ** 6) * 10;
+            visible_planet_size = 10;
         else
-            visible_planet_size = (10 ** 6) * 15;
+            visible_planet_size = 15;
 
         // var parentOrbit = orbitingElement_.getParentOrbit();
         // if (parentOrbit) {
@@ -392,7 +393,11 @@ export class DrawThreePlsys implements DrawWorkerInstance {
         sphereMesh_.visible = true
         sphereMeshGr_.visible = true
 
-        this.updateStar(orbitingElement_, sphereMesh_);
+        const light_pt = new THREE.PointLight();
+        light_pt.color.set("white")
+
+        sphereMesh_.material = new THREE.MeshBasicMaterial()
+
 
         var all_obj: ThreeUserData = {
             sphereMesh: sphereMesh_,
@@ -403,7 +408,10 @@ export class DrawThreePlsys implements DrawWorkerInstance {
         sphereMeshGr_.userData = all_obj
 
         sphereMeshGr_.add(sphereMesh_)
+        sphereMeshGr_.add(light_pt);
         root_.add(sphereMeshGr_)
+
+        this.updateStar(orbitingElement_, sphereMesh_);
 
         sphereMesh_.rotation.set(0, 0, 0)
         sphereMesh_.position.set(0, 0, 0)
@@ -418,13 +426,28 @@ export class DrawThreePlsys implements DrawWorkerInstance {
 
     public updateStar(orbitingElement_: Star, sphereMesh_: THREE.Mesh) {
         var sun_color = orbitingElement_.color.getRgb().formatHex();
-        (sphereMesh_.material as THREE.MeshStandardMaterial).color.set(sun_color)
+        (sphereMesh_.material as THREE.MeshBasicMaterial).color.set(sun_color);
+
+        // (sphereMesh_.material as THREE.MeshStandardMaterial).emissive.set("white");
+        // (sphereMesh_.material as THREE.MeshStandardMaterial).emissive.set(sun_emit);
+        // (sphereMesh_.material as THREE.MeshStandardMaterial).emissiveIntensity = 1;
+        // for (const ch_ of sphereMesh_.parent.children)
+        //     if (ch_ instanceof THREE.PointLight) {
+        //         var stltPoint = ch_ as THREE.PointLight;
+        //         // stltPoint.color.set(sun_color)
+        //         stltPoint.color.set("white")
+        //         // stltPoint.intensity
+        //         // const stltIntens = 15;
+        //         // const stltDist = 100; // DRAWUNIT
+        //         // const stltDecay = 1; // for physically correct lights, should be 2.
+        //         // console.log("stltPoint", stltPoint);
+        //     }
 
         // make sun bigger just because
         // this.sun.geometry.scale(sun_size,sun_size,sun_size)
         // this.sun.geometry = new THREE.SphereGeometry(sun_size, 5, 5);
         // this.sun.scale.set(sun_size, sun_size, sun_size)
-        var visible_planet_size = orbitingElement_.radius.km * 2 * 10
+        var visible_planet_size = orbitingElement_.radius.Gm * 2 * 10 // DRAWUNIT
 
         // var visible_planet_size = Math.sqrt(ellipse_.getLength()) * 1000
         // var visible_planet_size = Math.sqrt(ellipse_.getLength())*100
@@ -486,19 +509,20 @@ export class DrawThreePlsys implements DrawWorkerInstance {
 
     }
 
+
     public updateDeep() {
         // console.debug("#HERELINE "+this.type+" 143 ");
         console.time(`#time ${this.type} updateDeep`);
 
-        this.hab_zone.geometry = new THREE.RingGeometry(
-            this.world.planetary_system.hab_zone_in.km,
-            this.world.planetary_system.hab_zone_out.km,
-            15, 1);
+        this.hab_zone.geometry = new THREE.RingGeometry( // DRAWUNIT
+            this.world.planetarySystem.hab_zone_in.Gm,
+            this.world.planetarySystem.hab_zone_out.Gm,
+            50, 1);
 
-        this.frost_zone.geometry = new THREE.RingGeometry(
-            this.world.planetary_system.frost_line.km,
-            this.world.planetary_system.orbits_limit_out.km,
-            15, 1);
+        this.frost_zone.geometry = new THREE.RingGeometry( // DRAWUNIT
+            this.world.planetarySystem.frost_line.Gm,
+            this.world.planetarySystem.orbits_limit_out.Gm,
+            50, 1);
 
 
         while (this.orb_lines.length > 0)
@@ -515,7 +539,7 @@ export class DrawThreePlsys implements DrawWorkerInstance {
 
         this.orbElemToGroup.clear()
 
-        this.popOrbits([this.world.planetary_system], this.scene, this.scene)
+        this.popOrbits([this.world.planetarySystem], this.scene, this.scene)
         // this.popOrbits(this.world.planetary_system.getSats(), this.scene, this.scene)
 
         console.timeEnd((`#time ${this.type} updateDeep`));
@@ -543,9 +567,9 @@ export class DrawThreePlsys implements DrawWorkerInstance {
             var orbLine_ = parentOrbUserData.orbLine
 
             // var orb_len = orbEllipseCurve_.getLength()
-            // var orb_len = parentOrbit.perimeter.km
+            // var orb_len = parentOrbit.perimeter.Gm // DRAWUNIT
             var orb_per = parentOrbit.orbitalPeriod
-            var time_orb = this.world.planetary_system.time.ey % orb_per.ey
+            var time_orb = this.world.planetarySystem.time.ey % orb_per.ey
             var time_orb_proc = time_orb / orb_per.ey
             time_orb_proc += parentOrbit.mean_longitude.rev
             var true_theta = Convert.true_anomaly_rev(time_orb_proc, parentOrbit.eccentricity)
@@ -561,20 +585,14 @@ export class DrawThreePlsys implements DrawWorkerInstance {
     }
 
 
-    public draw() {
-        // console.debug("#HERELINE "+this.type+" draw ", this.world.planetary_system.time.ey);
-
-        if (this.selectedThing) {
-            this.selectedPrevPos.copy(this.selectedThing.position)
-        }
+    public updateShallow() {
 
         for (const iterator of this.orbElemToGroup.values()) {
-            this.calculatePos(iterator);
+            // this.calculatePos(iterator);
 
             var userData = (iterator.userData as ThreeUserData)
             var orbitingElement_ = userData.orbitingElement
 
-            // TODO dirty way to efficiently keep THREE objects synced with OrbitingElement valueas
             if (orbitingElement_ instanceof Star) {
                 var sphereMesh_ = userData.sphereMesh
                 this.updateStar(orbitingElement_, sphereMesh_)
@@ -584,6 +602,19 @@ export class DrawThreePlsys implements DrawWorkerInstance {
             }
         }
 
+    }
+
+    public draw() {
+        // console.debug("#HERELINE "+this.type+" draw ", this.world.planetary_system.time.ey);
+
+        if (this.selectedThing) {
+            this.selectedPrevPos.copy(this.selectedThing.position)
+        }
+
+        for (const iterator of this.orbElemToGroup.values()) {
+            this.calculatePos(iterator);
+        }
+
         this.hoverSphere.visible = false;
         if (this.config.follow_pointed_orbit !== "none") {
             if (this.sharedData.mousex != 0 && this.sharedData.mousey != 0) {
@@ -591,17 +622,19 @@ export class DrawThreePlsys implements DrawWorkerInstance {
                 this.mouse.y = - (this.sharedData.mousey / this.canvasOffscreen.height) * 2 + 1;
                 // console.log("this.mouse", this.mouse);
 
-                var allIntersect = [...this.orb_lines, ...this.orb_planets]
+                // var allIntersect = [...this.orb_lines, ...this.orb_planets]
+                // const intersects = this.raycaster.intersectObjects(allIntersect, false);
                 this.raycaster.setFromCamera(this.mouse, this.camera);
-                const intersects = this.raycaster.intersectObjects(allIntersect, false);
-                // const intersects = this.raycaster.intersectObjects(this.scene.children, true);
+                const intersects = this.raycaster.intersectObjects(this.scene.children, true);
                 if (intersects.length > 0) {
-                    this.hoverSphere.visible = true;
                     var orb_ = intersects[0]
-                    this.hoverSphere.position.copy(orb_.point)
                     var targ_ = orb_.object.parent.userData as ThreeUserData
+                    if (targ_?.orbitingElement?.id) {
+                        this.hoverSphere.visible = true;
+                        this.hoverSphere.position.copy(orb_.point)
+                        this.sharedData.hoverId = targ_.orbitingElement.id
+                    }
                     // console.log("targ_", targ_);
-                    this.sharedData.hoverId = targ_.orbitingElement.id
                     // this.camera.lookAt(targ_.position)
                     // this.controls.target = targ_.position
                     // TODO set a shared data variable with the ID of the selected/focused WORLD thing (orbit,planet,cell,etc.)

@@ -13,6 +13,8 @@ import { OrbitingElement } from "../generate/OrbitingElement";
 import { DrawWorker } from "./DrawWorker";
 
 
+// TODO Make the main manager the one that calls each worker's "Ticker"
+// order of execution can be easilly imposed and probably just simpler to manage
 
 
 export class MainManager {
@@ -51,7 +53,7 @@ export class MainManager {
         // TODO make dedicated post to UPDATE/set the sharedData to workers
 
         this.world.init().then(() => {
-            this.config.WorldPlanetarySystemID = this.world.planetary_system.id;
+            this.config.WorldPlanetarySystemID = this.world.planetarySystem.id;
             this.gui.init();
         }).then(() => {
             return this.writeDeep();

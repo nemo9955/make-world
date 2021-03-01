@@ -16,6 +16,7 @@ import { DrawD3Plsys } from "./DrawD3Plsys";
 import { MainManager } from "./MainManager";
 import type GenericWorkerInstance from "worker-loader!./Generic.worker.ts";
 import { OrbitingElement } from "../generate/OrbitingElement";
+import { PlanetarySystem } from "../generate/PlanetarySystem";
 
 
 const SCROLL_THING_SIZE = 20
@@ -28,6 +29,7 @@ export interface DrawWorkerInstance {
     config: Config;
     fakeDOM: WorkerDOM;
 
+    updateShallow(): void;
     init(event: MessageEvent): void;
     updateDeep(): void;
     draw(): void;
@@ -46,6 +48,7 @@ export class DrawWorker {
     listDraws: DrawWorkerInstance[] = null;
     drawThreePlsys: DrawThreePlsys = null;
     drawD3Plsys: DrawD3Plsys = null;
+    planetarySystem: PlanetarySystem = null;
 
 
     constructor(worker: Worker) {
@@ -56,7 +59,7 @@ export class DrawWorker {
         this.drawThreePlsys = new DrawThreePlsys();
         this.drawD3Plsys = new DrawD3Plsys();
         this.listDraws = [this.drawThreePlsys, this.drawD3Plsys];
-        this.ticker = new Ticker(false, this.refreshShallow.bind(this), Units.LOOP_INTERVAL, Units.LOOP_INTERVAL * 0.6)
+        this.ticker = new Ticker(false, this.refreshTick.bind(this), Units.LOOP_INTERVAL, Units.LOOP_INTERVAL * 0.6)
     }
 
     public init() {
@@ -69,10 +72,11 @@ export class DrawWorker {
 
     public spread_objects() {
         // TODO make generic function ???
-        this.world.planetary_system.id = this.config.WorldPlanetarySystemID
+        this.world.planetarySystem.id = this.config.WorldPlanetarySystemID
 
         var to_spread: any[] = [this.world, ...this.listDraws]
         for (const object_ of to_spread) {
+            if (object_.planetarySystem === null) object_.planetarySystem = this.planetarySystem;
             if (object_.config === null) object_.sharedData = this.sharedData;
             if (object_.config === null) object_.config = this.config;
             if (object_.world === null) object_.world = this.world;
@@ -147,7 +151,7 @@ export class DrawWorker {
         console.time(`#time ${this.type} refreshDb ${refreshType} `);
 
         await this.refreshConfig();
-        var doSpecial = !false;
+        var doSpecial = false;
 
         var prom: Promise<void> = null
         if (refreshType == MessageType.RefreshDBDeep)
@@ -163,12 +167,21 @@ export class DrawWorker {
     private async refreshDeep(doSpecial = true) {
         console.debug("#HERELINE DrawWorker refreshDeep");
         await this.world.readDeep();
+        this.planetarySystem = this.world.planetarySystem;
         this.listDraws.forEach(draw_ => draw_.updateDeep());
+        if (doSpecial)
+        this.listDraws.forEach(draw_ => draw_.draw());
+    }
+
+    private async refreshShallow(doSpecial = true) {
+        // console.debug("#HERELINE DrawWorker refreshShallow");
+        await this.world.readShallow();
+        this.listDraws.forEach(draw_ => draw_.updateShallow());
         if (doSpecial)
             this.listDraws.forEach(draw_ => draw_.draw());
     }
 
-    private async refreshShallow(doSpecial = true) {
+    private async refreshTick(doSpecial = true) {
         // console.debug("#HERELINE DrawWorker refreshShallow");
         await this.world.readShallow();
         if (doSpecial)

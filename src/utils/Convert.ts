@@ -31,6 +31,14 @@ export function auToKm(from: number): number {
     return from * Units.ASTRONOMICAL_UNIT_KM;
 }
 
+
+export function GmToAu(from: number): number {
+    return kmToAu(from * 1000000);
+}
+export function auToGm(from: number): number {
+    return auToKm(from) / 1000000;
+}
+
 export function kmToSr(from: number): number {
     return from / Units.SOLAR_RADIUS_KM;
 }
@@ -252,10 +260,10 @@ export abstract class NumberConverter {
 
 export class NumberLength extends NumberConverter {
     public clone() { return new NumberLength(this.value); }
-    public get km(): number { return this.value; }
-    public set km(value: number) { this.value = value; }
     public get meter(): number { return this.value * 1000; }
     public set meter(value: number) { this.value = value / 1000; }
+    public get km(): number { return this.value; }
+    public set km(value: number) { this.value = value; }
     public get Mm(): number { return this.value / 1000; }
     public set Mm(value: number) { this.value = value * 1000; }
     public get Gm(): number { return this.value / 1000000; }

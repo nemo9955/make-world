@@ -32,7 +32,7 @@ export class WorldData {
     public readonly name: string;
     public readonly type = this.constructor.name;
 
-    public planetary_system: PlanetarySystem;
+    public planetarySystem: PlanetarySystem;
 
     public stdBObjMap = new Map<number, any>();
 
@@ -47,7 +47,7 @@ export class WorldData {
         this.dbm = new DataBaseManager(name);
         this.spaceFactory = new SpaceFactory(this);
 
-        this.planetary_system = new PlanetarySystem(this);
+        this.planetarySystem = new PlanetarySystem(this);
         // console.log("this.planetary_system.getWorldData()", this.planetary_system.getWorldData());
     }
 
@@ -60,10 +60,10 @@ export class WorldData {
             if (this.config.keepDbAtPageRefresh) {
                 return this.readDeep();
             } else {
-                this.planetary_system.init();
+                this.planetarySystem.init();
                 /////////// this.planetary_system.setWorldData(this);
                 /////////// this.setOrbElem(this.planetary_system);
-                this.spaceFactory.genStartingPlanetSystem(this.planetary_system);
+                this.spaceFactory.genStartingPlanetSystem(this.planetarySystem);
             }
         })
     }
@@ -76,6 +76,7 @@ export class WorldData {
     public spread_objects() {
         var to_spread: any[] = [this.spaceFactory]
         for (const object_ of to_spread) {
+            if (object_.planetarySystem === null) object_.planetarySystem = this.planetarySystem;
             if (object_.sharedData === null) object_.sharedData = this.sharedData;
             if (object_.config === null) object_.config = this.config;
             if (object_.world === null) object_.world = this;
@@ -123,8 +124,8 @@ export class WorldData {
 
             // keys_from_db.push(iterator.id)
             if (iterator.type == "PlanetarySystem") {
-                this.planetary_system.copyShallow(iterator)
-                this.stdBObjMap.set(iterator.id, this.planetary_system)
+                this.planetarySystem.copyShallow(iterator)
+                this.stdBObjMap.set(iterator.id, this.planetarySystem)
             } else {
                 const newLocal = this.stdBObjMap.get(iterator.id);
                 if (!newLocal) {
@@ -162,8 +163,8 @@ export class WorldData {
             //     var iterator = cursor.value; /// var 2
 
             if (iterator.type == "PlanetarySystem") {
-                this.planetary_system.copyDeep(iterator)
-                this.stdBObjMap.set(iterator.id, this.planetary_system)
+                this.planetarySystem.copyDeep(iterator)
+                this.stdBObjMap.set(iterator.id, this.planetarySystem)
             } else {
                 var obj_ = new orbit_types_[iterator.type](this) // wow
                 this.stdBObjMap.set(iterator.id, obj_)

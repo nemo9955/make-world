@@ -52,7 +52,7 @@ export class UpdateWorker {
 
     public spread_objects() {
         // TODO make generic function ???
-        this.world.planetary_system.id = this.config.WorldPlanetarySystemID
+        this.world.planetarySystem.id = this.config.WorldPlanetarySystemID
 
         var to_spread: any[] = [this.world, this.update_world]
         for (const object_ of to_spread) {
