@@ -20,7 +20,7 @@ test('Clone 1', async () => {
     var wdata_orig = make_world_test("world_table_wd_clone_1");
 
     // TODO FIXME this will fail because __proto__ is just like using static ....
-    // and stdBObjMap used will switch between  wdata_copy and wdata_orig
+    // and idObjMap used will switch between  wdata_copy and wdata_orig
     // return wdata_orig.init().then(() => {
     //     wdata_copy.planetary_system.id = wdata_orig.planetary_system.id
     //     // console.log("wdata_orig.id, wdata_copy.id", wdata_orig.id, wdata_copy.id);

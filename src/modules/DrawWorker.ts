@@ -13,6 +13,7 @@ import { Intervaler, Ticker } from "../utils/Time"
 import { SharedData } from "./SharedData";
 import { WorkerDOM } from "../utils/WorkerDOM";
 import { DrawD3Plsys } from "./DrawD3Plsys";
+import { DrawD3Terrain } from "./DrawD3Terrain";
 import { MainManager } from "./MainManager";
 import type GenericWorkerInstance from "worker-loader!./Generic.worker.ts";
 import { OrbitingElement } from "../generate/OrbitingElement";
@@ -48,6 +49,7 @@ export class DrawWorker {
     listDraws: DrawWorkerInstance[] = null;
     drawThreePlsys: DrawThreePlsys = null;
     drawD3Plsys: DrawD3Plsys = null;
+    drawD3Terrain: DrawD3Terrain = null;
     planetarySystem: PlanetarySystem = null;
 
 
@@ -58,7 +60,8 @@ export class DrawWorker {
         this.config = new Config();
         this.drawThreePlsys = new DrawThreePlsys();
         this.drawD3Plsys = new DrawD3Plsys();
-        this.listDraws = [this.drawThreePlsys, this.drawD3Plsys];
+        this.drawD3Terrain = new DrawD3Terrain();
+        this.listDraws = [this.drawThreePlsys, this.drawD3Plsys, this.drawD3Terrain];
         this.ticker = new Ticker(false, this.refreshTick.bind(this), Units.LOOP_INTERVAL, Units.LOOP_INTERVAL * 0.6)
     }
 
@@ -128,6 +131,10 @@ export class DrawWorker {
                 this.drawD3Plsys.init(event);
                 this.mapDraws.set(event.data.canvas_id, this.drawD3Plsys);
                 break;
+            case "DrawD3TerrainCanvas":
+                this.drawD3Terrain.init(event);
+                this.mapDraws.set(event.data.canvas_id, this.drawD3Terrain);
+                break;
             default:
                 console.error("DEFAULT not implemented !", this, event);
                 break
@@ -170,7 +177,7 @@ export class DrawWorker {
         this.planetarySystem = this.world.planetarySystem;
         this.listDraws.forEach(draw_ => draw_.updateDeep());
         if (doSpecial)
-        this.listDraws.forEach(draw_ => draw_.draw());
+            this.listDraws.forEach(draw_ => draw_.draw());
     }
 
     private async refreshShallow(doSpecial = true) {
@@ -189,8 +196,9 @@ export class DrawWorker {
     }
 
     public static initDrawWorkerCanvas(mngr: MainManager, the_worker: GenericWorkerInstance, event: MessageEvent) {
+        DrawWorker.initD3Stats(mngr, the_worker, event, "DrawD3TerrainCanvas");
         DrawWorker.initThreePlsysReal(mngr, the_worker, event);
-        DrawWorker.initD3Stats(mngr, the_worker, event);
+        DrawWorker.initD3Stats(mngr, the_worker, event, "DrawD3PlsysCanvas");
 
         // mngr.focusableThings[1].focus();
     }
@@ -251,7 +259,7 @@ export class DrawWorker {
             canvas.focus()
             if (mngr.sharedData.selectedId !== mngr.sharedData.hoverId) {
 
-                var selected = mngr.world.stdBObjMap.get(mngr.sharedData.hoverId)
+                var selected = mngr.world.idObjMap.get(mngr.sharedData.hoverId)
                 mngr.gui.selectOrbElement(selected as OrbitingElement);
             }
         };
@@ -269,12 +277,12 @@ export class DrawWorker {
         }, [canvasOffscreen]);
     }
 
-    private static initD3Stats(mngr: MainManager, the_worker: GenericWorkerInstance, event: MessageEvent) {
+    private static initD3Stats(mngr: MainManager, the_worker: GenericWorkerInstance, event: MessageEvent, useId: string) {
 
         var body = document.getElementsByTagName("body")[0];
         body.style.margin = "0"
         const canvas = document.createElement('canvas');
-        canvas.id = "DrawD3PlsysCanvas";
+        canvas.id = useId;
         // canvas.style.position = "absolute";
         canvas.tabIndex = 0; // so canvas can get keydown events
         // canvas.style.zIndex = "8";

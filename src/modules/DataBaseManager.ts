@@ -3,15 +3,22 @@ import { openDB, deleteDB, wrap, unwrap, IDBPDatabase, IDBPTransaction, IDBPObje
 // import { openDB, deleteDB, wrap, unwrap, IDBPDatabase, IDBPTransaction, IDBPObjectStore, StoreKey, StoreValue } from 'idb/with-async-ittr.js';
 
 
-export interface Identifiable {
-    id: number;
-}
+/*
+TODO Make tables "universe" specific , the ones that ID is needed
+TODO better split databases for different usages for more efficient read-write
 
+Examples:
+DB only for OrbitElements and load all of them since they are small
+DB only for Terrain/Big objects and load one by one sice they are big, so
+    read -> make_object -> manage -> write -> destroy_object
+
+*/
 export class DataBaseManager {
     public readonly name: string;
     public idb: IDBPDatabase<unknown>;
 
     public static STANDARD_OBJECTS = "STANDARD_OBJECTS";
+    public static BIG_OBJECTS = "BIG_OBJECTS";
     public TABLE_NAME = "world_table";
 
     constructor(name: string) {
@@ -43,6 +50,12 @@ export class DataBaseManager {
                     const store = db.createObjectStore(DataBaseManager.STANDARD_OBJECTS, { keyPath: 'id', autoIncrement: false });
                     // store.createIndex('id', 'id');
                     // console.log("createObjectStore ", STANDARD_OBJECTS);
+                }
+                if (!db.objectStoreNames.contains(DataBaseManager.BIG_OBJECTS)) {
+                    const store = db.createObjectStore(DataBaseManager.BIG_OBJECTS, { keyPath: 'id', autoIncrement: false });
+                    // store.createIndex('id', 'id');
+                    store.createIndex('type', 'type', { unique: false });
+                    // console.log("createObjectStore ", BIG_OBJECTS);
                 }
             }
         });

@@ -2,8 +2,7 @@ import * as Random from "../utils/Random"
 import * as Units from "../utils/Units"
 import * as Convert from "../utils/Convert"
 import { ObjectPool } from "../utils/ObjectPool";
-import { Identifiable } from "../modules/DataBaseManager";
-import { orbit_types_, WorldData } from "../modules/WorldData";
+import { WorldData } from "../modules/WorldData";
 
 import { FolderApi } from "tweakpane/dist/types/api/folder";
 import type Tweakpane from "tweakpane";
@@ -14,60 +13,27 @@ import type { Star } from "./Star";
 import type { PlanetarySystem } from "./PlanetarySystem";
 import type { SpaceGroup } from "./SpaceGroup";
 import { WorldGui } from "../modules/WorldGui";
+import { Identifiable } from "../modules/ObjectsHacker";
 
 
 // https://stackoverflow.com/a/65337891/2948519
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html
 
-export class OrbitingElement implements Identifiable {
-    public id: number = null;
-    public type: string = null;
+export class OrbitingElement extends Identifiable {
+    // public id: number = null;
+    // public type: string = null;
     public depth: number = 0;
     public satelites: number[] = [];
     public parentId: number = null;
 
     public isInHabZone = false;
 
-    /*
-    to be set from outside by WorldData
-    constructor(worldData: WorldData) {
-        (this as any).__proto__.getWorldData = () => { return worldData };
-    */
-    public getWorldData(): WorldData { throw new Error("Function needs to be re-defined in constructor."); }
-    public setWorldData(worldData: WorldData) {
-        // (this as any).__proto__.worldData = worldData;
-        // (this as any).__proto__.protoWorldWata = worldData;
-        // Object.getPrototypeOf(this).protoWorldWata = worldData;
-        // (this as any).__proto__.getWorldData = () => { return (this as any).__proto__.protoWorldWata; };
-        (this as any).__proto__.getWorldData = () => { return worldData; };
-    }
-    // public getWorldData(): WorldData { return (this as any).__proto__.protoWorldWata; }
-    // public getWorldData(): WorldData { return Object.getPrototypeOf(this).protoWorldWata; }
 
 
     constructor(worldData: WorldData) {
-        this.setWorldData(worldData);
-        this.genId();
+        super(worldData);
     }
 
-    protected genId() {
-        this.id = this.getWorldData().getFreeID();
-    }
-
-    public copyDeep(source_: this) {
-        Convert.copyDeep(this, source_)
-        return this;
-    }
-
-    public copyShallow(source_: this) {
-        Convert.copyShallow(this, source_)
-        return this;
-    }
-
-    public copyLogic(source_: this) {
-        Convert.copyShallow(this, source_, true)
-        return this;
-    }
 
     public clearSatelites() {
         for (const sat_ of this.getSats()) {
@@ -153,17 +119,17 @@ export class OrbitingElement implements Identifiable {
     public getSats(): OrbitingElement[] {
         var satObjs: OrbitingElement[] = []
         for (const sid of this.satelites)
-            satObjs.push(this.getWorldData().stdBObjMap.get(sid))
+            satObjs.push(this.getWorldData().idObjMap.get(sid))
         return satObjs
     }
 
     public getSatIndex(index: number): OrbitingElement {
         var sid = this.satelites[index];
-        return this.getWorldData().stdBObjMap.get(sid)
+        return this.getWorldData().idObjMap.get(sid)
     }
 
     // public getSatId(sid: number): OrbitingElement {
-    //     return this.getWorldData().stdBObjMap.get(sid)
+    //     return this.getWorldData().idObjMap.get(sid)
     // }
 
     public addSat(sat_: OrbitingElement) {
@@ -171,7 +137,7 @@ export class OrbitingElement implements Identifiable {
         sat_.depth = this.depth + 1;
         sat_.parentId = this.id;
         this.satelites.push(sat_.id)
-        this.getWorldData().setOrbElem(sat_)
+        this.getWorldData().setIdObject(sat_)
     }
 
     // public setOrbiting(sat_: OrbitingElement) {
@@ -179,7 +145,7 @@ export class OrbitingElement implements Identifiable {
     // }
     // public getOrbiting(): OrbitingElement {
     //     if (this.orbitingId)
-    //         return this.getWorldData().stdBObjMap.get(this.orbitingId)
+    //         return this.getWorldData().idObjMap.get(this.orbitingId)
     //     return this.getParentSolid();
     // }
 
@@ -213,7 +179,7 @@ export class OrbitingElement implements Identifiable {
     }
 
     public getParent(): OrbitingElement {
-        return this.getWorldData().stdBObjMap.get(this.parentId)
+        return this.getWorldData().idObjMap.get(this.parentId)
     }
 
     public getParentOrbit(): Orbit {
@@ -236,7 +202,7 @@ export class OrbitingElement implements Identifiable {
             if (parentOrbit.type == "PlanetarySystem") return null;
             if (parentOrbit.type == "Orbit")
                 return parentOrbit as any;
-            parentOrbit = this.getWorldData().stdBObjMap.get(parentOrbit.parentId)
+            parentOrbit = this.getWorldData().idObjMap.get(parentOrbit.parentId)
         }
     }
 

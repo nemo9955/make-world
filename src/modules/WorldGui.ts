@@ -173,7 +173,8 @@ export class WorldGui {
         }).on('change', () => { this.refreshConfig(); });
 
 
-        this.mainPane.addInput(this.manager.config, 'timeUpdSpeed', { min: 0, max: 1 });
+        // this.mainPane.addInput(this.manager.config, 'timeUpdSpeed', { min: 0, step: 0.05 });
+        this.mainPane.addInput(this.manager.config, 'timeUpdSpeed', { format: (v: number) => v.toFixed(6) });
 
 
         this.manager.viewableThings.forEach((elem_, index) => {

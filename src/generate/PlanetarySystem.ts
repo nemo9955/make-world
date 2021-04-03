@@ -7,8 +7,7 @@ import * as Random from "../utils/Random"
 import { Uniform } from "three";
 import * as Units from "../utils/Units"
 import * as Convert from "../utils/Convert"
-import { Identifiable } from "../modules/DataBaseManager";
-import { orbit_types_, WorldData } from "../modules/WorldData";
+import { WorldData } from "../modules/WorldData";
 import * as Tweakpane from "tweakpane/dist/tweakpane.js"
 import { WorldGui } from "../modules/WorldGui";
 
@@ -36,7 +35,7 @@ export class PlanetarySystem extends OrbitingElement {
 
     public getStars(): Star[] {
         var starObjs: Star[] = []
-        for (const obj_ of this.getWorldData().stdBObjMap.values()) {
+        for (const obj_ of this.getWorldData().idObjMap.values()) {
             if (obj_.type == "Star")
                 starObjs.push(obj_)
         }
@@ -50,7 +49,7 @@ export class PlanetarySystem extends OrbitingElement {
     init() {
         this.id = this.getWorldData().getFreeID(); // gen again after WorldData sets getFreeID
         this.time.eby = 5; // start at 5 Billion Earth years
-        this.getWorldData().setOrbElem(this)
+        this.getWorldData().setIdObject(this)
     }
 
 

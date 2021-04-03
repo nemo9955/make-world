@@ -2,8 +2,12 @@ const path = require("path");
 const SpeedMeasurePlugin = require("speed-measure-webpack-plugin");
 const smp = new SpeedMeasurePlugin();
 
+
 module.exports = smp.wrap({
     entry: './src/index.ts',
+    node: {
+        fs: "empty", // https://stackoverflow.com/a/61046205/2948519
+    },
     module: {
         rules: [
             {
@@ -31,5 +35,9 @@ module.exports = smp.wrap({
     devServer: {
         // compress: true,
         disableHostCheck: true,   // That solved it
+        headers: {
+            "Cross-Origin-Embedder-Policy": " require-corp",
+            "Cross-Origin-Opener-Policy": " same-origin",
+        },
     },
 });

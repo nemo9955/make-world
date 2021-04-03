@@ -6,8 +6,7 @@ import * as Convert from "../utils/Convert"
 import { Orbit } from "./Orbit";
 import { OrbitingElement } from "./OrbitingElement";
 import { ObjectPool } from "../utils/ObjectPool";
-import { Identifiable } from "../modules/DataBaseManager";
-import { orbit_types_, WorldData } from "../modules/WorldData";
+import { WorldData } from "../modules/WorldData";
 import * as Tweakpane from "tweakpane/dist/tweakpane.js"
 import { WorldGui } from "../modules/WorldGui";
 

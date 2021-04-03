@@ -1,6 +1,6 @@
 {
     "name": "make-world",
-    "version": "0.34.0",
+    "version": "0.35.0",
     "description": "Make a realistic world by simulating as many aspects as possible",
     "main": "dist/main.js",
     "private": true,
@@ -22,27 +22,29 @@
     "homepage": "https://github.com/nemo9955/make-world#readme",
     "devDependencies": {
         "@types/d3": "^6.3.0",
-        "@types/jest": "^26.0.20",
+        "@types/jest": "^26.0.22",
         "@types/stats.js": "^0.17.0",
         "fake-indexeddb": "^3.1.2",
         "jest": "^26.6.3",
         "schema-utils": "^3.0.0",
-        "speed-measure-webpack-plugin": "^1.4.2",
-        "ts-jest": "^26.5.1",
-        "ts-loader": "^7.0.5",
+        "speed-measure-webpack-plugin": "^1.5.0",
+        "ts-jest": "^26.5.4",
+        "ts-loader": "^8.1.0",
         "ts-node": "^9.1.1",
-        "typescript": "^3.9.9",
+        "typescript": "^4.2.3",
         "webpack": "^4.46.0",
         "webpack-cli": "^3.3.12",
         "webpack-dev-server": "^3.11.2",
         "worker-loader": "^3.0.8"
     },
     "dependencies": {
-        "d3": "^6.5.0",
-        "idb": "^5.0.7",
+        "@types/noisejs": "0.0.28",
+        "d3": "^6.6.2",
+        "idb": "^6.0.0",
+        "noisejs": "^2.1.0",
         "stats.js": "^0.17.0",
-        "three": "^0.122.0",
+        "three": "^0.127.0",
         "three-fps-counter": "^0.2.0",
-        "tweakpane": "^1.5.9"
+        "tweakpane": "^2.2.1"
     }
 }

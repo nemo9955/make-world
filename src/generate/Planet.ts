@@ -4,13 +4,13 @@ import * as Random from "../utils/Random"
 import * as Units from "../utils/Units"
 import * as Convert from "../utils/Convert"
 import { ObjectPool } from "../utils/ObjectPool";
-import { Identifiable } from "../modules/DataBaseManager";
-import { orbit_types_, WorldData } from "../modules/WorldData";
+import { WorldData } from "../modules/WorldData";
 import { Orbit } from "./Orbit";
 import { OrbitingElement } from "./OrbitingElement";
 import { PlanetarySystem } from "./PlanetarySystem";
 import * as Tweakpane from "tweakpane/dist/tweakpane.js"
 import { WorldGui } from "../modules/WorldGui";
+import { Terrain } from "./Terrain";
 
 // https://en.wikipedia.org/wiki/List_of_gravitationally_rounded_objects_of_the_Solar_System
 
@@ -38,6 +38,7 @@ export class Planet extends OrbitingElement {
     public isMoon?: boolean = false;
     public planetType: string = "UNKNOWN";
 
+    public terrainId: number = null;
 
     constructor(worldData: WorldData) {
         super(worldData);
@@ -50,6 +51,11 @@ export class Planet extends OrbitingElement {
         this.density.value = 1;
     }
 
+
+    public getTerrain(): Terrain {
+        if (!this.terrainId) return null;
+        return this.getWorldData().idObjMap.get(this.terrainId)
+    }
 
     public makeMoon(smajax: Convert.NumberLength, smajaxParent: Convert.NumberLength, plsys: PlanetarySystem) {
         this.color.set_color("DarkGrey")
@@ -202,7 +208,7 @@ export class Planet extends OrbitingElement {
         if (!parentMass) {
             console.warn("this.getParents()", this.getParents());
             console.log("this", this);
-            // console.log("this.getWorldData().stdBObjMap", this.getWorldData().stdBObjMap);
+            // console.log("this.getWorldData().idObjMap", this.getWorldData().idObjMap);
         }
         parentMass = parentMass.clone();
 

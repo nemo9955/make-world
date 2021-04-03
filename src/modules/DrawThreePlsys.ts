@@ -659,7 +659,7 @@ export class DrawThreePlsys implements DrawWorkerInstance {
         if (this.lastSelectedId != this.sharedData.selectedId) {
             this.lastSelectedId = this.sharedData.selectedId;
             // console.log("this.lastSelectedId", this.lastSelectedId);
-            var selOrbElem = this.world.stdBObjMap.get(this.lastSelectedId) as OrbitingElement
+            var selOrbElem = this.world.idObjMap.get(this.lastSelectedId) as OrbitingElement
             if (selOrbElem) {
                 var fosusElem = selOrbElem;
                 if (this.config.follow_pointed_orbit === "auto") {

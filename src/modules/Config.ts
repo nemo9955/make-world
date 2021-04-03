@@ -13,14 +13,14 @@ import * as Convert from "../utils/Convert"
 
 export class Config {
     do_draw_loop: boolean = true;
-    do_update_loop: boolean = false;
+    do_update_loop: boolean = true;
     do_main_loop: boolean = false; // leave false
 
     follow_pointed_orbit: "none" | "imediate" | "auto" = "auto";
 
     WorldPlanetarySystemID: number;
     globalIsReady: boolean = false; // global flag for when Tickers can run
-    timeUpdSpeed = 0.01;
+    timeUpdSpeed = 0.001;
 
     genEnsureInHabZone = true;
     genEnsureCenteredInHabZone = true;
@@ -32,6 +32,7 @@ export class Config {
         Convert.copyShallow(this, source_)
     }
 }
+
 export enum MessageType {
     Event = "Event",
     Ready = "Ready",
@@ -44,7 +45,6 @@ export enum MessageType {
     RefreshConfig = "RefreshConfig",
     MakeCanvas = "MakeCanvas",
 }
-
 
 export enum WorkerState {
     Paused,

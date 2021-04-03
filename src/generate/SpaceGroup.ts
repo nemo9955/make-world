@@ -4,8 +4,7 @@ import * as Random from "../utils/Random"
 import * as Units from "../utils/Units"
 import * as Convert from "../utils/Convert"
 import { ObjectPool } from "../utils/ObjectPool";
-import { Identifiable } from "../modules/DataBaseManager";
-import { orbit_types_, WorldData } from "../modules/WorldData";
+import { WorldData } from "../modules/WorldData";
 import { OrbitingElement } from "./OrbitingElement";
 import * as Tweakpane from "tweakpane/dist/tweakpane.js"
 import { WorldGui } from "../modules/WorldGui";
@@ -45,7 +44,7 @@ export class SpaceGroup extends OrbitingElement {
         var stillLooking = true;
 
         for (const sid of this.groupedSatelites)
-            satObjs.push(this.getWorldData().stdBObjMap.get(sid))
+            satObjs.push(this.getWorldData().idObjMap.get(sid))
 
         while (stillLooking) {
             stillLooking = false;

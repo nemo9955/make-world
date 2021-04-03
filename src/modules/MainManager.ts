@@ -1,7 +1,6 @@
 
 import { WorldData } from "./WorldData"
 import { WorldGui } from "./WorldGui"
-import { DataBaseManager, Identifiable } from "./DataBaseManager"
 import * as Units from "../utils/Units"
 import GenericWorkerInstance from "worker-loader!./Generic.worker.ts";
 import { Config, MessageType, WorkerData, WorkerState } from "./Config"
@@ -52,7 +51,13 @@ export class MainManager {
         // console.log("window.isSecureContext", window.isSecureContext);
         // TODO make dedicated post to UPDATE/set the sharedData to workers
 
-        this.world.init().then(() => {
+        Promise.resolve().then(() => {
+            return this.world.preInit();
+        }).then(() => {
+            return this.world.initPlSys();
+        }).then(() => {
+            return this.world.initTerrain();
+        }).then(() => {
             this.config.WorldPlanetarySystemID = this.world.planetarySystem.id;
             this.gui.init();
         }).then(() => {
@@ -133,7 +138,7 @@ export class MainManager {
         // if ((this.lastHover?.id === undefined && this.sharedData.hoverId !== null)
         //     || this.lastHover?.id != this.sharedData.hoverId) {
 
-        //     this.lastHover = this.world.stdBObjMap.get(this.sharedData.hoverId)
+        //     this.lastHover = this.world.idObjMap.get(this.sharedData.hoverId)
         //     // console.log("this.lastHover?.id", this.lastHover?.id);
         //     // console.log("this.sharedData.hoverId", this.sharedData.hoverId);
 

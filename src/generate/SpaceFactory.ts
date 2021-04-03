@@ -169,7 +169,7 @@ export class SpaceFactory {
 
     public genPTypeStarts(plsys: PlanetarySystem, root: OrbitingElement) {
         root.clearSatelites()
-        // console.debug("this.getWorldData().stdBObjMap", this.getWorldData().stdBObjMap);
+        // console.debug("this.getWorldData().idObjMap", this.getWorldData().idObjMap);
         // console.debug("root.satelites.length,root.satelites", root.satelites.length, root.satelites);
 
         var group_ = new SpaceGroup(this.getWorldData())
@@ -217,7 +217,7 @@ export class SpaceFactory {
 
     public genStar(plsys: PlanetarySystem, root: OrbitingElement, type?: string) {
         root.clearSatelites()
-        // console.debug("this.getWorldData().stdBObjMap", this.getWorldData().stdBObjMap);
+        // console.debug("this.getWorldData().idObjMap", this.getWorldData().idObjMap);
         // console.debug("root.satelites.length,root.satelites", root.satelites.length, root.satelites);
         var star_ = new Star(this.getWorldData())
         switch (type) {
@@ -460,8 +460,8 @@ export class SpaceFactory {
         }
 
         // root.satelites.sort((a, b) =>
-        //     this.getWorldData().stdBObjMap.get(a).semimajor_axis.value -
-        //     this.getWorldData().stdBObjMap.get(b).semimajor_axis.value);
+        //     this.getWorldData().idObjMap.get(a).semimajor_axis.value -
+        //     this.getWorldData().idObjMap.get(b).semimajor_axis.value);
         console.debug("this.orbit.satelites.length", root.satelites.length);
 
         root.computeAll();
