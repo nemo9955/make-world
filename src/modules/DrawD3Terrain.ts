@@ -3,10 +3,14 @@ import { WorldData } from "./WorldData"
 import { DrawWorker, DrawWorkerInstance } from "./DrawWorker"
 
 import * as d3 from "d3"
+import { geoDelaunay, geoVoronoi, geoContour } from "d3-geo-voronoi"
+// node_modules/d3-geo-voronoi/dist/d3-geo-voronoi.js
+
 
 import { Config } from "./Config"
 import * as Convert from "../utils/Convert"
 import * as Units from "../utils/Units"
+import * as Points from "../utils/Points"
 
 
 import { ObjectPool } from "../utils/ObjectPool";
@@ -24,6 +28,7 @@ import type Tweakpane from "tweakpane";
 import { WorldGui } from "../modules/WorldGui";
 
 import Noise = require("noisejs")
+import { pointGeoArr } from "../utils/Points"
 
 
 
@@ -53,7 +58,7 @@ https://observablehq.com/@d3/u-s-map-canvas
 
 https://bl.ocks.org/pkerpedjiev/32b11b37be444082762443c4030d145d D3 event filtering
 The red circles don't allow scroll-wheel zooming and drag-based panning
-
+https://bl.ocks.org/mbostock/6675193
 
 
 */
@@ -67,7 +72,8 @@ export class DrawD3Terrain implements DrawWorkerInstance {
     public config: Config = null;
     public fakeDOM = new WorkerDOM();
 
-    private ctx: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D = null;
+    private ctx: OffscreenCanvasRenderingContext2D = null;
+    // private ctx: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D = null;
 
 
     originalScale: number;
@@ -80,6 +86,7 @@ export class DrawD3Terrain implements DrawWorkerInstance {
     zoom: d3.ZoomBehavior<Element, unknown>;
     rotation: any;
     previousScaleFactor = 1;
+    points: { coordinates: pointGeoArr; type: string }
 
 
 
@@ -106,6 +113,7 @@ export class DrawD3Terrain implements DrawWorkerInstance {
         // this.ctx = this.canvasOffscreen.getContext("2d");
 
         this.initBase();
+        this.setTmpFastDraw();
         this.drawOnce();
     }
 
@@ -113,12 +121,14 @@ export class DrawD3Terrain implements DrawWorkerInstance {
     public updateDeep() {
         console.debug(`#HERELINE ${this.type} updateDeep `);
         this.initBase();
+        this.setTmpFastDraw();
         this.drawOnce();
     }
 
     public updateShallow() {
         console.debug(`#HERELINE ${this.type} updateShallow `);
         this.initBase();
+        this.setTmpFastDraw();
         this.drawOnce();
     }
 
@@ -149,7 +159,7 @@ export class DrawD3Terrain implements DrawWorkerInstance {
         this.path = d3.geoPath()
             .projection(this.projection)
             .context(this.ctx)
-            .pointRadius(1);
+            .pointRadius(1.5);
 
         this.grid = this.graticule();
 
@@ -160,13 +170,35 @@ export class DrawD3Terrain implements DrawWorkerInstance {
         var fakeSelect = d3.select(this.fakeDOM).selection()
         fakeSelect.call(this.zoom);
 
+
+
+
+        this.points = {
+            type: "MultiPoint",
+            coordinates: Points.makeGeoPtsFibb(1000)
+            // coordinates: Points.makeGeoPtsRandOk(1000)
+        }
+
+        this.voronoi = geoVoronoi()(this.points.coordinates);
+        console.log("this.voronoi", this.voronoi);
+        this.polys = this.voronoi.polygons()
+        console.log("this.polys", this.polys);
+
+    }
+
+    voronoi: any;
+    polys: any;
+
+    fastDrawTimeout = 0;
+    public setTmpFastDraw() {
+        // this.fastDrawTimeout = 7;
     }
 
 
-
-
-
     public drawOnce() {
+        if (this.fastDrawTimeout > 0) this.fastDrawTimeout--;
+        // console.log("this.fastDrawTimeout", this.fastDrawTimeout);
+
         this.ctx.clearRect(0, 0, this.canvasOffscreen.width, this.canvasOffscreen.height);
 
         this.ctx.save();
@@ -177,6 +209,29 @@ export class DrawD3Terrain implements DrawWorkerInstance {
         this.ctx.lineWidth = 2;
         this.ctx.strokeStyle = '#ddd';
         this.ctx.stroke();
+
+        if (this.fastDrawTimeout == 0) {
+            for (let index = 0; index < this.polys.features.length; index++) {
+                const poly = this.polys.features[index];
+
+                this.ctx.beginPath();
+                this.path(poly);
+                // this.ctx.fillStyle = "tomato"
+                // this.ctx.fillStyle = `rgba(${153 * (50 + index) % 250}, ${79 * (49 + index) % 250}, ${555 * (17 + index) % 250}, 0.5)`;
+                this.ctx.fillStyle = `rgba(${37 * (150 + index) % 250}, ${13 * (49 + index) % 250}, ${17 * (17 + index) % 250}, 0.5)`;
+                this.ctx.fill();
+
+            }
+        }
+
+            this.ctx.beginPath();
+            this.path(this.points);
+            this.ctx.fillStyle = "tomato"
+            this.ctx.fill();
+
+
+
+
 
         this.ctx.restore();
     }
@@ -199,6 +254,7 @@ export class DrawD3Terrain implements DrawWorkerInstance {
             this.projection.rotate(this.rotation);
         }
         // TODO make an drawFast variant in the future for this situation !!!!!
+        this.setTmpFastDraw();
         this.drawOnce(); // activate for smoother panning/zooming
     }
 
@@ -214,32 +270,12 @@ export class DrawD3Terrain implements DrawWorkerInstance {
     }
 
     public static guiMainStatic(pane_: Tweakpane, gui: WorldGui) {
-
-
         var map_ = {};
         [...DrawD3Terrain.getGeoViewsMap().keys()].forEach(obj_ => map_[obj_] = obj_)
 
         pane_.addInput(gui.manager.config, 'terrain_geo_view', { options: map_ })
         // .on('change', () => { gui.refreshConfig(); });
-
-
-
-        // console.debug("#HERELINE OrbitingElement populateSelectGUI ");
-        // slectPane.addMonitor(this, "id", { index: 2 });
-        // slectPane.addMonitor(this, "type", { index: 3 });
-        // slectPane.addMonitor(this, "depth", { index: 4 });
-
-        // const generalAct = slectPane.addFolder({ title: 'Select', expanded: true, index: 10000 });
-        // var parent = this.getParent();
-        // if (parent)
-        //     generalAct.addButton({ title: `Parent ${parent.type} ${parent.id}` }).on('click', () => {
-        //         gui.selectOrbElement(parent);
-        //     });
-        // this.guiPopSelectChildren(slectPane, gui, generalAct)
     }
-
-
-
 
 }
 
