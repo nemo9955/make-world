@@ -1,5 +1,14 @@
 type ActionCallback = (data?: any, name?: string, manager?: ActionsManager) => void;
 
+
+/*
+
+node_modules/three/build/three.js
+
+https://github.com/mrdoob/eventdispatcher.js/
+
+*/
+
 export class ActionsManager {
 
     callbacks = new Map<string, Array<ActionCallback>>();
@@ -43,6 +52,16 @@ export class ActionsManager {
             const cb_ = callbacks_copy[index];
             cb_(data, actName, this)
             // if (data?.stopAfterMe === true) break;
+        }
+    }
+
+    public callThisAction(actName: string, this_obj :any, data: any = null) {
+        if (this.callbacks[actName] === undefined) return;
+
+        const callbacks_copy = [...this.callbacks[actName]]
+        for (let index = 0; index < callbacks_copy.length; index++) {
+            const cb_ = callbacks_copy[index];
+            cb_.call(this_obj, data, actName, this)
         }
     }
 

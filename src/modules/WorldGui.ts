@@ -166,8 +166,10 @@ export class WorldGui {
         this.mainPane.addButton({ title: 'refreshConfig' }).on('click', () => { this.refreshConfig(); });
         this.mainPane.addInput(this.manager.config, 'do_draw_loop').on('change', () => { this.refreshConfig(); });
         this.mainPane.addInput(this.manager.config, 'do_update_loop').on('change', () => { this.refreshConfig(); });
+
         if (this.manager.config.do_main_loop) // if false at start, levae false
             this.mainPane.addInput(this.manager.config, 'do_main_loop').on('change', () => { this.refreshConfig(); });
+
         this.mainPane.addInput(this.manager.config, 'follow_pointed_orbit', {
             options: { "none": "none", "imediate": "imediate", "auto": "auto" }
         }).on('change', () => { this.refreshConfig(); });
