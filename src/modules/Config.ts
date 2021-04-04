@@ -3,6 +3,7 @@
 * Used to store and send VERRY simple data across the main thread and workers
 */
 import * as Convert from "../utils/Convert"
+import { DrawD3Terrain } from "./DrawD3Terrain";
 
 
 // TODO things to add, with parameters being in SpaceConfig!
@@ -27,6 +28,8 @@ export class Config {
     genEnsureMoonInHabZone = true;
 
     keepDbAtPageRefresh = false; // EXPERIMENTAL
+
+    terrain_geo_view: string = DrawD3Terrain.defaultGeoViews();
 
     public copy(source_: Config) {
         Convert.copyShallow(this, source_)

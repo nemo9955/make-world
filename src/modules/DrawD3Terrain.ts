@@ -20,11 +20,11 @@ import { SpaceGroup } from "../generate/SpaceGroup";
 import { PlanetarySystem } from "../generate/PlanetarySystem";
 import { Color } from "../utils/Color"
 
-// import * as Noise from "noisejs"
-// import * as Noise from "noisejs/index"
-// import * as Noise from "noisejs"
+import type Tweakpane from "tweakpane";
+import { WorldGui } from "../modules/WorldGui";
 
 import Noise = require("noisejs")
+
 
 
 /*
@@ -94,7 +94,6 @@ export class DrawD3Terrain implements DrawWorkerInstance {
 
         this.fakeDOM.addEventListener("resize", (event_) => { this.resize(event_); })
         this.resize(this.canvasOffscreen); // lazy use canvas since params same as Event ...
-        this.initStuff();
     }
 
 
@@ -105,67 +104,62 @@ export class DrawD3Terrain implements DrawWorkerInstance {
         this.fakeDOM.clientWidth = event_.width
         this.fakeDOM.clientHeight = event_.height
         // this.ctx = this.canvasOffscreen.getContext("2d");
+
+        this.initBase();
+        this.drawOnce();
     }
 
 
     public updateDeep() {
         console.debug(`#HERELINE ${this.type} updateDeep `);
-        // this.drawOnce();
+        this.initBase();
+        this.drawOnce();
     }
 
     public updateShallow() {
-        // this.drawOnce();
+        console.debug(`#HERELINE ${this.type} updateShallow `);
+        this.initBase();
+        this.drawOnce();
     }
 
     public draw() {
         this.drawOnce();
-        // No real-time draw is needed
     }
 
 
 
-
-    public initStuff() {
-        console.debug(`#HERELINE ${this.type} initStuff `);
-
-        this.initBase();
-
-        // var canvas = d3.create('canvas')
-        // console.log("canvas", canvas);
-
-        console.log("this.fakeDOM", this.fakeDOM);
-        var fakeSelect = d3.select(this.fakeDOM).selection()
-        // var fakeSelect = d3.select(this.ctx.canvas)
-
-        console.log("fakeSelect", fakeSelect);
-        fakeSelect.call(this.zoom);
-    }
 
     public initBase() {
         console.debug(`#HERELINE ${this.type} initBase `);
-        this.originalScale = this.canvasOffscreen.height / 2.1;
-        this.scale = this.originalScale;
-        this.translation = [this.canvasOffscreen.width / 2, this.canvasOffscreen.height / 2];
+        this.translation = [this.canvasOffscreen.width / 2.4, this.canvasOffscreen.height / 2];
         this.graticule = d3.geoGraticule();
 
-        // .clipAngle(90);
-        this.projection = d3.geoOrthographic()
+
+        // this.projection = d3.geoOrthographic()
         // this.projection = d3.geoMercator()
-            // .scale(this.scale)
+        var viewMap = DrawD3Terrain.getGeoViewsMap();
+        this.projection = viewMap.get(this.config.terrain_geo_view)()
             .translate(this.translation)
+        // .clipAngle(90);
+        // .scale(this.scale)
+
+        this.originalScale = this.projection.scale()
+        this.scale = this.originalScale;
 
         this.path = d3.geoPath()
             .projection(this.projection)
             .context(this.ctx)
             .pointRadius(1);
 
-        console.log("this.path", this.path);
-
         this.grid = this.graticule();
 
         this.zoom = d3.zoom()
             .scaleExtent([0.2, 7])
             .on("zoom", this.zoomed.bind(this))
+
+        var fakeSelect = d3.select(this.fakeDOM).selection()
+        fakeSelect.call(this.zoom);
+
     }
 
 
@@ -209,11 +203,45 @@ export class DrawD3Terrain implements DrawWorkerInstance {
     }
 
 
+
+
+    public static defaultGeoViews() { return "geoMercator"; }
+    public static getGeoViewsMap() {
+        var ret_ = new Map();
+        ret_.set("geoOrthographic", () => d3.geoOrthographic().clipAngle(90).scale(350))
+        ret_.set("geoMercator", () => d3.geoMercator().scale(130))
+        return ret_
+    }
+
+    public static guiMainStatic(pane_: Tweakpane, gui: WorldGui) {
+
+
+        var map_ = {};
+        [...DrawD3Terrain.getGeoViewsMap().keys()].forEach(obj_ => map_[obj_] = obj_)
+
+        pane_.addInput(gui.manager.config, 'terrain_geo_view', { options: map_ })
+        // .on('change', () => { gui.refreshConfig(); });
+
+
+
+        // console.debug("#HERELINE OrbitingElement populateSelectGUI ");
+        // slectPane.addMonitor(this, "id", { index: 2 });
+        // slectPane.addMonitor(this, "type", { index: 3 });
+        // slectPane.addMonitor(this, "depth", { index: 4 });
+
+        // const generalAct = slectPane.addFolder({ title: 'Select', expanded: true, index: 10000 });
+        // var parent = this.getParent();
+        // if (parent)
+        //     generalAct.addButton({ title: `Parent ${parent.type} ${parent.id}` }).on('click', () => {
+        //         gui.selectOrbElement(parent);
+        //     });
+        // this.guiPopSelectChildren(slectPane, gui, generalAct)
+    }
+
+
+
+
 }
-
-
-
-
 
 
     // public initTestt() {

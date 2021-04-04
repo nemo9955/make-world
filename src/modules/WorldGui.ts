@@ -14,6 +14,7 @@ import * as Convert from "../utils/Convert"
 import { OrbitingElement } from "../generate/OrbitingElement"
 import { Planet } from "../generate/Planet"
 import { Star } from "../generate/Star"
+import { DrawD3Terrain } from "./DrawD3Terrain"
 
 export const REFRESH_CALL_INTERVAL = 200
 
@@ -174,6 +175,8 @@ export class WorldGui {
             options: { "none": "none", "imediate": "imediate", "auto": "auto" }
         }).on('change', () => { this.refreshConfig(); });
 
+
+        DrawD3Terrain.guiMainStatic(this.mainPane, this);
 
         // this.mainPane.addInput(this.manager.config, 'timeUpdSpeed', { min: 0, step: 0.05 });
         this.mainPane.addInput(this.manager.config, 'timeUpdSpeed', { format: (v: number) => v.toFixed(6) });
