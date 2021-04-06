@@ -21,6 +21,9 @@ export const REFRESH_CALL_INTERVAL = 200
 // TODO regenerate only affected GUI parts after structural changes
 // TODO send shallow read action for simple value changes
 
+// TODO Have no objects always saved in main thread, read from DB and make objects only as they are selected !!!
+// This way we can allow workers to manage better the objects without conflicts from others
+
 
 export class WorldGui {
     manager: MainManager;
@@ -165,11 +168,7 @@ export class WorldGui {
         this.mainPane.addButton({ title: 'refreshDeep' }).on('click', () => { this.refreshDeep(); });
         this.mainPane.addButton({ title: 'refreshShallow' }).on('click', () => { this.refreshShallow(); });
         this.mainPane.addButton({ title: 'refreshConfig' }).on('click', () => { this.refreshConfig(); });
-        this.mainPane.addInput(this.manager.config, 'do_draw_loop').on('change', () => { this.refreshConfig(); });
-        this.mainPane.addInput(this.manager.config, 'do_update_loop').on('change', () => { this.refreshConfig(); });
 
-        if (this.manager.config.do_main_loop) // if false at start, levae false
-            this.mainPane.addInput(this.manager.config, 'do_main_loop').on('change', () => { this.refreshConfig(); });
 
         this.mainPane.addInput(this.manager.config, 'follow_pointed_orbit', {
             options: { "none": "none", "imediate": "imediate", "auto": "auto" }

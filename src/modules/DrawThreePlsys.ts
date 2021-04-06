@@ -1,6 +1,6 @@
 
 import { WorldData } from "./WorldData"
-import { DrawWorker, DrawWorkerInstance } from "./DrawWorker"
+import { DrawWorkerInstance } from "./PlanetSysWorker"
 
 
 import * as THREE from "three";
@@ -8,7 +8,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 import * as d3 from "d3"
 
-import { Config } from "./Config"
+import { Config, WorkerEvent } from "./Config"
 import * as Convert from "../utils/Convert"
 import * as Units from "../utils/Units"
 
@@ -149,7 +149,7 @@ export class DrawThreePlsys implements DrawWorkerInstance {
     }
 
 
-    public init(event: MessageEvent) {
+    public init(event: WorkerEvent) {
         this.canvasOffscreen = event.data.canvas;
         console.debug(`#HERELINE ${this.type} init `);
 

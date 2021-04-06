@@ -47,9 +47,9 @@ export class WorldData {
     public sharedData: SharedData = null;
     public readonly spaceFactory: SpaceFactory;
 
-    constructor(name: string) {
+    constructor(targetTable: string, name: string) {
         this.name = name;
-        this.dbm = new DataBaseManager(name);
+        this.dbm = new DataBaseManager(targetTable, name);
         this.spaceFactory = new SpaceFactory(this);
 
         this.planetarySystem = new PlanetarySystem(this);
@@ -57,7 +57,7 @@ export class WorldData {
     }
 
     public async preInit() {
-        console.debug("#HERELINE WorldData preInit");
+        console.debug(`#HERELINE WorldData preInit ${this.config.WORLD_DATABASE_NAME} `);
         return this.dbm.init(this.config.keepDbAtPageRefresh).then(() => {
             console.debug(`#HERELINE WorldData ${this.name} preInit then`);
             this.spread_objects();

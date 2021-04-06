@@ -2,7 +2,7 @@
 
 
 
-import GenericWorkerInstance from "worker-loader!./Generic.worker.ts";
+import GenericWorkerInstance from "worker-loader!./GenWorkerInstance.ts";
 import { MessageType } from "./Config";
 
 const BASIC_OBJECTS = ["number", "boolean", "string"]
@@ -114,7 +114,6 @@ export class EventsManager {
 
 
     public addOrbitCtrlEvents(canvas: HTMLElement, canvas_id: any, worker: GenericWorkerInstance) {
-
         // disable right-click context on canvas ... TODO do cool stuff !!!!
         // canvas.addEventListener("contextmenu", (evt_) => { evt_.preventDefault() });
 

@@ -13,27 +13,48 @@ import { DrawD3Terrain } from "./DrawD3Terrain";
 
 
 export class Config {
-    do_draw_loop: boolean = true;
-    do_update_loop: boolean = true;
-    do_main_loop: boolean = false; // leave false
 
     follow_pointed_orbit: "none" | "imediate" | "auto" = "auto";
 
-    WorldPlanetarySystemID: number;
     globalIsReady: boolean = false; // global flag for when Tickers can run
-    timeUpdSpeed = 0.001;
+    timeUpdSpeed = 0.0004;
 
     genEnsureInHabZone = true;
     genEnsureCenteredInHabZone = true;
     genEnsureMoonInHabZone = true;
 
+
     keepDbAtPageRefresh = false; // EXPERIMENTAL
+    WORLD_DATABASE_NAME: string = "WORLD-123"; // TODO properly generate at right time
+
 
     terrain_geo_view: string = DrawD3Terrain.defaultGeoViews();
 
     public copy(source_: Config) {
         Convert.copyShallow(this, source_)
+        return this;
     }
+}
+
+
+export type WorkerEvent = MessageEvent<WorkerPacket>
+
+export type WorkerPacket = {
+    message: MessageType,
+    config?: Config,
+    create?: string,
+    metaCanvas?: MetaCanvas,
+    canvas?: OffscreenCanvas,
+    canvas_id?: any,
+    sab?: SharedArrayBuffer,
+    event?: any,
+    event_id?: string,
+}
+
+export type MetaCanvas = {
+    id: string,
+    order: string,
+    generalFlags: any[],
 }
 
 export enum MessageType {
@@ -42,19 +63,9 @@ export enum MessageType {
     Play = "Play",
     Pause = "Pause",
     InitWorker = "InitWorker",
-    InitCanvas = "InitCanvas",
     RefreshDBDeep = "RefreshDBDeep",
     RefreshDBShallow = "RefreshDBShallow",
     RefreshConfig = "RefreshConfig",
-    MakeCanvas = "MakeCanvas",
-}
-
-export enum WorkerState {
-    Paused,
-    Ready,
-    Running,
-}
-
-export declare type WorkerData = {
-    state: WorkerState
+    CanvasReady = "CanvasReady",
+    CanvasMake = "CanvasMake",
 }

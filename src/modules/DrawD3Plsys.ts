@@ -1,10 +1,10 @@
 
 import { WorldData } from "./WorldData"
-import { DrawWorker, DrawWorkerInstance } from "./DrawWorker"
+import { DrawWorkerInstance } from "./PlanetSysWorker"
 
 import * as d3 from "d3"
 
-import { Config } from "./Config"
+import { Config, WorkerEvent } from "./Config"
 import * as Convert from "../utils/Convert"
 import * as Units from "../utils/Units"
 
@@ -47,7 +47,7 @@ export class DrawD3Plsys implements DrawWorkerInstance {
     }
 
 
-    public init(event: MessageEvent) {
+    public init(event: WorkerEvent) {
         console.debug(`#HERELINE ${this.type} init `);
         this.canvasOffscreen = event.data.canvas;
         this.ctx = this.canvasOffscreen.getContext("2d");

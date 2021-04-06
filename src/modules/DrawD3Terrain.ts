@@ -1,13 +1,13 @@
 
 import { WorldData } from "./WorldData"
-import { DrawWorker, DrawWorkerInstance } from "./DrawWorker"
+import { DrawWorkerInstance } from "./PlanetSysWorker"
 
 import * as d3 from "d3"
 import { geoDelaunay, geoVoronoi, geoContour } from "d3-geo-voronoi"
 // node_modules/d3-geo-voronoi/dist/d3-geo-voronoi.js
 
 
-import { Config } from "./Config"
+import { Config, WorkerEvent } from "./Config"
 import * as Convert from "../utils/Convert"
 import * as Units from "../utils/Units"
 import * as Points from "../utils/Points"
@@ -94,7 +94,7 @@ export class DrawD3Terrain implements DrawWorkerInstance {
     }
 
 
-    public init(event: MessageEvent) {
+    public init(event: WorkerEvent) {
         console.debug(`#HERELINE ${this.type} init `);
         this.canvasOffscreen = event.data.canvas;
         this.ctx = this.canvasOffscreen.getContext("2d");
@@ -180,7 +180,7 @@ export class DrawD3Terrain implements DrawWorkerInstance {
         }
 
         this.voronoi = geoVoronoi()(this.points.coordinates);
-        console.log("this.voronoi", this.voronoi);
+        // console.log("this.voronoi", this.voronoi);
         this.polys = this.voronoi.polygons()
         console.log("this.polys", this.polys);
 
@@ -191,7 +191,7 @@ export class DrawD3Terrain implements DrawWorkerInstance {
 
     fastDrawTimeout = 0;
     public setTmpFastDraw() {
-        // this.fastDrawTimeout = 7;
+        this.fastDrawTimeout = 7;
     }
 
 
@@ -218,7 +218,7 @@ export class DrawD3Terrain implements DrawWorkerInstance {
                 this.path(poly);
                 // this.ctx.fillStyle = "tomato"
                 // this.ctx.fillStyle = `rgba(${153 * (50 + index) % 250}, ${79 * (49 + index) % 250}, ${555 * (17 + index) % 250}, 0.5)`;
-                this.ctx.fillStyle = `rgba(${37 * (150 + index) % 250}, ${13 * (49 + index) % 250}, ${17 * (17 + index) % 250}, 0.5)`;
+                this.ctx.fillStyle = `rgba(${37 * (150 + index) % 250}, ${13 * (49 + index) % 250}, ${17 * (17 + index) % 250}, 0.4)`;
                 this.ctx.fill();
 
             }
@@ -254,8 +254,8 @@ export class DrawD3Terrain implements DrawWorkerInstance {
             this.projection.rotate(this.rotation);
         }
         // TODO make an drawFast variant in the future for this situation !!!!!
-        this.setTmpFastDraw();
-        this.drawOnce(); // activate for smoother panning/zooming
+        // this.setTmpFastDraw();
+        // this.drawOnce(); // activate for smoother panning/zooming
     }
 
 

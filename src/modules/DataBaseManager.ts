@@ -19,15 +19,16 @@ export class DataBaseManager {
 
     public static STANDARD_OBJECTS = "STANDARD_OBJECTS";
     public static BIG_OBJECTS = "BIG_OBJECTS";
-    public TABLE_NAME = "world_table";
+    public tableName: string = null;
 
-    constructor(name: string) {
+    constructor(targetTable: string, name: string) {
         this.name = name;
+        this.tableName = targetTable;
         this.idb = null;
     }
 
     public async init(keepDb: boolean) {
-        console.debug(`#HERELINE DataBaseManager ${this.name} init `);
+        console.log(`#HERELINE DataBaseManager ${this.name} init : ${this.tableName} `);
 
         var prom_: Promise<void> = null;
         if (keepDb) prom_ = Promise.resolve();
@@ -41,7 +42,7 @@ export class DataBaseManager {
 
     public async open() {
         console.debug(`#HERELINE DataBaseManager ${this.name} open `);
-        this.idb = await openDB(this.TABLE_NAME, 1, {
+        this.idb = await openDB(this.tableName, 1, {
             upgrade(db) {
                 console.debug("#HERELINE DataBaseManager NOTHEN open upgrade ");
                 // this.idb = db;
@@ -63,7 +64,7 @@ export class DataBaseManager {
 
     public async delete() {
         console.debug("#HERELINE DataBaseManager " + this.name + " delete ");
-        return deleteDB(this.TABLE_NAME)
+        return deleteDB(this.tableName)
     }
 
 

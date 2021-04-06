@@ -1,5 +1,5 @@
 
-import GenericWorkerInstance from "worker-loader!./Generic.worker.ts";
+import GenericWorkerInstance from "worker-loader!./GenWorkerInstance.ts";
 
 const TOTAL_ELEMENTS = 10
 const NULL_NUMBER = Number.NEGATIVE_INFINITY
