@@ -4,8 +4,7 @@ import * as Convert from "../utils/Convert"
 import { ObjectPool } from "../utils/ObjectPool";
 import { WorldData } from "../modules/WorldData";
 
-import { FolderApi } from "tweakpane/dist/types/api/folder";
-import type Tweakpane from "tweakpane";
+import * as Tweakpane from "tweakpane/dist/tweakpane.js"
 
 import type { Orbit } from "./Orbit";
 import type { Planet } from "./Planet";
@@ -207,7 +206,7 @@ export class OrbitingElement extends Identifiable {
     }
 
 
-    protected guiPopSelectChildren(slectPane: Tweakpane, gui: WorldGui, generalAct: FolderApi) {
+    protected guiPopSelectChildren(slectPane: Tweakpane, gui: WorldGui, generalAct: Tweakpane.FolderApi) {
         this.getSats().forEach((sat_, index) => {
             var title = `${sat_.type} ${sat_.id}`
             generalAct.addButton({ title: title }).on('click', () => {

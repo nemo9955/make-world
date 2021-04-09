@@ -14,7 +14,6 @@ import type { Orbit } from "./Orbit";
 import type { Planet } from "./Planet";
 import type { Star } from "./Star";
 import type { PlanetarySystem } from "./PlanetarySystem";
-import { FolderApi } from "tweakpane/dist/types/api/folder";
 // import type { SpaceGroup } from "./SpaceGroup";
 
 
@@ -72,7 +71,7 @@ export class SpaceGroup extends OrbitingElement {
 
     public clone() { return new SpaceGroup(this.getWorldData()).copyLogic(this) }
 
-    protected guiPopSelectChildren(slectPane: Tweakpane, gui: WorldGui, generalAct: FolderApi) {
+    protected guiPopSelectChildren(slectPane: Tweakpane, gui: WorldGui, generalAct: Tweakpane.FolderApi) {
         this.getSats().forEach((sat_, index) => {
             var title = ` ${sat_.type} ${sat_.id}`
             if (this.groupedSatelites.includes(sat_.id))

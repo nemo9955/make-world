@@ -34,6 +34,15 @@ import { pointGeoArr } from "../utils/Points"
 
 /*
 
+about octaves and persistence : https://adrianb.io/2014/08/09/perlinnoise.html
+with generic js implementation  : https://github.com/joshforisha/fractal-noise-js/blob/main/src/index.ts
+
+https://medium.com/@yvanscher/playing-with-perlin-noise-generating-realistic-archipelagos-b59f004d8401
+
+Also see for 4D noise  :
+https://github.com/joshforisha/open-simplex-noise-js
+
+
 https://www.npmjs.com/package/noisejs
 var noise = new Noise(Math.random());
 simplex2(x, y): 2D Simplex noise function
@@ -60,6 +69,8 @@ https://bl.ocks.org/pkerpedjiev/32b11b37be444082762443c4030d145d D3 event filter
 The red circles don't allow scroll-wheel zooming and drag-based panning
 https://bl.ocks.org/mbostock/6675193
 
+
+https://github.com/joshforisha/open-simplex-noise-js
 
 */
 

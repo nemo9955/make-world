@@ -5,9 +5,6 @@ const smp = new SpeedMeasurePlugin();
 
 module.exports = smp.wrap({
     entry: './src/index.ts',
-    node: {
-        fs: "empty", // https://stackoverflow.com/a/61046205/2948519
-    },
     module: {
         rules: [
             {
@@ -24,6 +21,11 @@ module.exports = smp.wrap({
     resolve: {
         extensions: [".tsx", ".ts", ".js"]
     },
+    // optimization: {
+    //     splitChunks: {
+    //         chunks: 'all',
+    //     },
+    // },
     output: {
         filename: '[name].js',
         sourceMapFilename: '[name].map',
@@ -31,10 +33,16 @@ module.exports = smp.wrap({
         library: 'make_world',
         publicPath: "/dist/",
         path: path.resolve(__dirname, "dist/"),
+        // library: {
+        //   name: 'make_world',
+        //   type: 'umd',
+        // },
+        // libraryTarget: 'umd',
+        // umdNamedDefine: true,
+        // globalObject: 'this'
     },
     devServer: {
-        // compress: true,
-        disableHostCheck: true,   // That solved it
+        disableHostCheck: true,
         headers: {
             "Cross-Origin-Embedder-Policy": " require-corp",
             "Cross-Origin-Opener-Policy": " same-origin",
