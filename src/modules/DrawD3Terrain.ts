@@ -183,8 +183,8 @@ export class DrawD3Terrain implements DrawWorkerInstance {
 
         this.points = {
             type: "MultiPoint",
-            coordinates: Points.makeGeoPtsSquares(0)
-            // coordinates: Points.makeGeoPtsFibb(100)
+            // coordinates: Points.makeGeoPtsSquares(0)
+            coordinates: Points.makeGeoPtsFibb(1000)
             // coordinates: Points.makeGeoPtsRandOk(1000)
         }
 

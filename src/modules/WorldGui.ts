@@ -1,10 +1,7 @@
 
 import * as Tweakpane from "tweakpane/dist/tweakpane.js"
 import * as TweakpaneDummy from "tweakpane"
-
-// https://web.archive.org/web/20200227175632/http://workshop.chromeexperiments.com:80/examples/gui/#1--Basic-Usage
-// import * as dat from 'dat.gui';
-
+import * as d3 from "d3"
 
 import { WorldData } from "./WorldData"
 import { Config, MessageType } from "./Config"
@@ -15,8 +12,39 @@ import { OrbitingElement } from "../generate/OrbitingElement"
 import { Planet } from "../generate/Planet"
 import { Star } from "../generate/Star"
 import { DrawD3Terrain } from "./DrawD3Terrain"
+import { GuiManager } from "./GuiManager"
 
 export const REFRESH_CALL_INTERVAL = 200
+
+
+// https://web.archive.org/web/20200227175632/http://workshop.chromeexperiments.com:80/examples/gui/#1--Basic-Usage
+// import * as dat from 'dat.gui';
+
+// https://www.w3schools.com/colors/colors_picker.asp
+// https://www.w3schools.com/tags/att_input_type_color.asp
+
+// https://www.d3-graph-gallery.com/graph/interactivity_button.html
+// https://www.d3-graph-gallery.com/graph/interactivity_button.html
+// https://www.d3-graph-gallery.com/graph/interactivity_button.html
+// https://www.d3-graph-gallery.com/graph/interactivity_button.html
+// https://www.d3-graph-gallery.com/graph/interactivity_button.html
+
+
+// https://getbootstrap.com/docs/5.0/components/buttons/
+// https://getbootstrap.com/docs/5.0/components/buttons/
+// https://getbootstrap.com/docs/5.0/components/buttons/
+// https://getbootstrap.com/docs/5.0/components/buttons/
+// https://getbootstrap.com/docs/5.0/components/buttons/
+
+
+// TODO !!!!!!!!!!!!!!!!!!!
+// Parse the GUI as a json to easilly transmit between main <-> worker
+// and use D3 to listen for changes to the structure to manage add/change/remove of elemenets
+// https://www.d3indepth.com/enterexit/
+// https://observablehq.com/@maliky/d3js-enter-update-and-exit
+// https://observablehq.com/@d3/selection-join
+// TODO !!!!!!!!!!!!!!!!!!!
+
 
 // TODO regenerate only affected GUI parts after structural changes
 // TODO send shallow read action for simple value changes
@@ -37,6 +65,10 @@ export class WorldGui {
     constructor() {
         this.manager = null;
         this.refresh_inval = new Intervaler();
+
+
+        new GuiManager(); // TODO temporary ....
+
     }
 
 
