@@ -1,4 +1,4 @@
-import { BaseWorker } from "./GenWorkerMetadata";
+import { BaseDrawUpdateWorker } from "./GenWorkerMetadata";
 
 import * as Convert from "../utils/Convert"
 import * as Units from "../utils/Units"
@@ -15,27 +15,8 @@ import { DrawD3Plsys } from "./DrawD3Plsys";
 // TODO simplify the refresh deep/shallow mechanisms since most actions will be done in this worker
 // TODO store position and rotation of objects inside themselves after time/orbit update so other workers can do "basic" checks and calculations
 
-export interface DrawWorkerInstance {
-    readonly type: string;
-    sharedData: SharedData;
-    world: WorldData;
-    canvasOffscreen: OffscreenCanvas;
-    config: Config;
-    fakeDOM: WorkerDOM;
 
-    updateShallow(): void;
-    init(event: WorkerEvent): void;
-    updateDeep(): void;
-    draw(): void;
-}
-
-
-export class PlanetSysWorker extends BaseWorker {
-
-
-    mapDraws = new Map<any, DrawWorkerInstance>();
-    planetarySystem: PlanetarySystem = null;
-
+export class PlanetSysWorker extends BaseDrawUpdateWorker {
 
 
     constructor(config: Config, worker: Worker, workerName: string, event: WorkerEvent) {
@@ -45,6 +26,10 @@ export class PlanetSysWorker extends BaseWorker {
 
     public init(): void {
         this.world.initWorker().then(() => {
+        //     return this.world.initPlSys();
+        // }).then(() => {
+        //     return this.world.writeDeep();
+        // }).then(() => {
             this.worker.postMessage(<WorkerPacket>{
                 message: MessageType.CanvasMake,
                 metaCanvas: {
@@ -108,24 +93,9 @@ export class PlanetSysWorker extends BaseWorker {
     }
 
 
-    public spread_objects(object_: any) {
-        super.spread_objects(object_);
-        if (object_.planetarySystem === null) object_.planetarySystem = this.planetarySystem
-    }
-
-    callEvent(event: any, event_id: any) {
-        // console.log("event_id, event", event_id, event);
-        var drawRedirect = this.mapDraws.get(event_id);
-        drawRedirect.fakeDOM.dispatchEvent(event);
-    }
-
 
     public updateInterval(): void {
-        // console.log(`It is me, ${this.name}`);
         // this.updPause();
-
-        // for (const draw_ of this.mapDraws.values())
-        //     draw_.draw();
         this.refreshTick(true)
     }
 
@@ -159,7 +129,6 @@ export class PlanetSysWorker extends BaseWorker {
     private async refreshDeep(doSpecial = true) {
         console.debug("#HERELINE DrawWorker refreshDeep");
         await this.world.readDeep();
-        this.planetarySystem = this.world.planetarySystem;
         for (const draw_ of this.mapDraws.values()) draw_.updateDeep();
         if (doSpecial) {
             // this.updatePlSys();

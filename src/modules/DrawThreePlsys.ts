@@ -1,6 +1,6 @@
 
 import { WorldData } from "./WorldData"
-import { DrawWorkerInstance } from "./PlanetSysWorker"
+import { DrawWorkerInstance } from "./GenWorkerMetadata"
 
 
 import * as THREE from "three";

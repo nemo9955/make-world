@@ -100,16 +100,16 @@ export class MainManager {
         console.debug(`#HERELINE MainManager pauseAll `);
         // this.config.globalIsReady = false;
         // this.gui.selectOrbElement(null);
-        this.ticker.stop();
-        for (const worker_ of this.workers) {
-            // waitBlocking(50); // TODO TMP !!!!!!!!!!!!!!
-            // this.workersData.get(worker_).state = WorkerState.Paused;
-            console.debug("MainManager pauseAll postMessage ", worker_.name);
-            worker_.postMessage({
-                message: MessageType.Pause,
-                config: this.config
-            });
-        }
+        // this.ticker.stop();
+        // for (const worker_ of this.workers) {
+        //     // waitBlocking(50); // TODO TMP !!!!!!!!!!!!!!
+        //     // this.workersData.get(worker_).state = WorkerState.Paused;
+        //     console.debug("MainManager pauseAll postMessage ", worker_.name);
+        //     worker_.postMessage({
+        //         message: MessageType.Pause,
+        //         config: this.config
+        //     });
+        // }
     }
 
     public playAll(refreshType: MessageType) {
@@ -203,22 +203,22 @@ export class MainManager {
         });
     }
 
-    public initWorker(workerType: string) {
-        var worker_ = new GenericWorkerInstance();
-        worker_.name = workerType
-        this.workers.push(worker_);
-        // this.workersData.set(worker_, { state: WorkerState.Paused })
-        worker_.postMessage({ create: workerType, sab: this.sharedData.sab });
+    // public initWorker(workerType: string) {
+    //     var worker_ = new GenericWorkerInstance();
+    //     worker_.name = workerType
+    //     this.workers.push(worker_);
+    //     // this.workersData.set(worker_, { state: WorkerState.Paused })
+    //     worker_.postMessage({ create: workerType, sab: this.sharedData.sab });
 
-        worker_.addEventListener("message", (event) => {
-            this.getMessage(worker_, event)
-        });
+    //     worker_.addEventListener("message", (event) => {
+    //         this.getMessage(worker_, event)
+    //     });
 
-        worker_.postMessage({
-            message: MessageType.InitWorker,
-            config: this.config
-        });
-    }
+    //     worker_.postMessage({
+    //         message: MessageType.InitWorker,
+    //         config: this.config
+    //     });
+    // }
 
     private readyWorker(the_worker: GenericWorkerInstance) {
         // var workerData_ = this.workersData.get(the_worker)

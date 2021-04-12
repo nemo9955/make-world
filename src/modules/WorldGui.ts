@@ -163,6 +163,10 @@ export class WorldGui {
     }
 
 
+    // dummy: any = {
+    //     TEST: 12
+    // };
+
     public init_manager() {
         // const folder_tp = this.mainPane.addFolder({ title: 'Manager', });
         this.mainPane.addButton({ title: 'refreshDeep' }).on('click', () => { this.refreshDeep(); });
@@ -179,6 +183,12 @@ export class WorldGui {
 
         // this.mainPane.addInput(this.manager.config, 'timeUpdSpeed', { min: 0, step: 0.05 });
         this.mainPane.addInput(this.manager.config, 'timeUpdSpeed', { format: (v: number) => v.toFixed(6) });
+
+        // this.mainPane.addInput(this.dummy, 'TEST',
+        //     { format: (v: number) => v.toFixed(6) })
+        //     .on('change', (event_) => {
+        //         console.log("event_", event_);
+        //     });
 
 
         this.manager.viewableThings.forEach((elem_, index) => {

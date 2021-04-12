@@ -2,7 +2,9 @@
 import * as d3 from "d3";
 
 
-export type pointGeo = [number, number]
+export type latitude = number
+export type longitude = number
+export type pointGeo = [latitude, longitude]
 export type pointGeoArr = pointGeo[]
 
 
@@ -54,6 +56,67 @@ export function makeGeoPtsFibb(number: number): pointGeoArr {
 export function makeGeoPtsRandOk(number: number): pointGeoArr {
     const degrees = 180 / Math.PI
     return Array.from({ length: number }, (d) => { return [Math.random() * 360, Math.acos(2 * Math.random() - 1) * degrees - 90]; });
+}
+
+
+export function splitSquare(splits: number): [number, number][] {
+    var arr: [number, number][] = []
+    var incr = 1 / (splits + 1);
+    for (var i = incr / 2; i < 1; i += incr) {
+        for (var j = incr / 2; j < 1; j += incr) {
+            // console.log("i,j", i, j);
+            arr.push([i, j])
+        }
+    }
+    return arr;
+}
+
+
+
+export function getGeoSquareArr(minLat, maxLat, minLon, maxLon, ofsetArr: pointGeoArr): pointGeoArr {
+    // console.log("minLat, maxLat, minLon, maxLon", minLat, maxLat, minLon, maxLon);
+    // console.log("ofsetArr", ofsetArr);
+
+    var arr: pointGeoArr = [];
+    for (const pt of ofsetArr) {
+        var clat = minLat + ((maxLat - minLat) * pt[0])
+        var clon = minLon + ((maxLon - minLon) * pt[1])
+        arr.push([clat, clon])
+    }
+
+    return arr;
+}
+
+/*
+https://www.redblobgames.com/x/1932-sphere-healpix/
+Possible workaround for fluid simulation needing a grid
+TODO Point should be "perfectly" in a grridd position, they just need to be linked
+*/
+export function makeGeoPtsSquares(splits: number): pointGeoArr {
+    var arr: pointGeoArr = []
+
+
+    var splitArr = splitSquare(splits);
+
+    for (var i = 0 + 45; i < 360; i += 360 / 4) {
+        // arr.push([i, 45])
+        var part = getGeoSquareArr(i - (360 / 8), i + (360 / 8), 0, 90, splitArr)
+        arr.push(...part)
+    }
+
+    for (var i = 0; i < 360; i += 360 / 4) {
+        // arr.push([i, 0])
+        var part = getGeoSquareArr( i - (360 / 8), i + (360 / 8),-45, 45, splitArr)
+        arr.push(...part)
+    }
+
+    for (var i = 0 + 45; i < 360; i += 360 / 4) {
+        // arr.push([i, -45])
+        var part = getGeoSquareArr(i - (360 / 8), i + (360 / 8), -90, 0, splitArr)
+        arr.push(...part)
+    }
+
+    return arr
 }
 
 

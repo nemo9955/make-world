@@ -1,6 +1,5 @@
 
 import { WorldData } from "./WorldData"
-import { DrawWorkerInstance } from "./PlanetSysWorker"
 
 import * as d3 from "d3"
 import { geoDelaunay, geoVoronoi, geoContour } from "d3-geo-voronoi"
@@ -29,6 +28,7 @@ import { WorldGui } from "../modules/WorldGui";
 
 import Noise = require("noisejs")
 import { pointGeoArr } from "../utils/Points"
+import { DrawWorkerInstance } from "./GenWorkerMetadata"
 
 
 
@@ -181,12 +181,10 @@ export class DrawD3Terrain implements DrawWorkerInstance {
         var fakeSelect = d3.select(this.fakeDOM).selection()
         fakeSelect.call(this.zoom);
 
-
-
-
         this.points = {
             type: "MultiPoint",
-            coordinates: Points.makeGeoPtsFibb(1000)
+            coordinates: Points.makeGeoPtsSquares(0)
+            // coordinates: Points.makeGeoPtsFibb(100)
             // coordinates: Points.makeGeoPtsRandOk(1000)
         }
 
@@ -202,7 +200,7 @@ export class DrawD3Terrain implements DrawWorkerInstance {
 
     fastDrawTimeout = 0;
     public setTmpFastDraw() {
-        this.fastDrawTimeout = 7;
+        this.fastDrawTimeout = 2;
     }
 
 
@@ -235,10 +233,10 @@ export class DrawD3Terrain implements DrawWorkerInstance {
             }
         }
 
-            this.ctx.beginPath();
-            this.path(this.points);
-            this.ctx.fillStyle = "tomato"
-            this.ctx.fill();
+        this.ctx.beginPath();
+        this.path(this.points);
+        this.ctx.fillStyle = "tomato"
+        this.ctx.fill();
 
 
 
@@ -272,7 +270,9 @@ export class DrawD3Terrain implements DrawWorkerInstance {
 
 
 
+    // public static defaultGeoViews() { return "geoOrthographic"; }
     public static defaultGeoViews() { return "geoMercator"; }
+
     public static getGeoViewsMap() {
         var ret_ = new Map();
         ret_.set("geoOrthographic", () => d3.geoOrthographic().clipAngle(90).scale(350))

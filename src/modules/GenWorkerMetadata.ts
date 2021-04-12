@@ -8,7 +8,7 @@ import * as Convert from "../utils/Convert"
 import * as Units from "../utils/Units"
 import { TerrainWorker } from "./TerrainWorker";
 import { PlanetSysWorker } from "./PlanetSysWorker";
-
+import { WorkerDOM } from "../utils/WorkerDOM";
 
 
 export abstract class BaseWorker {
@@ -85,4 +85,37 @@ export abstract class BaseWorker {
     protected updPlay() {
         this.ticker.start();
     }
+}
+
+
+export interface DrawWorkerInstance {
+    readonly type: string;
+    sharedData: SharedData;
+    world: WorldData;
+    canvasOffscreen: OffscreenCanvas;
+    config: Config;
+    fakeDOM: WorkerDOM;
+
+    updateShallow(): void;
+    init(event: WorkerEvent): void;
+    updateDeep(): void;
+    draw(): void;
+}
+
+
+export abstract class BaseDrawUpdateWorker extends BaseWorker {
+
+    mapDraws = new Map<any, DrawWorkerInstance>();
+
+    constructor(config: Config, worker: Worker, workerName: string, event: WorkerEvent) {
+        super(config, worker, workerName, event);
+    }
+
+    callEvent(event: any, event_id: any) {
+        // console.log("event_id, event", event_id, event);
+        var drawRedirect = this.mapDraws.get(event_id);
+        drawRedirect.fakeDOM.dispatchEvent(event);
+    }
+
+
 }
