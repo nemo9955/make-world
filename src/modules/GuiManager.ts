@@ -44,14 +44,22 @@ import * as d3 from "d3"
 
 
 
-// type d3Thing = d3.Selection<d3.EnterElement, string, HTMLDivElement, unknown>
-type d3EnterType = d3.Selection<d3.EnterElement, any, HTMLDivElement, unknown>
-type d3UpdateType = d3.Selection<d3.BaseType, any, HTMLDivElement, unknown>
+type guiElem = {
+    tag: string,
+    attr?: {},
+    listeners?: string,
+    // listeners?: {} | {}[] | string,
+}
 
+type guiJson = guiElem[]
 
-var testData = [
+type d3EnterType = d3.Selection<d3.EnterElement, guiElem, HTMLDivElement, unknown>
+type d3UpdateType = d3.Selection<d3.BaseType, guiElem, HTMLDivElement, unknown>
+
+var testData: guiJson = [
     {
         tag: "input",
+        listeners: "click",
         attr: {
             type: "button",
             id: "12312",
@@ -61,6 +69,7 @@ var testData = [
     },
     {
         tag: "input",
+        listeners: "click",
         attr: {
             type: "button",
             id: "346546",
@@ -72,7 +81,22 @@ var testData = [
     //     tag: "br",
     // },
     {
+        tag: "input", // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/color
+        listeners: "input",
+        // listeners: "change",
+        attr: {
+            type: "color",
+            id: "g3v56h56y",
+            value: "#ff0000",
+            name: "color picker",
+        }
+    },
+    // {
+    //     tag: "br",
+    // },
+    {
         tag: "input",
+        listeners: "click",
         attr: {
             type: "button",
             id: "6785678",
@@ -97,13 +121,11 @@ export class GuiManager {
         setTimeout(() => { this.test1(); }, 1000);
     }
 
-    getId(d) {
-        return d?.attr?.id
+    private getId(d) {
+        return `${d?.tag}-${d?.attr?.id}`
     }
 
     test1() {
-
-
         var dat = this.container.selectAll("*")
             .data(testData, this.getId)
         // .join(
@@ -112,8 +134,8 @@ export class GuiManager {
         //     remove => remove.call(this.removeTag.bind(this))
         // )
 
-        dat.enter().call(this.addTag.bind(this))
-        dat.exit().call(this.removeTag.bind(this))
+        dat.enter().call(this.enterSelectTags.bind(this))
+        dat.exit().call(this.exitSelectTags.bind(this))
 
         setTimeout(() => { this.test2(); }, 1000);
     }
@@ -121,6 +143,7 @@ export class GuiManager {
     test2() {
         testData.push({
             tag: "input",
+            listeners: "click",
             attr: {
                 type: "button",
                 id: "afgasdfg",
@@ -129,12 +152,11 @@ export class GuiManager {
             }
         })
 
-
         var dat = this.container.selectAll("*")
             .data(testData, this.getId)
 
-        dat.enter().call(this.addTag.bind(this))
-        dat.exit().call(this.removeTag.bind(this))
+        dat.enter().call(this.enterSelectTags.bind(this))
+        dat.exit().call(this.exitSelectTags.bind(this))
 
         setTimeout(() => { this.test3(); }, 1000);
     }
@@ -146,31 +168,55 @@ export class GuiManager {
         var dat = this.container.selectAll("*")
             .data(testData, this.getId)
 
-        dat.enter().call(this.addTag.bind(this))
-        dat.exit().call(this.removeTag.bind(this))
+        dat.enter().call(this.enterSelectTags.bind(this))
+        dat.exit().call(this.exitSelectTags.bind(this))
     }
 
+    private addTag(datum: guiElem, index: number, groups: any[]) {
+        var domElem = groups[index]
+        var d3Elem = d3.select(domElem)
+        if (typeof datum?.listeners == "string")
+            d3Elem.on(datum.listeners, (event: any, datEv: any) => {
+                console.log("event", event);
+                // console.log("datEv", datEv);
+            })
+    }
 
+    private setTag(datum: guiElem, index: number, groups: any[]) {
+        var domElem = groups[index]
+        var d3Elem = d3.select(domElem)
 
-    public addTag(enter: d3EnterType) {
-        console.log("enter", enter);
+        if (datum?.attr)
+            for (const key in datum.attr) {
+                d3Elem.attr(key, datum.attr[key])
+            }
+    }
+
+    private removeTag(datum: guiElem, index: number, groups: any[]) {
+        var domElem = groups[index]
+        var d3Elem = d3.select(domElem)
+
+        console.log(`removeTag .........................`);
+        console.log("datum", datum);
+        console.log("index", index);
+        console.log("groups", groups);
+        console.log("elem", domElem);
+        console.log("d3elem", d3Elem);
+    }
+
+    private enterSelectTags(enter: d3EnterType) {
         enter
-            .append(d => document.createElement(d.tag)) // https://stackoverflow.com/questions/28485046/d3-append-with-function-argument/28485870
-            .call(this.setTag.bind(this))
+            .append(d => document.createElement(d.tag))
+            .each(this.addTag.bind(this))
+            .call(this.setSelectTags.bind(this))
     }
 
-
-    public setTag(update: d3UpdateType) {
-        console.log("update", update);
+    private setSelectTags(update: d3UpdateType) {
         return update
-            .attr("type", d => d?.attr?.type)
-            .attr("class", d => d?.attr?.class)
-            .attr("value", d => d?.attr?.value)
-            .attr("id", d => d?.attr?.id)
+            .each(this.setTag.bind(this))
     }
 
-    public removeTag(remove: d3UpdateType) {
-        console.log("remove", remove);
+    private exitSelectTags(remove: d3UpdateType) {
         remove.remove();
     }
 
