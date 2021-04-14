@@ -96996,6 +96996,7 @@ class SpaceFactory {
     }
     getWorldData() { return this.worldData; }
     genStartingPlanetSystem(plsys) {
+        plsys.clearSatelites();
         if (Random.randPercent() < 60)
             this.genStar(plsys, plsys, "habitable");
         else
@@ -97129,8 +97130,7 @@ class SpaceFactory {
     }
     genStar(plsys, root, type) {
         root.clearSatelites();
-        // console.debug("this.getWorldData().idObjMap", this.getWorldData().idObjMap);
-        // console.debug("root.satelites.length,root.satelites", root.satelites.length, root.satelites);
+        console.log("plsys", plsys);
         var star_ = new Star_1.Star(this.getWorldData());
         switch (type) {
             case "sun":
@@ -97644,6 +97644,186 @@ exports.Terrain = Terrain;
 
 /***/ }),
 
+/***/ "./src/gui/JguiMake.ts":
+/*!*****************************!*\
+  !*** ./src/gui/JguiMake.ts ***!
+  \*****************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.JguiManager = exports.JguiMake = void 0;
+const Random_1 = __webpack_require__(/*! ../utils/Random */ "./src/utils/Random.ts");
+class JguiMake {
+    constructor(tag_) {
+        this.tag = null;
+        this.attr = {};
+        this.style = {};
+        this.html = null;
+        this.tag = tag_;
+        this.genId();
+    }
+    // just for convenience
+    get id() { return this.attr.id; }
+    set id(value) { this.attr.id = value; }
+    get class() { return this.attr.class; }
+    set class(value) { this.attr.class = value; }
+    get type() { return this.attr.type; }
+    set type(value) { this.attr.type = value; }
+    mkWorkerJgui(id, order) {
+        this.tag = "div";
+        this.id = id;
+        this.class = "d-grid gap-1 bg-light border shadow-sm rounded ";
+        // this.style.zIndex = "200";
+        // this.style.position = "fixed";
+        // this.style.top = "10px";
+        // this.style.left = "10px";
+        // this.style.width = "256px";
+        this.attr.jguiOrder = order;
+        var coll = this.addColapse(id, true);
+        return [this, coll];
+    }
+    mkContainer() {
+        // https://getbootstrap.com/docs/5.0/layout/containers/
+        this.tag = "div";
+        this.class = "d-grid gap-1 bg-light border shadow-sm rounded ";
+        return this;
+    }
+    mkButton(name, type = "primary") {
+        // https://getbootstrap.com/docs/5.0/components/buttons/
+        this.tag = "button";
+        // this.listeners = "click";
+        this.attr.class = `btn btn-${type} btn-sm`;
+        this.attr.type = "button";
+        this.html = name;
+        this.style["padding"] = "0"; //  no padding
+        return this;
+    }
+    addButton(btnName) {
+        // https://getbootstrap.com/docs/5.0/components/buttons/
+        var btnObj = new JguiMake(null).mkButton(btnName);
+        this.appendHtml(btnObj);
+        return btnObj;
+    }
+    mkColapse(name, expanded) {
+        // https://getbootstrap.com/docs/5.0/components/collapse/
+        this.tag = "div";
+        // this.class = "collapse";
+        // this.class = "collapse gap-1 bg-light border shadow-sm rounded  ";
+        this.class = "collapse gap-1 card card-body";
+        if (expanded)
+            this.class += " show";
+        this.genId();
+        this.style["padding-top"] = "0.1rem";
+        this.style["padding-left"] = "0.4rem";
+        this.style["padding-bottom"] = "0px";
+        this.style["padding-right"] = "0px";
+        return this;
+    }
+    addColapse(colName, expanded = false) {
+        // https://getbootstrap.com/docs/5.0/components/collapse/
+        // https://getbootstrap.com/docs/5.0/components/card/
+        var btnName = `Toggle ${colName}`;
+        var btnObj = new JguiMake(null).mkButton(btnName, "secondary");
+        var colObj = new JguiMake(null).mkColapse(colName, expanded);
+        btnObj.genId();
+        // btnObj.attr["data-bs-toggle"] = "button"
+        btnObj.attr["data-bs-toggle"] = "collapse";
+        btnObj.attr["aria-expanded"] = `false`;
+        btnObj.attr["data-bs-target"] = `#${colObj.id}`;
+        btnObj.attr["aria-controls"] = `${colObj.id}`;
+        this.appendHtml(btnObj);
+        this.appendHtml(colObj);
+        return colObj;
+    }
+    mkRow() {
+        // https://getbootstrap.com/docs/5.0/layout/gutters/#row-columns-gutters
+        this.tag = "div";
+        this.class = "row align-items-start";
+        return this;
+    }
+    addSlider(slideName, min, max, step) {
+        // https://getbootstrap.com/docs/5.0/forms/range/
+        // <label for= "customRange3" class= "form-label" > Example range < /label>
+        // < input type = "range" class="form-range" min = "0" max = "5" step = "0.5" id = "customRange3" >
+        // var rowObj = new JguiMake(null).mkRow()
+        var labelObj = new JguiMake("label").genId();
+        var rangeObj = new JguiMake("input").genId();
+        labelObj.tag = "label";
+        labelObj.attr.for = `${rangeObj.id}`;
+        labelObj.attr.class = "form-label";
+        labelObj.html = `${slideName}`;
+        labelObj.style.margin = "0";
+        rangeObj.tag = `input`;
+        rangeObj.attr.type = `range`;
+        rangeObj.attr.class = `form-range`;
+        rangeObj.attr.min = `${min}`;
+        rangeObj.attr.max = `${max}`;
+        rangeObj.attr.step = `${step}`;
+        rangeObj.style.margin = "0";
+        rangeObj.style["padding-left"] = "0.5rem";
+        rangeObj.style["padding-right"] = "0.5rem";
+        rangeObj.attr.oninput = `${labelObj.id}.innerHTML="${slideName} "+value`;
+        // rangeObj.listeners = `input`
+        // rangeObj.listeners = `change`
+        // rangeObj.listeners = `oninput`
+        this.appendHtml(labelObj);
+        this.appendHtml(rangeObj);
+        // rowObj.appendHtml(labelObj)
+        // rowObj.appendHtml(rangeObj)
+        // this.appendHtml(rowObj)
+        return rangeObj;
+    }
+    genId() {
+        var bid = Random_1.randomAlphabetString(5);
+        this.id = `${this.tag}${bid}`;
+        return this;
+    }
+    appendHtml(elem) {
+        if (!this.html)
+            this.html = [];
+        this.html.push(elem);
+        // return
+    }
+    appendListener(elem) {
+        if (!this.listeners)
+            this.listeners = [];
+        this.listeners.push(elem);
+        // return
+    }
+    addEventListener(evMng, evName, listenerCbk) {
+        // TODO maybe option to not pass the Event to move less data ???
+        var jListen = {
+            name: evName,
+            id: `${evName}-${this.id}.${Random_1.randomAlphabetString(6)}` // TODO could be better
+        };
+        evMng.registerListener(jListen.id, listenerCbk);
+        this.appendListener(jListen);
+        return this;
+    }
+}
+exports.JguiMake = JguiMake;
+class JguiManager {
+    constructor(worker, workerName) {
+        this.listenersJguiMap = new Map();
+        this.worker = worker;
+        this.workerName = workerName;
+    }
+    registerListener(lisId, listenerCbk) {
+        this.listenersJguiMap.set(lisId, listenerCbk);
+    }
+    dispachListener(lisId, event) {
+        var lisCbk = this.listenersJguiMap.get(lisId);
+        lisCbk(event);
+    }
+}
+exports.JguiManager = JguiManager;
+
+
+/***/ }),
+
 /***/ "./src/modules/Config.ts":
 /*!*******************************!*\
   !*** ./src/modules/Config.ts ***!
@@ -97655,9 +97835,6 @@ exports.Terrain = Terrain;
 
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MessageType = exports.Config = void 0;
-/*
-* Used to store and send VERRY simple data across the main thread and workers
-*/
 const Convert = __webpack_require__(/*! ../utils/Convert */ "./src/utils/Convert.ts");
 const DrawD3Terrain_1 = __webpack_require__(/*! ./DrawD3Terrain */ "./src/modules/DrawD3Terrain.ts");
 // TODO things to add, with parameters being in SpaceConfig!
@@ -97694,6 +97871,7 @@ var MessageType;
     MessageType["RefreshConfig"] = "RefreshConfig";
     MessageType["CanvasReady"] = "CanvasReady";
     MessageType["CanvasMake"] = "CanvasMake";
+    MessageType["RefreshJGUI"] = "RefreshJGUI";
 })(MessageType = exports.MessageType || (exports.MessageType = {}));
 
 
@@ -98019,8 +98197,8 @@ class DrawD3Terrain {
         fakeSelect.call(this.zoom);
         this.points = {
             type: "MultiPoint",
-            coordinates: Points.makeGeoPtsSquares(0)
-            // coordinates: Points.makeGeoPtsFibb(100)
+            // coordinates: Points.makeGeoPtsSquares(0)
+            coordinates: Points.makeGeoPtsFibb(1000)
             // coordinates: Points.makeGeoPtsRandOk(1000)
         };
         this.voronoi = d3_geo_voronoi_1.geoVoronoi()(this.points.coordinates);
@@ -98286,6 +98464,7 @@ class DrawThreePlsys {
         this.frost_zone.rotateX(Convert.degToRad(-90));
         this.frost_zone.position.y = -10; // DRAWUNIT
         this.scene.add(this.frost_zone);
+        console.log("this.world", this.world);
     }
     cameraMoved() {
         this.distToTarget = this.camera.position.distanceTo(this.controls.target);
@@ -98670,6 +98849,7 @@ const Config_1 = __webpack_require__(/*! ./Config */ "./src/modules/Config.ts");
 const SharedData_1 = __webpack_require__(/*! ./SharedData */ "./src/modules/SharedData.ts");
 const WorldData_1 = __webpack_require__(/*! ./WorldData */ "./src/modules/WorldData.ts");
 const Units = __webpack_require__(/*! ../utils/Units */ "./src/utils/Units.ts");
+const JguiMake_1 = __webpack_require__(/*! ../gui/JguiMake */ "./src/gui/JguiMake.ts");
 class BaseWorker {
     constructor(config, worker, workerName, event) {
         this.sharedData = new SharedData_1.SharedData();
@@ -98685,8 +98865,9 @@ class BaseWorker {
         this.spread_objects(this.world);
         this.world.initWorker().then(() => {
             this.worker.postMessage({ message: Config_1.MessageType.Ready, from: this.name });
+        }).then(() => {
+            this.init();
         });
-        this.init();
     }
     spread_objects(object_) {
         if (object_.sharedData === null)
@@ -98697,8 +98878,8 @@ class BaseWorker {
             object_.world = this.world;
     }
     getMessage(event) {
-        // console.debug(`#HERELINE ${this.name} getMessage  ${event.data.message}`);
         var _a;
+        console.debug(`#HERELINE ${this.name} getMessage  ${event.data.message}`);
         if (((_a = event === null || event === void 0 ? void 0 : event.data) === null || _a === void 0 ? void 0 : _a.config) && this.config)
             this.config.copy(event.data.config);
         const message_ = event.data.message;
@@ -98735,11 +98916,19 @@ class BaseDrawUpdateWorker extends BaseWorker {
     constructor(config, worker, workerName, event) {
         super(config, worker, workerName, event);
         this.mapDraws = new Map();
+        this.workerJguiManager = new JguiMake_1.JguiManager(worker, workerName);
     }
-    callEvent(event, event_id) {
-        // console.log("event_id, event", event_id, event);
-        var drawRedirect = this.mapDraws.get(event_id);
-        drawRedirect.fakeDOM.dispatchEvent(event);
+    callEvent(woEvent) {
+        var _a, _b;
+        var event = woEvent.data.event;
+        var event_id = woEvent.data.event_id;
+        if ((_b = (_a = woEvent.data) === null || _a === void 0 ? void 0 : _a.metadata) === null || _b === void 0 ? void 0 : _b.isFromJgui) {
+            this.workerJguiManager.dispachListener(event_id, woEvent);
+        }
+        else {
+            var drawRedirect = this.mapDraws.get(event_id);
+            drawRedirect.fakeDOM.dispatchEvent(event);
+        }
     }
 }
 exports.BaseDrawUpdateWorker = BaseDrawUpdateWorker;
@@ -98812,6 +99001,7 @@ const GenWorkerMetadata_1 = __webpack_require__(/*! ./GenWorkerMetadata */ "./sr
 const Config_1 = __webpack_require__(/*! ./Config */ "./src/modules/Config.ts");
 const DrawThreePlsys_1 = __webpack_require__(/*! ./DrawThreePlsys */ "./src/modules/DrawThreePlsys.ts");
 const DrawD3Plsys_1 = __webpack_require__(/*! ./DrawD3Plsys */ "./src/modules/DrawD3Plsys.ts");
+const JguiMake_1 = __webpack_require__(/*! ../gui/JguiMake */ "./src/gui/JguiMake.ts");
 // TODO move generation in this worker instead of in the main thread
 // TODO simplify the refresh deep/shallow mechanisms since most actions will be done in this worker
 // TODO store position and rotation of objects inside themselves after time/orbit update so other workers can do "basic" checks and calculations
@@ -98821,11 +99011,7 @@ class PlanetSysWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
         // this.ticker.tick_interval = Units.LOOP_INTERVAL * 50;
     }
     init() {
-        this.world.initWorker().then(() => {
-            //     return this.world.initPlSys();
-            // }).then(() => {
-            //     return this.world.writeDeep();
-            // }).then(() => {
+        Promise.resolve().then(() => {
             this.worker.postMessage({
                 message: Config_1.MessageType.CanvasMake,
                 metaCanvas: {
@@ -98843,7 +99029,14 @@ class PlanetSysWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
                 }
             });
         }).then(() => {
-            this.refreshDeep(true);
+            return this.world.initPlSys();
+        }).then(() => {
+            console.log("this.world", this.world);
+            //     return this.world.writeDeep();
+        }).then(() => {
+            // return this.refreshDeep(true);
+        }).then(() => {
+            this.makeJgiu();
         });
     }
     CanvasReady(event) {
@@ -98854,6 +99047,7 @@ class PlanetSysWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
                 this.mapDraws.set(event.data.canvas_id, draw1_);
                 this.spread_objects(draw1_);
                 draw1_.init(event);
+                draw1_.updateDeep();
                 break;
             case `${this.name}-canvas-DrawD3Plsys`:
                 var draw2_ = new DrawD3Plsys_1.DrawD3Plsys();
@@ -98874,7 +99068,7 @@ class PlanetSysWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
                 this.CanvasReady(event);
                 break;
             case Config_1.MessageType.Event:
-                this.callEvent(event.data.event, event.data.event_id);
+                this.callEvent(event);
                 break;
             case Config_1.MessageType.RefreshDBDeep:
             case Config_1.MessageType.RefreshDBShallow:
@@ -98912,8 +99106,8 @@ class PlanetSysWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
         });
     }
     async refreshDeep(doSpecial = true) {
-        console.debug("#HERELINE DrawWorker refreshDeep");
-        await this.world.readDeep();
+        // console.debug("#HERELINE DrawWorker refreshDeep");
+        // await this.world.readDeep();
         for (const draw_ of this.mapDraws.values())
             draw_.updateDeep();
         if (doSpecial) {
@@ -98924,7 +99118,7 @@ class PlanetSysWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
     }
     async refreshShallow(doSpecial = true) {
         // console.debug("#HERELINE DrawWorker refreshShallow");
-        await this.world.readShallow();
+        // await this.world.readShallow();
         for (const draw_ of this.mapDraws.values())
             draw_.updateShallow();
         if (doSpecial) {
@@ -98935,13 +99129,13 @@ class PlanetSysWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
     }
     async refreshTick(doSpecial = true) {
         // console.debug("#HERELINE DrawWorker refreshShallow");
-        await this.world.readShallow();
+        // await this.world.readShallow();
         if (doSpecial) {
             this.updatePlSys();
             for (const draw_ of this.mapDraws.values())
                 draw_.draw();
-            await this.world.writeShallow();
-            this.tellMainToUpdate();
+            // await this.world.writeShallow();
+            // this.tellMainToUpdate();
         }
     }
     updatePlSys() {
@@ -98950,6 +99144,43 @@ class PlanetSysWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
         this.world.planetarySystem.time.ey += this.config.timeUpdSpeed;
         // console.log("this.world.planetary_system.time.ey", this.world.planetary_system.time.ey);
         // this.updateTerrain();
+    }
+    makeJgiu() {
+        var plsys = this.world.planetarySystem;
+        var workerJgui;
+        [this.workerJguiMain, workerJgui] = new JguiMake_1.JguiMake(null).mkWorkerJgui("plsys", "200");
+        workerJgui.addButton("genStartingPlanetSystem").addEventListener(this.workerJguiManager, "click", (event) => {
+            this.world.spaceFactory.genStartingPlanetSystem(plsys);
+            this.refreshDeep();
+        });
+        workerJgui.addButton("genStar").addEventListener(this.workerJguiManager, "click", (event) => {
+            this.world.spaceFactory.genStar(plsys, plsys);
+            this.refreshDeep();
+        });
+        workerJgui.addButton("genPTypeStarts").addEventListener(this.workerJguiManager, "click", (event) => {
+            this.world.spaceFactory.genPTypeStarts(plsys, plsys);
+            this.refreshDeep();
+        });
+        workerJgui.addButton("genOrbitsSimple").addEventListener(this.workerJguiManager, "click", (event) => {
+            this.world.spaceFactory.genOrbitsSimple(plsys, plsys.root());
+            this.refreshDeep();
+        });
+        workerJgui.addButton("genOrbitsSimpleMoons").addEventListener(this.workerJguiManager, "click", (event) => {
+            this.world.spaceFactory.genOrbitsSimpleMoons(plsys, plsys.root());
+            this.refreshDeep();
+        });
+        // workerJgui.addButton("genOrbitsUniform").addEventListener(this.workerJguiManager, "click", (event: WorkerEvent) => {
+        //     this.world.spaceFactory.genOrbitsUniform(plsys, plsys.root())
+        //     this.refreshDeep()
+        // })
+        // console.log("this.workerJguiMain", this.workerJguiMain);
+        this.worker.postMessage({
+            message: Config_1.MessageType.RefreshJGUI,
+            jgui: this.workerJguiMain,
+            metadata: {
+                isMainWorkerContainer: true,
+            }
+        });
     }
 }
 exports.PlanetSysWorker = PlanetSysWorker;
@@ -99031,12 +99262,13 @@ exports.TerrainWorker = void 0;
 const GenWorkerMetadata_1 = __webpack_require__(/*! ./GenWorkerMetadata */ "./src/modules/GenWorkerMetadata.ts");
 const Config_1 = __webpack_require__(/*! ./Config */ "./src/modules/Config.ts");
 const DrawD3Terrain_1 = __webpack_require__(/*! ./DrawD3Terrain */ "./src/modules/DrawD3Terrain.ts");
+const JguiMake_1 = __webpack_require__(/*! ../gui/JguiMake */ "./src/gui/JguiMake.ts");
 class TerrainWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
     constructor(config, worker, workerName, event) {
         super(config, worker, workerName, event);
     }
     init() {
-        this.world.initWorker().then(() => {
+        Promise.resolve().then(() => {
             this.worker.postMessage({
                 message: Config_1.MessageType.CanvasMake,
                 metaCanvas: {
@@ -99046,7 +99278,7 @@ class TerrainWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
                 }
             });
         }).then(() => {
-            // this.refreshDeep(true);
+            this.makeJgiu();
         });
     }
     CanvasReady(event) {
@@ -99064,14 +99296,14 @@ class TerrainWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
         }
     }
     getMessageExtra(event) {
-        console.debug(`#HERELINE ${this.name} getMessageExtra  ${event.data.message}`);
+        // console.debug(`#HERELINE ${this.name} getMessageExtra  ${event.data.message}`);
         const message_ = event.data.message;
         switch (message_) {
             case Config_1.MessageType.CanvasReady:
                 this.CanvasReady(event);
                 break;
             case Config_1.MessageType.Event:
-                this.callEvent(event.data.event, event.data.event_id);
+                this.callEvent(event);
                 break;
             case Config_1.MessageType.RefreshDBDeep:
             case Config_1.MessageType.RefreshDBShallow:
@@ -99138,6 +99370,33 @@ class TerrainWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
             // this.tellMainToUpdate();
         }
     }
+    makeJgiu() {
+        var workerJgui;
+        [this.workerJguiMain, workerJgui] = new JguiMake_1.JguiMake(null).mkWorkerJgui("terr", "600");
+        workerJgui.addButton("Test 1").addEventListener(this.workerJguiManager, "click", (event) => {
+            console.log("??????????????????? event", event.data.event);
+        });
+        workerJgui.addButton("Test 2").addEventListener(this.workerJguiManager, "click", (event) => {
+            console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!! event", event.data.event);
+        });
+        // var subStuff = workerJgui.addColapse("More stuff", true)
+        // subStuff.addButton("Stuff 1")
+        // subStuff.addButton("Stuff 2")
+        // subStuff.addButton("Stuff 3")
+        // var mrrStuff = subStuff.addColapse("MORRRR stuff", true)
+        // mrrStuff.addButton("Thing 1")
+        // mrrStuff.addButton("Thing 2")
+        // mrrStuff.addButton("Thing 3")
+        // subStuff.addSlider("SLIDE", 0, 100, 0.1)
+        // console.log("this.workerJguiMain", this.workerJguiMain);
+        this.worker.postMessage({
+            message: Config_1.MessageType.RefreshJGUI,
+            jgui: this.workerJguiMain,
+            metadata: {
+                isMainWorkerContainer: true,
+            }
+        });
+    }
 }
 exports.TerrainWorker = TerrainWorker;
 
@@ -99196,7 +99455,7 @@ class WorldData {
     async initPlSys() {
         console.debug("#HERELINE WorldData initPlSys");
         if (this.config.keepDbAtPageRefresh) {
-            return this.readDeep();
+            // return this.readDeep();
         }
         else {
             this.planetarySystem.init();
@@ -100234,7 +100493,7 @@ exports.makeGeoPtsRandBad2 = makeGeoPtsRandBad2;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.pickChanceOverlaping = exports.customComparator = exports.pickAllOverlaping = exports.wiggle_down = exports.wiggle_up = exports.wiggle = exports.random_int_clamp = exports.random_float_clamp = exports.randPercent = void 0;
+exports.randomPartOfArray = exports.randomAlphabetString = exports.pickChanceOverlaping = exports.customComparator = exports.pickAllOverlaping = exports.wiggle_down = exports.wiggle_up = exports.wiggle = exports.random_int_clamp = exports.random_float_clamp = exports.randPercent = void 0;
 function randPercent() {
     return Math.random() * 100;
 }
@@ -100306,6 +100565,25 @@ function pickChanceOverlaping(spot, pickData) {
     return null;
 }
 exports.pickChanceOverlaping = pickChanceOverlaping;
+var lowAlphabet = 'abcdefghijklmnopqrstuvwxyz'.split('');
+var uppAlphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+var allAlphabet = [...lowAlphabet, ...uppAlphabet];
+function randomAlphabetString(size_ = 6) {
+    return randomPartOfArray(allAlphabet, size_).join("");
+}
+exports.randomAlphabetString = randomAlphabetString;
+function randomPartOfArray(array, size_) {
+    var l = array.length, r, b;
+    while (l) {
+        r = Math.floor(Math.random() * --l);
+        b = array[r];
+        array[r] = array[l];
+        array[l] = b;
+    }
+    // const size_ = Math.floor(Math.random() * array.length);
+    return array.slice(0, size_).sort();
+}
+exports.randomPartOfArray = randomPartOfArray;
 
 
 /***/ }),

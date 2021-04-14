@@ -104015,6 +104015,7 @@ class SpaceFactory {
     }
     getWorldData() { return this.worldData; }
     genStartingPlanetSystem(plsys) {
+        plsys.clearSatelites();
         if (Random.randPercent() < 60)
             this.genStar(plsys, plsys, "habitable");
         else
@@ -104148,8 +104149,7 @@ class SpaceFactory {
     }
     genStar(plsys, root, type) {
         root.clearSatelites();
-        // console.debug("this.getWorldData().idObjMap", this.getWorldData().idObjMap);
-        // console.debug("root.satelites.length,root.satelites", root.satelites.length, root.satelites);
+        console.log("plsys", plsys);
         var star_ = new Star_1.Star(this.getWorldData());
         switch (type) {
             case "sun":
@@ -104663,6 +104663,332 @@ exports.Terrain = Terrain;
 
 /***/ }),
 
+/***/ "./src/gui/JguiMake.ts":
+/*!*****************************!*\
+  !*** ./src/gui/JguiMake.ts ***!
+  \*****************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.JguiManager = exports.JguiMake = void 0;
+const Random_1 = __webpack_require__(/*! ../utils/Random */ "./src/utils/Random.ts");
+class JguiMake {
+    constructor(tag_) {
+        this.tag = null;
+        this.attr = {};
+        this.style = {};
+        this.html = null;
+        this.tag = tag_;
+        this.genId();
+    }
+    // just for convenience
+    get id() { return this.attr.id; }
+    set id(value) { this.attr.id = value; }
+    get class() { return this.attr.class; }
+    set class(value) { this.attr.class = value; }
+    get type() { return this.attr.type; }
+    set type(value) { this.attr.type = value; }
+    mkWorkerJgui(id, order) {
+        this.tag = "div";
+        this.id = id;
+        this.class = "d-grid gap-1 bg-light border shadow-sm rounded ";
+        // this.style.zIndex = "200";
+        // this.style.position = "fixed";
+        // this.style.top = "10px";
+        // this.style.left = "10px";
+        // this.style.width = "256px";
+        this.attr.jguiOrder = order;
+        var coll = this.addColapse(id, true);
+        return [this, coll];
+    }
+    mkContainer() {
+        // https://getbootstrap.com/docs/5.0/layout/containers/
+        this.tag = "div";
+        this.class = "d-grid gap-1 bg-light border shadow-sm rounded ";
+        return this;
+    }
+    mkButton(name, type = "primary") {
+        // https://getbootstrap.com/docs/5.0/components/buttons/
+        this.tag = "button";
+        // this.listeners = "click";
+        this.attr.class = `btn btn-${type} btn-sm`;
+        this.attr.type = "button";
+        this.html = name;
+        this.style["padding"] = "0"; //  no padding
+        return this;
+    }
+    addButton(btnName) {
+        // https://getbootstrap.com/docs/5.0/components/buttons/
+        var btnObj = new JguiMake(null).mkButton(btnName);
+        this.appendHtml(btnObj);
+        return btnObj;
+    }
+    mkColapse(name, expanded) {
+        // https://getbootstrap.com/docs/5.0/components/collapse/
+        this.tag = "div";
+        // this.class = "collapse";
+        // this.class = "collapse gap-1 bg-light border shadow-sm rounded  ";
+        this.class = "collapse gap-1 card card-body";
+        if (expanded)
+            this.class += " show";
+        this.genId();
+        this.style["padding-top"] = "0.1rem";
+        this.style["padding-left"] = "0.4rem";
+        this.style["padding-bottom"] = "0px";
+        this.style["padding-right"] = "0px";
+        return this;
+    }
+    addColapse(colName, expanded = false) {
+        // https://getbootstrap.com/docs/5.0/components/collapse/
+        // https://getbootstrap.com/docs/5.0/components/card/
+        var btnName = `Toggle ${colName}`;
+        var btnObj = new JguiMake(null).mkButton(btnName, "secondary");
+        var colObj = new JguiMake(null).mkColapse(colName, expanded);
+        btnObj.genId();
+        // btnObj.attr["data-bs-toggle"] = "button"
+        btnObj.attr["data-bs-toggle"] = "collapse";
+        btnObj.attr["aria-expanded"] = `false`;
+        btnObj.attr["data-bs-target"] = `#${colObj.id}`;
+        btnObj.attr["aria-controls"] = `${colObj.id}`;
+        this.appendHtml(btnObj);
+        this.appendHtml(colObj);
+        return colObj;
+    }
+    mkRow() {
+        // https://getbootstrap.com/docs/5.0/layout/gutters/#row-columns-gutters
+        this.tag = "div";
+        this.class = "row align-items-start";
+        return this;
+    }
+    addSlider(slideName, min, max, step) {
+        // https://getbootstrap.com/docs/5.0/forms/range/
+        // <label for= "customRange3" class= "form-label" > Example range < /label>
+        // < input type = "range" class="form-range" min = "0" max = "5" step = "0.5" id = "customRange3" >
+        // var rowObj = new JguiMake(null).mkRow()
+        var labelObj = new JguiMake("label").genId();
+        var rangeObj = new JguiMake("input").genId();
+        labelObj.tag = "label";
+        labelObj.attr.for = `${rangeObj.id}`;
+        labelObj.attr.class = "form-label";
+        labelObj.html = `${slideName}`;
+        labelObj.style.margin = "0";
+        rangeObj.tag = `input`;
+        rangeObj.attr.type = `range`;
+        rangeObj.attr.class = `form-range`;
+        rangeObj.attr.min = `${min}`;
+        rangeObj.attr.max = `${max}`;
+        rangeObj.attr.step = `${step}`;
+        rangeObj.style.margin = "0";
+        rangeObj.style["padding-left"] = "0.5rem";
+        rangeObj.style["padding-right"] = "0.5rem";
+        rangeObj.attr.oninput = `${labelObj.id}.innerHTML="${slideName} "+value`;
+        // rangeObj.listeners = `input`
+        // rangeObj.listeners = `change`
+        // rangeObj.listeners = `oninput`
+        this.appendHtml(labelObj);
+        this.appendHtml(rangeObj);
+        // rowObj.appendHtml(labelObj)
+        // rowObj.appendHtml(rangeObj)
+        // this.appendHtml(rowObj)
+        return rangeObj;
+    }
+    genId() {
+        var bid = Random_1.randomAlphabetString(5);
+        this.id = `${this.tag}${bid}`;
+        return this;
+    }
+    appendHtml(elem) {
+        if (!this.html)
+            this.html = [];
+        this.html.push(elem);
+        // return
+    }
+    appendListener(elem) {
+        if (!this.listeners)
+            this.listeners = [];
+        this.listeners.push(elem);
+        // return
+    }
+    addEventListener(evMng, evName, listenerCbk) {
+        // TODO maybe option to not pass the Event to move less data ???
+        var jListen = {
+            name: evName,
+            id: `${evName}-${this.id}.${Random_1.randomAlphabetString(6)}` // TODO could be better
+        };
+        evMng.registerListener(jListen.id, listenerCbk);
+        this.appendListener(jListen);
+        return this;
+    }
+}
+exports.JguiMake = JguiMake;
+class JguiManager {
+    constructor(worker, workerName) {
+        this.listenersJguiMap = new Map();
+        this.worker = worker;
+        this.workerName = workerName;
+    }
+    registerListener(lisId, listenerCbk) {
+        this.listenersJguiMap.set(lisId, listenerCbk);
+    }
+    dispachListener(lisId, event) {
+        var lisCbk = this.listenersJguiMap.get(lisId);
+        lisCbk(event);
+    }
+}
+exports.JguiManager = JguiManager;
+
+
+/***/ }),
+
+/***/ "./src/gui/JsonToGUI.ts":
+/*!******************************!*\
+  !*** ./src/gui/JsonToGUI.ts ***!
+  \******************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.JsonToGUI = void 0;
+const d3 = __webpack_require__(/*! d3 */ "./node_modules/d3/index.js");
+const Config_1 = __webpack_require__(/*! ../modules/Config */ "./src/modules/Config.ts");
+const EventUtils = __webpack_require__(/*! ../utils/EventUtils */ "./src/utils/EventUtils.ts");
+class JsonToGUI {
+    constructor() {
+        this.allContainer = null;
+        this.mainGuiContainer = null;
+        this.workerJguiMap = new Map();
+        this.listenersJguiMap = new Map();
+        this.allContainer = d3.select("body")
+            .append("div")
+            .attr("id", "allJguiDiv")
+            .style("zIndex", "200")
+            .style("position", "fixed")
+            .style("top", "0px")
+            .style("left", "0px");
+        this.mainGuiContainer = this.allContainer
+            .append("div")
+            .attr("class", "d-grid gap-1 bg-light border shadow-sm rounded ")
+            .attr("id", "MainWorkerJguiDiv")
+            .style("zIndex", "200")
+            .style("position", "fixed")
+            .style("top", "10px")
+            .style("left", "10px")
+            .style("width", "200px");
+    }
+    refreshJgui(the_worker, event) {
+        var workerJgui = event.data.jgui;
+        if (event.data.metadata.isMainWorkerContainer) {
+            this.workerJguiMap.set(the_worker, workerJgui);
+            var allJgui = [...this.workerJguiMap.values()].sort((a, b) => {
+                var textA = a.attr.jguiOrder.toLowerCase();
+                var textB = b.attr.jguiOrder.toLowerCase();
+                return (textA < textB) ? -1 : (textA > textB) ? 1 : 0;
+            });
+            // console.log("allJgui", allJgui);
+            var dat = this.mainGuiContainer.selectChildren("*")
+                .data(allJgui, this.getId);
+            dat.enter().call(this.enterSelectTags.bind(this));
+            dat.exit().call(this.exitSelectTags.bind(this));
+        }
+        this.popJguiListeners(the_worker, workerJgui);
+        // console.log("this.listenersJguiMap", this.listenersJguiMap);
+    }
+    popJguiListeners(the_worker, workerJgui) {
+        if (workerJgui === null || workerJgui === void 0 ? void 0 : workerJgui.listeners)
+            for (const listen of workerJgui.listeners)
+                this.listenersJguiMap.set(listen.id, the_worker);
+        if (Array.isArray(workerJgui === null || workerJgui === void 0 ? void 0 : workerJgui.html))
+            for (const elem of workerJgui.html)
+                this.popJguiListeners(the_worker, elem);
+    }
+    getId(d) {
+        var _a;
+        return `${d === null || d === void 0 ? void 0 : d.tag}-${(_a = d === null || d === void 0 ? void 0 : d.attr) === null || _a === void 0 ? void 0 : _a.id}`;
+    }
+    addTag(jguiMake, index, groups) {
+        var domElem = groups[index];
+        var d3Elem = d3.select(domElem);
+        if (jguiMake === null || jguiMake === void 0 ? void 0 : jguiMake.listeners)
+            for (const listen of jguiMake.listeners) {
+                domElem.addEventListener(listen.name, (event) => {
+                    // console.log("event", event);
+                    var worker = this.listenersJguiMap.get(listen.id);
+                    if (worker) {
+                        var basicEvent = EventUtils.getBasicEvent(event);
+                        worker.postMessage({
+                            message: Config_1.MessageType.Event,
+                            event: basicEvent,
+                            event_id: listen.id,
+                            jgui: jguiMake,
+                            metadata: { isFromJgui: true }
+                        });
+                    }
+                    // console.log(" event.target.value", (event.target as any).value);
+                });
+                // d3Elem.on(datum.listeners, (event: any, datEv: any) => {
+                //     console.log("event", event);
+                //     console.log(" event.target.value", (event.target as any).value);
+                // })
+            }
+    }
+    setTag(datum, index, groups) {
+        var domElem = groups[index];
+        var d3Elem = d3.select(domElem);
+        if (datum === null || datum === void 0 ? void 0 : datum.attr)
+            for (const key in datum.attr) {
+                d3Elem.attr(key, datum.attr[key]);
+            }
+        if (datum === null || datum === void 0 ? void 0 : datum.style)
+            for (const key in datum.style) {
+                d3Elem.style(key, datum.style[key]);
+            }
+        if (typeof (datum === null || datum === void 0 ? void 0 : datum.html) == "string")
+            d3Elem.html(datum.html);
+        else if (Array.isArray(datum === null || datum === void 0 ? void 0 : datum.html)) {
+            var dat = d3Elem
+                .selectChildren("*")
+                .data(datum.html, this.getId);
+            dat.enter().call(this.enterSelectTags.bind(this));
+            dat.exit().call(this.exitSelectTags.bind(this));
+        }
+        // else if (typeof datum?.html == "object") {
+        // }
+    }
+    removeTag(datum, index, groups) {
+        var domElem = groups[index];
+        var d3Elem = d3.select(domElem);
+        console.log(`removeTag .........................`);
+        console.log("datum", datum);
+        console.log("index", index);
+        console.log("groups", groups);
+        console.log("elem", domElem);
+        console.log("d3elem", d3Elem);
+    }
+    enterSelectTags(enter) {
+        enter
+            .append(d => document.createElement(d.tag))
+            .each(this.addTag.bind(this))
+            .call(this.setSelectTags.bind(this));
+    }
+    setSelectTags(update) {
+        return update
+            .each(this.setTag.bind(this));
+    }
+    exitSelectTags(remove) {
+        remove.each(console.log);
+        remove.remove();
+    }
+}
+exports.JsonToGUI = JsonToGUI;
+
+
+/***/ }),
+
 /***/ "./src/index.ts":
 /*!**********************!*\
   !*** ./src/index.ts ***!
@@ -104684,123 +105010,6 @@ Object.defineProperty(exports, "MainManager", { enumerable: true, get: function 
 
 /***/ }),
 
-/***/ "./src/modules/CanvasManager.ts":
-/*!**************************************!*\
-  !*** ./src/modules/CanvasManager.ts ***!
-  \**************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.CanvasManager = exports.SCROLL_THING_SIZE = void 0;
-const Config_1 = __webpack_require__(/*! ./Config */ "./src/modules/Config.ts");
-exports.SCROLL_THING_SIZE = 20;
-class CanvasManager {
-    static makeWorkerCanvas(mngr, the_worker, event) {
-        var metaCanvas = event.data.metaCanvas;
-        var canvas = CanvasManager.addCanvas(metaCanvas, mngr, the_worker);
-        CanvasManager.sortExistingElements(metaCanvas, mngr, the_worker);
-        CanvasManager.addMouseSharedBuffer(metaCanvas, mngr, the_worker, canvas); // TODO proper mouse sharedData
-        CanvasManager.addResizeListener(metaCanvas, mngr, the_worker, canvas);
-        CanvasManager.addRightClickStuff(metaCanvas, mngr, the_worker, canvas);
-        mngr.viewableThings.push(canvas);
-        // TODO have a more dynamic ID-based way of propagating events
-        if (metaCanvas.generalFlags.includes("orbit"))
-            mngr.evmng.addOrbitCtrlEvents(canvas, canvas.id, the_worker);
-        if (metaCanvas.generalFlags.includes("d3"))
-            mngr.evmng.addEventsD3Canvas(canvas, canvas.id, the_worker);
-        var canvasOffscreen = canvas.transferControlToOffscreen();
-        the_worker.postMessage({
-            message: Config_1.MessageType.CanvasReady,
-            config: mngr.config,
-            metaCanvas: metaCanvas,
-            canvas: canvasOffscreen,
-            canvas_id: canvas.id,
-        }, [canvasOffscreen]);
-    }
-    static addRightClickStuff(metaCanvas, mngr, the_worker, canvas) {
-        var selectListener = (evt_) => {
-            canvas.focus();
-            evt_.preventDefault();
-            if (metaCanvas.generalFlags.includes("orbit"))
-                if (mngr.sharedData.selectedId !== mngr.sharedData.hoverId) {
-                    var selected = mngr.world.idObjMap.get(mngr.sharedData.hoverId);
-                    mngr.gui.selectOrbElement(selected);
-                }
-        };
-        canvas.addEventListener("contextmenu", selectListener.bind(mngr));
-    }
-    static addMouseSharedBuffer(metaCanvas, mngr, the_worker, canvas) {
-        // console.log("canvas", canvas);
-        // "mousedown" "mouseenter" "mouseleave" "mousemove" "mouseout" "mouseover" "mouseup":
-        if (metaCanvas.generalFlags.includes("orbit")) {
-            canvas.addEventListener('mousemove', (evt) => {
-                var rect = canvas.getBoundingClientRect();
-                mngr.sharedData.mousex = evt.clientX - rect.left;
-                mngr.sharedData.mousey = evt.clientY - rect.top;
-            }, false);
-            canvas.addEventListener('mouseleave', () => {
-                mngr.sharedData.mousex = null;
-                mngr.sharedData.mousey = null;
-            }, false);
-        }
-    }
-    static addResizeListener(metaCanvas, mngr, the_worker, canvas) {
-        var canvasResize = () => {
-            var fakeResizeEvent = new Event("resize");
-            fakeResizeEvent.width = window.innerWidth - exports.SCROLL_THING_SIZE;
-            fakeResizeEvent.height = window.innerHeight;
-            canvas.dispatchEvent(fakeResizeEvent);
-            // canvasOffscreen.width = fakeResizeEvent.width;
-            // canvasOffscreen.height = fakeResizeEvent.height;
-            // console.log("initThreePlsysReal canvas", canvas);
-        };
-        // window.addEventListener('resize', canvasResize.bind(this));
-        window.addEventListener('resize', canvasResize);
-        canvasResize();
-        mngr.evmng.addResizeEvents(canvas, canvas.id, the_worker);
-    }
-    static sortExistingElements(metaCanvas, mngr, the_worker) {
-        var body = document.getElementsByTagName("body")[0];
-        var stores_li = body.getElementsByTagName("canvas");
-        [].slice.call(stores_li).sort(function (a, b) {
-            var textA = a.getAttribute('order').toLowerCase();
-            var textB = b.getAttribute('order').toLowerCase();
-            return (textA < textB) ? -1 : (textA > textB) ? 1 : 0;
-        })
-            .forEach(function (el) { el.parentNode.appendChild(el); });
-    }
-    static addCanvas(metaCanvas, mngr, the_worker) {
-        var body = document.getElementsByTagName("body")[0];
-        body.style.margin = "0";
-        const canvas = document.createElement('canvas');
-        canvas.id = metaCanvas.id;
-        canvas.tabIndex = 0; // so canvas can get keydown events
-        canvas.setAttribute('order', metaCanvas.order);
-        // canvas.style.position = "absolute";
-        // canvas.style.zIndex = "8";
-        // canvas.style.border = "1px solid";
-        // const div_ = document.createElement('div'); body.appendChild(div_); mngr.viewableThings.push(div_);
-        body.appendChild(canvas);
-        // Disable middle click scroll https://stackoverflow.com/a/30423436/2948519
-        canvas.onmousedown = function (e) { if (e.button === 1)
-            return false; };
-        // TODO TMP needs to have initial size set
-        // canvas.width = 300;
-        // canvas.height = 200;
-        canvas.width = window.innerWidth - exports.SCROLL_THING_SIZE;
-        canvas.height = window.innerHeight;
-        // canvas.focus();
-        return canvas;
-    }
-}
-exports.CanvasManager = CanvasManager;
-
-
-/***/ }),
-
 /***/ "./src/modules/Config.ts":
 /*!*******************************!*\
   !*** ./src/modules/Config.ts ***!
@@ -104812,9 +105021,6 @@ exports.CanvasManager = CanvasManager;
 
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MessageType = exports.Config = void 0;
-/*
-* Used to store and send VERRY simple data across the main thread and workers
-*/
 const Convert = __webpack_require__(/*! ../utils/Convert */ "./src/utils/Convert.ts");
 const DrawD3Terrain_1 = __webpack_require__(/*! ./DrawD3Terrain */ "./src/modules/DrawD3Terrain.ts");
 // TODO things to add, with parameters being in SpaceConfig!
@@ -104851,6 +105057,7 @@ var MessageType;
     MessageType["RefreshConfig"] = "RefreshConfig";
     MessageType["CanvasReady"] = "CanvasReady";
     MessageType["CanvasMake"] = "CanvasMake";
+    MessageType["RefreshJGUI"] = "RefreshJGUI";
 })(MessageType = exports.MessageType || (exports.MessageType = {}));
 
 
@@ -105176,8 +105383,8 @@ class DrawD3Terrain {
         fakeSelect.call(this.zoom);
         this.points = {
             type: "MultiPoint",
-            coordinates: Points.makeGeoPtsSquares(0)
-            // coordinates: Points.makeGeoPtsFibb(100)
+            // coordinates: Points.makeGeoPtsSquares(0)
+            coordinates: Points.makeGeoPtsFibb(1000)
             // coordinates: Points.makeGeoPtsRandOk(1000)
         };
         this.voronoi = d3_geo_voronoi_1.geoVoronoi()(this.points.coordinates);
@@ -105443,6 +105650,7 @@ class DrawThreePlsys {
         this.frost_zone.rotateX(Convert.degToRad(-90));
         this.frost_zone.position.y = -10; // DRAWUNIT
         this.scene.add(this.frost_zone);
+        console.log("this.world", this.world);
     }
     cameraMoved() {
         this.distToTarget = this.camera.position.distanceTo(this.controls.target);
@@ -105811,143 +106019,6 @@ exports.DrawThreePlsys = DrawThreePlsys;
 
 /***/ }),
 
-/***/ "./src/modules/EventsManager.ts":
-/*!**************************************!*\
-  !*** ./src/modules/EventsManager.ts ***!
-  \**************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.EventsManager = void 0;
-const Config_1 = __webpack_require__(/*! ./Config */ "./src/modules/Config.ts");
-const BASIC_OBJECTS = ["number", "boolean", "string"];
-/*
-
-https://bl.ocks.org/pkerpedjiev/32b11b37be444082762443c4030d145d D3 event filtering
-The red circles don't allow scroll-wheel zooming and drag-based panning
-
-*/
-class EventsManager {
-    // TODO add IDs to events and use them to determine the worker and FakeDOM to receive events
-    constructor() {
-    }
-    getBasicEvent(source_) {
-        var target_ = {};
-        for (const key in source_) {
-            var type_ = typeof source_[key];
-            if (BASIC_OBJECTS.includes(type_) == false)
-                continue;
-            // console.log("key", key, type_);
-            target_[key] = source_[key];
-        }
-        return target_;
-    }
-    genericRedirect(event_name, canvas, canvas_id, worker) {
-        // console.log("event_name", event_name);
-        canvas.addEventListener(event_name, (evt_) => {
-            var basic_event = this.getBasicEvent(evt_);
-            basic_event["event_id"] = canvas_id;
-            // console.log("event_name, event", event_name, basic_event);
-            worker.postMessage({
-                message: Config_1.MessageType.Event,
-                event_id: canvas_id,
-                event: basic_event,
-            });
-        });
-    }
-    genericConditionalRedirect(event_name, canvas, canvas_id, worker, eventCondition) {
-        // console.log("event_name", event_name);
-        canvas.addEventListener(event_name, (evt_) => {
-            if (eventCondition(evt_) == false)
-                return;
-            var basic_event = this.getBasicEvent(evt_);
-            basic_event["event_id"] = canvas_id;
-            // console.log("event_name, event", event_name, basic_event);
-            worker.postMessage({
-                message: Config_1.MessageType.Event,
-                event_id: canvas_id,
-                event: basic_event,
-            });
-        });
-    }
-    conditionalRedirect(event_do, event_in, event_out, canvas, canvas_id, worker) {
-        var ev_do_fun = (evt_) => {
-            var basic_event = this.getBasicEvent(evt_);
-            basic_event["event_id"] = canvas_id;
-            // console.log("event_do, event", event_do, basic_event);
-            worker.postMessage({
-                message: Config_1.MessageType.Event,
-                event_id: canvas_id,
-                event: basic_event,
-            });
-        };
-        canvas.addEventListener(event_in, (evt_) => {
-            var basic_event = this.getBasicEvent(evt_);
-            basic_event["event_id"] = canvas_id;
-            // console.log("event_in, event", event_in, basic_event);
-            canvas.addEventListener(event_do, ev_do_fun); ///////////////////
-            worker.postMessage({
-                message: Config_1.MessageType.Event,
-                event_id: canvas_id,
-                event: basic_event,
-            });
-        });
-        canvas.addEventListener(event_out, (evt_) => {
-            var basic_event = this.getBasicEvent(evt_);
-            basic_event["event_id"] = canvas_id;
-            // console.log("event_out, event", event_out, basic_event);
-            canvas.removeEventListener(event_do, ev_do_fun); ///////////////////
-            worker.postMessage({
-                message: Config_1.MessageType.Event,
-                event_id: canvas_id,
-                event: basic_event,
-            });
-        });
-    }
-    isShiftPressed(event_) {
-        return Boolean(event_.shiftKey);
-    }
-    addResizeEvents(canvas, canvas_id, worker) {
-        this.genericRedirect("resize", canvas, canvas_id, worker);
-    }
-    addOrbitCtrlEvents(canvas, canvas_id, worker) {
-        // disable right-click context on canvas ... TODO do cool stuff !!!!
-        // canvas.addEventListener("contextmenu", (evt_) => { evt_.preventDefault() });
-        // this.genericRedirect("keydown", canvas, canvas_id, worker)
-        // TODO maybe limit somehow the amount of events (pointermove,touchmove) being sent ???
-        this.conditionalRedirect("pointermove", "pointerdown", "pointerup", canvas, canvas_id, worker);
-        this.genericConditionalRedirect("wheel", canvas, canvas_id, worker, this.isShiftPressed.bind(this));
-        // this.conditionalRedirect("touchmove", "touchstart", "touchend", canvas, canvas_id, worker)
-        // canvas.addEventListener('touchstart', onTouchStart, false);
-        // canvas.addEventListener('touchend', onTouchEnd, false);
-        // canvas.addEventListener('touchmove', onTouchMove, false);
-        // canvas.addEventListener('contextmenu', onContextMenu, false);
-        // canvas.addEventListener('pointerdown', onPointerDown, false);
-        // canvas.addEventListener('keydown', onKeyDown, false);
-        // canvas.addEventListener('wheel', onMouseWheel, false);
-    }
-    addEventsD3Canvas(canvas, canvas_id, worker) {
-        // this.genericRedirect("pointerdown", canvas, canvas_id, worker)
-        // this.genericRedirect("pointerup", canvas, canvas_id, worker)
-        // this.genericRedirect("dblclick", canvas, canvas_id, worker)
-        // this.genericRedirect("mousedown", canvas, canvas_id, worker)
-        this.genericConditionalRedirect("wheel", canvas, canvas_id, worker, this.isShiftPressed.bind(this));
-        // this.genericRedirect("selectstart", canvas, canvas_id, worker)
-        // this.conditionalRedirect("pointermove", "pointerdown", "pointerup", canvas, canvas_id, worker)
-        this.conditionalRedirect("mousemove", "mousedown", "mouseup", canvas, canvas_id, worker);
-        // this.genericRedirect("mousemove", canvas, canvas_id, worker)
-        // this.genericRedirect("mousedown", canvas, canvas_id, worker)
-        // this.genericRedirect("mouseup", canvas, canvas_id, worker)
-    }
-}
-exports.EventsManager = EventsManager;
-
-
-/***/ }),
-
 /***/ "./src/modules/GenWorkerMetadata.ts":
 /*!******************************************!*\
   !*** ./src/modules/GenWorkerMetadata.ts ***!
@@ -105964,6 +106035,7 @@ const Config_1 = __webpack_require__(/*! ./Config */ "./src/modules/Config.ts");
 const SharedData_1 = __webpack_require__(/*! ./SharedData */ "./src/modules/SharedData.ts");
 const WorldData_1 = __webpack_require__(/*! ./WorldData */ "./src/modules/WorldData.ts");
 const Units = __webpack_require__(/*! ../utils/Units */ "./src/utils/Units.ts");
+const JguiMake_1 = __webpack_require__(/*! ../gui/JguiMake */ "./src/gui/JguiMake.ts");
 class BaseWorker {
     constructor(config, worker, workerName, event) {
         this.sharedData = new SharedData_1.SharedData();
@@ -105979,8 +106051,9 @@ class BaseWorker {
         this.spread_objects(this.world);
         this.world.initWorker().then(() => {
             this.worker.postMessage({ message: Config_1.MessageType.Ready, from: this.name });
+        }).then(() => {
+            this.init();
         });
-        this.init();
     }
     spread_objects(object_) {
         if (object_.sharedData === null)
@@ -105991,8 +106064,8 @@ class BaseWorker {
             object_.world = this.world;
     }
     getMessage(event) {
-        // console.debug(`#HERELINE ${this.name} getMessage  ${event.data.message}`);
         var _a;
+        console.debug(`#HERELINE ${this.name} getMessage  ${event.data.message}`);
         if (((_a = event === null || event === void 0 ? void 0 : event.data) === null || _a === void 0 ? void 0 : _a.config) && this.config)
             this.config.copy(event.data.config);
         const message_ = event.data.message;
@@ -106029,11 +106102,19 @@ class BaseDrawUpdateWorker extends BaseWorker {
     constructor(config, worker, workerName, event) {
         super(config, worker, workerName, event);
         this.mapDraws = new Map();
+        this.workerJguiManager = new JguiMake_1.JguiManager(worker, workerName);
     }
-    callEvent(event, event_id) {
-        // console.log("event_id, event", event_id, event);
-        var drawRedirect = this.mapDraws.get(event_id);
-        drawRedirect.fakeDOM.dispatchEvent(event);
+    callEvent(woEvent) {
+        var _a, _b;
+        var event = woEvent.data.event;
+        var event_id = woEvent.data.event_id;
+        if ((_b = (_a = woEvent.data) === null || _a === void 0 ? void 0 : _a.metadata) === null || _b === void 0 ? void 0 : _b.isFromJgui) {
+            this.workerJguiManager.dispachListener(event_id, woEvent);
+        }
+        else {
+            var drawRedirect = this.mapDraws.get(event_id);
+            drawRedirect.fakeDOM.dispatchEvent(event);
+        }
     }
 }
 exports.BaseDrawUpdateWorker = BaseDrawUpdateWorker;
@@ -106052,6 +106133,7 @@ exports.BaseDrawUpdateWorker = BaseDrawUpdateWorker;
 
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MainManager = void 0;
+const CanvasUtils = __webpack_require__(/*! ../utils/CanvasUtils */ "./src/utils/CanvasUtils.ts");
 const WorldData_1 = __webpack_require__(/*! ./WorldData */ "./src/modules/WorldData.ts");
 const WorldGui_1 = __webpack_require__(/*! ./WorldGui */ "./src/modules/WorldGui.ts");
 const Units = __webpack_require__(/*! ../utils/Units */ "./src/utils/Units.ts");
@@ -106059,10 +106141,9 @@ const GenWorkerInstance_ts_1 = __webpack_require__(/*! worker-loader!./GenWorker
 const Config_1 = __webpack_require__(/*! ./Config */ "./src/modules/Config.ts");
 const Time_1 = __webpack_require__(/*! ../utils/Time */ "./src/utils/Time.ts");
 const SharedData_1 = __webpack_require__(/*! ./SharedData */ "./src/modules/SharedData.ts");
-const EventsManager_1 = __webpack_require__(/*! ./EventsManager */ "./src/modules/EventsManager.ts");
 const TerrainWorker_1 = __webpack_require__(/*! ./TerrainWorker */ "./src/modules/TerrainWorker.ts");
 const PlanetSysWorker_1 = __webpack_require__(/*! ./PlanetSysWorker */ "./src/modules/PlanetSysWorker.ts");
-const CanvasManager_1 = __webpack_require__(/*! ./CanvasManager */ "./src/modules/CanvasManager.ts");
+const JsonToGUI_1 = __webpack_require__(/*! ../gui/JsonToGUI */ "./src/gui/JsonToGUI.ts");
 // TODO Make the main manager the one that calls each worker's "Ticker"
 // order of execution can be easilly imposed and probably just simpler to manage
 class MainManager {
@@ -106072,8 +106153,8 @@ class MainManager {
         this.sharedData = new SharedData_1.SharedData();
         this.viewableThings = [];
         this.gui = new WorldGui_1.WorldGui();
+        this.jgui = new JsonToGUI_1.JsonToGUI();
         this.config = new Config_1.Config();
-        this.evmng = new EventsManager_1.EventsManager();
         this.world = new WorldData_1.WorldData(this.config.WORLD_DATABASE_NAME, "MainManager");
         // TODO Actions will need to tell everyone of cases when a readDeep will be need
         // Usual var updates will be ok readShallow, structure changes need readDeep
@@ -106087,7 +106168,7 @@ class MainManager {
         Promise.resolve().then(() => {
             return this.world.preInit();
         }).then(() => {
-            return this.world.initPlSys();
+            // return this.world.initPlSys();
         }).then(() => {
             // return this.world.initTerrain();
         }).then(() => {
@@ -106133,7 +106214,7 @@ class MainManager {
         //     // waitBlocking(50); // TODO TMP !!!!!!!!!!!!!!
         //     // this.workersData.get(worker_).state = WorkerState.Paused;
         //     console.debug("MainManager pauseAll postMessage ", worker_.name);
-        //     worker_.postMessage({
+        //     worker_.postMessage(<WorkerPacket>{
         //         message: MessageType.Pause,
         //         config: this.config
         //     });
@@ -106176,7 +106257,7 @@ class MainManager {
         // for (const worker_ of this.workers) {
         //     // waitBlocking(50); // TODO TMP !!!!!!!!!!!!!!
         //     console.log("MainManager writeDeep postMessage ", worker_.name);
-        //     worker_.postMessage({
+        //     worker_.postMessage(<WorkerPacket>{
         //         message: MessageType.RefreshDBDeep,
         //         config: this.config
         //     });
@@ -106215,11 +106296,11 @@ class MainManager {
     //     worker_.name = workerType
     //     this.workers.push(worker_);
     //     // this.workersData.set(worker_, { state: WorkerState.Paused })
-    //     worker_.postMessage({ create: workerType, sab: this.sharedData.sab });
+    //     worker_.postMessage(<WorkerPacket>{ create: workerType, sab: this.sharedData.sab });
     //     worker_.addEventListener("message", (event) => {
     //         this.getMessage(worker_, event)
     //     });
-    //     worker_.postMessage({
+    //     worker_.postMessage(<WorkerPacket>{
     //         message: MessageType.InitWorker,
     //         config: this.config
     //     });
@@ -106251,8 +106332,11 @@ class MainManager {
             case Config_1.MessageType.RefreshDBDeep:
                 this.readDeep();
                 break;
+            case Config_1.MessageType.RefreshJGUI:
+                this.jgui.refreshJgui(the_worker, event);
+                break;
             case Config_1.MessageType.CanvasMake:
-                CanvasManager_1.CanvasManager.makeWorkerCanvas(this, the_worker, event);
+                CanvasUtils.makeWorkerCanvas(this, the_worker, event);
                 this.gui.regenerate(false);
                 break;
             default:
@@ -106331,6 +106415,7 @@ const GenWorkerMetadata_1 = __webpack_require__(/*! ./GenWorkerMetadata */ "./sr
 const Config_1 = __webpack_require__(/*! ./Config */ "./src/modules/Config.ts");
 const DrawThreePlsys_1 = __webpack_require__(/*! ./DrawThreePlsys */ "./src/modules/DrawThreePlsys.ts");
 const DrawD3Plsys_1 = __webpack_require__(/*! ./DrawD3Plsys */ "./src/modules/DrawD3Plsys.ts");
+const JguiMake_1 = __webpack_require__(/*! ../gui/JguiMake */ "./src/gui/JguiMake.ts");
 // TODO move generation in this worker instead of in the main thread
 // TODO simplify the refresh deep/shallow mechanisms since most actions will be done in this worker
 // TODO store position and rotation of objects inside themselves after time/orbit update so other workers can do "basic" checks and calculations
@@ -106340,11 +106425,7 @@ class PlanetSysWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
         // this.ticker.tick_interval = Units.LOOP_INTERVAL * 50;
     }
     init() {
-        this.world.initWorker().then(() => {
-            //     return this.world.initPlSys();
-            // }).then(() => {
-            //     return this.world.writeDeep();
-            // }).then(() => {
+        Promise.resolve().then(() => {
             this.worker.postMessage({
                 message: Config_1.MessageType.CanvasMake,
                 metaCanvas: {
@@ -106362,7 +106443,14 @@ class PlanetSysWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
                 }
             });
         }).then(() => {
-            this.refreshDeep(true);
+            return this.world.initPlSys();
+        }).then(() => {
+            console.log("this.world", this.world);
+            //     return this.world.writeDeep();
+        }).then(() => {
+            // return this.refreshDeep(true);
+        }).then(() => {
+            this.makeJgiu();
         });
     }
     CanvasReady(event) {
@@ -106373,6 +106461,7 @@ class PlanetSysWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
                 this.mapDraws.set(event.data.canvas_id, draw1_);
                 this.spread_objects(draw1_);
                 draw1_.init(event);
+                draw1_.updateDeep();
                 break;
             case `${this.name}-canvas-DrawD3Plsys`:
                 var draw2_ = new DrawD3Plsys_1.DrawD3Plsys();
@@ -106393,7 +106482,7 @@ class PlanetSysWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
                 this.CanvasReady(event);
                 break;
             case Config_1.MessageType.Event:
-                this.callEvent(event.data.event, event.data.event_id);
+                this.callEvent(event);
                 break;
             case Config_1.MessageType.RefreshDBDeep:
             case Config_1.MessageType.RefreshDBShallow:
@@ -106431,8 +106520,8 @@ class PlanetSysWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
         });
     }
     async refreshDeep(doSpecial = true) {
-        console.debug("#HERELINE DrawWorker refreshDeep");
-        await this.world.readDeep();
+        // console.debug("#HERELINE DrawWorker refreshDeep");
+        // await this.world.readDeep();
         for (const draw_ of this.mapDraws.values())
             draw_.updateDeep();
         if (doSpecial) {
@@ -106443,7 +106532,7 @@ class PlanetSysWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
     }
     async refreshShallow(doSpecial = true) {
         // console.debug("#HERELINE DrawWorker refreshShallow");
-        await this.world.readShallow();
+        // await this.world.readShallow();
         for (const draw_ of this.mapDraws.values())
             draw_.updateShallow();
         if (doSpecial) {
@@ -106454,13 +106543,13 @@ class PlanetSysWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
     }
     async refreshTick(doSpecial = true) {
         // console.debug("#HERELINE DrawWorker refreshShallow");
-        await this.world.readShallow();
+        // await this.world.readShallow();
         if (doSpecial) {
             this.updatePlSys();
             for (const draw_ of this.mapDraws.values())
                 draw_.draw();
-            await this.world.writeShallow();
-            this.tellMainToUpdate();
+            // await this.world.writeShallow();
+            // this.tellMainToUpdate();
         }
     }
     updatePlSys() {
@@ -106469,6 +106558,43 @@ class PlanetSysWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
         this.world.planetarySystem.time.ey += this.config.timeUpdSpeed;
         // console.log("this.world.planetary_system.time.ey", this.world.planetary_system.time.ey);
         // this.updateTerrain();
+    }
+    makeJgiu() {
+        var plsys = this.world.planetarySystem;
+        var workerJgui;
+        [this.workerJguiMain, workerJgui] = new JguiMake_1.JguiMake(null).mkWorkerJgui("plsys", "200");
+        workerJgui.addButton("genStartingPlanetSystem").addEventListener(this.workerJguiManager, "click", (event) => {
+            this.world.spaceFactory.genStartingPlanetSystem(plsys);
+            this.refreshDeep();
+        });
+        workerJgui.addButton("genStar").addEventListener(this.workerJguiManager, "click", (event) => {
+            this.world.spaceFactory.genStar(plsys, plsys);
+            this.refreshDeep();
+        });
+        workerJgui.addButton("genPTypeStarts").addEventListener(this.workerJguiManager, "click", (event) => {
+            this.world.spaceFactory.genPTypeStarts(plsys, plsys);
+            this.refreshDeep();
+        });
+        workerJgui.addButton("genOrbitsSimple").addEventListener(this.workerJguiManager, "click", (event) => {
+            this.world.spaceFactory.genOrbitsSimple(plsys, plsys.root());
+            this.refreshDeep();
+        });
+        workerJgui.addButton("genOrbitsSimpleMoons").addEventListener(this.workerJguiManager, "click", (event) => {
+            this.world.spaceFactory.genOrbitsSimpleMoons(plsys, plsys.root());
+            this.refreshDeep();
+        });
+        // workerJgui.addButton("genOrbitsUniform").addEventListener(this.workerJguiManager, "click", (event: WorkerEvent) => {
+        //     this.world.spaceFactory.genOrbitsUniform(plsys, plsys.root())
+        //     this.refreshDeep()
+        // })
+        // console.log("this.workerJguiMain", this.workerJguiMain);
+        this.worker.postMessage({
+            message: Config_1.MessageType.RefreshJGUI,
+            jgui: this.workerJguiMain,
+            metadata: {
+                isMainWorkerContainer: true,
+            }
+        });
     }
 }
 exports.PlanetSysWorker = PlanetSysWorker;
@@ -106550,12 +106676,13 @@ exports.TerrainWorker = void 0;
 const GenWorkerMetadata_1 = __webpack_require__(/*! ./GenWorkerMetadata */ "./src/modules/GenWorkerMetadata.ts");
 const Config_1 = __webpack_require__(/*! ./Config */ "./src/modules/Config.ts");
 const DrawD3Terrain_1 = __webpack_require__(/*! ./DrawD3Terrain */ "./src/modules/DrawD3Terrain.ts");
+const JguiMake_1 = __webpack_require__(/*! ../gui/JguiMake */ "./src/gui/JguiMake.ts");
 class TerrainWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
     constructor(config, worker, workerName, event) {
         super(config, worker, workerName, event);
     }
     init() {
-        this.world.initWorker().then(() => {
+        Promise.resolve().then(() => {
             this.worker.postMessage({
                 message: Config_1.MessageType.CanvasMake,
                 metaCanvas: {
@@ -106565,7 +106692,7 @@ class TerrainWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
                 }
             });
         }).then(() => {
-            // this.refreshDeep(true);
+            this.makeJgiu();
         });
     }
     CanvasReady(event) {
@@ -106583,14 +106710,14 @@ class TerrainWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
         }
     }
     getMessageExtra(event) {
-        console.debug(`#HERELINE ${this.name} getMessageExtra  ${event.data.message}`);
+        // console.debug(`#HERELINE ${this.name} getMessageExtra  ${event.data.message}`);
         const message_ = event.data.message;
         switch (message_) {
             case Config_1.MessageType.CanvasReady:
                 this.CanvasReady(event);
                 break;
             case Config_1.MessageType.Event:
-                this.callEvent(event.data.event, event.data.event_id);
+                this.callEvent(event);
                 break;
             case Config_1.MessageType.RefreshDBDeep:
             case Config_1.MessageType.RefreshDBShallow:
@@ -106657,6 +106784,33 @@ class TerrainWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
             // this.tellMainToUpdate();
         }
     }
+    makeJgiu() {
+        var workerJgui;
+        [this.workerJguiMain, workerJgui] = new JguiMake_1.JguiMake(null).mkWorkerJgui("terr", "600");
+        workerJgui.addButton("Test 1").addEventListener(this.workerJguiManager, "click", (event) => {
+            console.log("??????????????????? event", event.data.event);
+        });
+        workerJgui.addButton("Test 2").addEventListener(this.workerJguiManager, "click", (event) => {
+            console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!! event", event.data.event);
+        });
+        // var subStuff = workerJgui.addColapse("More stuff", true)
+        // subStuff.addButton("Stuff 1")
+        // subStuff.addButton("Stuff 2")
+        // subStuff.addButton("Stuff 3")
+        // var mrrStuff = subStuff.addColapse("MORRRR stuff", true)
+        // mrrStuff.addButton("Thing 1")
+        // mrrStuff.addButton("Thing 2")
+        // mrrStuff.addButton("Thing 3")
+        // subStuff.addSlider("SLIDE", 0, 100, 0.1)
+        // console.log("this.workerJguiMain", this.workerJguiMain);
+        this.worker.postMessage({
+            message: Config_1.MessageType.RefreshJGUI,
+            jgui: this.workerJguiMain,
+            metadata: {
+                isMainWorkerContainer: true,
+            }
+        });
+    }
 }
 exports.TerrainWorker = TerrainWorker;
 
@@ -106715,7 +106869,7 @@ class WorldData {
     async initPlSys() {
         console.debug("#HERELINE WorldData initPlSys");
         if (this.config.keepDbAtPageRefresh) {
-            return this.readDeep();
+            // return this.readDeep();
         }
         else {
             this.planetarySystem.init();
@@ -106925,6 +107079,27 @@ const Config_1 = __webpack_require__(/*! ./Config */ "./src/modules/Config.ts");
 const Time_1 = __webpack_require__(/*! ../utils/Time */ "./src/utils/Time.ts");
 const DrawD3Terrain_1 = __webpack_require__(/*! ./DrawD3Terrain */ "./src/modules/DrawD3Terrain.ts");
 exports.REFRESH_CALL_INTERVAL = 200;
+// https://web.archive.org/web/20200227175632/http://workshop.chromeexperiments.com:80/examples/gui/#1--Basic-Usage
+// import * as dat from 'dat.gui';
+// https://www.w3schools.com/colors/colors_picker.asp
+// https://www.w3schools.com/tags/att_input_type_color.asp
+// https://www.d3-graph-gallery.com/graph/interactivity_button.html
+// https://www.d3-graph-gallery.com/graph/interactivity_button.html
+// https://www.d3-graph-gallery.com/graph/interactivity_button.html
+// https://www.d3-graph-gallery.com/graph/interactivity_button.html
+// https://www.d3-graph-gallery.com/graph/interactivity_button.html
+// https://getbootstrap.com/docs/5.0/components/buttons/
+// https://getbootstrap.com/docs/5.0/components/buttons/
+// https://getbootstrap.com/docs/5.0/components/buttons/
+// https://getbootstrap.com/docs/5.0/components/buttons/
+// https://getbootstrap.com/docs/5.0/components/buttons/
+// TODO !!!!!!!!!!!!!!!!!!!
+// Parse the GUI as a json to easilly transmit between main <-> worker
+// and use D3 to listen for changes to the structure to manage add/change/remove of elemenets
+// https://www.d3indepth.com/enterexit/
+// https://observablehq.com/@maliky/d3js-enter-update-and-exit
+// https://observablehq.com/@d3/selection-join
+// TODO !!!!!!!!!!!!!!!!!!!
 // TODO regenerate only affected GUI parts after structural changes
 // TODO send shallow read action for simple value changes
 // TODO Have no objects always saved in main thread, read from DB and make objects only as they are selected !!!
@@ -106950,7 +107125,7 @@ class WorldGui {
     }
     initSelection() {
         this.slectPane = new Tweakpane({
-            title: 'Selected',
+            title: '!!!contextmenu issue!!!',
         });
         var selectElem = this.slectPane.containerElem_;
         selectElem.className = "SelectionDiv";
@@ -107224,6 +107399,238 @@ class ActionsManager {
     }
 }
 exports.ActionsManager = ActionsManager;
+
+
+/***/ }),
+
+/***/ "./src/utils/CanvasUtils.ts":
+/*!**********************************!*\
+  !*** ./src/utils/CanvasUtils.ts ***!
+  \**********************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.makeWorkerCanvas = exports.SCROLL_THING_SIZE = void 0;
+const Config_1 = __webpack_require__(/*! ../modules/Config */ "./src/modules/Config.ts");
+const EventUtils = __webpack_require__(/*! ./EventUtils */ "./src/utils/EventUtils.ts");
+exports.SCROLL_THING_SIZE = 20;
+function makeWorkerCanvas(mngr, the_worker, event) {
+    var metaCanvas = event.data.metaCanvas;
+    var canvas = addCanvas(metaCanvas, mngr, the_worker);
+    sortExistingElements(metaCanvas, mngr, the_worker);
+    addMouseSharedBuffer(metaCanvas, mngr, the_worker, canvas); // TODO proper mouse sharedData
+    addResizeListener(metaCanvas, mngr, the_worker, canvas);
+    addRightClickStuff(metaCanvas, mngr, the_worker, canvas);
+    mngr.viewableThings.push(canvas);
+    // TODO have a more dynamic ID-based way of propagating events
+    if (metaCanvas.generalFlags.includes("orbit"))
+        EventUtils.addOrbitCtrlEvents(canvas, canvas.id, the_worker);
+    if (metaCanvas.generalFlags.includes("d3"))
+        EventUtils.addEventsD3Canvas(canvas, canvas.id, the_worker);
+    var canvasOffscreen = canvas.transferControlToOffscreen();
+    the_worker.postMessage({
+        message: Config_1.MessageType.CanvasReady,
+        config: mngr.config,
+        metaCanvas: metaCanvas,
+        canvas: canvasOffscreen,
+        canvas_id: canvas.id,
+    }, [canvasOffscreen]);
+}
+exports.makeWorkerCanvas = makeWorkerCanvas;
+function addRightClickStuff(metaCanvas, mngr, the_worker, canvas) {
+    var selectListener = (evt_) => {
+        canvas.focus();
+        evt_.preventDefault();
+        if (metaCanvas.generalFlags.includes("orbit"))
+            if (mngr.sharedData.selectedId !== mngr.sharedData.hoverId) {
+                var selected = mngr.world.idObjMap.get(mngr.sharedData.hoverId);
+                mngr.gui.selectOrbElement(selected);
+            }
+    };
+    canvas.addEventListener("contextmenu", selectListener.bind(mngr));
+}
+function addMouseSharedBuffer(metaCanvas, mngr, the_worker, canvas) {
+    // console.log("canvas", canvas);
+    // "mousedown" "mouseenter" "mouseleave" "mousemove" "mouseout" "mouseover" "mouseup":
+    if (metaCanvas.generalFlags.includes("orbit")) {
+        canvas.addEventListener('mousemove', (evt) => {
+            var rect = canvas.getBoundingClientRect();
+            mngr.sharedData.mousex = evt.clientX - rect.left;
+            mngr.sharedData.mousey = evt.clientY - rect.top;
+        }, false);
+        canvas.addEventListener('mouseleave', () => {
+            mngr.sharedData.mousex = null;
+            mngr.sharedData.mousey = null;
+        }, false);
+    }
+}
+function addResizeListener(metaCanvas, mngr, the_worker, canvas) {
+    var canvasResize = () => {
+        var fakeResizeEvent = new Event("resize");
+        fakeResizeEvent.width = window.innerWidth - exports.SCROLL_THING_SIZE;
+        fakeResizeEvent.height = window.innerHeight;
+        canvas.dispatchEvent(fakeResizeEvent);
+        // canvasOffscreen.width = fakeResizeEvent.width;
+        // canvasOffscreen.height = fakeResizeEvent.height;
+        // console.log("initThreePlsysReal canvas", canvas);
+    };
+    // window.addEventListener('resize', canvasResize.bind(this));
+    window.addEventListener('resize', canvasResize);
+    canvasResize();
+    EventUtils.addResizeEvents(canvas, canvas.id, the_worker);
+}
+function sortExistingElements(metaCanvas, mngr, the_worker) {
+    var body = document.getElementsByTagName("body")[0];
+    var stores_li = body.getElementsByTagName("canvas");
+    [].slice.call(stores_li).sort(function (a, b) {
+        var textA = a.getAttribute('order').toLowerCase();
+        var textB = b.getAttribute('order').toLowerCase();
+        return (textA < textB) ? -1 : (textA > textB) ? 1 : 0;
+    })
+        .forEach(function (el) { el.parentNode.appendChild(el); });
+}
+function addCanvas(metaCanvas, mngr, the_worker) {
+    var body = document.getElementsByTagName("body")[0];
+    body.style.margin = "0";
+    const canvas = document.createElement('canvas');
+    canvas.id = metaCanvas.id;
+    canvas.tabIndex = 0; // so canvas can get keydown events
+    canvas.setAttribute('order', metaCanvas.order);
+    // canvas.style.position = "absolute";
+    // canvas.style.zIndex = "8";
+    // canvas.style.border = "1px solid";
+    // const div_ = document.createElement('div'); body.appendChild(div_); mngr.viewableThings.push(div_);
+    body.appendChild(canvas);
+    // Disable middle click scroll https://stackoverflow.com/a/30423436/2948519
+    canvas.onmousedown = function (e) { if (e.button === 1)
+        return false; };
+    // TODO TMP needs to have initial size set
+    // canvas.width = 300;
+    // canvas.height = 200;
+    canvas.width = window.innerWidth - exports.SCROLL_THING_SIZE;
+    canvas.height = window.innerHeight;
+    // canvas.focus();
+    return canvas;
+}
+// export function initDrawWorkerCanvas(mngr: MainManager, the_worker: GenericWorkerInstance, event: WorkerEvent) {
+//     // CanvasManager.initD3Stats(mngr, the_worker, event, "DrawD3TerrainCanvas");
+//     // CanvasManager.initThreePlsysReal(mngr, the_worker, event);
+//     // CanvasManager.initD3Stats(mngr, the_worker, event, "DrawD3PlsysCanvas");
+//     // mngr.focusableThings[1].focus();
+// }
+// function initThreePlsysReal(mngr: MainManager, the_worker: GenericWorkerInstance, event: WorkerEvent) {
+//     var body = document.getElementsByTagName("body")[0];
+//     body.style.margin = "0"
+//     const canvas = document.createElement('canvas');
+//     canvas.id = "DrawThreePlsysCanvas";
+//     canvas.tabIndex = 0; // so canvas can get keydown events
+//     // canvas.style.position = "absolute";
+//     // canvas.style.zIndex = "8";
+//     // canvas.style.border = "1px solid";
+//     // const div_ = document.createElement('div'); body.appendChild(div_); mngr.viewableThings.push(div_);
+//     body.appendChild(canvas);
+//     mngr.viewableThings.push(canvas);
+//     // Disable middle click scroll https://stackoverflow.com/a/30423436/2948519
+//     // document.body.onmousedown = function (e) { if (e.button === 1) return false; }
+//     canvas.onmousedown = function (e) { if (e.button === 1) return false; }
+//     // TODO TMP needs to have initial size set
+//     canvas.width = window.innerWidth - SCROLL_THING_SIZE;
+//     canvas.height = window.innerHeight;
+//     // canvas.focus();
+//     // console.log("canvas", canvas);
+//     // "mousedown" "mouseenter" "mouseleave" "mousemove" "mouseout" "mouseover" "mouseup":
+//     canvas.addEventListener('mousemove', (evt) => {
+//         var rect = canvas.getBoundingClientRect();
+//         mngr.sharedData.mousex = evt.clientX - rect.left;
+//         mngr.sharedData.mousey = evt.clientY - rect.top;
+//     }, false);
+//     canvas.addEventListener('mouseleave', () => {
+//         mngr.sharedData.mousex = null;
+//         mngr.sharedData.mousey = null;
+//     }, false);
+//     var canvasOffscreen = canvas.transferControlToOffscreen();
+//     var canvasResize = () => {
+//         var fakeResizeEvent: any = new Event("resize");
+//         fakeResizeEvent.width = window.innerWidth - SCROLL_THING_SIZE
+//         fakeResizeEvent.height = window.innerHeight
+//         canvas.dispatchEvent(fakeResizeEvent);
+//         // canvasOffscreen.width = fakeResizeEvent.width;
+//         // canvasOffscreen.height = fakeResizeEvent.height;
+//         // console.log("initThreePlsysReal canvas", canvas);
+//     }
+//     // window.addEventListener('resize', canvasResize.bind(this));
+//     window.addEventListener('resize', canvasResize);
+//     canvasResize();
+//     var selectListener = (evt_: Event) => {
+//         canvas.focus()
+//         evt_.preventDefault();
+//         if (mngr.sharedData.selectedId !== mngr.sharedData.hoverId) {
+//             var selected = mngr.world.idObjMap.get(mngr.sharedData.hoverId)
+//             mngr.gui.selectOrbElement(selected as OrbitingElement);
+//         }
+//     };
+//     canvas.addEventListener("contextmenu", selectListener.bind(mngr));
+//     // TODO have a more dynamic ID-based way of propagating events
+//     EventUtils.addOrbitCtrlEvents(canvas, canvas.id, the_worker)
+//     EventUtils.addResizeEvents(canvas, canvas.id, the_worker)
+//     the_worker.postMessage(<WorkerPacket>{
+//         message: MessageType.CanvasReady,
+//         config: mngr.config,
+//         canvas: canvasOffscreen,
+//         canvas_id: canvas.id,
+//     }, [canvasOffscreen]);
+// }
+// function initD3Stats(mngr: MainManager, the_worker: GenericWorkerInstance, event: WorkerEvent, useId: string) {
+//     var body = document.getElementsByTagName("body")[0];
+//     body.style.margin = "0"
+//     const canvas = document.createElement('canvas');
+//     canvas.id = useId;
+//     // canvas.style.position = "absolute";
+//     canvas.tabIndex = 0; // so canvas can get keydown events
+//     // canvas.style.zIndex = "8";
+//     // canvas.style.border = "1px solid";
+//     // const div_ = document.createElement('div'); body.appendChild(div_); mngr.viewableThings.push(div_);
+//     body.appendChild(canvas);
+//     mngr.viewableThings.push(canvas);
+//     // Disable middle click scroll https://stackoverflow.com/a/30423436/2948519
+//     // document.body.onmousedown = function (e) { if (e.button === 1) return false; }
+//     canvas.onmousedown = function (e) { if (e.button === 1) return false; }
+//     // TODO TMP needs to have initial size set
+//     canvas.width = window.innerWidth - SCROLL_THING_SIZE;
+//     canvas.height = window.innerHeight;
+//     // canvas.focus();
+//     var canvasOffscreen = canvas.transferControlToOffscreen();
+//     var canvasResize = () => {
+//         // canvasOffscreen.width = window.innerWidth - SCROLL_THING_SIZE;
+//         // canvasOffscreen.height = window.innerHeight;
+//         // canvas.width = canvasOffscreen.width
+//         // canvas.height = canvasOffscreen.height
+//         var fakeResizeEvent: any = new Event("resize");
+//         fakeResizeEvent.width = window.innerWidth - SCROLL_THING_SIZE;
+//         fakeResizeEvent.height = window.innerHeight;
+//         canvas.dispatchEvent(fakeResizeEvent);
+//         // console.log("initD3Stats canvas", canvas);
+//     }
+//     // window.addEventListener('resize', canvasResize.bind(this));
+//     window.addEventListener('resize', canvasResize);
+//     canvasResize();
+//     var selectListener = (evt_: Event) => {
+//         canvas.focus();
+//         evt_.preventDefault();
+//     };
+//     canvas.addEventListener("contextmenu", selectListener.bind(mngr));
+//     EventUtils.addEventsD3Canvas(canvas, canvas.id, the_worker)
+//     EventUtils.addResizeEvents(canvas, canvas.id, the_worker)
+//     the_worker.postMessage(<WorkerPacket>{
+//         message: MessageType.CanvasReady,
+//         config: mngr.config,
+//         canvas: canvasOffscreen,
+//         canvas_id: canvas.id,
+//     }, [canvasOffscreen]);
+// }
 
 
 /***/ }),
@@ -107679,6 +108086,155 @@ exports.NumberRadiantFlux = NumberRadiantFlux;
 
 /***/ }),
 
+/***/ "./src/utils/EventUtils.ts":
+/*!*********************************!*\
+  !*** ./src/utils/EventUtils.ts ***!
+  \*********************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.addEventsD3Canvas = exports.addOrbitCtrlEvents = exports.addResizeEvents = exports.isShiftPressed = exports.conditionalRedirect = exports.genericConditionalRedirect = exports.genericRedirect = exports.getBasicEvent = void 0;
+const Config_1 = __webpack_require__(/*! ../modules/Config */ "./src/modules/Config.ts");
+const BASIC_OBJECTS = ["number", "boolean", "string"];
+/*
+
+https://bl.ocks.org/pkerpedjiev/32b11b37be444082762443c4030d145d D3 event filtering
+The red circles don't allow scroll-wheel zooming and drag-based panning
+
+*/
+function getBasicEvent(source_) {
+    var target_ = {};
+    for (const key in source_) {
+        var type_ = typeof source_[key];
+        if (BASIC_OBJECTS.includes(type_) == false)
+            continue;
+        // console.log("key", key, type_);
+        target_[key] = source_[key];
+    }
+    if (typeof source_.target == "object") {
+        target_.target = {};
+        for (const key in source_.target) {
+            var type_ = typeof source_.target[key];
+            if (BASIC_OBJECTS.includes(type_) == false)
+                continue;
+            // console.log("key", key, type_);
+            target_.target[key] = source_.target[key];
+        }
+    }
+    return target_;
+}
+exports.getBasicEvent = getBasicEvent;
+function genericRedirect(event_name, canvas, canvas_id, worker) {
+    // console.log("event_name", event_name);
+    canvas.addEventListener(event_name, (evt_) => {
+        var basic_event = getBasicEvent(evt_);
+        basic_event["event_id"] = canvas_id;
+        // console.log("event_name, event", event_name, basic_event);
+        worker.postMessage({
+            message: Config_1.MessageType.Event,
+            event_id: canvas_id,
+            event: basic_event,
+        });
+    });
+}
+exports.genericRedirect = genericRedirect;
+function genericConditionalRedirect(event_name, canvas, canvas_id, worker, eventCondition) {
+    // console.log("event_name", event_name);
+    canvas.addEventListener(event_name, (evt_) => {
+        if (eventCondition(evt_) == false)
+            return;
+        var basic_event = getBasicEvent(evt_);
+        basic_event["event_id"] = canvas_id;
+        // console.log("event_name, event", event_name, basic_event);
+        worker.postMessage({
+            message: Config_1.MessageType.Event,
+            event_id: canvas_id,
+            event: basic_event,
+        });
+    });
+}
+exports.genericConditionalRedirect = genericConditionalRedirect;
+function conditionalRedirect(event_do, event_in, event_out, canvas, canvas_id, worker) {
+    var ev_do_fun = (evt_) => {
+        var basic_event = getBasicEvent(evt_);
+        basic_event["event_id"] = canvas_id;
+        // console.log("event_do, event", event_do, basic_event);
+        worker.postMessage({
+            message: Config_1.MessageType.Event,
+            event_id: canvas_id,
+            event: basic_event,
+        });
+    };
+    canvas.addEventListener(event_in, (evt_) => {
+        var basic_event = getBasicEvent(evt_);
+        basic_event["event_id"] = canvas_id;
+        // console.log("event_in, event", event_in, basic_event);
+        canvas.addEventListener(event_do, ev_do_fun); ///////////////////
+        worker.postMessage({
+            message: Config_1.MessageType.Event,
+            event_id: canvas_id,
+            event: basic_event,
+        });
+    });
+    canvas.addEventListener(event_out, (evt_) => {
+        var basic_event = getBasicEvent(evt_);
+        basic_event["event_id"] = canvas_id;
+        // console.log("event_out, event", event_out, basic_event);
+        canvas.removeEventListener(event_do, ev_do_fun); ///////////////////
+        worker.postMessage({
+            message: Config_1.MessageType.Event,
+            event_id: canvas_id,
+            event: basic_event,
+        });
+    });
+}
+exports.conditionalRedirect = conditionalRedirect;
+function isShiftPressed(event_) {
+    return Boolean(event_.shiftKey);
+}
+exports.isShiftPressed = isShiftPressed;
+function addResizeEvents(canvas, canvas_id, worker) {
+    genericRedirect("resize", canvas, canvas_id, worker);
+}
+exports.addResizeEvents = addResizeEvents;
+function addOrbitCtrlEvents(canvas, canvas_id, worker) {
+    // disable right-click context on canvas ... TODO do cool stuff !!!!
+    // canvas.addEventListener("contextmenu", (evt_) => { evt_.preventDefault() });
+    // genericRedirect("keydown", canvas, canvas_id, worker)
+    // TODO maybe limit somehow the amount of events (pointermove,touchmove) being sent ???
+    conditionalRedirect("pointermove", "pointerdown", "pointerup", canvas, canvas_id, worker);
+    genericConditionalRedirect("wheel", canvas, canvas_id, worker, isShiftPressed.bind(this));
+    // conditionalRedirect("touchmove", "touchstart", "touchend", canvas, canvas_id, worker)
+    // canvas.addEventListener('touchstart', onTouchStart, false);
+    // canvas.addEventListener('touchend', onTouchEnd, false);
+    // canvas.addEventListener('touchmove', onTouchMove, false);
+    // canvas.addEventListener('contextmenu', onContextMenu, false);
+    // canvas.addEventListener('pointerdown', onPointerDown, false);
+    // canvas.addEventListener('keydown', onKeyDown, false);
+    // canvas.addEventListener('wheel', onMouseWheel, false);
+}
+exports.addOrbitCtrlEvents = addOrbitCtrlEvents;
+function addEventsD3Canvas(canvas, canvas_id, worker) {
+    // genericRedirect("pointerdown", canvas, canvas_id, worker)
+    // genericRedirect("pointerup", canvas, canvas_id, worker)
+    // genericRedirect("dblclick", canvas, canvas_id, worker)
+    // genericRedirect("mousedown", canvas, canvas_id, worker)
+    genericConditionalRedirect("wheel", canvas, canvas_id, worker, isShiftPressed.bind(this));
+    // genericRedirect("selectstart", canvas, canvas_id, worker)
+    // conditionalRedirect("pointermove", "pointerdown", "pointerup", canvas, canvas_id, worker)
+    conditionalRedirect("mousemove", "mousedown", "mouseup", canvas, canvas_id, worker);
+    // genericRedirect("mousemove", canvas, canvas_id, worker)
+    // genericRedirect("mousedown", canvas, canvas_id, worker)
+    // genericRedirect("mouseup", canvas, canvas_id, worker)
+}
+exports.addEventsD3Canvas = addEventsD3Canvas;
+
+
+/***/ }),
+
 /***/ "./src/utils/ObjectPool.ts":
 /*!*********************************!*\
   !*** ./src/utils/ObjectPool.ts ***!
@@ -107982,7 +108538,7 @@ exports.makeGeoPtsRandBad2 = makeGeoPtsRandBad2;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.pickChanceOverlaping = exports.customComparator = exports.pickAllOverlaping = exports.wiggle_down = exports.wiggle_up = exports.wiggle = exports.random_int_clamp = exports.random_float_clamp = exports.randPercent = void 0;
+exports.randomPartOfArray = exports.randomAlphabetString = exports.pickChanceOverlaping = exports.customComparator = exports.pickAllOverlaping = exports.wiggle_down = exports.wiggle_up = exports.wiggle = exports.random_int_clamp = exports.random_float_clamp = exports.randPercent = void 0;
 function randPercent() {
     return Math.random() * 100;
 }
@@ -108054,6 +108610,25 @@ function pickChanceOverlaping(spot, pickData) {
     return null;
 }
 exports.pickChanceOverlaping = pickChanceOverlaping;
+var lowAlphabet = 'abcdefghijklmnopqrstuvwxyz'.split('');
+var uppAlphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+var allAlphabet = [...lowAlphabet, ...uppAlphabet];
+function randomAlphabetString(size_ = 6) {
+    return randomPartOfArray(allAlphabet, size_).join("");
+}
+exports.randomAlphabetString = randomAlphabetString;
+function randomPartOfArray(array, size_) {
+    var l = array.length, r, b;
+    while (l) {
+        r = Math.floor(Math.random() * --l);
+        b = array[r];
+        array[r] = array[l];
+        array[l] = b;
+    }
+    // const size_ = Math.floor(Math.random() * array.length);
+    return array.slice(0, size_).sort();
+}
+exports.randomPartOfArray = randomPartOfArray;
 
 
 /***/ }),
