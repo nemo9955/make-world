@@ -87,3 +87,32 @@ export function pickChanceOverlaping(spot: number, pickData: OverlapingData[]) {
 
 }
 
+
+
+
+
+
+
+var lowAlphabet = 'abcdefghijklmnopqrstuvwxyz'.split('');
+var uppAlphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+var allAlphabet = [...lowAlphabet, ...uppAlphabet]
+
+export function randomAlphabetString(size_: number = 6): string {
+    return randomPartOfArray(allAlphabet, size_).join("")
+}
+
+export function randomPartOfArray(array: any[], size_: number) {
+    var l = array.length, r, b;
+
+    while (l) {
+        r = Math.floor(Math.random() * --l);
+        b = array[r];
+        array[r] = array[l];
+        array[l] = b;
+    }
+
+    // const size_ = Math.floor(Math.random() * array.length);
+    return array.slice(0, size_).sort();
+
+}
+

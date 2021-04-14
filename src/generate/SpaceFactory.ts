@@ -40,6 +40,7 @@ export class SpaceFactory {
 
 
     public genStartingPlanetSystem(plsys: PlanetarySystem) {
+        plsys.clearSatelites();
         if (Random.randPercent() < 60)
             this.genStar(plsys, plsys, "habitable")
         else
@@ -217,8 +218,9 @@ export class SpaceFactory {
 
     public genStar(plsys: PlanetarySystem, root: OrbitingElement, type?: string) {
         root.clearSatelites()
-        // console.debug("this.getWorldData().idObjMap", this.getWorldData().idObjMap);
-        // console.debug("root.satelites.length,root.satelites", root.satelites.length, root.satelites);
+
+        console.log("plsys", plsys);
+
         var star_ = new Star(this.getWorldData())
         switch (type) {
             case "sun":

@@ -4,7 +4,7 @@ import * as TweakpaneDummy from "tweakpane"
 import * as d3 from "d3"
 
 import { WorldData } from "./WorldData"
-import { Config, MessageType } from "./Config"
+import { Config, MessageType, WorkerEvent } from "./Config"
 import { MainManager } from "./MainManager"
 import { Intervaler } from "../utils/Time"
 import * as Convert from "../utils/Convert"
@@ -12,7 +12,7 @@ import { OrbitingElement } from "../generate/OrbitingElement"
 import { Planet } from "../generate/Planet"
 import { Star } from "../generate/Star"
 import { DrawD3Terrain } from "./DrawD3Terrain"
-import { GuiManager } from "./GuiManager"
+import { JsonToGUI } from "../gui/JsonToGUI"
 
 export const REFRESH_CALL_INTERVAL = 200
 
@@ -66,9 +66,6 @@ export class WorldGui {
         this.manager = null;
         this.refresh_inval = new Intervaler();
 
-
-        new GuiManager(); // TODO temporary ....
-
     }
 
 
@@ -92,7 +89,7 @@ export class WorldGui {
 
     private initSelection() {
         this.slectPane = new Tweakpane({
-            title: 'Selected',
+            title: '!!!contextmenu issue!!!',
         });
         var selectElem: HTMLElement = this.slectPane.containerElem_
         selectElem.className = "SelectionDiv"

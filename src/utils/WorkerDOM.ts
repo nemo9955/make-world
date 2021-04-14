@@ -58,6 +58,8 @@ export class WorkerDOM implements HTMLElement {
         this.actions.callThisAction(event["type"], this, event)
         return true;
     }
+
+
     removeEventListener(type: any, listener: any, options?: any) {
         // console.log("#HERELINE WorkerDOM removeEventListener ", type);
         this.actions.removeAction(type, listener)

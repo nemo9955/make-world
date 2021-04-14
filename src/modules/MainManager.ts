@@ -1,3 +1,4 @@
+import * as CanvasUtils from "../utils/CanvasUtils"
 
 import { WorldData } from "./WorldData"
 import { WorldGui } from "./WorldGui"
@@ -7,12 +8,11 @@ import { Config, MessageType, WorkerEvent, WorkerPacket } from "./Config"
 import * as THREE from "three";
 import { Ticker, waitBlocking } from "../utils/Time";
 import { SharedData } from "./SharedData";
-import { EventsManager } from "./EventsManager";
 import { OrbitingElement } from "../generate/OrbitingElement";
 import { TerrainWorker } from "./TerrainWorker";
 import { BaseWorker } from "./GenWorkerMetadata";
 import { PlanetSysWorker } from "./PlanetSysWorker";
-import { CanvasManager } from "./CanvasManager";
+import { JsonToGUI } from "../gui/JsonToGUI";
 
 
 // TODO Make the main manager the one that calls each worker's "Ticker"
@@ -23,6 +23,7 @@ export class MainManager {
     cam_timeout: any = null;
 
     gui: WorldGui;
+    jgui: JsonToGUI;
 
     workers: GenericWorkerInstance[] = [];
 
@@ -32,14 +33,13 @@ export class MainManager {
     ticker: Ticker;
 
     sharedData = new SharedData();
-    evmng: EventsManager;
 
     viewableThings: HTMLElement[] = [];
 
     constructor() {
         this.gui = new WorldGui();
+        this.jgui = new JsonToGUI();
         this.config = new Config();
-        this.evmng = new EventsManager();
         this.world = new WorldData(this.config.WORLD_DATABASE_NAME, "MainManager");
 
         // TODO Actions will need to tell everyone of cases when a readDeep will be need
@@ -56,7 +56,7 @@ export class MainManager {
         Promise.resolve().then(() => {
             return this.world.preInit();
         }).then(() => {
-            return this.world.initPlSys();
+            // return this.world.initPlSys();
         }).then(() => {
             // return this.world.initTerrain();
         }).then(() => {
@@ -88,7 +88,7 @@ export class MainManager {
         for (const worker_ of this.workers) {
             // waitBlocking(50); // TODO TMP !!!!!!!!!!!!!!
             console.log("MainManager writeDeep postMessage ", worker_.name);
-            worker_.postMessage({
+            worker_.postMessage(<WorkerPacket>{
                 message: MessageType.RefreshConfig,
                 config: this.config
             });
@@ -105,7 +105,7 @@ export class MainManager {
         //     // waitBlocking(50); // TODO TMP !!!!!!!!!!!!!!
         //     // this.workersData.get(worker_).state = WorkerState.Paused;
         //     console.debug("MainManager pauseAll postMessage ", worker_.name);
-        //     worker_.postMessage({
+        //     worker_.postMessage(<WorkerPacket>{
         //         message: MessageType.Pause,
         //         config: this.config
         //     });
@@ -121,7 +121,7 @@ export class MainManager {
             // waitBlocking(50); // TODO TMP !!!!!!!!!!!!!!
             // this.workersData.get(worker_).state = WorkerState.Running;
             console.debug("MainManager playAll postMessage ", worker_.name);
-            worker_.postMessage({
+            worker_.postMessage(<WorkerPacket>{
                 message: refreshType,
                 config: this.config
             });
@@ -158,7 +158,7 @@ export class MainManager {
         // for (const worker_ of this.workers) {
         //     // waitBlocking(50); // TODO TMP !!!!!!!!!!!!!!
         //     console.log("MainManager writeDeep postMessage ", worker_.name);
-        //     worker_.postMessage({
+        //     worker_.postMessage(<WorkerPacket>{
         //         message: MessageType.RefreshDBDeep,
         //         config: this.config
         //     });
@@ -174,7 +174,7 @@ export class MainManager {
         for (const worker_ of this.workers) {
             // waitBlocking(50); // TODO TMP !!!!!!!!!!!!!!
             console.log("MainManager writeShallow postMessage ", worker_.name);
-            worker_.postMessage({
+            worker_.postMessage(<WorkerPacket>{
                 message: MessageType.RefreshDBShallow,
                 config: this.config
             });
@@ -197,7 +197,7 @@ export class MainManager {
             this.getMessage(genWorker, event)
         });
 
-        genWorker.postMessage({
+        genWorker.postMessage(<WorkerPacket>{
             message: MessageType.InitWorker,
             config: this.config
         });
@@ -208,13 +208,13 @@ export class MainManager {
     //     worker_.name = workerType
     //     this.workers.push(worker_);
     //     // this.workersData.set(worker_, { state: WorkerState.Paused })
-    //     worker_.postMessage({ create: workerType, sab: this.sharedData.sab });
+    //     worker_.postMessage(<WorkerPacket>{ create: workerType, sab: this.sharedData.sab });
 
     //     worker_.addEventListener("message", (event) => {
     //         this.getMessage(worker_, event)
     //     });
 
-    //     worker_.postMessage({
+    //     worker_.postMessage(<WorkerPacket>{
     //         message: MessageType.InitWorker,
     //         config: this.config
     //     });
@@ -229,7 +229,7 @@ export class MainManager {
         // this.playAll(MessageType.RefreshDBDeep);
         // }
 
-        the_worker.postMessage({
+        the_worker.postMessage(<WorkerPacket>{
             message: MessageType.Play,
             config: this.config
         });
@@ -247,8 +247,10 @@ export class MainManager {
                 this.readShallow(); break;
             case MessageType.RefreshDBDeep:
                 this.readDeep(); break;
+            case MessageType.RefreshJGUI:
+                this.jgui.refreshJgui(the_worker, event); break;
             case MessageType.CanvasMake:
-                CanvasManager.makeWorkerCanvas(this, the_worker, event);
+                CanvasUtils.makeWorkerCanvas(this, the_worker, event);
                 this.gui.regenerate(false);
                 break;
             default:

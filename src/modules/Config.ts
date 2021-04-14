@@ -2,6 +2,7 @@
 /*
 * Used to store and send VERRY simple data across the main thread and workers
 */
+import { JguiMake } from "../gui/JguiMake";
 import * as Convert from "../utils/Convert"
 import { DrawD3Terrain } from "./DrawD3Terrain";
 
@@ -42,6 +43,7 @@ export type WorkerEvent = MessageEvent<WorkerPacket>
 export type WorkerPacket = {
     message: MessageType,
     config?: Config,
+    jgui?: JguiMake,
     create?: string,
     metaCanvas?: MetaCanvas,
     canvas?: OffscreenCanvas,
@@ -49,6 +51,7 @@ export type WorkerPacket = {
     sab?: SharedArrayBuffer,
     event?: any,
     event_id?: string,
+    metadata?: any,
 }
 
 export type MetaCanvas = {
@@ -56,6 +59,7 @@ export type MetaCanvas = {
     order: string,
     generalFlags: any[],
 }
+
 
 export enum MessageType {
     Event = "Event",
@@ -68,4 +72,5 @@ export enum MessageType {
     RefreshConfig = "RefreshConfig",
     CanvasReady = "CanvasReady",
     CanvasMake = "CanvasMake",
+    RefreshJGUI = "RefreshJGUI"
 }

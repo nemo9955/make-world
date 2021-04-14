@@ -67,7 +67,7 @@ export class WorldData {
     public async initPlSys() {
         console.debug("#HERELINE WorldData initPlSys");
         if (this.config.keepDbAtPageRefresh) {
-            return this.readDeep();
+            // return this.readDeep();
         } else {
             this.planetarySystem.init();
             /////////// this.planetary_system.setWorldData(this);

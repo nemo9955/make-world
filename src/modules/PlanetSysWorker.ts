@@ -9,6 +9,7 @@ import { WorldData } from "./WorldData";
 import { SharedData } from "./SharedData";
 import { WorkerDOM } from "../utils/WorkerDOM";
 import { DrawD3Plsys } from "./DrawD3Plsys";
+import { JguiMake } from "../gui/JguiMake";
 
 
 // TODO move generation in this worker instead of in the main thread
@@ -25,11 +26,7 @@ export class PlanetSysWorker extends BaseDrawUpdateWorker {
     }
 
     public init(): void {
-        this.world.initWorker().then(() => {
-        //     return this.world.initPlSys();
-        // }).then(() => {
-        //     return this.world.writeDeep();
-        // }).then(() => {
+        Promise.resolve().then(() => {
             this.worker.postMessage(<WorkerPacket>{
                 message: MessageType.CanvasMake,
                 metaCanvas: {
@@ -47,7 +44,14 @@ export class PlanetSysWorker extends BaseDrawUpdateWorker {
                 }
             });
         }).then(() => {
-            this.refreshDeep(true);
+            return this.world.initPlSys();
+        }).then(() => {
+            console.log("this.world", this.world);
+            //     return this.world.writeDeep();
+        }).then(() => {
+            // return this.refreshDeep(true);
+        }).then(() => {
+            this.makeJgiu();
         })
     }
 
@@ -60,6 +64,7 @@ export class PlanetSysWorker extends BaseDrawUpdateWorker {
                 this.mapDraws.set(event.data.canvas_id, draw1_);
                 this.spread_objects(draw1_)
                 draw1_.init(event);
+                draw1_.updateDeep();
                 break;
             case `${this.name}-canvas-DrawD3Plsys`:
                 var draw2_ = new DrawD3Plsys();
@@ -81,7 +86,7 @@ export class PlanetSysWorker extends BaseDrawUpdateWorker {
             case MessageType.CanvasReady:
                 this.CanvasReady(event); break;
             case MessageType.Event:
-                this.callEvent(event.data.event, event.data.event_id); break;
+                this.callEvent(event); break;
             case MessageType.RefreshDBDeep:
             case MessageType.RefreshDBShallow:
                 this.refreshDb(event, message_); break;
@@ -104,7 +109,7 @@ export class PlanetSysWorker extends BaseDrawUpdateWorker {
     private tellMainToUpdate() {
         // console.debug("#HERELINE UpdateWorker tellMainToUpdate");
         // TODO tell more exactly what and how to update !!!!
-        this.worker.postMessage({ message: MessageType.RefreshDBShallow });
+        this.worker.postMessage(<WorkerPacket>{ message: MessageType.RefreshDBShallow });
     }
 
 
@@ -127,8 +132,8 @@ export class PlanetSysWorker extends BaseDrawUpdateWorker {
     }
 
     private async refreshDeep(doSpecial = true) {
-        console.debug("#HERELINE DrawWorker refreshDeep");
-        await this.world.readDeep();
+        // console.debug("#HERELINE DrawWorker refreshDeep");
+        // await this.world.readDeep();
         for (const draw_ of this.mapDraws.values()) draw_.updateDeep();
         if (doSpecial) {
             // this.updatePlSys();
@@ -138,7 +143,7 @@ export class PlanetSysWorker extends BaseDrawUpdateWorker {
 
     private async refreshShallow(doSpecial = true) {
         // console.debug("#HERELINE DrawWorker refreshShallow");
-        await this.world.readShallow();
+        // await this.world.readShallow();
         for (const draw_ of this.mapDraws.values()) draw_.updateShallow();
         if (doSpecial) {
             // this.updatePlSys();
@@ -148,12 +153,12 @@ export class PlanetSysWorker extends BaseDrawUpdateWorker {
 
     private async refreshTick(doSpecial = true) {
         // console.debug("#HERELINE DrawWorker refreshShallow");
-        await this.world.readShallow();
+        // await this.world.readShallow();
         if (doSpecial) {
             this.updatePlSys();
             for (const draw_ of this.mapDraws.values()) draw_.draw();
-            await this.world.writeShallow();
-            this.tellMainToUpdate();
+            // await this.world.writeShallow();
+            // this.tellMainToUpdate();
         }
     }
 
@@ -167,6 +172,59 @@ export class PlanetSysWorker extends BaseDrawUpdateWorker {
 
         // this.updateTerrain();
     }
+
+
+
+    private makeJgiu() {
+        var plsys = this.world.planetarySystem
+        var workerJgui: JguiMake;
+
+        [this.workerJguiMain, workerJgui] = new JguiMake(null).mkWorkerJgui("plsys", "200");
+
+
+        workerJgui.addButton("genStartingPlanetSystem").addEventListener(this.workerJguiManager, "click", (event: WorkerEvent) => {
+            this.world.spaceFactory.genStartingPlanetSystem(plsys)
+            this.refreshDeep()
+        })
+
+        workerJgui.addButton("genStar").addEventListener(this.workerJguiManager, "click", (event: WorkerEvent) => {
+            this.world.spaceFactory.genStar(plsys, plsys)
+            this.refreshDeep()
+        })
+
+        workerJgui.addButton("genPTypeStarts").addEventListener(this.workerJguiManager, "click", (event: WorkerEvent) => {
+            this.world.spaceFactory.genPTypeStarts(plsys, plsys)
+            this.refreshDeep()
+        })
+
+        workerJgui.addButton("genOrbitsSimple").addEventListener(this.workerJguiManager, "click", (event: WorkerEvent) => {
+            this.world.spaceFactory.genOrbitsSimple(plsys, plsys.root())
+            this.refreshDeep()
+        })
+
+        workerJgui.addButton("genOrbitsSimpleMoons").addEventListener(this.workerJguiManager, "click", (event: WorkerEvent) => {
+            this.world.spaceFactory.genOrbitsSimpleMoons(plsys, plsys.root())
+            this.refreshDeep()
+        })
+
+        // workerJgui.addButton("genOrbitsUniform").addEventListener(this.workerJguiManager, "click", (event: WorkerEvent) => {
+        //     this.world.spaceFactory.genOrbitsUniform(plsys, plsys.root())
+        //     this.refreshDeep()
+        // })
+
+
+
+        // console.log("this.workerJguiMain", this.workerJguiMain);
+
+        this.worker.postMessage(<WorkerPacket>{
+            message: MessageType.RefreshJGUI,
+            jgui: this.workerJguiMain,
+            metadata: {
+                isMainWorkerContainer: true,
+            }
+        });
+    }
+
 
 
 }

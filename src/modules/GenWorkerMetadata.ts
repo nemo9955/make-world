@@ -1,5 +1,5 @@
 import { Intervaler, Ticker } from "../utils/Time";
-import { Config, MessageType, WorkerEvent } from "./Config";
+import { Config, MessageType, WorkerEvent, WorkerPacket } from "./Config";
 import { SharedData } from "./SharedData";
 import { WorldData } from "./WorldData";
 
@@ -9,6 +9,7 @@ import * as Units from "../utils/Units"
 import { TerrainWorker } from "./TerrainWorker";
 import { PlanetSysWorker } from "./PlanetSysWorker";
 import { WorkerDOM } from "../utils/WorkerDOM";
+import { JguiMake, JguiManager } from "../gui/JguiMake";
 
 
 export abstract class BaseWorker {
@@ -34,9 +35,10 @@ export abstract class BaseWorker {
     public preInit() {
         this.spread_objects(this.world)
         this.world.initWorker().then(() => {
-            this.worker.postMessage({ message: MessageType.Ready, from: this.name });
+            this.worker.postMessage(<WorkerPacket>{ message: MessageType.Ready, from: this.name });
+        }).then(() => {
+            this.init();
         })
-        this.init();
     }
 
     public spread_objects(object_: any) {
@@ -49,7 +51,7 @@ export abstract class BaseWorker {
     public abstract init(): void;
 
     public getMessage(event: WorkerEvent) {
-        // console.debug(`#HERELINE ${this.name} getMessage  ${event.data.message}`);
+        console.debug(`#HERELINE ${this.name} getMessage  ${event.data.message}`);
 
         if (event?.data?.config && this.config)
             this.config.copy(event.data.config as Config)
@@ -105,16 +107,28 @@ export interface DrawWorkerInstance {
 
 export abstract class BaseDrawUpdateWorker extends BaseWorker {
 
-    mapDraws = new Map<any, DrawWorkerInstance>();
+    public mapDraws = new Map<any, DrawWorkerInstance>();
+    public workerJguiMain: JguiMake;
+    public workerJguiManager: JguiManager;
+
+
 
     constructor(config: Config, worker: Worker, workerName: string, event: WorkerEvent) {
         super(config, worker, workerName, event);
+        this.workerJguiManager = new JguiManager(worker, workerName);
     }
 
-    callEvent(event: any, event_id: any) {
-        // console.log("event_id, event", event_id, event);
-        var drawRedirect = this.mapDraws.get(event_id);
-        drawRedirect.fakeDOM.dispatchEvent(event);
+    callEvent(woEvent: WorkerEvent) {
+        var event = woEvent.data.event;
+        var event_id = woEvent.data.event_id;
+
+        if (woEvent.data?.metadata?.isFromJgui) {
+            this.workerJguiManager.dispachListener(event_id, woEvent)
+        } else {
+            var drawRedirect = this.mapDraws.get(event_id);
+            drawRedirect.fakeDOM.dispatchEvent(event);
+        }
+
     }
 
 

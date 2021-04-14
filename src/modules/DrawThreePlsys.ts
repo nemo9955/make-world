@@ -219,6 +219,7 @@ export class DrawThreePlsys implements DrawWorkerInstance {
         this.frost_zone.rotateX(Convert.degToRad(-90))
         this.frost_zone.position.y = -10 // DRAWUNIT
         this.scene.add(this.frost_zone);
+        console.log("this.world", this.world);
     }
 
     distToTarget = 0;
