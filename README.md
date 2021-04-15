@@ -2,6 +2,9 @@
 Make a realistic world by simulating as many aspects as possible
 
 
+[![Build Status](https://travis-ci.com/nemo9955/make-world.svg?branch=master)](https://travis-ci.com/nemo9955/make-world)
+
+
 ## Keys
     LEFT MOUSE BUTTON is used to move the view inside a canvas and interact with GUI
     MIDDLE MOUSE BUTTON is for alternative zooming in some places

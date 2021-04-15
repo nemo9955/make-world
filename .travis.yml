@@ -5,8 +5,10 @@ node_js:
 
 
 script:
+  - ls -ila
   - npm run dev
-  # - npm run test
+  - pwd
+  - ls -ila
 
 
 
