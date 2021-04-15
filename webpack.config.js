@@ -30,7 +30,7 @@ module.exports = smp.wrap({
         filename: '[name].js',
         sourceMapFilename: '[name].map',
         chunkFilename: '[id].js',
-        publicPath: "./dist/",
+        publicPath: "../dist/",
         path: path.resolve(__dirname, "dist/"),
         library: 'make_world',
         // libraryTarget: 'umd',

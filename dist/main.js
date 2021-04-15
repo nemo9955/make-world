@@ -78,7 +78,7 @@ var make_world =
 /******/ 	__webpack_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };
 /******/
 /******/ 	// __webpack_public_path__
-/******/ 	__webpack_require__.p = "./dist/";
+/******/ 	__webpack_require__.p = "../dist/";
 /******/
 /******/
 /******/ 	// Load entry module and return exports
