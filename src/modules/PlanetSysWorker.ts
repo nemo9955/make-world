@@ -6,7 +6,6 @@ import { Config, MessageType, WorkerEvent, WorkerPacket } from "./Config";
 import { DrawThreePlsys } from "./DrawThreePlsys";
 import { PlanetarySystem } from "../generate/PlanetarySystem";
 import { WorldData } from "./WorldData";
-import { SharedData } from "./SharedData";
 import { WorkerDOM } from "../utils/WorkerDOM";
 import { DrawD3Plsys } from "./DrawD3Plsys";
 import { JguiMake } from "../gui/JguiMake";

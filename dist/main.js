@@ -82,7 +82,7 @@ var make_world =
 /******/
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 48);
+/******/ 	return __webpack_require__(__webpack_require__.s = 47);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -50309,7 +50309,7 @@ function mean(values, valueof) {
 });
 
 // EXTERNAL MODULE: ./node_modules/d3-array/src/merge.js
-var merge = __webpack_require__(36);
+var merge = __webpack_require__(35);
 
 // EXTERNAL MODULE: ./node_modules/d3-array/src/min.js
 var src_min = __webpack_require__(10);
@@ -50359,7 +50359,7 @@ function pair(a, b) {
 var quickselect = __webpack_require__(24);
 
 // EXTERNAL MODULE: ./node_modules/d3-array/src/range.js
-var range = __webpack_require__(37);
+var range = __webpack_require__(36);
 
 // CONCATENATED MODULE: ./node_modules/d3-array/src/least.js
 
@@ -51431,7 +51431,7 @@ function min(values, valueof) {
 
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OrbitingElement = void 0;
-const ObjectsHacker_1 = __webpack_require__(40);
+const ObjectsHacker_1 = __webpack_require__(39);
 // https://stackoverflow.com/a/65337891/2948519
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html
 class OrbitingElement extends ObjectsHacker_1.Identifiable {
@@ -51945,7 +51945,7 @@ function fcumsum(values, valueof) {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var _delaunay_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(45);
+/* harmony import */ var _delaunay_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(44);
 /* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "a", function() { return _delaunay_js__WEBPACK_IMPORTED_MODULE_0__["a"]; });
 
 /* harmony import */ var _voronoi_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(25);
@@ -57131,7 +57131,7 @@ var src_extent = __webpack_require__(11);
 var ticks = __webpack_require__(5);
 
 // EXTERNAL MODULE: ./node_modules/d3-array/src/range.js
-var src_range = __webpack_require__(37);
+var src_range = __webpack_require__(36);
 
 // CONCATENATED MODULE: ./node_modules/d3-contour/src/array.js
 var array_array = Array.prototype;
@@ -60848,7 +60848,7 @@ function longitude(point) {
 });
 
 // EXTERNAL MODULE: ./node_modules/d3-array/src/merge.js
-var src_merge = __webpack_require__(36);
+var src_merge = __webpack_require__(35);
 
 // CONCATENATED MODULE: ./node_modules/d3-geo/src/clip/index.js
 
@@ -71878,8 +71878,8 @@ exports.LOOP_INTERVAL = 100;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DrawD3Terrain = void 0;
 const d3 = __webpack_require__(22);
-const d3_geo_voronoi_1 = __webpack_require__(68);
-const Points = __webpack_require__(51);
+const d3_geo_voronoi_1 = __webpack_require__(67);
+const Points = __webpack_require__(50);
 const WorkerDOM_1 = __webpack_require__(28);
 /*
 
@@ -71921,7 +71921,6 @@ https://github.com/joshforisha/open-simplex-noise-js
 class DrawD3Terrain {
     constructor() {
         this.type = this.constructor.name;
-        this.sharedData = null;
         this.world = null;
         this.canvasOffscreen = null;
         this.config = null;
@@ -72104,7 +72103,7 @@ exports.DrawD3Terrain = DrawD3Terrain;
 /* WEBPACK VAR INJECTION */(function(global) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.WorkerDocument = exports.WorkerDOM = void 0;
-const Actions_1 = __webpack_require__(53);
+const Actions_1 = __webpack_require__(52);
 class DUMMY_CLASS {
 }
 class WorkerDOM {
@@ -72289,7 +72288,7 @@ class WorkerDocument {
 }
 exports.WorkerDocument = WorkerDocument;
 
-/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(52)))
+/* WEBPACK VAR INJECTION */}.call(this, __webpack_require__(51)))
 
 /***/ }),
 /* 29 */
@@ -72299,7 +72298,7 @@ exports.WorkerDocument = WorkerDocument;
 
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Star = void 0;
-const Color_1 = __webpack_require__(41);
+const Color_1 = __webpack_require__(40);
 const Random = __webpack_require__(13);
 const Convert = __webpack_require__(4);
 const OrbitingElement_1 = __webpack_require__(12);
@@ -72470,6 +72469,981 @@ exports.Star = Star;
 
 /***/ }),
 /* 30 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Planet = void 0;
+const Color_1 = __webpack_require__(40);
+const Random = __webpack_require__(13);
+const Convert = __webpack_require__(4);
+const OrbitingElement_1 = __webpack_require__(12);
+// https://en.wikipedia.org/wiki/List_of_gravitationally_rounded_objects_of_the_Solar_System
+// TODO more proper and complex planets and moons generation
+// https://youtu.be/t6i6TPsqvaM?t=257
+// https://www.youtube.com/watch?v=Evq7n2cCTlg&ab_channel=Artifexian
+// TODO generate some predefined planet compositions
+// // random size and composition (water, rock, iron) and get mass and density based on proportions, etc
+// TODO calc inner and outer limit
+class Planet extends OrbitingElement_1.OrbitingElement {
+    constructor(worldData) {
+        super(worldData);
+        this.orbLimitOut = new Convert.NumberLength(); // hill sphere
+        this.orbLimitIn = new Convert.NumberLength(); // roche limit
+        this.radius = new Convert.NumberLength();
+        this.mass = new Convert.NumberBigMass();
+        this.density = new Convert.NumberDensity();
+        this.isMoon = false;
+        this.planetType = "UNKNOWN";
+        this.terrainId = null;
+        this.type = this.constructor.name;
+        this.color = new Color_1.Color();
+        this.radius.value = 1;
+        this.mass.value = 1;
+        this.density.value = 1;
+    }
+    getTerrain() {
+        if (!this.terrainId)
+            return null;
+        return this.getWorldData().idObjMap.get(this.terrainId);
+    }
+    makeMoon(smajax, smajaxParent, plsys) {
+        this.color.set_color("DarkGrey");
+        this.planetType = "Moon";
+        this.isMoon = true;
+        // TODO make Major moons and Minor moons and maybe ensure moon is smaller than planet
+        this.mass.em = Random.random_float_clamp(0.01, 0.02);
+        this.radius.er = Random.random_float_clamp(0.1, 0.3);
+        // this.surfaceGravity = Random.random_float_clamp(0.68,1.5);
+        // this.surfaceGravity = this.mass.em / (this.radius.er * this.radius.er) // calculated
+        this.density.setMassRadius(this.mass, this.radius);
+    }
+    makeEarthLike() {
+        this.color.set_color("blue");
+        this.planetType = "Normal";
+        // ver 1 : https://youtu.be/RxbIoIM_Uck?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=64
+        this.mass.em = Random.random_float_clamp(0.4, 2.35);
+        this.radius.er = Random.random_float_clamp(0.78, 1.25);
+        // this.surfaceGravity = Random.random_float_clamp(0.68,1.5);
+        // ver 2 : https://youtu.be/RxbIoIM_Uck?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=81
+        // this.mass.em = Random.random_float_clamp(0.1, 3.5);
+        // this.radius.er = Random.random_float_clamp(0.5, 1.5);
+        // this.surfaceGravity = Random.random_float_clamp(0.4,1.6);
+        // console.log("this.radius.km", this.radius.km, "makeEarthLike");
+        // this.surfaceGravity = this.mass.em / (this.radius.er * this.radius.er) // calculated
+        // this.density.setSiRadiusYotta(this.mass, this.radius);
+        this.density.setMassRadius(this.mass, this.radius);
+        // console.log("this.mass", this.mass);
+        // console.log("this.radius", this.radius);
+        // console.log("this.density", this.density);
+    }
+    makeDwarf() {
+        this.color.set_color("MistyRose");
+        this.planetType = "Dwarf";
+        // https://youtu.be/XEIsZjQ_OdU?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=67
+        this.mass.em = Random.random_float_clamp(0.0001, 0.1);
+        this.radius.er = Random.random_float_clamp(0.03, 0.5); // CHECK what is the max
+        // this.surfaceGravity = this.mass.em / (this.radius.er * this.radius.er) // calculated
+        this.density.setMassRadius(this.mass, this.radius);
+    }
+    makeGassGiant() {
+        this.color.set_color("DarkGoldenRod");
+        this.planetType = "GassGiant";
+        // https://youtu.be/80oQBGD7g34?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=22
+        // 13 Jupiter Mass == 13 * 317.8 Earth Mass
+        this.mass.jupm = Random.random_float_clamp(2, 13);
+        // https://youtu.be/80oQBGD7g34?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=35
+        this.radius.jupr = Random.random_float_clamp(0.9, 1.1); // Add SOME wiggle
+        // this.surfaceGravity = this.mass.em / (this.radius.er * this.radius.er) // calculated
+        this.density.setMassRadius(this.mass, this.radius);
+    }
+    makePuffyGiantPlanet() {
+        this.color.set_color("DarkCyan");
+        this.planetType = "PuffyGiantPlanet";
+        // https://youtu.be/80oQBGD7g34?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=22
+        // https://youtu.be/80oQBGD7g34?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=98
+        this.mass.em = Random.random_float_clamp(10, Convert.jupEarthMass(2));
+        // https://youtu.be/80oQBGD7g34?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=35
+        this.radius.jupr = Random.random_float_clamp(1, 3); // CHECK what is the max
+        // this.surfaceGravity = this.mass.em / (this.radius.er * this.radius.er) // calculated
+        this.density.setMassRadius(this.mass, this.radius);
+    }
+    makeGassDwarf() {
+        this.color.set_color("Crimson");
+        this.planetType = "GassDwarf";
+        // https://youtu.be/80oQBGD7g34?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=179
+        this.mass.em = Random.random_float_clamp(1, 20);
+        this.radius.er = Random.random_float_clamp(2, 5); // CHECK what is the max
+        // this.surfaceGravity = this.mass.em / (this.radius.er * this.radius.er) // calculated
+        this.density.setMassRadius(this.mass, this.radius);
+    }
+    randomMainOrbit(smajax, plsys) {
+        return this.makeTypes(["all"], smajax, plsys);
+    }
+    randomBinaryOrbit(planetIndex, smajax, plsys) {
+        var tags = ["all"];
+        if (planetIndex >= 1)
+            tags = ["nohab"];
+        return this.makeTypes(tags, smajax, plsys);
+    }
+    makeTypes(tags, smajax, plsys) {
+        // https://youtu.be/80oQBGD7g34?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=244 gass giants
+        // get a main platet suitable to it's orbit
+        // min-max valid orbit in au
+        // pick = what is returned by function
+        var picks = [];
+        var minOrb = plsys.orbits_limit_in.au;
+        var maxOrb = plsys.orbits_limit_out.au;
+        var habOrb = (plsys.hab_zone_in.au + plsys.hab_zone_out.au) / 2;
+        var frostOrb = plsys.frost_line.au;
+        picks.push({ min: -minOrb, max: maxOrb * 200, chance: 0.0001, pick: this.makeEarthLike.bind(this) });
+        if (["all", "hab"].filter(x => tags.includes(x))) {
+            picks.push({ min: plsys.hab_zone_in.au, max: plsys.hab_zone_out.au, chance: 1000000, pick: this.makeEarthLike.bind(this) });
+            picks.push({ min: minOrb, max: habOrb * 2, chance: 2, pick: this.makeEarthLike.bind(this) });
+        }
+        if (["all", "nohab"].filter(x => tags.includes(x)))
+            picks.push({ min: minOrb, max: frostOrb * 0.6, chance: 3, pick: this.makeDwarf.bind(this) });
+        if (["all", "nohab"].filter(x => tags.includes(x)))
+            picks.push({ min: minOrb, max: frostOrb * 0.6, chance: 2, pick: this.makePuffyGiantPlanet.bind(this) });
+        if (["all", "nohab"].filter(x => tags.includes(x)))
+            picks.push({ min: frostOrb * 0.6, max: frostOrb * 2, chance: 1, pick: this.makeGassGiant.bind(this) });
+        if (["all", "nohab"].filter(x => tags.includes(x)))
+            picks.push({ min: frostOrb, max: maxOrb * 2, chance: 5, pick: this.makeGassGiant.bind(this) });
+        if (["all", "nohab"].filter(x => tags.includes(x)))
+            picks.push({ min: frostOrb * 0.6, max: maxOrb * 2, chance: 6, pick: this.makeGassDwarf.bind(this) });
+        var pickedMake = Random.pickChanceOverlaping(smajax.au, picks);
+        return pickedMake.pick();
+    }
+    compute() {
+        super.compute();
+        var orbit_ = this.getDirectOrbit();
+        var parentMass = this.getParentMass();
+        if (!parentMass) {
+            console.warn("this.getParents()", this.getParents());
+            console.log("this", this);
+            // console.log("this.getWorldData().idObjMap", this.getWorldData().idObjMap);
+        }
+        parentMass = parentMass.clone();
+        var minMass = this.mass.value;
+        var maxMass = parentMass.value;
+        if (minMass > maxMass) {
+            console.warn(`Illogical Hill Sphere, ${minMass} > ${maxMass} `, this, parentMass);
+        }
+        this.orbLimitOut.value = orbit_.semimajor_axis.value * Math.cbrt(minMass / (3 * maxMass));
+        var rochFractionMass = this.mass.value / 1;
+        // var rochFractionDens = this.density.value / 1;
+        // if (rochFractionDens != rochFractionMass)
+        //     console.warn("Roch fractions should be the same", rochFractionDens, rochFractionMass, this);
+        this.orbLimitIn.value = this.radius.value * Math.pow(2 * rochFractionMass, 1 / 3);
+        // console.log("1111"
+        //     , "\t", orbit_.semimajor_axis.km
+        //     , "\t", this.orbLimitIn.km
+        //     , "\t", this.orbLimitOut.km
+        // );
+        return this;
+    }
+    getMass() {
+        return this.mass;
+    }
+    guiSelect(slectPane, gui) {
+        slectPane.addInput(this.color, 'value', { label: "color" });
+        slectPane.addInput(this.radius, 'km', { label: "radius km" });
+        slectPane.addInput(this.mass, 'Yg', { label: "mass Yg" });
+        slectPane.addMonitor(this.orbLimitIn, 'km', { label: "lim in" });
+        slectPane.addMonitor(this.orbLimitOut, 'km', { label: "lim out" });
+        slectPane.addMonitor(this.density, 'gcm3', { label: "density" });
+        slectPane.addMonitor(this, "planetType");
+        slectPane.addMonitor(this, "isInHabZone");
+        super.guiSelect(slectPane, gui);
+    }
+    clone() { return new Planet(this.getWorldData()).copyLogic(this); }
+}
+exports.Planet = Planet;
+
+
+/***/ }),
+/* 31 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Ticker = exports.Intervaler = exports.waitBlocking = void 0;
+function waitBlocking(ms) {
+    var start = new Date().getTime();
+    var end = start;
+    while (end < start + ms) {
+        end = new Date().getTime();
+    }
+}
+exports.waitBlocking = waitBlocking;
+class Intervaler {
+    constructor() {
+        this.last_time = +new Date();
+    }
+    check(interval) {
+        const now_ = +new Date();
+        if (now_ - this.last_time > interval) {
+            this.last_time = now_;
+            return true;
+        }
+        return false;
+    }
+}
+exports.Intervaler = Intervaler;
+class Ticker {
+    constructor(enabled = false, tick_function = null, tick_interval = 100, delay_interval = 0) {
+        this.enabled = enabled;
+        this.timeout_val = null;
+        this.tick_function = tick_function;
+        this.delay_interval = delay_interval;
+        this.used_delay = this.delay_interval;
+        this.tick_interval = tick_interval;
+    }
+    tick() {
+        this.tick_function();
+    }
+    // TODO FIXME check if there is a recursivity issue
+    start() {
+        this.enabled = true;
+        if (this.timeout_val === null) {
+            this.timeout_val = setTimeout(() => {
+                this.timeout_val = null;
+                this.used_delay = 0;
+                this.start();
+                this.tick();
+            }, this.tick_interval + this.used_delay);
+        }
+    }
+    stop() {
+        this.enabled = false;
+        if (this.timeout_val !== null) {
+            clearTimeout(this.timeout_val);
+            this.timeout_val = null;
+        }
+    }
+    updateState(setEnable) {
+        // console.warn(`#HERELINE Time updateState setEnable ${setEnable} `);
+        if (setEnable == this.enabled)
+            return;
+        if (setEnable)
+            this.start();
+        else
+            this.stop();
+    }
+}
+exports.Ticker = Ticker;
+
+
+/***/ }),
+/* 32 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.JguiManager = exports.JguiMake = void 0;
+const Random_1 = __webpack_require__(13);
+class JguiMake {
+    constructor(tag_) {
+        this.tag = null;
+        this.attr = {};
+        this.style = {};
+        this.html = null;
+        this.tag = tag_;
+        this.genId();
+    }
+    // just for convenience
+    get id() { return this.attr.id; }
+    set id(value) { this.attr.id = value; }
+    get class() { return this.attr.class; }
+    set class(value) { this.attr.class = value; }
+    get type() { return this.attr.type; }
+    set type(value) { this.attr.type = value; }
+    mkWorkerJgui(id, order) {
+        this.tag = "div";
+        this.id = id;
+        this.class = "d-grid gap-1 bg-light border shadow-sm rounded ";
+        // this.style.zIndex = "200";
+        // this.style.position = "fixed";
+        // this.style.top = "10px";
+        // this.style.left = "10px";
+        // this.style.width = "256px";
+        this.attr.jguiOrder = order;
+        var coll = this.addColapse(id, true);
+        return [this, coll];
+    }
+    mkContainer() {
+        // https://getbootstrap.com/docs/5.0/layout/containers/
+        this.tag = "div";
+        this.class = "d-grid gap-1 bg-light border shadow-sm rounded ";
+        return this;
+    }
+    mkButton(name, type = "primary") {
+        // https://getbootstrap.com/docs/5.0/components/buttons/
+        this.tag = "button";
+        // this.listeners = "click";
+        this.attr.class = `btn btn-${type} btn-sm`;
+        this.attr.type = "button";
+        this.html = name;
+        this.style["padding"] = "0"; //  no padding
+        return this;
+    }
+    addButton(btnName) {
+        // https://getbootstrap.com/docs/5.0/components/buttons/
+        var btnObj = new JguiMake(null).mkButton(btnName);
+        this.appendHtml(btnObj);
+        return btnObj;
+    }
+    mkColapse(name, expanded) {
+        // https://getbootstrap.com/docs/5.0/components/collapse/
+        this.tag = "div";
+        // this.class = "collapse";
+        // this.class = "collapse gap-1 bg-light border shadow-sm rounded  ";
+        this.class = "collapse gap-1 card card-body";
+        if (expanded)
+            this.class += " show";
+        this.genId();
+        this.style["padding-top"] = "0.1rem";
+        this.style["padding-left"] = "0.4rem";
+        this.style["padding-bottom"] = "0px";
+        this.style["padding-right"] = "0px";
+        return this;
+    }
+    addColapse(colName, expanded = false) {
+        // https://getbootstrap.com/docs/5.0/components/collapse/
+        // https://getbootstrap.com/docs/5.0/components/card/
+        var btnName = `Toggle ${colName}`;
+        var btnObj = new JguiMake(null).mkButton(btnName, "secondary");
+        var colObj = new JguiMake(null).mkColapse(colName, expanded);
+        btnObj.genId();
+        // btnObj.attr["data-bs-toggle"] = "button"
+        btnObj.attr["data-bs-toggle"] = "collapse";
+        btnObj.attr["aria-expanded"] = `false`;
+        btnObj.attr["data-bs-target"] = `#${colObj.id}`;
+        btnObj.attr["aria-controls"] = `${colObj.id}`;
+        this.appendHtml(btnObj);
+        this.appendHtml(colObj);
+        return colObj;
+    }
+    mkRow() {
+        // https://getbootstrap.com/docs/5.0/layout/gutters/#row-columns-gutters
+        this.tag = "div";
+        this.class = "row align-items-start";
+        return this;
+    }
+    addSlider(slideName, min, max, step) {
+        // https://getbootstrap.com/docs/5.0/forms/range/
+        // <label for= "customRange3" class= "form-label" > Example range < /label>
+        // < input type = "range" class="form-range" min = "0" max = "5" step = "0.5" id = "customRange3" >
+        // var rowObj = new JguiMake(null).mkRow()
+        var labelObj = new JguiMake("label").genId();
+        var rangeObj = new JguiMake("input").genId();
+        labelObj.tag = "label";
+        labelObj.attr.for = `${rangeObj.id}`;
+        labelObj.attr.class = "form-label";
+        labelObj.html = `${slideName}`;
+        labelObj.style.margin = "0";
+        rangeObj.tag = `input`;
+        rangeObj.attr.type = `range`;
+        rangeObj.attr.class = `form-range`;
+        rangeObj.attr.min = `${min}`;
+        rangeObj.attr.max = `${max}`;
+        rangeObj.attr.step = `${step}`;
+        rangeObj.style.margin = "0";
+        rangeObj.style["padding-left"] = "0.5rem";
+        rangeObj.style["padding-right"] = "0.5rem";
+        rangeObj.attr.oninput = `${labelObj.id}.innerHTML="${slideName} "+value`;
+        // rangeObj.listeners = `input`
+        // rangeObj.listeners = `change`
+        // rangeObj.listeners = `oninput`
+        this.appendHtml(labelObj);
+        this.appendHtml(rangeObj);
+        // rowObj.appendHtml(labelObj)
+        // rowObj.appendHtml(rangeObj)
+        // this.appendHtml(rowObj)
+        return rangeObj;
+    }
+    genId() {
+        var bid = Random_1.randomAlphabetString(5);
+        this.id = `${this.tag}${bid}`;
+        return this;
+    }
+    appendHtml(elem) {
+        if (!this.html)
+            this.html = [];
+        this.html.push(elem);
+        // return
+    }
+    appendListener(elem) {
+        if (!this.listeners)
+            this.listeners = [];
+        this.listeners.push(elem);
+        // return
+    }
+    addEventListener(evMng, evName, listenerCbk) {
+        // TODO maybe option to not pass the Event to move less data ???
+        var jListen = {
+            name: evName,
+            id: `${evName}-${this.id}.${Random_1.randomAlphabetString(6)}` // TODO could be better
+        };
+        evMng.registerListener(jListen.id, listenerCbk);
+        this.appendListener(jListen);
+        return this;
+    }
+}
+exports.JguiMake = JguiMake;
+class JguiManager {
+    constructor(worker, workerName) {
+        this.listenersJguiMap = new Map();
+        this.worker = worker;
+        this.workerName = workerName;
+    }
+    registerListener(lisId, listenerCbk) {
+        this.listenersJguiMap.set(lisId, listenerCbk);
+    }
+    dispachListener(lisId, event) {
+        var lisCbk = this.listenersJguiMap.get(lisId);
+        lisCbk(event);
+    }
+}
+exports.JguiManager = JguiManager;
+
+
+/***/ }),
+/* 33 */,
+/* 34 */,
+/* 35 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return merge; });
+function* flatten(arrays) {
+  for (const array of arrays) {
+    yield* array;
+  }
+}
+
+function merge(arrays) {
+  return Array.from(flatten(arrays));
+}
+
+
+/***/ }),
+/* 36 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony default export */ __webpack_exports__["a"] = (function(start, stop, step) {
+  start = +start, stop = +stop, step = (n = arguments.length) < 2 ? (stop = start, start = 0, 1) : n < 3 ? 1 : +step;
+
+  var i = -1,
+      n = Math.max(0, Math.ceil((stop - start) / step)) | 0,
+      range = new Array(n);
+
+  while (++i < n) {
+    range[i] = start + i * step;
+  }
+
+  return range;
+});
+
+
+/***/ }),
+/* 37 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.addEventsD3Canvas = exports.addOrbitCtrlEvents = exports.addResizeEvents = exports.isShiftPressed = exports.conditionalRedirect = exports.genericConditionalRedirect = exports.genericRedirect = exports.getBasicEvent = void 0;
+const Config_1 = __webpack_require__(3);
+const BASIC_OBJECTS = ["number", "boolean", "string"];
+/*
+
+https://bl.ocks.org/pkerpedjiev/32b11b37be444082762443c4030d145d D3 event filtering
+The red circles don't allow scroll-wheel zooming and drag-based panning
+
+*/
+function getBasicEvent(source_) {
+    var target_ = {};
+    for (const key in source_) {
+        var type_ = typeof source_[key];
+        if (BASIC_OBJECTS.includes(type_) == false)
+            continue;
+        // console.log("key", key, type_);
+        target_[key] = source_[key];
+    }
+    if (typeof source_.target == "object") {
+        target_.target = {};
+        for (const key in source_.target) {
+            var type_ = typeof source_.target[key];
+            if (BASIC_OBJECTS.includes(type_) == false)
+                continue;
+            // console.log("key", key, type_);
+            target_.target[key] = source_.target[key];
+        }
+    }
+    return target_;
+}
+exports.getBasicEvent = getBasicEvent;
+function genericRedirect(event_name, canvas, canvas_id, worker) {
+    // console.log("event_name", event_name);
+    canvas.addEventListener(event_name, (evt_) => {
+        var basic_event = getBasicEvent(evt_);
+        basic_event["event_id"] = canvas_id;
+        // console.log("event_name, event", event_name, basic_event);
+        worker.postMessage({
+            message: Config_1.MessageType.Event,
+            event_id: canvas_id,
+            event: basic_event,
+        });
+    });
+}
+exports.genericRedirect = genericRedirect;
+function genericConditionalRedirect(event_name, canvas, canvas_id, worker, eventCondition) {
+    // console.log("event_name", event_name);
+    canvas.addEventListener(event_name, (evt_) => {
+        if (eventCondition(evt_) == false)
+            return;
+        var basic_event = getBasicEvent(evt_);
+        basic_event["event_id"] = canvas_id;
+        // console.log("event_name, event", event_name, basic_event);
+        worker.postMessage({
+            message: Config_1.MessageType.Event,
+            event_id: canvas_id,
+            event: basic_event,
+        });
+    });
+}
+exports.genericConditionalRedirect = genericConditionalRedirect;
+function conditionalRedirect(event_do, event_in, event_out, canvas, canvas_id, worker) {
+    var ev_do_fun = (evt_) => {
+        var basic_event = getBasicEvent(evt_);
+        basic_event["event_id"] = canvas_id;
+        // console.log("event_do, event", event_do, basic_event);
+        worker.postMessage({
+            message: Config_1.MessageType.Event,
+            event_id: canvas_id,
+            event: basic_event,
+        });
+    };
+    canvas.addEventListener(event_in, (evt_) => {
+        var basic_event = getBasicEvent(evt_);
+        basic_event["event_id"] = canvas_id;
+        // console.log("event_in, event", event_in, basic_event);
+        canvas.addEventListener(event_do, ev_do_fun); ///////////////////
+        worker.postMessage({
+            message: Config_1.MessageType.Event,
+            event_id: canvas_id,
+            event: basic_event,
+        });
+    });
+    canvas.addEventListener(event_out, (evt_) => {
+        var basic_event = getBasicEvent(evt_);
+        basic_event["event_id"] = canvas_id;
+        // console.log("event_out, event", event_out, basic_event);
+        canvas.removeEventListener(event_do, ev_do_fun); ///////////////////
+        worker.postMessage({
+            message: Config_1.MessageType.Event,
+            event_id: canvas_id,
+            event: basic_event,
+        });
+    });
+}
+exports.conditionalRedirect = conditionalRedirect;
+function isShiftPressed(event_) {
+    return Boolean(event_.shiftKey);
+}
+exports.isShiftPressed = isShiftPressed;
+function addResizeEvents(canvas, canvas_id, worker) {
+    genericRedirect("resize", canvas, canvas_id, worker);
+}
+exports.addResizeEvents = addResizeEvents;
+function addOrbitCtrlEvents(canvas, canvas_id, worker) {
+    // disable right-click context on canvas ... TODO do cool stuff !!!!
+    // canvas.addEventListener("contextmenu", (evt_) => { evt_.preventDefault() });
+    // genericRedirect("keydown", canvas, canvas_id, worker)
+    // TODO maybe limit somehow the amount of events (pointermove,touchmove) being sent ???
+    conditionalRedirect("pointermove", "pointerdown", "pointerup", canvas, canvas_id, worker);
+    genericConditionalRedirect("wheel", canvas, canvas_id, worker, isShiftPressed.bind(this));
+    // conditionalRedirect("touchmove", "touchstart", "touchend", canvas, canvas_id, worker)
+    // canvas.addEventListener('touchstart', onTouchStart, false);
+    // canvas.addEventListener('touchend', onTouchEnd, false);
+    // canvas.addEventListener('touchmove', onTouchMove, false);
+    // canvas.addEventListener('contextmenu', onContextMenu, false);
+    // canvas.addEventListener('pointerdown', onPointerDown, false);
+    // canvas.addEventListener('keydown', onKeyDown, false);
+    // canvas.addEventListener('wheel', onMouseWheel, false);
+}
+exports.addOrbitCtrlEvents = addOrbitCtrlEvents;
+function addEventsD3Canvas(canvas, canvas_id, worker) {
+    // genericRedirect("pointerdown", canvas, canvas_id, worker)
+    // genericRedirect("pointerup", canvas, canvas_id, worker)
+    // genericRedirect("dblclick", canvas, canvas_id, worker)
+    // genericRedirect("mousedown", canvas, canvas_id, worker)
+    genericConditionalRedirect("wheel", canvas, canvas_id, worker, isShiftPressed.bind(this));
+    // genericRedirect("selectstart", canvas, canvas_id, worker)
+    // conditionalRedirect("pointermove", "pointerdown", "pointerup", canvas, canvas_id, worker)
+    conditionalRedirect("mousemove", "mousedown", "mouseup", canvas, canvas_id, worker);
+    // genericRedirect("mousemove", canvas, canvas_id, worker)
+    // genericRedirect("mousedown", canvas, canvas_id, worker)
+    // genericRedirect("mouseup", canvas, canvas_id, worker)
+}
+exports.addEventsD3Canvas = addEventsD3Canvas;
+
+
+/***/ }),
+/* 38 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.WorldData = exports.objects_types_ = void 0;
+const PlanetarySystem_1 = __webpack_require__(53);
+const DataBaseManager_1 = __webpack_require__(54);
+const SpaceFactory_1 = __webpack_require__(55);
+const Orbit_1 = __webpack_require__(41);
+const Planet_1 = __webpack_require__(30);
+const Star_1 = __webpack_require__(29);
+const SpaceGroup_1 = __webpack_require__(42);
+const Terrain_1 = __webpack_require__(56);
+// TODO read&write function WITH and WITHOUT structure change
+// WITHOUT structure change is just update or variables values
+// WITH represents a refresh/regen
+// TODO Planet Star Orbit and such objects to be stored directly in DB and referenced by some UUID
+// TODO do not use function.name and constructor.name so minified can be used
+// https://stackoverflow.com/questions/50267543/class-name-always-e-for-every-class-after-uglify-webpack-for-production
+exports.objects_types_ = {};
+exports.objects_types_["PlanetarySystem"] = PlanetarySystem_1.PlanetarySystem;
+exports.objects_types_["Orbit"] = Orbit_1.Orbit;
+exports.objects_types_["Planet"] = Planet_1.Planet;
+exports.objects_types_["Star"] = Star_1.Star;
+exports.objects_types_["SpaceGroup"] = SpaceGroup_1.SpaceGroup;
+exports.objects_types_["Terrain"] = Terrain_1.Terrain;
+class WorldData {
+    constructor(targetTable, name) {
+        this.type = this.constructor.name;
+        this.idObjMap = new Map();
+        this.config = null;
+        this.name = name;
+        this.dbm = new DataBaseManager_1.DataBaseManager(targetTable, name);
+        this.spaceFactory = new SpaceFactory_1.SpaceFactory(this);
+        this.planetarySystem = new PlanetarySystem_1.PlanetarySystem(this);
+        // console.log("this.planetary_system.getWorldData()", this.planetary_system.getWorldData());
+    }
+    async preInit() {
+        console.debug(`#HERELINE WorldData preInit ${this.config.WORLD_DATABASE_NAME} `);
+        return this.dbm.init(this.config.keepDbAtPageRefresh).then(() => {
+            console.debug(`#HERELINE WorldData ${this.name} preInit then`);
+            this.spread_objects();
+        });
+    }
+    async initPlSys() {
+        console.debug("#HERELINE WorldData initPlSys");
+        if (this.config.keepDbAtPageRefresh) {
+            // return this.readDeep();
+        }
+        else {
+            this.planetarySystem.init();
+            /////////// this.planetary_system.setWorldData(this);
+            /////////// this.setOrbElem(this.planetary_system);
+            this.spaceFactory.genStartingPlanetSystem(this.planetarySystem);
+            return Promise.resolve();
+        }
+        return Promise.reject();
+    }
+    async initTerrain() {
+        console.debug("#HERELINE WorldData initTerrain");
+        for (const element of this.planetarySystem.getAllSats()) {
+            if (element instanceof Planet_1.Planet && element.isInHabZone) {
+                if (element.planetType == "Normal") {
+                    Terrain_1.Terrain.initForPlanet(element);
+                    return; // TODO TMP FIXME limit to 1 terrain while testing !!!!!!!!!!!!!!!!!
+                }
+            }
+        }
+    }
+    initWorker() {
+        console.debug("#HERELINE WorldData initWorker");
+        return this.dbm.open();
+    }
+    spread_objects() {
+        var to_spread = [this.spaceFactory];
+        for (const object_ of to_spread) {
+            if (object_.planetarySystem === null)
+                object_.planetarySystem = this.planetarySystem;
+            if (object_.config === null)
+                object_.config = this.config;
+            if (object_.world === null)
+                object_.world = this;
+        }
+    }
+    getFreeID() {
+        return WorldData.wdMaxId++;
+        // if (!this.sharedData) return Math.ceil(Math.random() * 10000) + 1000;
+        // var id_ = this.sharedData.maxId++;
+        // while (this.idObjMap.has(id_))
+        //     id_ = this.sharedData.maxId++;
+        // return id_;
+    }
+    free(id_) {
+        this.idObjMap.delete(id_);
+    }
+    setIdObject(obj_) {
+        this.idObjMap.set(obj_.id, obj_);
+    }
+    async readShallow() {
+        // console.debug("#HERELINE WorldData readShallow this.name", this.name);
+        // console.time("#time WorldData " + this.name + " readShallow");
+        // return this.readDeep(); // TODO WA FIXME
+        var data_ps = this.dbm.idb.transaction(DataBaseManager_1.DataBaseManager.STANDARD_OBJECTS, "readonly");
+        // var keys_from_db = []
+        // var keys_from_wd = [...this.idObjMap.keys()]
+        var all = await data_ps.store.getAll(); /// var 1
+        for (const iterator of all) { /// var 1
+            // var cursor = data_ps.store.openCursor(); /// var 2
+            // for await (const cursor of data_ps.store) { /// var 2
+            //     var iterator = cursor.value; /// var 2
+            // keys_from_db.push(iterator.id)
+            if (iterator.type == "PlanetarySystem") {
+                this.planetarySystem.copyShallow(iterator);
+                this.idObjMap.set(iterator.id, this.planetarySystem);
+            }
+            else {
+                const newLocal = this.idObjMap.get(iterator.id);
+                if (!newLocal) {
+                    console.warn("this", this);
+                    // console.warn("this.idObjMap", this.idObjMap);
+                    // console.warn("iterator", iterator);
+                }
+                newLocal.copyShallow(iterator);
+            }
+        }
+        // keys_from_db.sort()
+        // keys_from_wd.sort()
+        // console.log("keys_from_db", keys_from_db);
+        // console.log("keys_from_wd", keys_from_wd);
+        await data_ps.done.finally(() => {
+            // console.timeEnd("#time WorldData " + this.name + " readShallow");
+        });
+    }
+    async readDeep() {
+        console.debug(`#HERELINE WorldData readDeep this.name ${this.name}`);
+        console.time(`#time WorldData ${this.name} readDeep`);
+        var data_ps = this.dbm.idb.transaction(DataBaseManager_1.DataBaseManager.STANDARD_OBJECTS, "readonly");
+        this.idObjMap.clear();
+        var all = await data_ps.store.getAll(); /// var 1
+        for (const iterator of all) { /// var 1
+            // var cursor = data_ps.store.openCursor(); /// var 2
+            // for await (const cursor of data_ps.store) { /// var 2
+            //     var iterator = cursor.value; /// var 2
+            if (iterator.type == "PlanetarySystem") {
+                this.planetarySystem.copyDeep(iterator);
+                this.idObjMap.set(iterator.id, this.planetarySystem);
+            }
+            else {
+                var obj_ = new exports.objects_types_[iterator.type](this); // wow
+                this.idObjMap.set(iterator.id, obj_);
+                const newLocal = this.idObjMap.get(iterator.id);
+                if (!newLocal) {
+                    console.warn("this.idObjMap", this.idObjMap);
+                    console.warn("this", this);
+                    console.warn("iterator", iterator);
+                }
+                newLocal.copyDeep(iterator);
+            }
+        }
+        await data_ps.done.finally(() => {
+            console.timeEnd(`#time WorldData ${this.name} readDeep`);
+        });
+    }
+    async writeDeep() {
+        console.debug(`#HERELINE WorldData writeDeep this.name ${this.name}`);
+        console.time(`#time WorldData ${this.name} writeDeep`);
+        var data_ps = this.dbm.idb.transaction(DataBaseManager_1.DataBaseManager.STANDARD_OBJECTS, "readwrite");
+        await data_ps.store.clear();
+        var promises = [];
+        for (const iterator of this.idObjMap.values()) {
+            promises.push(data_ps.store.put(iterator));
+        }
+        promises.push(data_ps.done);
+        await Promise.all(promises).finally(() => {
+            console.timeEnd(`#time WorldData ${this.name} writeDeep`);
+        });
+    }
+    async writeShallow() {
+        // console.debug("#HERELINE WorldData writeShallow this.name", this.name);
+        // console.time("#time WorldData " + this.name + " writeShallow");
+        var data_ps = this.dbm.idb.transaction(DataBaseManager_1.DataBaseManager.STANDARD_OBJECTS, "readwrite");
+        var promises = [];
+        for (const iterator of this.idObjMap.values()) {
+            promises.push(data_ps.store.put(iterator));
+        }
+        promises.push(data_ps.done);
+        await Promise.all(promises).finally(() => {
+            // console.timeEnd("#time WorldData " + this.name + " writeShallow");
+        });
+    }
+    async setBigIdObject(obj_) {
+        var data_ps = this.dbm.idb.transaction(DataBaseManager_1.DataBaseManager.BIG_OBJECTS, "readwrite");
+        await data_ps.store.put(obj_);
+        await data_ps.done;
+    }
+    async getBigIdObject(id_) {
+        var data_ps = this.dbm.idb.transaction(DataBaseManager_1.DataBaseManager.BIG_OBJECTS, "readwrite");
+        return await data_ps.store.get(id_);
+    }
+    async *iterateAllBig(mode = "readonly") {
+        console.time(`#time WorldData ${this.name} iterateAllBig`);
+        console.debug(`#HERELINE WorldData iterateAllBig this.name ${this.name}`);
+        var data_ps = this.dbm.idb.transaction(DataBaseManager_1.DataBaseManager.BIG_OBJECTS, mode);
+        var cursor = await data_ps.store.openCursor();
+        while (cursor) {
+            // console.log("cursor.key, cursor.value", cursor.key, cursor.value);
+            var iterator = cursor.value;
+            yield iterator;
+            cursor.update(iterator);
+            cursor = await cursor.continue();
+        }
+        await data_ps.done.finally(() => {
+            console.timeEnd(`#time WorldData ${this.name} iterateAllBig`);
+        });
+    }
+    async *iterateAllBigType(VTYPE, mode = "readonly") {
+        // console.time(`#time WorldData ${this.name} iterateAllBigType`);
+        console.debug(`#HERELINE WorldData iterateAllBigType this.name ${this.name}`);
+        const data_ps = this.dbm.idb.transaction(DataBaseManager_1.DataBaseManager.BIG_OBJECTS, mode);
+        const index = data_ps.objectStore(DataBaseManager_1.DataBaseManager.BIG_OBJECTS).index('type');
+        var cursor = await index.openCursor(VTYPE.name);
+        while (cursor) {
+            var iterator = VTYPE.clone(this, cursor.value);
+            yield iterator;
+            cursor.update(iterator);
+            cursor = await cursor.continue();
+        }
+        await data_ps.done.finally(() => {
+            // console.timeEnd(`#time WorldData ${this.name} iterateAllBigType`);
+        });
+    }
+}
+exports.WorldData = WorldData;
+WorldData.wdMaxId = 10;
+
+
+/***/ }),
+/* 39 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Identifiable = void 0;
+const Convert = __webpack_require__(4);
+class Identifiable {
+    constructor(worldData) {
+        this.id = null;
+        this.type = null;
+        this.type = this.constructor.name;
+        this.setWorldData(worldData);
+        this.genId();
+    }
+    /*
+    to be set from outside by WorldData
+    constructor(worldData: WorldData) {
+        (this as any).__proto__.getWorldData = () => { return worldData };
+    */
+    getWorldData() { throw new Error("Function needs to be re-defined in constructor."); }
+    setWorldData(worldData) {
+        this.__proto__.getWorldData = () => { return worldData; };
+    }
+    genId() {
+        this.id = this.getWorldData().getFreeID();
+    }
+    copyDeep(source_) {
+        Convert.copyDeep(this, source_);
+        return this;
+    }
+    copyShallow(source_) {
+        Convert.copyShallow(this, source_);
+        return this;
+    }
+    copyLogic(source_) {
+        Convert.copyShallow(this, source_, true);
+        return this;
+    }
+}
+exports.Identifiable = Identifiable;
+
+
+/***/ }),
+/* 40 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Color = void 0;
+const d3 = __webpack_require__(22);
+class ColorValues {
+    constructor() {
+        this.r = 255;
+        this.g = 255;
+        this.b = 255;
+        this.opacity = 1;
+    }
+    copy(source_) {
+        // console.log("ColorValues .... source_", source_);
+        if (typeof source_.r !== "undefined")
+            this.r = source_.r;
+        if (typeof source_.g !== "undefined")
+            this.g = source_.g;
+        if (typeof source_.b !== "undefined")
+            this.b = source_.b;
+        if (typeof source_.a !== "undefined")
+            this.opacity = source_.a;
+        if (typeof source_.opacity !== "undefined")
+            this.opacity = source_.opacity;
+    }
+}
+class Color {
+    constructor() {
+        this._value = new ColorValues();
+    }
+    copyDeep(source_) { this.copyShallow(source_); }
+    copyShallow(source_) {
+        if (source_._value)
+            this._value.copy(source_._value);
+        else
+            this._value.copy(source_);
+    }
+    get r() { return this._value.r; }
+    get g() { return this._value.g; }
+    get b() { return this._value.b; }
+    set_color(value) {
+        var color = d3.color(value);
+        this._value.copy(color);
+    }
+    get value() {
+        return this._value;
+    }
+    set value(value) {
+        this._value.copy(value);
+    }
+    toString() {
+        return d3.rgb(this.r, this.g, this.b).toString();
+    }
+    getRgb() {
+        return d3.rgb(this.r, this.g, this.b);
+    }
+}
+exports.Color = Color;
+
+
+/***/ }),
+/* 41 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -72674,985 +73648,6 @@ exports.Orbit = Orbit;
 
 
 /***/ }),
-/* 31 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.Planet = void 0;
-const Color_1 = __webpack_require__(41);
-const Random = __webpack_require__(13);
-const Convert = __webpack_require__(4);
-const OrbitingElement_1 = __webpack_require__(12);
-// https://en.wikipedia.org/wiki/List_of_gravitationally_rounded_objects_of_the_Solar_System
-// TODO more proper and complex planets and moons generation
-// https://youtu.be/t6i6TPsqvaM?t=257
-// https://www.youtube.com/watch?v=Evq7n2cCTlg&ab_channel=Artifexian
-// TODO generate some predefined planet compositions
-// // random size and composition (water, rock, iron) and get mass and density based on proportions, etc
-// TODO calc inner and outer limit
-class Planet extends OrbitingElement_1.OrbitingElement {
-    constructor(worldData) {
-        super(worldData);
-        this.orbLimitOut = new Convert.NumberLength(); // hill sphere
-        this.orbLimitIn = new Convert.NumberLength(); // roche limit
-        this.radius = new Convert.NumberLength();
-        this.mass = new Convert.NumberBigMass();
-        this.density = new Convert.NumberDensity();
-        this.isMoon = false;
-        this.planetType = "UNKNOWN";
-        this.terrainId = null;
-        this.type = this.constructor.name;
-        this.color = new Color_1.Color();
-        this.radius.value = 1;
-        this.mass.value = 1;
-        this.density.value = 1;
-    }
-    getTerrain() {
-        if (!this.terrainId)
-            return null;
-        return this.getWorldData().idObjMap.get(this.terrainId);
-    }
-    makeMoon(smajax, smajaxParent, plsys) {
-        this.color.set_color("DarkGrey");
-        this.planetType = "Moon";
-        this.isMoon = true;
-        // TODO make Major moons and Minor moons and maybe ensure moon is smaller than planet
-        this.mass.em = Random.random_float_clamp(0.01, 0.02);
-        this.radius.er = Random.random_float_clamp(0.1, 0.3);
-        // this.surfaceGravity = Random.random_float_clamp(0.68,1.5);
-        // this.surfaceGravity = this.mass.em / (this.radius.er * this.radius.er) // calculated
-        this.density.setMassRadius(this.mass, this.radius);
-    }
-    makeEarthLike() {
-        this.color.set_color("blue");
-        this.planetType = "Normal";
-        // ver 1 : https://youtu.be/RxbIoIM_Uck?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=64
-        this.mass.em = Random.random_float_clamp(0.4, 2.35);
-        this.radius.er = Random.random_float_clamp(0.78, 1.25);
-        // this.surfaceGravity = Random.random_float_clamp(0.68,1.5);
-        // ver 2 : https://youtu.be/RxbIoIM_Uck?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=81
-        // this.mass.em = Random.random_float_clamp(0.1, 3.5);
-        // this.radius.er = Random.random_float_clamp(0.5, 1.5);
-        // this.surfaceGravity = Random.random_float_clamp(0.4,1.6);
-        // console.log("this.radius.km", this.radius.km, "makeEarthLike");
-        // this.surfaceGravity = this.mass.em / (this.radius.er * this.radius.er) // calculated
-        // this.density.setSiRadiusYotta(this.mass, this.radius);
-        this.density.setMassRadius(this.mass, this.radius);
-        // console.log("this.mass", this.mass);
-        // console.log("this.radius", this.radius);
-        // console.log("this.density", this.density);
-    }
-    makeDwarf() {
-        this.color.set_color("MistyRose");
-        this.planetType = "Dwarf";
-        // https://youtu.be/XEIsZjQ_OdU?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=67
-        this.mass.em = Random.random_float_clamp(0.0001, 0.1);
-        this.radius.er = Random.random_float_clamp(0.03, 0.5); // CHECK what is the max
-        // this.surfaceGravity = this.mass.em / (this.radius.er * this.radius.er) // calculated
-        this.density.setMassRadius(this.mass, this.radius);
-    }
-    makeGassGiant() {
-        this.color.set_color("DarkGoldenRod");
-        this.planetType = "GassGiant";
-        // https://youtu.be/80oQBGD7g34?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=22
-        // 13 Jupiter Mass == 13 * 317.8 Earth Mass
-        this.mass.jupm = Random.random_float_clamp(2, 13);
-        // https://youtu.be/80oQBGD7g34?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=35
-        this.radius.jupr = Random.random_float_clamp(0.9, 1.1); // Add SOME wiggle
-        // this.surfaceGravity = this.mass.em / (this.radius.er * this.radius.er) // calculated
-        this.density.setMassRadius(this.mass, this.radius);
-    }
-    makePuffyGiantPlanet() {
-        this.color.set_color("DarkCyan");
-        this.planetType = "PuffyGiantPlanet";
-        // https://youtu.be/80oQBGD7g34?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=22
-        // https://youtu.be/80oQBGD7g34?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=98
-        this.mass.em = Random.random_float_clamp(10, Convert.jupEarthMass(2));
-        // https://youtu.be/80oQBGD7g34?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=35
-        this.radius.jupr = Random.random_float_clamp(1, 3); // CHECK what is the max
-        // this.surfaceGravity = this.mass.em / (this.radius.er * this.radius.er) // calculated
-        this.density.setMassRadius(this.mass, this.radius);
-    }
-    makeGassDwarf() {
-        this.color.set_color("Crimson");
-        this.planetType = "GassDwarf";
-        // https://youtu.be/80oQBGD7g34?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=179
-        this.mass.em = Random.random_float_clamp(1, 20);
-        this.radius.er = Random.random_float_clamp(2, 5); // CHECK what is the max
-        // this.surfaceGravity = this.mass.em / (this.radius.er * this.radius.er) // calculated
-        this.density.setMassRadius(this.mass, this.radius);
-    }
-    randomMainOrbit(smajax, plsys) {
-        return this.makeTypes(["all"], smajax, plsys);
-    }
-    randomBinaryOrbit(planetIndex, smajax, plsys) {
-        var tags = ["all"];
-        if (planetIndex >= 1)
-            tags = ["nohab"];
-        return this.makeTypes(tags, smajax, plsys);
-    }
-    makeTypes(tags, smajax, plsys) {
-        // https://youtu.be/80oQBGD7g34?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=244 gass giants
-        // get a main platet suitable to it's orbit
-        // min-max valid orbit in au
-        // pick = what is returned by function
-        var picks = [];
-        var minOrb = plsys.orbits_limit_in.au;
-        var maxOrb = plsys.orbits_limit_out.au;
-        var habOrb = (plsys.hab_zone_in.au + plsys.hab_zone_out.au) / 2;
-        var frostOrb = plsys.frost_line.au;
-        picks.push({ min: -minOrb, max: maxOrb * 200, chance: 0.0001, pick: this.makeEarthLike.bind(this) });
-        if (["all", "hab"].filter(x => tags.includes(x))) {
-            picks.push({ min: plsys.hab_zone_in.au, max: plsys.hab_zone_out.au, chance: 1000000, pick: this.makeEarthLike.bind(this) });
-            picks.push({ min: minOrb, max: habOrb * 2, chance: 2, pick: this.makeEarthLike.bind(this) });
-        }
-        if (["all", "nohab"].filter(x => tags.includes(x)))
-            picks.push({ min: minOrb, max: frostOrb * 0.6, chance: 3, pick: this.makeDwarf.bind(this) });
-        if (["all", "nohab"].filter(x => tags.includes(x)))
-            picks.push({ min: minOrb, max: frostOrb * 0.6, chance: 2, pick: this.makePuffyGiantPlanet.bind(this) });
-        if (["all", "nohab"].filter(x => tags.includes(x)))
-            picks.push({ min: frostOrb * 0.6, max: frostOrb * 2, chance: 1, pick: this.makeGassGiant.bind(this) });
-        if (["all", "nohab"].filter(x => tags.includes(x)))
-            picks.push({ min: frostOrb, max: maxOrb * 2, chance: 5, pick: this.makeGassGiant.bind(this) });
-        if (["all", "nohab"].filter(x => tags.includes(x)))
-            picks.push({ min: frostOrb * 0.6, max: maxOrb * 2, chance: 6, pick: this.makeGassDwarf.bind(this) });
-        var pickedMake = Random.pickChanceOverlaping(smajax.au, picks);
-        return pickedMake.pick();
-    }
-    compute() {
-        super.compute();
-        var orbit_ = this.getDirectOrbit();
-        var parentMass = this.getParentMass();
-        if (!parentMass) {
-            console.warn("this.getParents()", this.getParents());
-            console.log("this", this);
-            // console.log("this.getWorldData().idObjMap", this.getWorldData().idObjMap);
-        }
-        parentMass = parentMass.clone();
-        var minMass = this.mass.value;
-        var maxMass = parentMass.value;
-        if (minMass > maxMass) {
-            console.warn(`Illogical Hill Sphere, ${minMass} > ${maxMass} `, this, parentMass);
-        }
-        this.orbLimitOut.value = orbit_.semimajor_axis.value * Math.cbrt(minMass / (3 * maxMass));
-        var rochFractionMass = this.mass.value / 1;
-        // var rochFractionDens = this.density.value / 1;
-        // if (rochFractionDens != rochFractionMass)
-        //     console.warn("Roch fractions should be the same", rochFractionDens, rochFractionMass, this);
-        this.orbLimitIn.value = this.radius.value * Math.pow(2 * rochFractionMass, 1 / 3);
-        // console.log("1111"
-        //     , "\t", orbit_.semimajor_axis.km
-        //     , "\t", this.orbLimitIn.km
-        //     , "\t", this.orbLimitOut.km
-        // );
-        return this;
-    }
-    getMass() {
-        return this.mass;
-    }
-    guiSelect(slectPane, gui) {
-        slectPane.addInput(this.color, 'value', { label: "color" });
-        slectPane.addInput(this.radius, 'km', { label: "radius km" });
-        slectPane.addInput(this.mass, 'Yg', { label: "mass Yg" });
-        slectPane.addMonitor(this.orbLimitIn, 'km', { label: "lim in" });
-        slectPane.addMonitor(this.orbLimitOut, 'km', { label: "lim out" });
-        slectPane.addMonitor(this.density, 'gcm3', { label: "density" });
-        slectPane.addMonitor(this, "planetType");
-        slectPane.addMonitor(this, "isInHabZone");
-        super.guiSelect(slectPane, gui);
-    }
-    clone() { return new Planet(this.getWorldData()).copyLogic(this); }
-}
-exports.Planet = Planet;
-
-
-/***/ }),
-/* 32 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.Ticker = exports.Intervaler = exports.waitBlocking = void 0;
-function waitBlocking(ms) {
-    var start = new Date().getTime();
-    var end = start;
-    while (end < start + ms) {
-        end = new Date().getTime();
-    }
-}
-exports.waitBlocking = waitBlocking;
-class Intervaler {
-    constructor() {
-        this.last_time = +new Date();
-    }
-    check(interval) {
-        const now_ = +new Date();
-        if (now_ - this.last_time > interval) {
-            this.last_time = now_;
-            return true;
-        }
-        return false;
-    }
-}
-exports.Intervaler = Intervaler;
-class Ticker {
-    constructor(enabled = false, tick_function = null, tick_interval = 100, delay_interval = 0) {
-        this.enabled = enabled;
-        this.timeout_val = null;
-        this.tick_function = tick_function;
-        this.delay_interval = delay_interval;
-        this.used_delay = this.delay_interval;
-        this.tick_interval = tick_interval;
-    }
-    tick() {
-        this.tick_function();
-    }
-    // TODO FIXME check if there is a recursivity issue
-    start() {
-        this.enabled = true;
-        if (this.timeout_val === null) {
-            this.timeout_val = setTimeout(() => {
-                this.timeout_val = null;
-                this.used_delay = 0;
-                this.start();
-                this.tick();
-            }, this.tick_interval + this.used_delay);
-        }
-    }
-    stop() {
-        this.enabled = false;
-        if (this.timeout_val !== null) {
-            clearTimeout(this.timeout_val);
-            this.timeout_val = null;
-        }
-    }
-    updateState(setEnable) {
-        // console.warn(`#HERELINE Time updateState setEnable ${setEnable} `);
-        if (setEnable == this.enabled)
-            return;
-        if (setEnable)
-            this.start();
-        else
-            this.stop();
-    }
-}
-exports.Ticker = Ticker;
-
-
-/***/ }),
-/* 33 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.JguiManager = exports.JguiMake = void 0;
-const Random_1 = __webpack_require__(13);
-class JguiMake {
-    constructor(tag_) {
-        this.tag = null;
-        this.attr = {};
-        this.style = {};
-        this.html = null;
-        this.tag = tag_;
-        this.genId();
-    }
-    // just for convenience
-    get id() { return this.attr.id; }
-    set id(value) { this.attr.id = value; }
-    get class() { return this.attr.class; }
-    set class(value) { this.attr.class = value; }
-    get type() { return this.attr.type; }
-    set type(value) { this.attr.type = value; }
-    mkWorkerJgui(id, order) {
-        this.tag = "div";
-        this.id = id;
-        this.class = "d-grid gap-1 bg-light border shadow-sm rounded ";
-        // this.style.zIndex = "200";
-        // this.style.position = "fixed";
-        // this.style.top = "10px";
-        // this.style.left = "10px";
-        // this.style.width = "256px";
-        this.attr.jguiOrder = order;
-        var coll = this.addColapse(id, true);
-        return [this, coll];
-    }
-    mkContainer() {
-        // https://getbootstrap.com/docs/5.0/layout/containers/
-        this.tag = "div";
-        this.class = "d-grid gap-1 bg-light border shadow-sm rounded ";
-        return this;
-    }
-    mkButton(name, type = "primary") {
-        // https://getbootstrap.com/docs/5.0/components/buttons/
-        this.tag = "button";
-        // this.listeners = "click";
-        this.attr.class = `btn btn-${type} btn-sm`;
-        this.attr.type = "button";
-        this.html = name;
-        this.style["padding"] = "0"; //  no padding
-        return this;
-    }
-    addButton(btnName) {
-        // https://getbootstrap.com/docs/5.0/components/buttons/
-        var btnObj = new JguiMake(null).mkButton(btnName);
-        this.appendHtml(btnObj);
-        return btnObj;
-    }
-    mkColapse(name, expanded) {
-        // https://getbootstrap.com/docs/5.0/components/collapse/
-        this.tag = "div";
-        // this.class = "collapse";
-        // this.class = "collapse gap-1 bg-light border shadow-sm rounded  ";
-        this.class = "collapse gap-1 card card-body";
-        if (expanded)
-            this.class += " show";
-        this.genId();
-        this.style["padding-top"] = "0.1rem";
-        this.style["padding-left"] = "0.4rem";
-        this.style["padding-bottom"] = "0px";
-        this.style["padding-right"] = "0px";
-        return this;
-    }
-    addColapse(colName, expanded = false) {
-        // https://getbootstrap.com/docs/5.0/components/collapse/
-        // https://getbootstrap.com/docs/5.0/components/card/
-        var btnName = `Toggle ${colName}`;
-        var btnObj = new JguiMake(null).mkButton(btnName, "secondary");
-        var colObj = new JguiMake(null).mkColapse(colName, expanded);
-        btnObj.genId();
-        // btnObj.attr["data-bs-toggle"] = "button"
-        btnObj.attr["data-bs-toggle"] = "collapse";
-        btnObj.attr["aria-expanded"] = `false`;
-        btnObj.attr["data-bs-target"] = `#${colObj.id}`;
-        btnObj.attr["aria-controls"] = `${colObj.id}`;
-        this.appendHtml(btnObj);
-        this.appendHtml(colObj);
-        return colObj;
-    }
-    mkRow() {
-        // https://getbootstrap.com/docs/5.0/layout/gutters/#row-columns-gutters
-        this.tag = "div";
-        this.class = "row align-items-start";
-        return this;
-    }
-    addSlider(slideName, min, max, step) {
-        // https://getbootstrap.com/docs/5.0/forms/range/
-        // <label for= "customRange3" class= "form-label" > Example range < /label>
-        // < input type = "range" class="form-range" min = "0" max = "5" step = "0.5" id = "customRange3" >
-        // var rowObj = new JguiMake(null).mkRow()
-        var labelObj = new JguiMake("label").genId();
-        var rangeObj = new JguiMake("input").genId();
-        labelObj.tag = "label";
-        labelObj.attr.for = `${rangeObj.id}`;
-        labelObj.attr.class = "form-label";
-        labelObj.html = `${slideName}`;
-        labelObj.style.margin = "0";
-        rangeObj.tag = `input`;
-        rangeObj.attr.type = `range`;
-        rangeObj.attr.class = `form-range`;
-        rangeObj.attr.min = `${min}`;
-        rangeObj.attr.max = `${max}`;
-        rangeObj.attr.step = `${step}`;
-        rangeObj.style.margin = "0";
-        rangeObj.style["padding-left"] = "0.5rem";
-        rangeObj.style["padding-right"] = "0.5rem";
-        rangeObj.attr.oninput = `${labelObj.id}.innerHTML="${slideName} "+value`;
-        // rangeObj.listeners = `input`
-        // rangeObj.listeners = `change`
-        // rangeObj.listeners = `oninput`
-        this.appendHtml(labelObj);
-        this.appendHtml(rangeObj);
-        // rowObj.appendHtml(labelObj)
-        // rowObj.appendHtml(rangeObj)
-        // this.appendHtml(rowObj)
-        return rangeObj;
-    }
-    genId() {
-        var bid = Random_1.randomAlphabetString(5);
-        this.id = `${this.tag}${bid}`;
-        return this;
-    }
-    appendHtml(elem) {
-        if (!this.html)
-            this.html = [];
-        this.html.push(elem);
-        // return
-    }
-    appendListener(elem) {
-        if (!this.listeners)
-            this.listeners = [];
-        this.listeners.push(elem);
-        // return
-    }
-    addEventListener(evMng, evName, listenerCbk) {
-        // TODO maybe option to not pass the Event to move less data ???
-        var jListen = {
-            name: evName,
-            id: `${evName}-${this.id}.${Random_1.randomAlphabetString(6)}` // TODO could be better
-        };
-        evMng.registerListener(jListen.id, listenerCbk);
-        this.appendListener(jListen);
-        return this;
-    }
-}
-exports.JguiMake = JguiMake;
-class JguiManager {
-    constructor(worker, workerName) {
-        this.listenersJguiMap = new Map();
-        this.worker = worker;
-        this.workerName = workerName;
-    }
-    registerListener(lisId, listenerCbk) {
-        this.listenersJguiMap.set(lisId, listenerCbk);
-    }
-    dispachListener(lisId, event) {
-        var lisCbk = this.listenersJguiMap.get(lisId);
-        lisCbk(event);
-    }
-}
-exports.JguiManager = JguiManager;
-
-
-/***/ }),
-/* 34 */,
-/* 35 */,
-/* 36 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return merge; });
-function* flatten(arrays) {
-  for (const array of arrays) {
-    yield* array;
-  }
-}
-
-function merge(arrays) {
-  return Array.from(flatten(arrays));
-}
-
-
-/***/ }),
-/* 37 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-/* harmony default export */ __webpack_exports__["a"] = (function(start, stop, step) {
-  start = +start, stop = +stop, step = (n = arguments.length) < 2 ? (stop = start, start = 0, 1) : n < 3 ? 1 : +step;
-
-  var i = -1,
-      n = Math.max(0, Math.ceil((stop - start) / step)) | 0,
-      range = new Array(n);
-
-  while (++i < n) {
-    range[i] = start + i * step;
-  }
-
-  return range;
-});
-
-
-/***/ }),
-/* 38 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.addEventsD3Canvas = exports.addOrbitCtrlEvents = exports.addResizeEvents = exports.isShiftPressed = exports.conditionalRedirect = exports.genericConditionalRedirect = exports.genericRedirect = exports.getBasicEvent = void 0;
-const Config_1 = __webpack_require__(3);
-const BASIC_OBJECTS = ["number", "boolean", "string"];
-/*
-
-https://bl.ocks.org/pkerpedjiev/32b11b37be444082762443c4030d145d D3 event filtering
-The red circles don't allow scroll-wheel zooming and drag-based panning
-
-*/
-function getBasicEvent(source_) {
-    var target_ = {};
-    for (const key in source_) {
-        var type_ = typeof source_[key];
-        if (BASIC_OBJECTS.includes(type_) == false)
-            continue;
-        // console.log("key", key, type_);
-        target_[key] = source_[key];
-    }
-    if (typeof source_.target == "object") {
-        target_.target = {};
-        for (const key in source_.target) {
-            var type_ = typeof source_.target[key];
-            if (BASIC_OBJECTS.includes(type_) == false)
-                continue;
-            // console.log("key", key, type_);
-            target_.target[key] = source_.target[key];
-        }
-    }
-    return target_;
-}
-exports.getBasicEvent = getBasicEvent;
-function genericRedirect(event_name, canvas, canvas_id, worker) {
-    // console.log("event_name", event_name);
-    canvas.addEventListener(event_name, (evt_) => {
-        var basic_event = getBasicEvent(evt_);
-        basic_event["event_id"] = canvas_id;
-        // console.log("event_name, event", event_name, basic_event);
-        worker.postMessage({
-            message: Config_1.MessageType.Event,
-            event_id: canvas_id,
-            event: basic_event,
-        });
-    });
-}
-exports.genericRedirect = genericRedirect;
-function genericConditionalRedirect(event_name, canvas, canvas_id, worker, eventCondition) {
-    // console.log("event_name", event_name);
-    canvas.addEventListener(event_name, (evt_) => {
-        if (eventCondition(evt_) == false)
-            return;
-        var basic_event = getBasicEvent(evt_);
-        basic_event["event_id"] = canvas_id;
-        // console.log("event_name, event", event_name, basic_event);
-        worker.postMessage({
-            message: Config_1.MessageType.Event,
-            event_id: canvas_id,
-            event: basic_event,
-        });
-    });
-}
-exports.genericConditionalRedirect = genericConditionalRedirect;
-function conditionalRedirect(event_do, event_in, event_out, canvas, canvas_id, worker) {
-    var ev_do_fun = (evt_) => {
-        var basic_event = getBasicEvent(evt_);
-        basic_event["event_id"] = canvas_id;
-        // console.log("event_do, event", event_do, basic_event);
-        worker.postMessage({
-            message: Config_1.MessageType.Event,
-            event_id: canvas_id,
-            event: basic_event,
-        });
-    };
-    canvas.addEventListener(event_in, (evt_) => {
-        var basic_event = getBasicEvent(evt_);
-        basic_event["event_id"] = canvas_id;
-        // console.log("event_in, event", event_in, basic_event);
-        canvas.addEventListener(event_do, ev_do_fun); ///////////////////
-        worker.postMessage({
-            message: Config_1.MessageType.Event,
-            event_id: canvas_id,
-            event: basic_event,
-        });
-    });
-    canvas.addEventListener(event_out, (evt_) => {
-        var basic_event = getBasicEvent(evt_);
-        basic_event["event_id"] = canvas_id;
-        // console.log("event_out, event", event_out, basic_event);
-        canvas.removeEventListener(event_do, ev_do_fun); ///////////////////
-        worker.postMessage({
-            message: Config_1.MessageType.Event,
-            event_id: canvas_id,
-            event: basic_event,
-        });
-    });
-}
-exports.conditionalRedirect = conditionalRedirect;
-function isShiftPressed(event_) {
-    return Boolean(event_.shiftKey);
-}
-exports.isShiftPressed = isShiftPressed;
-function addResizeEvents(canvas, canvas_id, worker) {
-    genericRedirect("resize", canvas, canvas_id, worker);
-}
-exports.addResizeEvents = addResizeEvents;
-function addOrbitCtrlEvents(canvas, canvas_id, worker) {
-    // disable right-click context on canvas ... TODO do cool stuff !!!!
-    // canvas.addEventListener("contextmenu", (evt_) => { evt_.preventDefault() });
-    // genericRedirect("keydown", canvas, canvas_id, worker)
-    // TODO maybe limit somehow the amount of events (pointermove,touchmove) being sent ???
-    conditionalRedirect("pointermove", "pointerdown", "pointerup", canvas, canvas_id, worker);
-    genericConditionalRedirect("wheel", canvas, canvas_id, worker, isShiftPressed.bind(this));
-    // conditionalRedirect("touchmove", "touchstart", "touchend", canvas, canvas_id, worker)
-    // canvas.addEventListener('touchstart', onTouchStart, false);
-    // canvas.addEventListener('touchend', onTouchEnd, false);
-    // canvas.addEventListener('touchmove', onTouchMove, false);
-    // canvas.addEventListener('contextmenu', onContextMenu, false);
-    // canvas.addEventListener('pointerdown', onPointerDown, false);
-    // canvas.addEventListener('keydown', onKeyDown, false);
-    // canvas.addEventListener('wheel', onMouseWheel, false);
-}
-exports.addOrbitCtrlEvents = addOrbitCtrlEvents;
-function addEventsD3Canvas(canvas, canvas_id, worker) {
-    // genericRedirect("pointerdown", canvas, canvas_id, worker)
-    // genericRedirect("pointerup", canvas, canvas_id, worker)
-    // genericRedirect("dblclick", canvas, canvas_id, worker)
-    // genericRedirect("mousedown", canvas, canvas_id, worker)
-    genericConditionalRedirect("wheel", canvas, canvas_id, worker, isShiftPressed.bind(this));
-    // genericRedirect("selectstart", canvas, canvas_id, worker)
-    // conditionalRedirect("pointermove", "pointerdown", "pointerup", canvas, canvas_id, worker)
-    conditionalRedirect("mousemove", "mousedown", "mouseup", canvas, canvas_id, worker);
-    // genericRedirect("mousemove", canvas, canvas_id, worker)
-    // genericRedirect("mousedown", canvas, canvas_id, worker)
-    // genericRedirect("mouseup", canvas, canvas_id, worker)
-}
-exports.addEventsD3Canvas = addEventsD3Canvas;
-
-
-/***/ }),
-/* 39 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.WorldData = exports.objects_types_ = void 0;
-const PlanetarySystem_1 = __webpack_require__(54);
-const DataBaseManager_1 = __webpack_require__(55);
-const SpaceFactory_1 = __webpack_require__(56);
-const Orbit_1 = __webpack_require__(30);
-const Planet_1 = __webpack_require__(31);
-const Star_1 = __webpack_require__(29);
-const SpaceGroup_1 = __webpack_require__(42);
-const Terrain_1 = __webpack_require__(57);
-// TODO read&write function WITH and WITHOUT structure change
-// WITHOUT structure change is just update or variables values
-// WITH represents a refresh/regen
-// TODO Planet Star Orbit and such objects to be stored directly in DB and referenced by some UUID
-// TODO do not use function.name and constructor.name so minified can be used
-// https://stackoverflow.com/questions/50267543/class-name-always-e-for-every-class-after-uglify-webpack-for-production
-exports.objects_types_ = {};
-exports.objects_types_["PlanetarySystem"] = PlanetarySystem_1.PlanetarySystem;
-exports.objects_types_["Orbit"] = Orbit_1.Orbit;
-exports.objects_types_["Planet"] = Planet_1.Planet;
-exports.objects_types_["Star"] = Star_1.Star;
-exports.objects_types_["SpaceGroup"] = SpaceGroup_1.SpaceGroup;
-exports.objects_types_["Terrain"] = Terrain_1.Terrain;
-class WorldData {
-    constructor(targetTable, name) {
-        this.type = this.constructor.name;
-        this.idObjMap = new Map();
-        this.config = null;
-        this.sharedData = null;
-        this.name = name;
-        this.dbm = new DataBaseManager_1.DataBaseManager(targetTable, name);
-        this.spaceFactory = new SpaceFactory_1.SpaceFactory(this);
-        this.planetarySystem = new PlanetarySystem_1.PlanetarySystem(this);
-        // console.log("this.planetary_system.getWorldData()", this.planetary_system.getWorldData());
-    }
-    async preInit() {
-        console.debug(`#HERELINE WorldData preInit ${this.config.WORLD_DATABASE_NAME} `);
-        return this.dbm.init(this.config.keepDbAtPageRefresh).then(() => {
-            console.debug(`#HERELINE WorldData ${this.name} preInit then`);
-            this.spread_objects();
-        });
-    }
-    async initPlSys() {
-        console.debug("#HERELINE WorldData initPlSys");
-        if (this.config.keepDbAtPageRefresh) {
-            // return this.readDeep();
-        }
-        else {
-            this.planetarySystem.init();
-            /////////// this.planetary_system.setWorldData(this);
-            /////////// this.setOrbElem(this.planetary_system);
-            this.spaceFactory.genStartingPlanetSystem(this.planetarySystem);
-            return Promise.resolve();
-        }
-        return Promise.reject();
-    }
-    async initTerrain() {
-        console.debug("#HERELINE WorldData initTerrain");
-        for (const element of this.planetarySystem.getAllSats()) {
-            if (element instanceof Planet_1.Planet && element.isInHabZone) {
-                if (element.planetType == "Normal") {
-                    Terrain_1.Terrain.initForPlanet(element);
-                    return; // TODO TMP FIXME limit to 1 terrain while testing !!!!!!!!!!!!!!!!!
-                }
-            }
-        }
-    }
-    initWorker() {
-        console.debug("#HERELINE WorldData initWorker");
-        return this.dbm.open();
-    }
-    spread_objects() {
-        var to_spread = [this.spaceFactory];
-        for (const object_ of to_spread) {
-            if (object_.planetarySystem === null)
-                object_.planetarySystem = this.planetarySystem;
-            if (object_.sharedData === null)
-                object_.sharedData = this.sharedData;
-            if (object_.config === null)
-                object_.config = this.config;
-            if (object_.world === null)
-                object_.world = this;
-        }
-    }
-    getFreeID() {
-        if (!this.sharedData)
-            return WorldData.wdMaxId--;
-        // if (!this.sharedData) return Math.ceil(Math.random() * 10000) + 1000;
-        var id_ = this.sharedData.maxId++;
-        while (this.idObjMap.has(id_))
-            id_ = this.sharedData.maxId++;
-        return id_;
-    }
-    free(id_) {
-        this.idObjMap.delete(id_);
-    }
-    setIdObject(obj_) {
-        this.idObjMap.set(obj_.id, obj_);
-    }
-    async readShallow() {
-        // console.debug("#HERELINE WorldData readShallow this.name", this.name);
-        // console.time("#time WorldData " + this.name + " readShallow");
-        // return this.readDeep(); // TODO WA FIXME
-        var data_ps = this.dbm.idb.transaction(DataBaseManager_1.DataBaseManager.STANDARD_OBJECTS, "readonly");
-        // var keys_from_db = []
-        // var keys_from_wd = [...this.idObjMap.keys()]
-        var all = await data_ps.store.getAll(); /// var 1
-        for (const iterator of all) { /// var 1
-            // var cursor = data_ps.store.openCursor(); /// var 2
-            // for await (const cursor of data_ps.store) { /// var 2
-            //     var iterator = cursor.value; /// var 2
-            // keys_from_db.push(iterator.id)
-            if (iterator.type == "PlanetarySystem") {
-                this.planetarySystem.copyShallow(iterator);
-                this.idObjMap.set(iterator.id, this.planetarySystem);
-            }
-            else {
-                const newLocal = this.idObjMap.get(iterator.id);
-                if (!newLocal) {
-                    console.warn("this", this);
-                    // console.warn("this.idObjMap", this.idObjMap);
-                    // console.warn("iterator", iterator);
-                }
-                newLocal.copyShallow(iterator);
-            }
-        }
-        // keys_from_db.sort()
-        // keys_from_wd.sort()
-        // console.log("keys_from_db", keys_from_db);
-        // console.log("keys_from_wd", keys_from_wd);
-        await data_ps.done.finally(() => {
-            // console.timeEnd("#time WorldData " + this.name + " readShallow");
-        });
-    }
-    async readDeep() {
-        console.debug(`#HERELINE WorldData readDeep this.name ${this.name}`);
-        console.time(`#time WorldData ${this.name} readDeep`);
-        var data_ps = this.dbm.idb.transaction(DataBaseManager_1.DataBaseManager.STANDARD_OBJECTS, "readonly");
-        this.idObjMap.clear();
-        var all = await data_ps.store.getAll(); /// var 1
-        for (const iterator of all) { /// var 1
-            // var cursor = data_ps.store.openCursor(); /// var 2
-            // for await (const cursor of data_ps.store) { /// var 2
-            //     var iterator = cursor.value; /// var 2
-            if (iterator.type == "PlanetarySystem") {
-                this.planetarySystem.copyDeep(iterator);
-                this.idObjMap.set(iterator.id, this.planetarySystem);
-            }
-            else {
-                var obj_ = new exports.objects_types_[iterator.type](this); // wow
-                this.idObjMap.set(iterator.id, obj_);
-                const newLocal = this.idObjMap.get(iterator.id);
-                if (!newLocal) {
-                    console.warn("this.idObjMap", this.idObjMap);
-                    console.warn("this", this);
-                    console.warn("iterator", iterator);
-                }
-                newLocal.copyDeep(iterator);
-            }
-        }
-        await data_ps.done.finally(() => {
-            console.timeEnd(`#time WorldData ${this.name} readDeep`);
-        });
-    }
-    async writeDeep() {
-        console.debug(`#HERELINE WorldData writeDeep this.name ${this.name}`);
-        console.time(`#time WorldData ${this.name} writeDeep`);
-        var data_ps = this.dbm.idb.transaction(DataBaseManager_1.DataBaseManager.STANDARD_OBJECTS, "readwrite");
-        await data_ps.store.clear();
-        var promises = [];
-        for (const iterator of this.idObjMap.values()) {
-            promises.push(data_ps.store.put(iterator));
-        }
-        promises.push(data_ps.done);
-        await Promise.all(promises).finally(() => {
-            console.timeEnd(`#time WorldData ${this.name} writeDeep`);
-        });
-    }
-    async writeShallow() {
-        // console.debug("#HERELINE WorldData writeShallow this.name", this.name);
-        // console.time("#time WorldData " + this.name + " writeShallow");
-        var data_ps = this.dbm.idb.transaction(DataBaseManager_1.DataBaseManager.STANDARD_OBJECTS, "readwrite");
-        var promises = [];
-        for (const iterator of this.idObjMap.values()) {
-            promises.push(data_ps.store.put(iterator));
-        }
-        promises.push(data_ps.done);
-        await Promise.all(promises).finally(() => {
-            // console.timeEnd("#time WorldData " + this.name + " writeShallow");
-        });
-    }
-    async setBigIdObject(obj_) {
-        var data_ps = this.dbm.idb.transaction(DataBaseManager_1.DataBaseManager.BIG_OBJECTS, "readwrite");
-        await data_ps.store.put(obj_);
-        await data_ps.done;
-    }
-    async getBigIdObject(id_) {
-        var data_ps = this.dbm.idb.transaction(DataBaseManager_1.DataBaseManager.BIG_OBJECTS, "readwrite");
-        return await data_ps.store.get(id_);
-    }
-    async *iterateAllBig(mode = "readonly") {
-        console.time(`#time WorldData ${this.name} iterateAllBig`);
-        console.debug(`#HERELINE WorldData iterateAllBig this.name ${this.name}`);
-        var data_ps = this.dbm.idb.transaction(DataBaseManager_1.DataBaseManager.BIG_OBJECTS, mode);
-        var cursor = await data_ps.store.openCursor();
-        while (cursor) {
-            // console.log("cursor.key, cursor.value", cursor.key, cursor.value);
-            var iterator = cursor.value;
-            yield iterator;
-            cursor.update(iterator);
-            cursor = await cursor.continue();
-        }
-        await data_ps.done.finally(() => {
-            console.timeEnd(`#time WorldData ${this.name} iterateAllBig`);
-        });
-    }
-    async *iterateAllBigType(VTYPE, mode = "readonly") {
-        // console.time(`#time WorldData ${this.name} iterateAllBigType`);
-        console.debug(`#HERELINE WorldData iterateAllBigType this.name ${this.name}`);
-        const data_ps = this.dbm.idb.transaction(DataBaseManager_1.DataBaseManager.BIG_OBJECTS, mode);
-        const index = data_ps.objectStore(DataBaseManager_1.DataBaseManager.BIG_OBJECTS).index('type');
-        var cursor = await index.openCursor(VTYPE.name);
-        while (cursor) {
-            var iterator = VTYPE.clone(this, cursor.value);
-            yield iterator;
-            cursor.update(iterator);
-            cursor = await cursor.continue();
-        }
-        await data_ps.done.finally(() => {
-            // console.timeEnd(`#time WorldData ${this.name} iterateAllBigType`);
-        });
-    }
-}
-exports.WorldData = WorldData;
-WorldData.wdMaxId = -10;
-
-
-/***/ }),
-/* 40 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.Identifiable = void 0;
-const Convert = __webpack_require__(4);
-class Identifiable {
-    constructor(worldData) {
-        this.id = null;
-        this.type = null;
-        this.type = this.constructor.name;
-        this.setWorldData(worldData);
-        this.genId();
-    }
-    /*
-    to be set from outside by WorldData
-    constructor(worldData: WorldData) {
-        (this as any).__proto__.getWorldData = () => { return worldData };
-    */
-    getWorldData() { throw new Error("Function needs to be re-defined in constructor."); }
-    setWorldData(worldData) {
-        this.__proto__.getWorldData = () => { return worldData; };
-    }
-    genId() {
-        this.id = this.getWorldData().getFreeID();
-    }
-    copyDeep(source_) {
-        Convert.copyDeep(this, source_);
-        return this;
-    }
-    copyShallow(source_) {
-        Convert.copyShallow(this, source_);
-        return this;
-    }
-    copyLogic(source_) {
-        Convert.copyShallow(this, source_, true);
-        return this;
-    }
-}
-exports.Identifiable = Identifiable;
-
-
-/***/ }),
-/* 41 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.Color = void 0;
-const d3 = __webpack_require__(22);
-class ColorValues {
-    constructor() {
-        this.r = 255;
-        this.g = 255;
-        this.b = 255;
-        this.opacity = 1;
-    }
-    copy(source_) {
-        // console.log("ColorValues .... source_", source_);
-        if (typeof source_.r !== "undefined")
-            this.r = source_.r;
-        if (typeof source_.g !== "undefined")
-            this.g = source_.g;
-        if (typeof source_.b !== "undefined")
-            this.b = source_.b;
-        if (typeof source_.a !== "undefined")
-            this.opacity = source_.a;
-        if (typeof source_.opacity !== "undefined")
-            this.opacity = source_.opacity;
-    }
-}
-class Color {
-    constructor() {
-        this._value = new ColorValues();
-    }
-    copyDeep(source_) { this.copyShallow(source_); }
-    copyShallow(source_) {
-        if (source_._value)
-            this._value.copy(source_._value);
-        else
-            this._value.copy(source_);
-    }
-    get r() { return this._value.r; }
-    get g() { return this._value.g; }
-    get b() { return this._value.b; }
-    set_color(value) {
-        var color = d3.color(value);
-        this._value.copy(color);
-    }
-    get value() {
-        return this._value;
-    }
-    set value(value) {
-        this._value.copy(value);
-    }
-    toString() {
-        return d3.rgb(this.r, this.g, this.b).toString();
-    }
-    getRgb() {
-        return d3.rgb(this.r, this.g, this.b);
-    }
-}
-exports.Color = Color;
-
-
-/***/ }),
 /* 42 */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -73730,78 +73725,20 @@ exports.SpaceGroup = SpaceGroup;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SharedData = void 0;
-const TOTAL_ELEMENTS = 10;
-const NULL_NUMBER = Number.NEGATIVE_INFINITY;
-class SharedData {
-    constructor() {
-        this.sab = null;
-        this.ia = null;
-    }
-    // TODO setting value to null translates by default to 0 ... in setter/getter translate it to INFINITY or something
-    setNumber(value) {
-        if (value == null) {
-            return NULL_NUMBER;
-        }
-        return value;
-    }
-    getNumber(value) {
-        if (value == NULL_NUMBER) {
-            return null;
-        }
-        return value;
-    }
-    setNumberRaw(value) { return value; }
-    getNumberRaw(value) { return value; }
-    get mousex() { return this.getNumber(this.ia[0]); }
-    set mousex(value) { this.ia[0] = this.setNumber(value); }
-    get mousey() { return this.getNumber(this.ia[1]); }
-    set mousey(value) { this.ia[1] = this.setNumber(value); }
-    get hoverId() { return this.getNumberRaw(this.ia[2]); }
-    set hoverId(value) { this.ia[2] = this.setNumberRaw(value); }
-    get selectedId() { return this.getNumberRaw(this.ia[3]); }
-    set selectedId(value) { this.ia[3] = this.setNumberRaw(value); }
-    get maxId() { return this.getNumberRaw(this.ia[4]); }
-    set maxId(value) { this.ia[4] = this.setNumberRaw(value); }
-    initMain() {
-        this.sab = new SharedArrayBuffer(Float64Array.BYTES_PER_ELEMENT * TOTAL_ELEMENTS);
-        this.ia = new Float64Array(this.sab);
-        for (const index in this.ia)
-            this.ia[index] = NULL_NUMBER;
-        this.maxId = 10;
-    }
-    initShared(sab_) {
-        this.sab = sab_;
-        this.ia = new Float64Array(this.sab);
-    }
-}
-exports.SharedData = SharedData;
-
-
-/***/ }),
-/* 44 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
 exports.BaseDrawUpdateWorker = exports.BaseWorker = void 0;
-const Time_1 = __webpack_require__(32);
+const Time_1 = __webpack_require__(31);
 const Config_1 = __webpack_require__(3);
-const SharedData_1 = __webpack_require__(43);
-const WorldData_1 = __webpack_require__(39);
+const WorldData_1 = __webpack_require__(38);
 const Units = __webpack_require__(26);
-const JguiMake_1 = __webpack_require__(33);
+const JguiMake_1 = __webpack_require__(32);
 class BaseWorker {
     constructor(config, worker, workerName, event) {
-        this.sharedData = new SharedData_1.SharedData();
         this.db_read_itv = new Time_1.Intervaler();
         this.name = workerName;
         this.worker = worker;
         this.config = new Config_1.Config().copy(config);
         this.world = new WorldData_1.WorldData(this.config.WORLD_DATABASE_NAME, this.name);
         this.ticker = new Time_1.Ticker(false, this.updateInterval.bind(this), Units.LOOP_INTERVAL);
-        this.sharedData.initShared(event.data.sab);
     }
     preInit() {
         this.spread_objects(this.world);
@@ -73812,8 +73749,6 @@ class BaseWorker {
         });
     }
     spread_objects(object_) {
-        if (object_.sharedData === null)
-            object_.sharedData = this.sharedData;
         if (object_.config === null)
             object_.config = this.config;
         if (object_.world === null)
@@ -73877,7 +73812,7 @@ exports.BaseDrawUpdateWorker = BaseDrawUpdateWorker;
 
 
 /***/ }),
-/* 45 */
+/* 44 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -74639,16 +74574,16 @@ function* flatIterable(points, fx, fy, that) {
 
 
 /***/ }),
+/* 45 */,
 /* 46 */,
-/* 47 */,
-/* 48 */
+/* 47 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MainManager = void 0;
-var MainManager_1 = __webpack_require__(49);
+var MainManager_1 = __webpack_require__(48);
 Object.defineProperty(exports, "MainManager", { enumerable: true, get: function () { return MainManager_1.MainManager; } });
 // export { test_1 } from "../snipets/test_1"
 // export { test_2 } from "../snipets/test_2"
@@ -74657,31 +74592,29 @@ Object.defineProperty(exports, "MainManager", { enumerable: true, get: function 
 
 
 /***/ }),
-/* 49 */
+/* 48 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MainManager = void 0;
-const CanvasUtils = __webpack_require__(50);
-const WorldData_1 = __webpack_require__(39);
-const WorldGui_1 = __webpack_require__(58);
+const CanvasUtils = __webpack_require__(49);
+const WorldData_1 = __webpack_require__(38);
+const WorldGui_1 = __webpack_require__(57);
 const Units = __webpack_require__(26);
-const GenWorkerInstance_ts_1 = __webpack_require__(60);
+const GenWorkerInstance_ts_1 = __webpack_require__(59);
 const Config_1 = __webpack_require__(3);
-const Time_1 = __webpack_require__(32);
-const SharedData_1 = __webpack_require__(43);
-const TerrainWorker_1 = __webpack_require__(61);
-const PlanetSysWorker_1 = __webpack_require__(62);
-const JsonToGUI_1 = __webpack_require__(67);
+const Time_1 = __webpack_require__(31);
+const TerrainWorker_1 = __webpack_require__(60);
+const PlanetSysWorker_1 = __webpack_require__(61);
+const JsonToGUI_1 = __webpack_require__(66);
 // TODO Make the main manager the one that calls each worker's "Ticker"
 // order of execution can be easilly imposed and probably just simpler to manage
 class MainManager {
     constructor() {
         this.cam_timeout = null;
         this.workers = [];
-        this.sharedData = new SharedData_1.SharedData();
         this.viewableThings = [];
         this.gui = new WorldGui_1.WorldGui();
         this.jgui = new JsonToGUI_1.JsonToGUI();
@@ -74692,7 +74625,6 @@ class MainManager {
         this.ticker = new Time_1.Ticker(false, this.loopCheck.bind(this), Units.LOOP_INTERVAL, Units.LOOP_INTERVAL * 1.9);
     }
     async init() {
-        this.sharedData.initMain();
         this.spread_objects();
         // console.log("window.isSecureContext", window.isSecureContext);
         // TODO make dedicated post to UPDATE/set the sharedData to workers
@@ -74715,8 +74647,6 @@ class MainManager {
     spread_objects() {
         var to_spread = [this.world, this.gui];
         for (const object_ of to_spread) {
-            if (object_.sharedData === null)
-                object_.sharedData = this.sharedData;
             if (object_.manager === null)
                 object_.manager = this;
             if (object_.config === null)
@@ -74812,7 +74742,7 @@ class MainManager {
         var genWorker = new GenWorkerInstance_ts_1.default();
         genWorker.name = workerClass.name;
         this.workers.push(genWorker);
-        genWorker.postMessage({ create: genWorker.name, sab: this.sharedData.sab, config: this.config });
+        genWorker.postMessage({ create: genWorker.name, config: this.config });
         genWorker.addEventListener("message", (event) => {
             this.getMessage(genWorker, event);
         });
@@ -74879,7 +74809,7 @@ exports.MainManager = MainManager;
 
 
 /***/ }),
-/* 50 */
+/* 49 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -74887,7 +74817,7 @@ exports.MainManager = MainManager;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.makeWorkerCanvas = exports.SCROLL_THING_SIZE = void 0;
 const Config_1 = __webpack_require__(3);
-const EventUtils = __webpack_require__(38);
+const EventUtils = __webpack_require__(37);
 exports.SCROLL_THING_SIZE = 20;
 function makeWorkerCanvas(mngr, the_worker, event) {
     var metaCanvas = event.data.metaCanvas;
@@ -74916,28 +74846,28 @@ function addRightClickStuff(metaCanvas, mngr, the_worker, canvas) {
     var selectListener = (evt_) => {
         canvas.focus();
         evt_.preventDefault();
-        if (metaCanvas.generalFlags.includes("orbit"))
-            if (mngr.sharedData.selectedId !== mngr.sharedData.hoverId) {
-                var selected = mngr.world.idObjMap.get(mngr.sharedData.hoverId);
-                mngr.gui.selectOrbElement(selected);
-            }
+        // if (metaCanvas.generalFlags.includes("orbit"))
+        //     if (mngr.sharedData.selectedId !== mngr.sharedData.hoverId) {
+        //         var selected = mngr.world.idObjMap.get(mngr.sharedData.hoverId)
+        //         mngr.gui.selectOrbElement(selected as OrbitingElement);
+        //     }
     };
     canvas.addEventListener("contextmenu", selectListener.bind(mngr));
 }
 function addMouseSharedBuffer(metaCanvas, mngr, the_worker, canvas) {
     // console.log("canvas", canvas);
     // "mousedown" "mouseenter" "mouseleave" "mousemove" "mouseout" "mouseover" "mouseup":
-    if (metaCanvas.generalFlags.includes("orbit")) {
-        canvas.addEventListener('mousemove', (evt) => {
-            var rect = canvas.getBoundingClientRect();
-            mngr.sharedData.mousex = evt.clientX - rect.left;
-            mngr.sharedData.mousey = evt.clientY - rect.top;
-        }, false);
-        canvas.addEventListener('mouseleave', () => {
-            mngr.sharedData.mousex = null;
-            mngr.sharedData.mousey = null;
-        }, false);
-    }
+    // if (metaCanvas.generalFlags.includes("orbit")) {
+    //     canvas.addEventListener('mousemove', (evt) => {
+    //         var rect = canvas.getBoundingClientRect();
+    //         mngr.sharedData.mousex = evt.clientX - rect.left;
+    //         mngr.sharedData.mousey = evt.clientY - rect.top;
+    //     }, false);
+    //     canvas.addEventListener('mouseleave', () => {
+    //         mngr.sharedData.mousex = null;
+    //         mngr.sharedData.mousey = null;
+    //     }, false);
+    // }
 }
 function addResizeListener(metaCanvas, mngr, the_worker, canvas) {
     var canvasResize = () => {
@@ -75106,7 +75036,7 @@ function addCanvas(metaCanvas, mngr, the_worker) {
 
 
 /***/ }),
-/* 51 */
+/* 50 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -75327,7 +75257,7 @@ exports.makeGeoPtsRandBad2 = makeGeoPtsRandBad2;
 
 
 /***/ }),
-/* 52 */
+/* 51 */
 /***/ (function(module, exports) {
 
 var g;
@@ -75353,7 +75283,7 @@ module.exports = g;
 
 
 /***/ }),
-/* 53 */
+/* 52 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -75438,7 +75368,7 @@ exports.ActionsManager = ActionsManager;
 
 
 /***/ }),
-/* 54 */
+/* 53 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -75505,14 +75435,14 @@ exports.PlanetarySystem = PlanetarySystem;
 
 
 /***/ }),
-/* 55 */
+/* 54 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DataBaseManager = void 0;
-const idb_1 = __webpack_require__(69);
+const idb_1 = __webpack_require__(68);
 // import { openDB, deleteDB, wrap, unwrap, IDBPDatabase, IDBPTransaction, IDBPObjectStore, StoreKey, StoreValue } from 'idb/with-async-ittr.js';
 /*
 TODO Make tables "universe" specific , the ones that ID is needed
@@ -75575,7 +75505,7 @@ DataBaseManager.BIG_OBJECTS = "BIG_OBJECTS";
 
 
 /***/ }),
-/* 56 */
+/* 55 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -75583,8 +75513,8 @@ DataBaseManager.BIG_OBJECTS = "BIG_OBJECTS";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SpaceFactory = void 0;
 const Star_1 = __webpack_require__(29);
-const Orbit_1 = __webpack_require__(30);
-const Planet_1 = __webpack_require__(31);
+const Orbit_1 = __webpack_require__(41);
+const Planet_1 = __webpack_require__(30);
 const Random = __webpack_require__(13);
 const Convert = __webpack_require__(4);
 const SpaceGroup_1 = __webpack_require__(42);
@@ -75949,14 +75879,14 @@ exports.SpaceFactory = SpaceFactory;
 
 
 /***/ }),
-/* 57 */
+/* 56 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Terrain = void 0;
-const ObjectsHacker_1 = __webpack_require__(40);
+const ObjectsHacker_1 = __webpack_require__(39);
 class Terrain extends ObjectsHacker_1.Identifiable {
     // constructor(worldData: WorldData, data_: any) {
     //     super(worldData);
@@ -75986,16 +75916,16 @@ exports.Terrain = Terrain;
 
 
 /***/ }),
-/* 58 */
+/* 57 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.WorldGui = exports.REFRESH_CALL_INTERVAL = void 0;
-const Tweakpane = __webpack_require__(59);
+const Tweakpane = __webpack_require__(58);
 const Config_1 = __webpack_require__(3);
-const Time_1 = __webpack_require__(32);
+const Time_1 = __webpack_require__(31);
 const DrawD3Terrain_1 = __webpack_require__(27);
 exports.REFRESH_CALL_INTERVAL = 200;
 // https://web.archive.org/web/20200227175632/http://workshop.chromeexperiments.com:80/examples/gui/#1--Basic-Usage
@@ -76053,17 +75983,17 @@ class WorldGui {
         selectElem.style.bottom = "0px";
         selectElem.style.right = "0px";
         selectElem.style.width = "256px";
-        this.slectPane.addMonitor(this.manager.sharedData, "hoverId");
-        this.slectPane.addMonitor(this.manager.sharedData, "selectedId");
+        // this.slectPane.addMonitor(this.manager.sharedData, "hoverId");
+        // this.slectPane.addMonitor(this.manager.sharedData, "selectedId");
     }
     selectOrbElement(orbElem) {
         this.slectPane.containerElem_.remove();
         this.slectPane.dispose();
         this.initSelection();
-        this.manager.sharedData.selectedId = null;
+        // this.manager.sharedData.selectedId = null;
         if (!orbElem)
             return;
-        this.manager.sharedData.selectedId = orbElem.id;
+        // this.manager.sharedData.selectedId = orbElem.id;
         orbElem.guiSelect(this.slectPane, this);
         // TODO refresh only this element ....
         this.slectPane.on('change', () => this.refreshShallow());
@@ -76231,7 +76161,7 @@ exports.WorldGui = WorldGui;
 
 
 /***/ }),
-/* 59 */
+/* 58 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /*! Tweakpane 2.3.0 (c) 2016 cocopon, licensed under the MIT license. */
@@ -83259,7 +83189,7 @@ exports.WorldGui = WorldGui;
 
 
 /***/ }),
-/* 60 */
+/* 59 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -83271,17 +83201,17 @@ function Worker_fn() {
 
 
 /***/ }),
-/* 61 */
+/* 60 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TerrainWorker = void 0;
-const GenWorkerMetadata_1 = __webpack_require__(44);
+const GenWorkerMetadata_1 = __webpack_require__(43);
 const Config_1 = __webpack_require__(3);
 const DrawD3Terrain_1 = __webpack_require__(27);
-const JguiMake_1 = __webpack_require__(33);
+const JguiMake_1 = __webpack_require__(32);
 class TerrainWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
     constructor(config, worker, workerName, event) {
         super(config, worker, workerName, event);
@@ -83408,18 +83338,18 @@ exports.TerrainWorker = TerrainWorker;
 
 
 /***/ }),
-/* 62 */
+/* 61 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PlanetSysWorker = void 0;
-const GenWorkerMetadata_1 = __webpack_require__(44);
+const GenWorkerMetadata_1 = __webpack_require__(43);
 const Config_1 = __webpack_require__(3);
-const DrawThreePlsys_1 = __webpack_require__(63);
-const DrawD3Plsys_1 = __webpack_require__(66);
-const JguiMake_1 = __webpack_require__(33);
+const DrawThreePlsys_1 = __webpack_require__(62);
+const DrawD3Plsys_1 = __webpack_require__(65);
+const JguiMake_1 = __webpack_require__(32);
 // TODO move generation in this worker instead of in the main thread
 // TODO simplify the refresh deep/shallow mechanisms since most actions will be done in this worker
 // TODO store position and rotation of objects inside themselves after time/orbit update so other workers can do "basic" checks and calculations
@@ -83605,7 +83535,7 @@ exports.PlanetSysWorker = PlanetSysWorker;
 
 
 /***/ }),
-/* 63 */
+/* 62 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -83613,17 +83543,15 @@ exports.PlanetSysWorker = PlanetSysWorker;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DrawThreePlsys = void 0;
 const THREE = __webpack_require__(0);
-const OrbitControls_1 = __webpack_require__(64);
+const OrbitControls_1 = __webpack_require__(63);
 const Convert = __webpack_require__(4);
-const ObjectPool_1 = __webpack_require__(65);
-const Orbit_1 = __webpack_require__(30);
-const Planet_1 = __webpack_require__(31);
+const ObjectPool_1 = __webpack_require__(64);
+const Planet_1 = __webpack_require__(30);
 const Star_1 = __webpack_require__(29);
 const WorkerDOM_1 = __webpack_require__(28);
 class DrawThreePlsys {
     constructor() {
         this.type = this.constructor.name;
-        this.sharedData = null;
         this.world = null;
         this.config = null;
         this.canvasOffscreen = null;
@@ -84049,76 +83977,72 @@ class DrawThreePlsys {
     }
     draw() {
         // console.debug("#HERELINE "+this.type+" draw ", this.world.planetary_system.time.ey);
-        var _a;
         if (this.selectedThing) {
             this.selectedPrevPos.copy(this.selectedThing.position);
         }
         for (const iterator of this.orbElemToGroup.values()) {
             this.calculatePos(iterator);
         }
-        this.hoverSphere.visible = false;
-        if (this.config.follow_pointed_orbit !== "none") {
-            if (this.sharedData.mousex != 0 && this.sharedData.mousey != 0) {
-                this.mouse.x = (this.sharedData.mousex / this.canvasOffscreen.width) * 2 - 1;
-                this.mouse.y = -(this.sharedData.mousey / this.canvasOffscreen.height) * 2 + 1;
-                // console.log("this.mouse", this.mouse);
-                // var allIntersect = [...this.orb_lines, ...this.orb_planets]
-                // const intersects = this.raycaster.intersectObjects(allIntersect, false);
-                this.raycaster.setFromCamera(this.mouse, this.camera);
-                const intersects = this.raycaster.intersectObjects(this.scene.children, true);
-                if (intersects.length > 0) {
-                    var orb_ = intersects[0];
-                    var targ_ = orb_.object.parent.userData;
-                    if ((_a = targ_ === null || targ_ === void 0 ? void 0 : targ_.orbitingElement) === null || _a === void 0 ? void 0 : _a.id) {
-                        this.hoverSphere.visible = true;
-                        this.hoverSphere.position.copy(orb_.point);
-                        this.sharedData.hoverId = targ_.orbitingElement.id;
-                    }
-                    // console.log("targ_", targ_);
-                    // this.camera.lookAt(targ_.position)
-                    // this.controls.target = targ_.position
-                    // TODO set a shared data variable with the ID of the selected/focused WORLD thing (orbit,planet,cell,etc.)
-                }
-                else {
-                    this.sharedData.hoverId = null;
-                }
-            }
-        }
-        if (this.selectedThing) {
-            this.selectedPrevPos.sub(this.selectedThing.position); //reuse Vec3 for delta
-            this.camera.position.sub(this.selectedPrevPos);
-            // this.camera.lookAt(this.selectedThing.position)
-            this.selectedPrevPos.copy(this.selectedThing.position);
-        }
-        // https://stackoverflow.com/questions/37482231/camera-position-changes-in-three-orbitcontrols-in-three-js
-        // https://stackoverflow.com/questions/53292145/forcing-orbitcontrols-to-navigate-around-a-moving-object-almost-working
-        // https://github.com/mrdoob/three.js/pull/16374#issuecomment-489773834
-        if (this.lastSelectedId != this.sharedData.selectedId) {
-            this.lastSelectedId = this.sharedData.selectedId;
-            // console.log("this.lastSelectedId", this.lastSelectedId);
-            var selOrbElem = this.world.idObjMap.get(this.lastSelectedId);
-            if (selOrbElem) {
-                var fosusElem = selOrbElem;
-                if (this.config.follow_pointed_orbit === "auto") {
-                    var firstSat = selOrbElem.getSatIndex(0); // better focuss on Sat
-                    if (firstSat && selOrbElem instanceof Orbit_1.Orbit)
-                        fosusElem = firstSat; // better focuss on Sat
-                }
-                var orbElemGr = this.orbElemToGroup.get(fosusElem);
-                // console.log("orbElemGr", orbElemGr);
-                this.selectedThing = orbElemGr;
-                this.controls.target = orbElemGr.position;
-                this.camera.lookAt(orbElemGr.position);
-                // orbElemGr.add(this.camera)
-            }
-            else {
-                this.selectedThing = null;
-                this.controls.target = this.scene.position;
-                this.camera.lookAt(this.scene.position);
-                // this.scene.add(this.camera)
-            }
-            this.cameraMoved();
-        }
+        // this.hoverSphere.visible = false;
+        // if (this.config.follow_pointed_orbit !== "none") {
+        //     if (this.sharedData.mousex != 0 && this.sharedData.mousey != 0) {
+        //         this.mouse.x = (this.sharedData.mousex / this.canvasOffscreen.width) * 2 - 1;
+        //         this.mouse.y = - (this.sharedData.mousey / this.canvasOffscreen.height) * 2 + 1;
+        //         // console.log("this.mouse", this.mouse);
+        //         // var allIntersect = [...this.orb_lines, ...this.orb_planets]
+        //         // const intersects = this.raycaster.intersectObjects(allIntersect, false);
+        //         this.raycaster.setFromCamera(this.mouse, this.camera);
+        //         const intersects = this.raycaster.intersectObjects(this.scene.children, true);
+        //         if (intersects.length > 0) {
+        //             var orb_ = intersects[0]
+        //             var targ_ = orb_.object.parent.userData as ThreeUserData
+        //             if (targ_?.orbitingElement?.id) {
+        //                 this.hoverSphere.visible = true;
+        //                 this.hoverSphere.position.copy(orb_.point)
+        //                 this.sharedData.hoverId = targ_.orbitingElement.id
+        //             }
+        //             // console.log("targ_", targ_);
+        //             // this.camera.lookAt(targ_.position)
+        //             // this.controls.target = targ_.position
+        //             // TODO set a shared data variable with the ID of the selected/focused WORLD thing (orbit,planet,cell,etc.)
+        //         } else {
+        //             this.sharedData.hoverId = null;
+        //         }
+        //     }
+        // }
+        // if (this.selectedThing) {
+        //     this.selectedPrevPos.sub(this.selectedThing.position);//reuse Vec3 for delta
+        //     this.camera.position.sub(this.selectedPrevPos);
+        //     // this.camera.lookAt(this.selectedThing.position)
+        //     this.selectedPrevPos.copy(this.selectedThing.position);
+        // }
+        // // https://stackoverflow.com/questions/37482231/camera-position-changes-in-three-orbitcontrols-in-three-js
+        // // https://stackoverflow.com/questions/53292145/forcing-orbitcontrols-to-navigate-around-a-moving-object-almost-working
+        // // https://github.com/mrdoob/three.js/pull/16374#issuecomment-489773834
+        // if (this.lastSelectedId != this.sharedData.selectedId) {
+        //     this.lastSelectedId = this.sharedData.selectedId;
+        //     // console.log("this.lastSelectedId", this.lastSelectedId);
+        //     var selOrbElem = this.world.idObjMap.get(this.lastSelectedId) as OrbitingElement
+        //     if (selOrbElem) {
+        //         var fosusElem = selOrbElem;
+        //         if (this.config.follow_pointed_orbit === "auto") {
+        //             var firstSat = selOrbElem.getSatIndex(0) // better focuss on Sat
+        //             if (firstSat && selOrbElem instanceof Orbit) fosusElem = firstSat; // better focuss on Sat
+        //         }
+        //         var orbElemGr = this.orbElemToGroup.get(fosusElem) as THREE.Object3D;
+        //         // console.log("orbElemGr", orbElemGr);
+        //         this.selectedThing = orbElemGr;
+        //         this.controls.target = orbElemGr.position
+        //         this.camera.lookAt(orbElemGr.position)
+        //         // orbElemGr.add(this.camera)
+        //     } else {
+        //         this.selectedThing = null;
+        //         this.controls.target = this.scene.position;
+        //         this.camera.lookAt(this.scene.position)
+        //         // this.scene.add(this.camera)
+        //     }
+        //     this.cameraMoved();
+        // }
         this.renderer.render(this.scene, this.camera);
     }
 }
@@ -84126,7 +84050,7 @@ exports.DrawThreePlsys = DrawThreePlsys;
 
 
 /***/ }),
-/* 64 */
+/* 63 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -85356,7 +85280,7 @@ MapControls.prototype.constructor = MapControls;
 
 
 /***/ }),
-/* 65 */
+/* 64 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -85418,7 +85342,7 @@ exports.ObjectPool = ObjectPool;
 
 
 /***/ }),
-/* 66 */
+/* 65 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -85437,7 +85361,6 @@ https://observablehq.com/@pstuffa/canvas-treemap
 class DrawD3Plsys {
     constructor() {
         this.type = this.constructor.name;
-        this.sharedData = null;
         this.world = null;
         this.canvasOffscreen = null;
         this.config = null;
@@ -85536,7 +85459,7 @@ exports.DrawD3Plsys = DrawD3Plsys;
 
 
 /***/ }),
-/* 67 */
+/* 66 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -85545,7 +85468,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.JsonToGUI = void 0;
 const d3 = __webpack_require__(22);
 const Config_1 = __webpack_require__(3);
-const EventUtils = __webpack_require__(38);
+const EventUtils = __webpack_require__(37);
 class JsonToGUI {
     constructor() {
         this.allContainer = null;
@@ -85677,7 +85600,7 @@ exports.JsonToGUI = JsonToGUI;
 
 
 /***/ }),
-/* 68 */
+/* 67 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -85690,7 +85613,7 @@ __webpack_require__.d(__webpack_exports__, "geoVoronoi", function() { return /* 
 __webpack_require__.d(__webpack_exports__, "geoContour", function() { return /* reexport */ geoContour; });
 
 // EXTERNAL MODULE: ./node_modules/d3-delaunay/src/delaunay.js + 1 modules
-var src_delaunay = __webpack_require__(45);
+var src_delaunay = __webpack_require__(44);
 
 // CONCATENATED MODULE: ./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/compose.js
 /* harmony default export */ var compose = (function(a, b) {
@@ -93464,7 +93387,7 @@ function geoContour() {
 
 
 /***/ }),
-/* 69 */
+/* 68 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";

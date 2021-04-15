@@ -99,17 +99,17 @@ export class WorldGui {
         selectElem.style.right = "0px"
         selectElem.style.width = "256px"
 
-        this.slectPane.addMonitor(this.manager.sharedData, "hoverId");
-        this.slectPane.addMonitor(this.manager.sharedData, "selectedId");
+        // this.slectPane.addMonitor(this.manager.sharedData, "hoverId");
+        // this.slectPane.addMonitor(this.manager.sharedData, "selectedId");
     }
 
     public selectOrbElement(orbElem: OrbitingElement) {
         this.slectPane.containerElem_.remove();
         this.slectPane.dispose();
         this.initSelection()
-        this.manager.sharedData.selectedId = null;
+        // this.manager.sharedData.selectedId = null;
         if (!orbElem) return;
-        this.manager.sharedData.selectedId = orbElem.id;
+        // this.manager.sharedData.selectedId = orbElem.id;
 
         orbElem.guiSelect(this.slectPane, this);
 

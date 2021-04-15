@@ -7,7 +7,6 @@ import GenericWorkerInstance from "worker-loader!./GenWorkerInstance.ts";
 import { Config, MessageType, WorkerEvent, WorkerPacket } from "./Config"
 import * as THREE from "three";
 import { Ticker, waitBlocking } from "../utils/Time";
-import { SharedData } from "./SharedData";
 import { OrbitingElement } from "../generate/OrbitingElement";
 import { TerrainWorker } from "./TerrainWorker";
 import { BaseWorker } from "./GenWorkerMetadata";
@@ -32,8 +31,6 @@ export class MainManager {
 
     ticker: Ticker;
 
-    sharedData = new SharedData();
-
     viewableThings: HTMLElement[] = [];
 
     constructor() {
@@ -48,7 +45,6 @@ export class MainManager {
     }
 
     public async init() {
-        this.sharedData.initMain();
         this.spread_objects();
         // console.log("window.isSecureContext", window.isSecureContext);
         // TODO make dedicated post to UPDATE/set the sharedData to workers
@@ -74,7 +70,6 @@ export class MainManager {
     public spread_objects() {
         var to_spread: any[] = [this.world, this.gui]
         for (const object_ of to_spread) {
-            if (object_.sharedData === null) object_.sharedData = this.sharedData;
             if (object_.manager === null) object_.manager = this;
             if (object_.config === null) object_.config = this.config;
             if (object_.world === null) object_.world = this.world;
@@ -188,7 +183,7 @@ export class MainManager {
         genWorker.name = workerClass.name
 
         this.workers.push(genWorker);
-        genWorker.postMessage(<WorkerPacket>{ create: genWorker.name, sab: this.sharedData.sab, config: this.config });
+        genWorker.postMessage(<WorkerPacket>{ create: genWorker.name, config: this.config });
 
         genWorker.addEventListener("message", (event) => {
             this.getMessage(genWorker, event)

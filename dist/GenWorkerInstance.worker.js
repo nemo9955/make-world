@@ -50308,7 +50308,7 @@ function mean(values, valueof) {
 });
 
 // EXTERNAL MODULE: ./node_modules/d3-array/src/merge.js
-var merge = __webpack_require__(36);
+var merge = __webpack_require__(35);
 
 // EXTERNAL MODULE: ./node_modules/d3-array/src/min.js
 var src_min = __webpack_require__(9);
@@ -50358,7 +50358,7 @@ function pair(a, b) {
 var quickselect = __webpack_require__(23);
 
 // EXTERNAL MODULE: ./node_modules/d3-array/src/range.js
-var range = __webpack_require__(37);
+var range = __webpack_require__(36);
 
 // CONCATENATED MODULE: ./node_modules/d3-array/src/least.js
 
@@ -50744,7 +50744,7 @@ function union(...others) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NumberRadiantFlux = exports.NumberTemperature = exports.NumberTime = exports.NumberAngle = exports.NumberDensity = exports.NumberBigMass = exports.NumberMass = exports.NumberVolume = exports.NumberLength = exports.NumberConverter = exports.true_anomaly_rev = exports.copyDeep = exports.copyShallow = exports.sphereVolumeBig = exports.sphereVolume = exports.copy = exports.clamp = exports.revToDeg = exports.degToRev = exports.radToRev = exports.revToRad = exports.radToDeg = exports.degToRad = exports.srToAu = exports.auToSr = exports.earthJupMass = exports.jupEarthMass = exports.jupmToKg = exports.kgToJupm = exports.juprToKm = exports.kmToJupr = exports.erToKm = exports.kmToEr = exports.srToKm = exports.kmToSr = exports.auToGm = exports.GmToAu = exports.auToKm = exports.kmToAu = exports.emToKg = exports.kgToEm = exports.smToKg = exports.kgToSm = void 0;
 const THREE = __webpack_require__(0);
-const Units = __webpack_require__(34);
+const Units = __webpack_require__(33);
 // import * as Convert from "../utils/Convert"
 function kgToSm(from) {
     return from / Units.SOLAR_MASS_KG;
@@ -51382,7 +51382,7 @@ function min(values, valueof) {
 
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OrbitingElement = void 0;
-const ObjectsHacker_1 = __webpack_require__(38);
+const ObjectsHacker_1 = __webpack_require__(37);
 // https://stackoverflow.com/a/65337891/2948519
 // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html
 class OrbitingElement extends ObjectsHacker_1.Identifiable {
@@ -51821,7 +51821,7 @@ class Polygon {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MessageType = exports.Config = void 0;
 const Convert = __webpack_require__(3);
-const DrawD3Terrain_1 = __webpack_require__(35);
+const DrawD3Terrain_1 = __webpack_require__(34);
 // TODO things to add, with parameters being in SpaceConfig!
 // genMainOrbits ... bool ensure_habitable
 // // make just the main orbits and add after
@@ -52553,7 +52553,7 @@ exports.WorkerDocument = WorkerDocument;
 
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Star = void 0;
-const Color_1 = __webpack_require__(39);
+const Color_1 = __webpack_require__(38);
 const Random = __webpack_require__(12);
 const Convert = __webpack_require__(3);
 const OrbitingElement_1 = __webpack_require__(11);
@@ -52729,213 +52729,8 @@ exports.Star = Star;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Orbit = void 0;
-const Random = __webpack_require__(12);
-const Convert = __webpack_require__(3);
-const OrbitingElement_1 = __webpack_require__(11);
-/*
-https://www.amsat.org/keplerian-elements-tutorial/
-http://www.planetaryorbits.com/kepler-laws-orbital-elements.html
-https://jtauber.github.io/orbits/019.html
-
-mean distance :
-    https://www.jstor.org/stable/2689506?seq=1
-    http://www.planetaryorbits.com/kepler-laws-orbital-elements.html
-    https://en.wikipedia.org/wiki/Kepler%27s_laws_of_planetary_motion#Third_law
-
-*/
-class Orbit extends OrbitingElement_1.OrbitingElement {
-    constructor(worldData) {
-        super(worldData);
-        this.mean_longitude = new Convert.NumberAngle(0);
-        // Right Ascension of Ascending Node
-        // RAAN
-        // Longitude of Ascending Node
-        // Ω, longitude of ascending node
-        // Rotation of the PLANE of the orbit
-        this.longitude_ascending_node = new Convert.NumberAngle();
-        // LONGITUDE OF PERIHELION
-        // argument of periapsis
-        // Argument of Perigee
-        // ω, argument of perihelion
-        // Rotation of the orbit inside the plane
-        this.argument_of_perihelion = new Convert.NumberAngle();
-        // Orbital Inclination
-        // i, inclination
-        // How tilted the plan of orbit is compared to "horizontal"
-        this.inclination = new Convert.NumberAngle();
-        // Eccentricity
-        // ecce
-        this._eccentricity = 0.00001;
-        // Mean Motion
-        // orbit period
-        // semimajor-axis
-        this.semimajor_axis = new Convert.NumberLength();
-        this.semiminor_axis = new Convert.NumberLength();
-        this.focal_distance = new Convert.NumberLength();
-        this.perimeter = new Convert.NumberLength();
-        this.orbitalPeriod = new Convert.NumberTime();
-        this.type = this.constructor.name;
-        this.satelites = new Array();
-        // console.log("this.constructor", this.constructor);
-    }
-    get eccentricity() { return this._eccentricity; }
-    set eccentricity(value) {
-        this._eccentricity = value;
-        this.semiminor_axis.value = this.calc_semiminor_axis();
-        this.focal_distance.value = this.calc_focal_distance();
-    }
-    calcPerimeter1() {
-        // https://www.geeksforgeeks.org/perimeter-of-an-ellipse/
-        return 2 * Math.PI * Math.sqrt((Math.pow(this.semimajor_axis.value, 2) + Math.pow(this.semiminor_axis.value, 2)) / 2);
-    }
-    calcPerimeter2() {
-        // apr 2 https://www.mathsisfun.com/geometry/ellipse-perimeter.html
-        return Math.PI * ((3 * (this.semimajor_axis.value + this.semiminor_axis.value))
-            - Math.sqrt(((3 * this.semimajor_axis.value) + this.semiminor_axis.value)
-                * (this.semimajor_axis.value + (3 * this.semiminor_axis.value))));
-    }
-    calcPerimeter3() {
-        // apr 3 https://www.mathsisfun.com/geometry/ellipse-perimeter.html
-        var hhh = Math.pow(this.semimajor_axis.value - this.semiminor_axis.value, 2)
-            / Math.pow(this.semimajor_axis.value + this.semiminor_axis.value, 2);
-        return Math.PI
-            * (this.semimajor_axis.value + this.semiminor_axis.value)
-            * (1 + ((3 * hhh)
-                / (10 + Math.sqrt(4 - (3 * hhh)))));
-    }
-    calcOrbitalPeriod() {
-        // T ² = a ³
-        // orbital period of a planet (T)
-        // mean distance of the planet to the sun (a)
-        return Math.sqrt(Math.pow(this.semimajor_axis.au, 3));
-    }
-    updateMajEcc() {
-        this.semiminor_axis.value = this.calc_semiminor_axis();
-        this.focal_distance.value = this.calc_focal_distance();
-        this.perimeter.value = (this.calcPerimeter1() + this.calcPerimeter2() + this.calcPerimeter3()) / 3;
-        this.orbitalPeriod.ey = this.calcOrbitalPeriod();
-    }
-    randomUniform() {
-        this.set_major_ecc(1, 0.1);
-        this.argument_of_perihelion.deg = 0;
-        this.longitude_ascending_node.deg = 0;
-        this.inclination.deg = 0;
-        this.updateMajEcc();
-        return this;
-    }
-    randomSane() {
-        this.set_major_ecc(Random.random_float_clamp(0.5, 30), Random.random_float_clamp(0.01, 0.2));
-        this.argument_of_perihelion.deg = Random.random_float_clamp(0, 360);
-        this.longitude_ascending_node.deg = Random.random_float_clamp(0, 360);
-        this.inclination.deg = Random.random_float_clamp(0, 5);
-        // this.inclination.deg = 5
-        // this.eccentricity = 0.001
-        this.updateMajEcc();
-        return this;
-    }
-    randomForMainOrbit(smajax, plsys) {
-        var ecc_ = Random.random_float_clamp(0.01, 0.2);
-        this.inclination.deg = Random.random_float_clamp(0, 5);
-        if (plsys.hab_zone_in.value <= smajax.value)
-            if (smajax.value <= plsys.hab_zone_out.value)
-                ecc_ = Random.random_float_clamp(0.01, 0.02);
-        if (smajax.value >= plsys.frost_line.value) {
-            ecc_ = Random.random_float_clamp(0.1, 0.2);
-            this.inclination.deg = Random.random_float_clamp(5, 10);
-        }
-        if (smajax.value >= plsys.orbits_limit_out.value * 0.7) {
-            ecc_ = Random.random_float_clamp(0.3, 0.4);
-            this.inclination.deg = Random.random_float_clamp(5, 20);
-        }
-        this.set_major_ecc(smajax, ecc_);
-        this.argument_of_perihelion.deg = Random.random_float_clamp(0, 360);
-        this.longitude_ascending_node.deg = Random.random_float_clamp(0, 360);
-        this.updateMajEcc();
-        return this;
-    }
-    randomForClusters(clusterSize, smajax, plsys) {
-        this.argument_of_perihelion.deg = Random.random_float_clamp(0, 360);
-        this.longitude_ascending_node.deg = Random.random_float_clamp(0, 360);
-        this.inclination.deg = Random.random_float_clamp(5, 6);
-        var ecc_ = Random.random_float_clamp(0.01, 0.05);
-        var orbitSize = smajax.clone().div(Random.random_float_clamp(60, 70)).mul(clusterSize);
-        this.set_major_ecc(orbitSize, ecc_);
-        this.updateMajEcc();
-        return this;
-    }
-    set_axis(semimajor, semiminor) {
-        this.semimajor_axis.copy(semimajor);
-        this.semiminor_axis.copy(semiminor);
-        if (this.semimajor_axis.value < this.semiminor_axis.value) {
-            console.warn("Major axis is smaller that Minor axis, will switch values !");
-            this.semimajor_axis.copy(semiminor);
-            this.semiminor_axis.copy(semimajor);
-        }
-        this.eccentricity = this.calc_eccentricity();
-        this.focal_distance.value = this.calc_focal_distance();
-        this.perimeter.value = (this.calcPerimeter1() + this.calcPerimeter2() + this.calcPerimeter3()) / 3;
-        this.orbitalPeriod.ey = this.calcOrbitalPeriod();
-    }
-    set_major_ecc(semimajor, eccentricity) {
-        this.semimajor_axis.copy(semimajor);
-        this.eccentricity = eccentricity;
-        this.semiminor_axis.value = this.calc_semiminor_axis();
-        this.focal_distance.value = this.calc_focal_distance();
-        this.perimeter.value = (this.calcPerimeter1() + this.calcPerimeter2() + this.calcPerimeter3()) / 3;
-        this.orbitalPeriod.ey = this.calcOrbitalPeriod();
-        if (this.semimajor_axis.value < this.semiminor_axis.value) {
-            console.error("this.semimajor_axis.value, this.semiminor_axis.value", this.semimajor_axis.value, this.semiminor_axis.value);
-            throw new Error("Major axis is smaller that Minor axis!");
-        }
-    }
-    set_minor_ecc(semiminor, eccentricity) {
-        this.semiminor_axis.copy(semiminor);
-        this.eccentricity = eccentricity;
-        this.semimajor_axis.value = this.calc_semimajor_axis();
-        this.focal_distance.value = this.calc_focal_distance();
-        this.perimeter.value = (this.calcPerimeter1() + this.calcPerimeter2() + this.calcPerimeter3()) / 3;
-        this.orbitalPeriod.ey = this.calcOrbitalPeriod();
-        if (this.semimajor_axis.value < this.semiminor_axis.value) {
-            console.error("this.semimajor_axis.value, this.semiminor_axis.value", this.semimajor_axis.value, this.semiminor_axis.value);
-            throw new Error("Major axis is smaller that Minor axis!");
-        }
-    }
-    calc_eccentricity() {
-        return Math.sqrt(1 - Math.pow((this.semiminor_axis.value / this.semimajor_axis.value), 2));
-    }
-    calc_semiminor_axis() {
-        return Math.sqrt(Math.pow(this.semimajor_axis.value, 2) * (1 - Math.pow(this._eccentricity, 2)));
-    }
-    calc_semimajor_axis() {
-        return Math.sqrt(Math.pow(this.semiminor_axis.value, 2) / (1 - Math.pow(this._eccentricity, 2)));
-    }
-    calc_focal_distance() {
-        return this.semimajor_axis.value * this._eccentricity;
-        // return this.semiminor_axis.value * this._eccentricity
-    }
-    free() { return; }
-    clone() { return new Orbit(this.getWorldData()).copyLogic(this); }
-    guiSelect(slectPane, gui) {
-        slectPane.addMonitor(this, "isInHabZone");
-        slectPane.addMonitor(this, "eccentricity");
-        slectPane.addMonitor(this.semimajor_axis, 'Gm', { label: "semimajor axis Gm" });
-        slectPane.addMonitor(this.orbitalPeriod, 'ey', { label: "orbital Period" });
-        super.guiSelect(slectPane, gui);
-    }
-}
-exports.Orbit = Orbit;
-
-
-/***/ }),
-/* 28 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
 exports.Planet = void 0;
-const Color_1 = __webpack_require__(39);
+const Color_1 = __webpack_require__(38);
 const Random = __webpack_require__(12);
 const Convert = __webpack_require__(3);
 const OrbitingElement_1 = __webpack_require__(11);
@@ -53123,7 +52918,7 @@ exports.Planet = Planet;
 
 
 /***/ }),
-/* 29 */
+/* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -53298,7 +53093,7 @@ exports.JguiManager = JguiManager;
 
 
 /***/ }),
-/* 30 */
+/* 29 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -58473,7 +58268,7 @@ var src_extent = __webpack_require__(10);
 var ticks = __webpack_require__(4);
 
 // EXTERNAL MODULE: ./node_modules/d3-array/src/range.js
-var src_range = __webpack_require__(37);
+var src_range = __webpack_require__(36);
 
 // CONCATENATED MODULE: ./node_modules/d3-contour/src/array.js
 var array_array = Array.prototype;
@@ -62190,7 +61985,7 @@ function longitude(point) {
 });
 
 // EXTERNAL MODULE: ./node_modules/d3-array/src/merge.js
-var src_merge = __webpack_require__(36);
+var src_merge = __webpack_require__(35);
 
 // CONCATENATED MODULE: ./node_modules/d3-geo/src/clip/index.js
 
@@ -72790,9 +72585,9 @@ function defaultConstrain(transform, extent, translateExtent) {
 
 
 /***/ }),
+/* 30 */,
 /* 31 */,
-/* 32 */,
-/* 33 */
+/* 32 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -72801,20 +72596,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.BaseDrawUpdateWorker = exports.BaseWorker = void 0;
 const Time_1 = __webpack_require__(46);
 const Config_1 = __webpack_require__(19);
-const SharedData_1 = __webpack_require__(50);
-const WorldData_1 = __webpack_require__(51);
-const Units = __webpack_require__(34);
-const JguiMake_1 = __webpack_require__(29);
+const WorldData_1 = __webpack_require__(50);
+const Units = __webpack_require__(33);
+const JguiMake_1 = __webpack_require__(28);
 class BaseWorker {
     constructor(config, worker, workerName, event) {
-        this.sharedData = new SharedData_1.SharedData();
         this.db_read_itv = new Time_1.Intervaler();
         this.name = workerName;
         this.worker = worker;
         this.config = new Config_1.Config().copy(config);
         this.world = new WorldData_1.WorldData(this.config.WORLD_DATABASE_NAME, this.name);
         this.ticker = new Time_1.Ticker(false, this.updateInterval.bind(this), Units.LOOP_INTERVAL);
-        this.sharedData.initShared(event.data.sab);
     }
     preInit() {
         this.spread_objects(this.world);
@@ -72825,8 +72617,6 @@ class BaseWorker {
         });
     }
     spread_objects(object_) {
-        if (object_.sharedData === null)
-            object_.sharedData = this.sharedData;
         if (object_.config === null)
             object_.config = this.config;
         if (object_.world === null)
@@ -72890,7 +72680,7 @@ exports.BaseDrawUpdateWorker = BaseDrawUpdateWorker;
 
 
 /***/ }),
-/* 34 */
+/* 33 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -72916,15 +72706,15 @@ exports.LOOP_INTERVAL = 100;
 
 
 /***/ }),
-/* 35 */
+/* 34 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DrawD3Terrain = void 0;
-const d3 = __webpack_require__(30);
-const d3_geo_voronoi_1 = __webpack_require__(61);
+const d3 = __webpack_require__(29);
+const d3_geo_voronoi_1 = __webpack_require__(60);
 const Points = __webpack_require__(47);
 const WorkerDOM_1 = __webpack_require__(25);
 /*
@@ -72967,7 +72757,6 @@ https://github.com/joshforisha/open-simplex-noise-js
 class DrawD3Terrain {
     constructor() {
         this.type = this.constructor.name;
-        this.sharedData = null;
         this.world = null;
         this.canvasOffscreen = null;
         this.config = null;
@@ -73143,7 +72932,7 @@ exports.DrawD3Terrain = DrawD3Terrain;
 
 
 /***/ }),
-/* 36 */
+/* 35 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -73160,7 +72949,7 @@ function merge(arrays) {
 
 
 /***/ }),
-/* 37 */
+/* 36 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -73180,7 +72969,7 @@ function merge(arrays) {
 
 
 /***/ }),
-/* 38 */
+/* 37 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -73225,14 +73014,14 @@ exports.Identifiable = Identifiable;
 
 
 /***/ }),
-/* 39 */
+/* 38 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Color = void 0;
-const d3 = __webpack_require__(30);
+const d3 = __webpack_require__(29);
 class ColorValues {
     constructor() {
         this.r = 255;
@@ -73286,6 +73075,211 @@ class Color {
     }
 }
 exports.Color = Color;
+
+
+/***/ }),
+/* 39 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Orbit = void 0;
+const Random = __webpack_require__(12);
+const Convert = __webpack_require__(3);
+const OrbitingElement_1 = __webpack_require__(11);
+/*
+https://www.amsat.org/keplerian-elements-tutorial/
+http://www.planetaryorbits.com/kepler-laws-orbital-elements.html
+https://jtauber.github.io/orbits/019.html
+
+mean distance :
+    https://www.jstor.org/stable/2689506?seq=1
+    http://www.planetaryorbits.com/kepler-laws-orbital-elements.html
+    https://en.wikipedia.org/wiki/Kepler%27s_laws_of_planetary_motion#Third_law
+
+*/
+class Orbit extends OrbitingElement_1.OrbitingElement {
+    constructor(worldData) {
+        super(worldData);
+        this.mean_longitude = new Convert.NumberAngle(0);
+        // Right Ascension of Ascending Node
+        // RAAN
+        // Longitude of Ascending Node
+        // Ω, longitude of ascending node
+        // Rotation of the PLANE of the orbit
+        this.longitude_ascending_node = new Convert.NumberAngle();
+        // LONGITUDE OF PERIHELION
+        // argument of periapsis
+        // Argument of Perigee
+        // ω, argument of perihelion
+        // Rotation of the orbit inside the plane
+        this.argument_of_perihelion = new Convert.NumberAngle();
+        // Orbital Inclination
+        // i, inclination
+        // How tilted the plan of orbit is compared to "horizontal"
+        this.inclination = new Convert.NumberAngle();
+        // Eccentricity
+        // ecce
+        this._eccentricity = 0.00001;
+        // Mean Motion
+        // orbit period
+        // semimajor-axis
+        this.semimajor_axis = new Convert.NumberLength();
+        this.semiminor_axis = new Convert.NumberLength();
+        this.focal_distance = new Convert.NumberLength();
+        this.perimeter = new Convert.NumberLength();
+        this.orbitalPeriod = new Convert.NumberTime();
+        this.type = this.constructor.name;
+        this.satelites = new Array();
+        // console.log("this.constructor", this.constructor);
+    }
+    get eccentricity() { return this._eccentricity; }
+    set eccentricity(value) {
+        this._eccentricity = value;
+        this.semiminor_axis.value = this.calc_semiminor_axis();
+        this.focal_distance.value = this.calc_focal_distance();
+    }
+    calcPerimeter1() {
+        // https://www.geeksforgeeks.org/perimeter-of-an-ellipse/
+        return 2 * Math.PI * Math.sqrt((Math.pow(this.semimajor_axis.value, 2) + Math.pow(this.semiminor_axis.value, 2)) / 2);
+    }
+    calcPerimeter2() {
+        // apr 2 https://www.mathsisfun.com/geometry/ellipse-perimeter.html
+        return Math.PI * ((3 * (this.semimajor_axis.value + this.semiminor_axis.value))
+            - Math.sqrt(((3 * this.semimajor_axis.value) + this.semiminor_axis.value)
+                * (this.semimajor_axis.value + (3 * this.semiminor_axis.value))));
+    }
+    calcPerimeter3() {
+        // apr 3 https://www.mathsisfun.com/geometry/ellipse-perimeter.html
+        var hhh = Math.pow(this.semimajor_axis.value - this.semiminor_axis.value, 2)
+            / Math.pow(this.semimajor_axis.value + this.semiminor_axis.value, 2);
+        return Math.PI
+            * (this.semimajor_axis.value + this.semiminor_axis.value)
+            * (1 + ((3 * hhh)
+                / (10 + Math.sqrt(4 - (3 * hhh)))));
+    }
+    calcOrbitalPeriod() {
+        // T ² = a ³
+        // orbital period of a planet (T)
+        // mean distance of the planet to the sun (a)
+        return Math.sqrt(Math.pow(this.semimajor_axis.au, 3));
+    }
+    updateMajEcc() {
+        this.semiminor_axis.value = this.calc_semiminor_axis();
+        this.focal_distance.value = this.calc_focal_distance();
+        this.perimeter.value = (this.calcPerimeter1() + this.calcPerimeter2() + this.calcPerimeter3()) / 3;
+        this.orbitalPeriod.ey = this.calcOrbitalPeriod();
+    }
+    randomUniform() {
+        this.set_major_ecc(1, 0.1);
+        this.argument_of_perihelion.deg = 0;
+        this.longitude_ascending_node.deg = 0;
+        this.inclination.deg = 0;
+        this.updateMajEcc();
+        return this;
+    }
+    randomSane() {
+        this.set_major_ecc(Random.random_float_clamp(0.5, 30), Random.random_float_clamp(0.01, 0.2));
+        this.argument_of_perihelion.deg = Random.random_float_clamp(0, 360);
+        this.longitude_ascending_node.deg = Random.random_float_clamp(0, 360);
+        this.inclination.deg = Random.random_float_clamp(0, 5);
+        // this.inclination.deg = 5
+        // this.eccentricity = 0.001
+        this.updateMajEcc();
+        return this;
+    }
+    randomForMainOrbit(smajax, plsys) {
+        var ecc_ = Random.random_float_clamp(0.01, 0.2);
+        this.inclination.deg = Random.random_float_clamp(0, 5);
+        if (plsys.hab_zone_in.value <= smajax.value)
+            if (smajax.value <= plsys.hab_zone_out.value)
+                ecc_ = Random.random_float_clamp(0.01, 0.02);
+        if (smajax.value >= plsys.frost_line.value) {
+            ecc_ = Random.random_float_clamp(0.1, 0.2);
+            this.inclination.deg = Random.random_float_clamp(5, 10);
+        }
+        if (smajax.value >= plsys.orbits_limit_out.value * 0.7) {
+            ecc_ = Random.random_float_clamp(0.3, 0.4);
+            this.inclination.deg = Random.random_float_clamp(5, 20);
+        }
+        this.set_major_ecc(smajax, ecc_);
+        this.argument_of_perihelion.deg = Random.random_float_clamp(0, 360);
+        this.longitude_ascending_node.deg = Random.random_float_clamp(0, 360);
+        this.updateMajEcc();
+        return this;
+    }
+    randomForClusters(clusterSize, smajax, plsys) {
+        this.argument_of_perihelion.deg = Random.random_float_clamp(0, 360);
+        this.longitude_ascending_node.deg = Random.random_float_clamp(0, 360);
+        this.inclination.deg = Random.random_float_clamp(5, 6);
+        var ecc_ = Random.random_float_clamp(0.01, 0.05);
+        var orbitSize = smajax.clone().div(Random.random_float_clamp(60, 70)).mul(clusterSize);
+        this.set_major_ecc(orbitSize, ecc_);
+        this.updateMajEcc();
+        return this;
+    }
+    set_axis(semimajor, semiminor) {
+        this.semimajor_axis.copy(semimajor);
+        this.semiminor_axis.copy(semiminor);
+        if (this.semimajor_axis.value < this.semiminor_axis.value) {
+            console.warn("Major axis is smaller that Minor axis, will switch values !");
+            this.semimajor_axis.copy(semiminor);
+            this.semiminor_axis.copy(semimajor);
+        }
+        this.eccentricity = this.calc_eccentricity();
+        this.focal_distance.value = this.calc_focal_distance();
+        this.perimeter.value = (this.calcPerimeter1() + this.calcPerimeter2() + this.calcPerimeter3()) / 3;
+        this.orbitalPeriod.ey = this.calcOrbitalPeriod();
+    }
+    set_major_ecc(semimajor, eccentricity) {
+        this.semimajor_axis.copy(semimajor);
+        this.eccentricity = eccentricity;
+        this.semiminor_axis.value = this.calc_semiminor_axis();
+        this.focal_distance.value = this.calc_focal_distance();
+        this.perimeter.value = (this.calcPerimeter1() + this.calcPerimeter2() + this.calcPerimeter3()) / 3;
+        this.orbitalPeriod.ey = this.calcOrbitalPeriod();
+        if (this.semimajor_axis.value < this.semiminor_axis.value) {
+            console.error("this.semimajor_axis.value, this.semiminor_axis.value", this.semimajor_axis.value, this.semiminor_axis.value);
+            throw new Error("Major axis is smaller that Minor axis!");
+        }
+    }
+    set_minor_ecc(semiminor, eccentricity) {
+        this.semiminor_axis.copy(semiminor);
+        this.eccentricity = eccentricity;
+        this.semimajor_axis.value = this.calc_semimajor_axis();
+        this.focal_distance.value = this.calc_focal_distance();
+        this.perimeter.value = (this.calcPerimeter1() + this.calcPerimeter2() + this.calcPerimeter3()) / 3;
+        this.orbitalPeriod.ey = this.calcOrbitalPeriod();
+        if (this.semimajor_axis.value < this.semiminor_axis.value) {
+            console.error("this.semimajor_axis.value, this.semiminor_axis.value", this.semimajor_axis.value, this.semiminor_axis.value);
+            throw new Error("Major axis is smaller that Minor axis!");
+        }
+    }
+    calc_eccentricity() {
+        return Math.sqrt(1 - Math.pow((this.semiminor_axis.value / this.semimajor_axis.value), 2));
+    }
+    calc_semiminor_axis() {
+        return Math.sqrt(Math.pow(this.semimajor_axis.value, 2) * (1 - Math.pow(this._eccentricity, 2)));
+    }
+    calc_semimajor_axis() {
+        return Math.sqrt(Math.pow(this.semiminor_axis.value, 2) / (1 - Math.pow(this._eccentricity, 2)));
+    }
+    calc_focal_distance() {
+        return this.semimajor_axis.value * this._eccentricity;
+        // return this.semiminor_axis.value * this._eccentricity
+    }
+    free() { return; }
+    clone() { return new Orbit(this.getWorldData()).copyLogic(this); }
+    guiSelect(slectPane, gui) {
+        slectPane.addMonitor(this, "isInHabZone");
+        slectPane.addMonitor(this, "eccentricity");
+        slectPane.addMonitor(this.semimajor_axis, 'Gm', { label: "semimajor axis Gm" });
+        slectPane.addMonitor(this.orbitalPeriod, 'ey', { label: "orbital Period" });
+        super.guiSelect(slectPane, gui);
+    }
+}
+exports.Orbit = Orbit;
 
 
 /***/ }),
@@ -74133,7 +74127,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.workerTypes = void 0;
 const ctx = self;
 const PlanetSysWorker_1 = __webpack_require__(45);
-const TerrainWorker_1 = __webpack_require__(60);
+const TerrainWorker_1 = __webpack_require__(59);
 exports.workerTypes = new Map();
 exports.workerTypes["TerrainWorker"] = TerrainWorker_1.TerrainWorker;
 exports.workerTypes["PlanetSysWorker"] = PlanetSysWorker_1.PlanetSysWorker;
@@ -74158,11 +74152,11 @@ ctx.addEventListener("message", (event) => {
 
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PlanetSysWorker = void 0;
-const GenWorkerMetadata_1 = __webpack_require__(33);
+const GenWorkerMetadata_1 = __webpack_require__(32);
 const Config_1 = __webpack_require__(19);
-const DrawThreePlsys_1 = __webpack_require__(56);
-const DrawD3Plsys_1 = __webpack_require__(59);
-const JguiMake_1 = __webpack_require__(29);
+const DrawThreePlsys_1 = __webpack_require__(55);
+const DrawD3Plsys_1 = __webpack_require__(58);
+const JguiMake_1 = __webpack_require__(28);
 // TODO move generation in this worker instead of in the main thread
 // TODO simplify the refresh deep/shallow mechanisms since most actions will be done in this worker
 // TODO store position and rotation of objects inside themselves after time/orbit update so other workers can do "basic" checks and calculations
@@ -74429,7 +74423,7 @@ exports.Ticker = Ticker;
 
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.makeGeoPtsRandBad2 = exports.makeGeoPtsRandBad1 = exports.makeGeoPoissonDiscSample = exports.makeGeoPtsSquares = exports.getGeoSquareArr = exports.splitSquare = exports.makeGeoPtsRandOk = exports.makeGeoPtsFibb = exports.removeDupPts = exports.sphereDistance = exports.linearDistance = void 0;
-const d3 = __webpack_require__(30);
+const d3 = __webpack_require__(29);
 function linearDistance(a, b) {
     return Math.hypot(a[0] - b[0], a[1] - b[1]);
 }
@@ -74760,70 +74754,15 @@ exports.ActionsManager = ActionsManager;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SharedData = void 0;
-const TOTAL_ELEMENTS = 10;
-const NULL_NUMBER = Number.NEGATIVE_INFINITY;
-class SharedData {
-    constructor() {
-        this.sab = null;
-        this.ia = null;
-    }
-    // TODO setting value to null translates by default to 0 ... in setter/getter translate it to INFINITY or something
-    setNumber(value) {
-        if (value == null) {
-            return NULL_NUMBER;
-        }
-        return value;
-    }
-    getNumber(value) {
-        if (value == NULL_NUMBER) {
-            return null;
-        }
-        return value;
-    }
-    setNumberRaw(value) { return value; }
-    getNumberRaw(value) { return value; }
-    get mousex() { return this.getNumber(this.ia[0]); }
-    set mousex(value) { this.ia[0] = this.setNumber(value); }
-    get mousey() { return this.getNumber(this.ia[1]); }
-    set mousey(value) { this.ia[1] = this.setNumber(value); }
-    get hoverId() { return this.getNumberRaw(this.ia[2]); }
-    set hoverId(value) { this.ia[2] = this.setNumberRaw(value); }
-    get selectedId() { return this.getNumberRaw(this.ia[3]); }
-    set selectedId(value) { this.ia[3] = this.setNumberRaw(value); }
-    get maxId() { return this.getNumberRaw(this.ia[4]); }
-    set maxId(value) { this.ia[4] = this.setNumberRaw(value); }
-    initMain() {
-        this.sab = new SharedArrayBuffer(Float64Array.BYTES_PER_ELEMENT * TOTAL_ELEMENTS);
-        this.ia = new Float64Array(this.sab);
-        for (const index in this.ia)
-            this.ia[index] = NULL_NUMBER;
-        this.maxId = 10;
-    }
-    initShared(sab_) {
-        this.sab = sab_;
-        this.ia = new Float64Array(this.sab);
-    }
-}
-exports.SharedData = SharedData;
-
-
-/***/ }),
-/* 51 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", { value: true });
 exports.WorldData = exports.objects_types_ = void 0;
-const PlanetarySystem_1 = __webpack_require__(52);
-const DataBaseManager_1 = __webpack_require__(53);
-const SpaceFactory_1 = __webpack_require__(54);
-const Orbit_1 = __webpack_require__(27);
-const Planet_1 = __webpack_require__(28);
+const PlanetarySystem_1 = __webpack_require__(51);
+const DataBaseManager_1 = __webpack_require__(52);
+const SpaceFactory_1 = __webpack_require__(53);
+const Orbit_1 = __webpack_require__(39);
+const Planet_1 = __webpack_require__(27);
 const Star_1 = __webpack_require__(26);
 const SpaceGroup_1 = __webpack_require__(40);
-const Terrain_1 = __webpack_require__(55);
+const Terrain_1 = __webpack_require__(54);
 // TODO read&write function WITH and WITHOUT structure change
 // WITHOUT structure change is just update or variables values
 // WITH represents a refresh/regen
@@ -74842,7 +74781,6 @@ class WorldData {
         this.type = this.constructor.name;
         this.idObjMap = new Map();
         this.config = null;
-        this.sharedData = null;
         this.name = name;
         this.dbm = new DataBaseManager_1.DataBaseManager(targetTable, name);
         this.spaceFactory = new SpaceFactory_1.SpaceFactory(this);
@@ -74890,8 +74828,6 @@ class WorldData {
         for (const object_ of to_spread) {
             if (object_.planetarySystem === null)
                 object_.planetarySystem = this.planetarySystem;
-            if (object_.sharedData === null)
-                object_.sharedData = this.sharedData;
             if (object_.config === null)
                 object_.config = this.config;
             if (object_.world === null)
@@ -74899,13 +74835,12 @@ class WorldData {
         }
     }
     getFreeID() {
-        if (!this.sharedData)
-            return WorldData.wdMaxId--;
+        return WorldData.wdMaxId++;
         // if (!this.sharedData) return Math.ceil(Math.random() * 10000) + 1000;
-        var id_ = this.sharedData.maxId++;
-        while (this.idObjMap.has(id_))
-            id_ = this.sharedData.maxId++;
-        return id_;
+        // var id_ = this.sharedData.maxId++;
+        // while (this.idObjMap.has(id_))
+        //     id_ = this.sharedData.maxId++;
+        // return id_;
     }
     free(id_) {
         this.idObjMap.delete(id_);
@@ -75048,11 +74983,11 @@ class WorldData {
     }
 }
 exports.WorldData = WorldData;
-WorldData.wdMaxId = -10;
+WorldData.wdMaxId = 10;
 
 
 /***/ }),
-/* 52 */
+/* 51 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -75119,14 +75054,14 @@ exports.PlanetarySystem = PlanetarySystem;
 
 
 /***/ }),
-/* 53 */
+/* 52 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DataBaseManager = void 0;
-const idb_1 = __webpack_require__(62);
+const idb_1 = __webpack_require__(61);
 // import { openDB, deleteDB, wrap, unwrap, IDBPDatabase, IDBPTransaction, IDBPObjectStore, StoreKey, StoreValue } from 'idb/with-async-ittr.js';
 /*
 TODO Make tables "universe" specific , the ones that ID is needed
@@ -75189,7 +75124,7 @@ DataBaseManager.BIG_OBJECTS = "BIG_OBJECTS";
 
 
 /***/ }),
-/* 54 */
+/* 53 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -75197,8 +75132,8 @@ DataBaseManager.BIG_OBJECTS = "BIG_OBJECTS";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SpaceFactory = void 0;
 const Star_1 = __webpack_require__(26);
-const Orbit_1 = __webpack_require__(27);
-const Planet_1 = __webpack_require__(28);
+const Orbit_1 = __webpack_require__(39);
+const Planet_1 = __webpack_require__(27);
 const Random = __webpack_require__(12);
 const Convert = __webpack_require__(3);
 const SpaceGroup_1 = __webpack_require__(40);
@@ -75563,14 +75498,14 @@ exports.SpaceFactory = SpaceFactory;
 
 
 /***/ }),
-/* 55 */
+/* 54 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Terrain = void 0;
-const ObjectsHacker_1 = __webpack_require__(38);
+const ObjectsHacker_1 = __webpack_require__(37);
 class Terrain extends ObjectsHacker_1.Identifiable {
     // constructor(worldData: WorldData, data_: any) {
     //     super(worldData);
@@ -75600,7 +75535,7 @@ exports.Terrain = Terrain;
 
 
 /***/ }),
-/* 56 */
+/* 55 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -75608,17 +75543,15 @@ exports.Terrain = Terrain;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DrawThreePlsys = void 0;
 const THREE = __webpack_require__(0);
-const OrbitControls_1 = __webpack_require__(57);
+const OrbitControls_1 = __webpack_require__(56);
 const Convert = __webpack_require__(3);
-const ObjectPool_1 = __webpack_require__(58);
-const Orbit_1 = __webpack_require__(27);
-const Planet_1 = __webpack_require__(28);
+const ObjectPool_1 = __webpack_require__(57);
+const Planet_1 = __webpack_require__(27);
 const Star_1 = __webpack_require__(26);
 const WorkerDOM_1 = __webpack_require__(25);
 class DrawThreePlsys {
     constructor() {
         this.type = this.constructor.name;
-        this.sharedData = null;
         this.world = null;
         this.config = null;
         this.canvasOffscreen = null;
@@ -76044,76 +75977,72 @@ class DrawThreePlsys {
     }
     draw() {
         // console.debug("#HERELINE "+this.type+" draw ", this.world.planetary_system.time.ey);
-        var _a;
         if (this.selectedThing) {
             this.selectedPrevPos.copy(this.selectedThing.position);
         }
         for (const iterator of this.orbElemToGroup.values()) {
             this.calculatePos(iterator);
         }
-        this.hoverSphere.visible = false;
-        if (this.config.follow_pointed_orbit !== "none") {
-            if (this.sharedData.mousex != 0 && this.sharedData.mousey != 0) {
-                this.mouse.x = (this.sharedData.mousex / this.canvasOffscreen.width) * 2 - 1;
-                this.mouse.y = -(this.sharedData.mousey / this.canvasOffscreen.height) * 2 + 1;
-                // console.log("this.mouse", this.mouse);
-                // var allIntersect = [...this.orb_lines, ...this.orb_planets]
-                // const intersects = this.raycaster.intersectObjects(allIntersect, false);
-                this.raycaster.setFromCamera(this.mouse, this.camera);
-                const intersects = this.raycaster.intersectObjects(this.scene.children, true);
-                if (intersects.length > 0) {
-                    var orb_ = intersects[0];
-                    var targ_ = orb_.object.parent.userData;
-                    if ((_a = targ_ === null || targ_ === void 0 ? void 0 : targ_.orbitingElement) === null || _a === void 0 ? void 0 : _a.id) {
-                        this.hoverSphere.visible = true;
-                        this.hoverSphere.position.copy(orb_.point);
-                        this.sharedData.hoverId = targ_.orbitingElement.id;
-                    }
-                    // console.log("targ_", targ_);
-                    // this.camera.lookAt(targ_.position)
-                    // this.controls.target = targ_.position
-                    // TODO set a shared data variable with the ID of the selected/focused WORLD thing (orbit,planet,cell,etc.)
-                }
-                else {
-                    this.sharedData.hoverId = null;
-                }
-            }
-        }
-        if (this.selectedThing) {
-            this.selectedPrevPos.sub(this.selectedThing.position); //reuse Vec3 for delta
-            this.camera.position.sub(this.selectedPrevPos);
-            // this.camera.lookAt(this.selectedThing.position)
-            this.selectedPrevPos.copy(this.selectedThing.position);
-        }
-        // https://stackoverflow.com/questions/37482231/camera-position-changes-in-three-orbitcontrols-in-three-js
-        // https://stackoverflow.com/questions/53292145/forcing-orbitcontrols-to-navigate-around-a-moving-object-almost-working
-        // https://github.com/mrdoob/three.js/pull/16374#issuecomment-489773834
-        if (this.lastSelectedId != this.sharedData.selectedId) {
-            this.lastSelectedId = this.sharedData.selectedId;
-            // console.log("this.lastSelectedId", this.lastSelectedId);
-            var selOrbElem = this.world.idObjMap.get(this.lastSelectedId);
-            if (selOrbElem) {
-                var fosusElem = selOrbElem;
-                if (this.config.follow_pointed_orbit === "auto") {
-                    var firstSat = selOrbElem.getSatIndex(0); // better focuss on Sat
-                    if (firstSat && selOrbElem instanceof Orbit_1.Orbit)
-                        fosusElem = firstSat; // better focuss on Sat
-                }
-                var orbElemGr = this.orbElemToGroup.get(fosusElem);
-                // console.log("orbElemGr", orbElemGr);
-                this.selectedThing = orbElemGr;
-                this.controls.target = orbElemGr.position;
-                this.camera.lookAt(orbElemGr.position);
-                // orbElemGr.add(this.camera)
-            }
-            else {
-                this.selectedThing = null;
-                this.controls.target = this.scene.position;
-                this.camera.lookAt(this.scene.position);
-                // this.scene.add(this.camera)
-            }
-            this.cameraMoved();
-        }
+        // this.hoverSphere.visible = false;
+        // if (this.config.follow_pointed_orbit !== "none") {
+        //     if (this.sharedData.mousex != 0 && this.sharedData.mousey != 0) {
+        //         this.mouse.x = (this.sharedData.mousex / this.canvasOffscreen.width) * 2 - 1;
+        //         this.mouse.y = - (this.sharedData.mousey / this.canvasOffscreen.height) * 2 + 1;
+        //         // console.log("this.mouse", this.mouse);
+        //         // var allIntersect = [...this.orb_lines, ...this.orb_planets]
+        //         // const intersects = this.raycaster.intersectObjects(allIntersect, false);
+        //         this.raycaster.setFromCamera(this.mouse, this.camera);
+        //         const intersects = this.raycaster.intersectObjects(this.scene.children, true);
+        //         if (intersects.length > 0) {
+        //             var orb_ = intersects[0]
+        //             var targ_ = orb_.object.parent.userData as ThreeUserData
+        //             if (targ_?.orbitingElement?.id) {
+        //                 this.hoverSphere.visible = true;
+        //                 this.hoverSphere.position.copy(orb_.point)
+        //                 this.sharedData.hoverId = targ_.orbitingElement.id
+        //             }
+        //             // console.log("targ_", targ_);
+        //             // this.camera.lookAt(targ_.position)
+        //             // this.controls.target = targ_.position
+        //             // TODO set a shared data variable with the ID of the selected/focused WORLD thing (orbit,planet,cell,etc.)
+        //         } else {
+        //             this.sharedData.hoverId = null;
+        //         }
+        //     }
+        // }
+        // if (this.selectedThing) {
+        //     this.selectedPrevPos.sub(this.selectedThing.position);//reuse Vec3 for delta
+        //     this.camera.position.sub(this.selectedPrevPos);
+        //     // this.camera.lookAt(this.selectedThing.position)
+        //     this.selectedPrevPos.copy(this.selectedThing.position);
+        // }
+        // // https://stackoverflow.com/questions/37482231/camera-position-changes-in-three-orbitcontrols-in-three-js
+        // // https://stackoverflow.com/questions/53292145/forcing-orbitcontrols-to-navigate-around-a-moving-object-almost-working
+        // // https://github.com/mrdoob/three.js/pull/16374#issuecomment-489773834
+        // if (this.lastSelectedId != this.sharedData.selectedId) {
+        //     this.lastSelectedId = this.sharedData.selectedId;
+        //     // console.log("this.lastSelectedId", this.lastSelectedId);
+        //     var selOrbElem = this.world.idObjMap.get(this.lastSelectedId) as OrbitingElement
+        //     if (selOrbElem) {
+        //         var fosusElem = selOrbElem;
+        //         if (this.config.follow_pointed_orbit === "auto") {
+        //             var firstSat = selOrbElem.getSatIndex(0) // better focuss on Sat
+        //             if (firstSat && selOrbElem instanceof Orbit) fosusElem = firstSat; // better focuss on Sat
+        //         }
+        //         var orbElemGr = this.orbElemToGroup.get(fosusElem) as THREE.Object3D;
+        //         // console.log("orbElemGr", orbElemGr);
+        //         this.selectedThing = orbElemGr;
+        //         this.controls.target = orbElemGr.position
+        //         this.camera.lookAt(orbElemGr.position)
+        //         // orbElemGr.add(this.camera)
+        //     } else {
+        //         this.selectedThing = null;
+        //         this.controls.target = this.scene.position;
+        //         this.camera.lookAt(this.scene.position)
+        //         // this.scene.add(this.camera)
+        //     }
+        //     this.cameraMoved();
+        // }
         this.renderer.render(this.scene, this.camera);
     }
 }
@@ -76121,7 +76050,7 @@ exports.DrawThreePlsys = DrawThreePlsys;
 
 
 /***/ }),
-/* 57 */
+/* 56 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -77351,7 +77280,7 @@ MapControls.prototype.constructor = MapControls;
 
 
 /***/ }),
-/* 58 */
+/* 57 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -77413,7 +77342,7 @@ exports.ObjectPool = ObjectPool;
 
 
 /***/ }),
-/* 59 */
+/* 58 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -77432,7 +77361,6 @@ https://observablehq.com/@pstuffa/canvas-treemap
 class DrawD3Plsys {
     constructor() {
         this.type = this.constructor.name;
-        this.sharedData = null;
         this.world = null;
         this.canvasOffscreen = null;
         this.config = null;
@@ -77531,17 +77459,17 @@ exports.DrawD3Plsys = DrawD3Plsys;
 
 
 /***/ }),
-/* 60 */
+/* 59 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TerrainWorker = void 0;
-const GenWorkerMetadata_1 = __webpack_require__(33);
+const GenWorkerMetadata_1 = __webpack_require__(32);
 const Config_1 = __webpack_require__(19);
-const DrawD3Terrain_1 = __webpack_require__(35);
-const JguiMake_1 = __webpack_require__(29);
+const DrawD3Terrain_1 = __webpack_require__(34);
+const JguiMake_1 = __webpack_require__(28);
 class TerrainWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
     constructor(config, worker, workerName, event) {
         super(config, worker, workerName, event);
@@ -77668,7 +77596,7 @@ exports.TerrainWorker = TerrainWorker;
 
 
 /***/ }),
-/* 61 */
+/* 60 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -85455,7 +85383,7 @@ function geoContour() {
 
 
 /***/ }),
-/* 62 */
+/* 61 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";

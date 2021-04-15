@@ -13,7 +13,6 @@ import { ObjectPool } from "../utils/ObjectPool";
 import { Orbit } from "../generate/Orbit";
 import { Planet } from "../generate/Planet";
 import { Star } from "../generate/Star";
-import { SharedData } from "./SharedData";
 import { WorkerDOM } from "../utils/WorkerDOM";
 import { OrbitingElement } from "../generate/OrbitingElement";
 import { SpaceGroup } from "../generate/SpaceGroup";
@@ -34,7 +33,6 @@ https://observablehq.com/@pstuffa/canvas-treemap
 
 export class DrawD3Plsys implements DrawWorkerInstance {
     public readonly type = this.constructor.name;
-    public sharedData: SharedData = null;
     public world: WorldData = null;
     public canvasOffscreen: OffscreenCanvas = null;
     public config: Config = null;

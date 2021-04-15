@@ -11,7 +11,6 @@ import { Planet } from "../generate/Planet";
 import { Star } from "../generate/Star";
 import { OrbitingElement } from "../generate/OrbitingElement";
 import { SpaceGroup } from "../generate/SpaceGroup";
-import { SharedData } from "./SharedData";
 import { Terrain } from "../generate/Terrain";
 import { ClonableConstructor, Identifiable } from "./ObjectsHacker";
 import { StoreKey } from "idb";
@@ -47,7 +46,6 @@ export class WorldData {
     public config: Config = null;
     public dbm: DataBaseManager;
 
-    public sharedData: SharedData = null;
     public readonly spaceFactory: SpaceFactory;
 
     constructor(targetTable: string, name: string) {
@@ -102,7 +100,6 @@ export class WorldData {
         var to_spread: any[] = [this.spaceFactory]
         for (const object_ of to_spread) {
             if (object_.planetarySystem === null) object_.planetarySystem = this.planetarySystem;
-            if (object_.sharedData === null) object_.sharedData = this.sharedData;
             if (object_.config === null) object_.config = this.config;
             if (object_.world === null) object_.world = this;
         }
@@ -110,14 +107,14 @@ export class WorldData {
 
 
 
-    public static wdMaxId = -10;
+    public static wdMaxId = 10;
     public getFreeID() {
-        if (!this.sharedData) return WorldData.wdMaxId--;
+        return WorldData.wdMaxId++;
         // if (!this.sharedData) return Math.ceil(Math.random() * 10000) + 1000;
-        var id_ = this.sharedData.maxId++;
-        while (this.idObjMap.has(id_))
-            id_ = this.sharedData.maxId++;
-        return id_;
+        // var id_ = this.sharedData.maxId++;
+        // while (this.idObjMap.has(id_))
+        //     id_ = this.sharedData.maxId++;
+        // return id_;
     }
 
     public free(id_: number) {
