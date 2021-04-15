@@ -31,3 +31,13 @@ draw shape wsing lots of sprite points
 
     https://hofk.de/main/discourse.threejs/2018/Points%20to%20Sphere/Points%20to%20Sphere.html
     https://hofk.de/main/discourse.threejs/2018/Points%20to%20Sphere%20uniformly/Points%20to%20Sphere%20uniformly.html
+
+
+
+WORDS and language generation
+    https://gist.github.com/swenzel/70beac153cdf23803f89 JavaScript random word generator
+    http://mewo2.com/notes/naming-language/
+
+    https://github.com/ryelle/naming-language ryelle/naming-language
+
+
