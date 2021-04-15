@@ -53,12 +53,12 @@ function addRightClickStuff(metaCanvas: MetaCanvas, mngr: MainManager, the_worke
         canvas.focus()
         evt_.preventDefault();
 
-        if (metaCanvas.generalFlags.includes("orbit"))
-            if (mngr.sharedData.selectedId !== mngr.sharedData.hoverId) {
+        // if (metaCanvas.generalFlags.includes("orbit"))
+        //     if (mngr.sharedData.selectedId !== mngr.sharedData.hoverId) {
 
-                var selected = mngr.world.idObjMap.get(mngr.sharedData.hoverId)
-                mngr.gui.selectOrbElement(selected as OrbitingElement);
-            }
+        //         var selected = mngr.world.idObjMap.get(mngr.sharedData.hoverId)
+        //         mngr.gui.selectOrbElement(selected as OrbitingElement);
+        //     }
     };
     canvas.addEventListener("contextmenu", selectListener.bind(mngr));
 
@@ -69,17 +69,17 @@ function addRightClickStuff(metaCanvas: MetaCanvas, mngr: MainManager, the_worke
 function addMouseSharedBuffer(metaCanvas: MetaCanvas, mngr: MainManager, the_worker: GenericWorkerInstance, canvas: HTMLCanvasElement): void {
     // console.log("canvas", canvas);
     // "mousedown" "mouseenter" "mouseleave" "mousemove" "mouseout" "mouseover" "mouseup":
-    if (metaCanvas.generalFlags.includes("orbit")) {
-        canvas.addEventListener('mousemove', (evt) => {
-            var rect = canvas.getBoundingClientRect();
-            mngr.sharedData.mousex = evt.clientX - rect.left;
-            mngr.sharedData.mousey = evt.clientY - rect.top;
-        }, false);
-        canvas.addEventListener('mouseleave', () => {
-            mngr.sharedData.mousex = null;
-            mngr.sharedData.mousey = null;
-        }, false);
-    }
+    // if (metaCanvas.generalFlags.includes("orbit")) {
+    //     canvas.addEventListener('mousemove', (evt) => {
+    //         var rect = canvas.getBoundingClientRect();
+    //         mngr.sharedData.mousex = evt.clientX - rect.left;
+    //         mngr.sharedData.mousey = evt.clientY - rect.top;
+    //     }, false);
+    //     canvas.addEventListener('mouseleave', () => {
+    //         mngr.sharedData.mousex = null;
+    //         mngr.sharedData.mousey = null;
+    //     }, false);
+    // }
 }
 
 function addResizeListener(metaCanvas: MetaCanvas, mngr: MainManager, the_worker: GenericWorkerInstance, canvas: HTMLCanvasElement): void {

@@ -48,7 +48,6 @@ export type WorkerPacket = {
     metaCanvas?: MetaCanvas,
     canvas?: OffscreenCanvas,
     canvas_id?: any,
-    sab?: SharedArrayBuffer,
     event?: any,
     event_id?: string,
     metadata?: any,

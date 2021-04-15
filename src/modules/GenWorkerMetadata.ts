@@ -1,6 +1,5 @@
 import { Intervaler, Ticker } from "../utils/Time";
 import { Config, MessageType, WorkerEvent, WorkerPacket } from "./Config";
-import { SharedData } from "./SharedData";
 import { WorldData } from "./WorldData";
 
 
@@ -13,7 +12,6 @@ import { JguiMake, JguiManager } from "../gui/JguiMake";
 
 
 export abstract class BaseWorker {
-    sharedData = new SharedData();
 
     world: WorldData;
     config: Config;
@@ -29,7 +27,6 @@ export abstract class BaseWorker {
         this.config = new Config().copy(config);
         this.world = new WorldData(this.config.WORLD_DATABASE_NAME, this.name);
         this.ticker = new Ticker(false, this.updateInterval.bind(this), Units.LOOP_INTERVAL)
-        this.sharedData.initShared(event.data.sab)
     }
 
     public preInit() {
@@ -42,7 +39,6 @@ export abstract class BaseWorker {
     }
 
     public spread_objects(object_: any) {
-        if (object_.sharedData === null) object_.sharedData = this.sharedData
         if (object_.config === null) object_.config = this.config
         if (object_.world === null) object_.world = this.world
     }
@@ -92,7 +88,6 @@ export abstract class BaseWorker {
 
 export interface DrawWorkerInstance {
     readonly type: string;
-    sharedData: SharedData;
     world: WorldData;
     canvasOffscreen: OffscreenCanvas;
     config: Config;

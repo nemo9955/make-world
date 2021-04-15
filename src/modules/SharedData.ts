@@ -4,7 +4,7 @@ import GenericWorkerInstance from "worker-loader!./GenWorkerInstance.ts";
 const TOTAL_ELEMENTS = 10
 const NULL_NUMBER = Number.NEGATIVE_INFINITY
 
-export class SharedData {
+export class SharedData_ {
     sab: SharedArrayBuffer = null;
     ia: Float64Array = null;
 
