@@ -19,7 +19,6 @@ import { JguiMake } from "../gui/JguiMake";
 
 export class PlanetSysWorker extends BaseDrawUpdateWorker {
 
-
     constructor(config: Config, worker: Worker, workerName: string, event: WorkerEvent) {
         super(config, worker, workerName, event);
         // this.ticker.tick_interval = Units.LOOP_INTERVAL * 50;

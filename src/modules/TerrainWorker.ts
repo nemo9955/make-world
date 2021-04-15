@@ -7,7 +7,6 @@ import { JguiMake } from "../gui/JguiMake";
 
 export class TerrainWorker extends BaseDrawUpdateWorker {
 
-
     constructor(config: Config, worker: Worker, workerName: string, event: WorkerEvent) {
         super(config, worker, workerName, event);
     }
