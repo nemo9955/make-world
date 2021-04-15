@@ -183,12 +183,9 @@ export class MainManager {
         console.timeEnd("#time MainManager writeShallow");
     }
 
-    test_: typeof BaseWorker;
-
     public initGenericWorker(workerClass: typeof BaseWorker) {
         var genWorker = new GenericWorkerInstance();
         genWorker.name = workerClass.name
-        this.test_ = TerrainWorker;
 
         this.workers.push(genWorker);
         genWorker.postMessage(<WorkerPacket>{ create: genWorker.name, sab: this.sharedData.sab, config: this.config });

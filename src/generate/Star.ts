@@ -23,6 +23,7 @@ import { WorldGui } from "../modules/WorldGui";
 // M	2,400–3,700 K	orange red	light orange red	0.08–0.45 M☉	≤ 0.7 R☉	≤ 0.08 L☉	Very weak	76.45%
 
 export class Star extends OrbitingElement {
+
     sclass: string;
     public readonly luminosity = new Convert.NumberRadiantFlux();
     public readonly temperature = new Convert.NumberTemperature();
@@ -209,15 +210,15 @@ export class Star extends OrbitingElement {
     public clone() { return new Star(this.getWorldData()).copyLogic(this) }
 
 
-        public guiSelect(slectPane: Tweakpane, gui: WorldGui) {
-            slectPane.addInput(this.color, 'value', { label: "color" })
-            slectPane.addInput(this.radius, 'km', { label: "radius km" });
-            slectPane.addInput(this.mass, 'Yg', { label: "mass Yg" });
+    public guiSelect(slectPane: Tweakpane, gui: WorldGui) {
+        slectPane.addInput(this.color, 'value', { label: "color" })
+        slectPane.addInput(this.radius, 'km', { label: "radius km" });
+        slectPane.addInput(this.mass, 'Yg', { label: "mass Yg" });
 
-            slectPane.addInput(this, 'sclass');
-            slectPane.addInput(this.luminosity, 'watt', { label: "luminosity watt" });
-            slectPane.addInput(this.temperature, 'kelvin', { label: "temperature kelvin" });
-            slectPane.addInput(this.lifetime, 'eby', { label: "lifetime eby" });
-            super.guiSelect(slectPane, gui);
-        }
+        slectPane.addInput(this, 'sclass');
+        slectPane.addInput(this.luminosity, 'watt', { label: "luminosity watt" });
+        slectPane.addInput(this.temperature, 'kelvin', { label: "temperature kelvin" });
+        slectPane.addInput(this.lifetime, 'eby', { label: "lifetime eby" });
+        super.guiSelect(slectPane, gui);
+    }
 }

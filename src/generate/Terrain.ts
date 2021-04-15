@@ -17,6 +17,7 @@ import { Identifiable } from "../modules/ObjectsHacker";
 
 
 export class Terrain extends Identifiable {
+
     public orbitElemId: number = null;
     public test: number = 100;
 

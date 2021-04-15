@@ -41,6 +41,13 @@ module.exports = smp.wrap({
         // umdNamedDefine: true,
         // globalObject: 'this'
     },
+    optimization: {
+        minimize: false,
+        // runtimeChunk: 'single',
+        // splitChunks: {
+        //     chunks: 'all',
+        // },
+    },
     devServer: {
         disableHostCheck: true,
         headers: {

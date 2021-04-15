@@ -22,6 +22,9 @@ import { StoreKey } from "idb";
 
 // TODO Planet Star Orbit and such objects to be stored directly in DB and referenced by some UUID
 
+// TODO do not use function.name and constructor.name so minified can be used
+// https://stackoverflow.com/questions/50267543/class-name-always-e-for-every-class-after-uglify-webpack-for-production
+
 
 export var objects_types_ = {};
 objects_types_["PlanetarySystem"] = PlanetarySystem
