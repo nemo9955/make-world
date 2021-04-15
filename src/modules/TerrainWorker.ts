@@ -134,24 +134,10 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
         [this.workerJguiMain, workerJgui] = new JguiMake(null).mkWorkerJgui("terr", "600");
 
         workerJgui.addButton("Test 1").addEventListener(this.workerJguiManager, "click", (event: WorkerEvent) => {
-            console.log("??????????????????? event", event.data.event);
-        })
-        workerJgui.addButton("Test 2").addEventListener(this.workerJguiManager, "click", (event: WorkerEvent) => {
             console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!! event", event.data.event);
         })
 
 
-        // var subStuff = workerJgui.addColapse("More stuff", true)
-        // subStuff.addButton("Stuff 1")
-        // subStuff.addButton("Stuff 2")
-        // subStuff.addButton("Stuff 3")
-        // var mrrStuff = subStuff.addColapse("MORRRR stuff", true)
-        // mrrStuff.addButton("Thing 1")
-        // mrrStuff.addButton("Thing 2")
-        // mrrStuff.addButton("Thing 3")
-        // subStuff.addSlider("SLIDE", 0, 100, 0.1)
-
-        // console.log("this.workerJguiMain", this.workerJguiMain);
 
         this.worker.postMessage(<WorkerPacket>{
             message: MessageType.RefreshJGUI,

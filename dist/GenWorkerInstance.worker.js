@@ -99374,21 +99374,8 @@ class TerrainWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
         var workerJgui;
         [this.workerJguiMain, workerJgui] = new JguiMake_1.JguiMake(null).mkWorkerJgui("terr", "600");
         workerJgui.addButton("Test 1").addEventListener(this.workerJguiManager, "click", (event) => {
-            console.log("??????????????????? event", event.data.event);
-        });
-        workerJgui.addButton("Test 2").addEventListener(this.workerJguiManager, "click", (event) => {
             console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!! event", event.data.event);
         });
-        // var subStuff = workerJgui.addColapse("More stuff", true)
-        // subStuff.addButton("Stuff 1")
-        // subStuff.addButton("Stuff 2")
-        // subStuff.addButton("Stuff 3")
-        // var mrrStuff = subStuff.addColapse("MORRRR stuff", true)
-        // mrrStuff.addButton("Thing 1")
-        // mrrStuff.addButton("Thing 2")
-        // mrrStuff.addButton("Thing 3")
-        // subStuff.addSlider("SLIDE", 0, 100, 0.1)
-        // console.log("this.workerJguiMain", this.workerJguiMain);
         this.worker.postMessage({
             message: Config_1.MessageType.RefreshJGUI,
             jgui: this.workerJguiMain,
