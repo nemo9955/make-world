@@ -1,0 +1,17 @@
+{
+    "compileOnSave": true,
+    "compilerOptions": {
+        "experimentalDecorators": true,
+        "module": "commonjs",
+        "target": "ES2018",
+        "sourceMap": true
+    },
+    "include": [
+        "src/**/*",
+        // "tests/**/*",
+        // "snipets/**/*"
+    ],
+    "exclude": [
+        "node_modules"
+    ]
+}

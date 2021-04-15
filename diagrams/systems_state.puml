@@ -1,0 +1,69 @@
+@startuml Systems overview
+
+[*] --> MakeWorld
+
+MakeWorld: Generate a basic solar system
+MakeWorld: Maybe generate more and add interactions in the future
+
+MakeWorld --> SaveWorld
+SaveWorld: Save the world as one or more JSON files
+
+MakeWorld --> MakeSolarSystem
+
+MakeSolarSystem --> MakeSun
+MakeSun: Basic stats for the Sun
+
+
+MakeSun --> ViewSolarSystem
+ViewSolarSystem: 3D render of the Sun and one or more Planets
+
+MakeSun --> MakePlanet
+MakeSolarSystem --> MakePlanet
+MakePlanet: One or more planets
+MakePlanet: Inclination, Day/Year duration
+MakePlanet: Control the simulation of a planet
+
+MakePlanet --> ViewPlanet
+ViewPlanet: Global view of planet
+ViewPlanet: General data from terrain, climate, life, etc.
+
+MakePlanet --> PlanetTerrain
+PlanetTerrain: Start/play/pause/stop simulation
+PlanetTerrain: Celular Tectinic plates
+PlanetTerrain: Air and watter flows and currents
+PlanetTerrain: Place resources in land/watter
+
+PlanetTerrain --> ViewPlanetTerrain
+ViewPlanetTerrain: ViewPlanetTerrain
+
+MakePlanet --> PlanetClimate
+PlanetClimate: Temperature from Sun and water/air currents
+PlanetClimate: Alocate terrain cells a binome
+
+PlanetClimate --> ViewPlanetClimate
+ViewPlanetClimate: ViewPlanetClimate
+
+MakePlanet --> PlanetLife
+PlanetLife: Simulate life movement and interations
+PlanetLife: Sim milenia wile tec. plates move
+PlanetLife: Sim months/years to create cities/roads
+
+PlanetLife --> ViewPlanetLife
+ViewPlanetLife: ViewPlanetLife
+
+PlanetTerrain --> ViewPlanet
+PlanetClimate --> ViewPlanet
+PlanetLife --> ViewPlanet
+
+PlanetTerrain --> PlanetClimate
+PlanetClimate --> PlanetLife
+PlanetTerrain --> PlanetLife
+' PlanetClimate --> PlanetTerrain
+' PlanetLife --> PlanetClimate
+' PlanetLife --> PlanetTerrain
+
+
+
+' SaveWorld --> [*]
+
+@enduml

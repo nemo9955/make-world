@@ -1,0 +1,24 @@
+@startuml Worker GUI interaction
+
+actor           user
+entity          gui
+participant     main
+participant     worker
+database        action
+
+
+
+action -> worker : request a GUI element and callback
+worker -> main : request a GUI element with data
+main -> gui : make the HTML things and listeners
+
+
+
+user -> gui : change input or button press
+gui -> main : callback sent to main
+main -> worker : callback data wrapped \n and sent to worker
+worker -> action : calls event so \n action gets GUI callback
+
+@enduml
+
+
