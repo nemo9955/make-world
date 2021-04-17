@@ -29,7 +29,7 @@ module.exports = smp.wrap({
         // publicPath: "../dist/",
         // publicPath: path.resolve(__dirname, "dist/"),
         publicPath: "/dist/",
-        path: path.join(__dirname, "dist"),
+        path: path.join(__dirname, "make-world/dist"),
         // path: "./dist/",
         // publicPath: path.join(__dirname, "dist"),
         // path: path.join(__dirname, "dist"),
