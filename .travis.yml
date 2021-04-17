@@ -7,7 +7,6 @@ script:
   - ls -ila
   - npm run dev
   - ls -ila
-  - ls -ila dist
 
 deploy:
   provider: pages
