@@ -8,8 +8,6 @@ import { WorldData } from "../modules/WorldData";
 import { Orbit } from "./Orbit";
 import { OrbitingElement } from "./OrbitingElement";
 import { PlanetarySystem } from "./PlanetarySystem";
-import * as Tweakpane from "tweakpane/dist/tweakpane.js"
-import { WorldGui } from "../modules/WorldGui";
 import { Planet } from "./Planet";
 import { Identifiable } from "../modules/ObjectsHacker";
 

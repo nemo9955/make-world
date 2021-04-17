@@ -77,7 +77,7 @@
 /******/ 	__webpack_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };
 /******/
 /******/ 	// __webpack_public_path__
-/******/ 	__webpack_require__.p = "../dist/";
+/******/ 	__webpack_require__.p = "/dist/";
 /******/
 /******/
 /******/ 	// Load entry module and return exports
@@ -27326,26 +27326,16 @@ function tickFormat(start, stop, count, specifier) {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "calendar", function() { return calendar; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return time; });
-/* harmony import */ var d3_array__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! d3-array */ "./node_modules/d3-array/src/index.js");
-/* harmony import */ var d3_time__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! d3-time */ "./node_modules/d3-time/src/index.js");
-/* harmony import */ var d3_time_format__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! d3-time-format */ "./node_modules/d3-time-format/src/index.js");
-/* harmony import */ var _continuous_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./continuous.js */ "./node_modules/d3-scale/src/continuous.js");
-/* harmony import */ var _init_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./init.js */ "./node_modules/d3-scale/src/init.js");
-/* harmony import */ var _nice_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./nice.js */ "./node_modules/d3-scale/src/nice.js");
+/* harmony import */ var d3_time__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! d3-time */ "./node_modules/d3-time/src/index.js");
+/* harmony import */ var d3_time_format__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! d3-time-format */ "./node_modules/d3-time-format/src/index.js");
+/* harmony import */ var _continuous_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./continuous.js */ "./node_modules/d3-scale/src/continuous.js");
+/* harmony import */ var _init_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./init.js */ "./node_modules/d3-scale/src/init.js");
+/* harmony import */ var _nice_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./nice.js */ "./node_modules/d3-scale/src/nice.js");
 
 
 
 
 
-
-
-var durationSecond = 1000,
-    durationMinute = durationSecond * 60,
-    durationHour = durationMinute * 60,
-    durationDay = durationHour * 24,
-    durationWeek = durationDay * 7,
-    durationMonth = durationDay * 30,
-    durationYear = durationDay * 365;
 
 function date(t) {
   return new Date(t);
@@ -27355,8 +27345,8 @@ function number(t) {
   return t instanceof Date ? +t : +new Date(+t);
 }
 
-function calendar(year, month, week, day, hour, minute, second, millisecond, format) {
-  var scale = Object(_continuous_js__WEBPACK_IMPORTED_MODULE_3__["default"])(),
+function calendar(ticks, tickInterval, year, month, week, day, hour, minute, second, format) {
+  var scale = Object(_continuous_js__WEBPACK_IMPORTED_MODULE_2__["default"])(),
       invert = scale.invert,
       domain = scale.domain;
 
@@ -27369,27 +27359,6 @@ function calendar(year, month, week, day, hour, minute, second, millisecond, for
       formatMonth = format("%B"),
       formatYear = format("%Y");
 
-  var tickIntervals = [
-    [second,  1,      durationSecond],
-    [second,  5,  5 * durationSecond],
-    [second, 15, 15 * durationSecond],
-    [second, 30, 30 * durationSecond],
-    [minute,  1,      durationMinute],
-    [minute,  5,  5 * durationMinute],
-    [minute, 15, 15 * durationMinute],
-    [minute, 30, 30 * durationMinute],
-    [  hour,  1,      durationHour  ],
-    [  hour,  3,  3 * durationHour  ],
-    [  hour,  6,  6 * durationHour  ],
-    [  hour, 12, 12 * durationHour  ],
-    [   day,  1,      durationDay   ],
-    [   day,  2,  2 * durationDay   ],
-    [  week,  1,      durationWeek  ],
-    [ month,  1,      durationMonth ],
-    [ month,  3,  3 * durationMonth ],
-    [  year,  1,      durationYear  ]
-  ];
-
   function tickFormat(date) {
     return (second(date) < date ? formatMillisecond
         : minute(date) < date ? formatSecond
@@ -27398,33 +27367,6 @@ function calendar(year, month, week, day, hour, minute, second, millisecond, for
         : month(date) < date ? (week(date) < date ? formatDay : formatWeek)
         : year(date) < date ? formatMonth
         : formatYear)(date);
-  }
-
-  function tickInterval(interval, start, stop) {
-    if (interval == null) interval = 10;
-
-    // If a desired tick count is specified, pick a reasonable tick interval
-    // based on the extent of the domain and a rough estimate of tick size.
-    // Otherwise, assume interval is already a time interval and use it.
-    if (typeof interval === "number") {
-      var target = Math.abs(stop - start) / interval,
-          i = Object(d3_array__WEBPACK_IMPORTED_MODULE_0__["bisector"])(function(i) { return i[2]; }).right(tickIntervals, target),
-          step;
-      if (i === tickIntervals.length) {
-        step = Object(d3_array__WEBPACK_IMPORTED_MODULE_0__["tickStep"])(start / durationYear, stop / durationYear, interval);
-        interval = year;
-      } else if (i) {
-        i = tickIntervals[target / tickIntervals[i - 1][2] < tickIntervals[i][2] / target ? i - 1 : i];
-        step = i[1];
-        interval = i[0];
-      } else {
-        step = Math.max(Object(d3_array__WEBPACK_IMPORTED_MODULE_0__["tickStep"])(start, stop, interval), 1);
-        interval = millisecond;
-      }
-      return interval.every(step);
-    }
-
-    return interval;
   }
 
   scale.invert = function(y) {
@@ -27436,15 +27378,8 @@ function calendar(year, month, week, day, hour, minute, second, millisecond, for
   };
 
   scale.ticks = function(interval) {
-    var d = domain(),
-        t0 = d[0],
-        t1 = d[d.length - 1],
-        r = t1 < t0,
-        t;
-    if (r) t = t0, t0 = t1, t1 = t;
-    t = tickInterval(interval, t0, t1);
-    t = t ? t.range(t0, t1 + 1) : []; // inclusive stop
-    return r ? t.reverse() : t;
+    var d = domain();
+    return ticks(d[0], d[d.length - 1], interval == null ? 10 : interval);
   };
 
   scale.tickFormat = function(count, specifier) {
@@ -27453,20 +27388,19 @@ function calendar(year, month, week, day, hour, minute, second, millisecond, for
 
   scale.nice = function(interval) {
     var d = domain();
-    return (interval = tickInterval(interval, d[0], d[d.length - 1]))
-        ? domain(Object(_nice_js__WEBPACK_IMPORTED_MODULE_5__["default"])(d, interval))
-        : scale;
+    if (!interval || typeof interval.range !== "function") interval = tickInterval(d[0], d[d.length - 1], interval == null ? 10 : interval);
+    return interval ? domain(Object(_nice_js__WEBPACK_IMPORTED_MODULE_4__["default"])(d, interval)) : scale;
   };
 
   scale.copy = function() {
-    return Object(_continuous_js__WEBPACK_IMPORTED_MODULE_3__["copy"])(scale, calendar(year, month, week, day, hour, minute, second, millisecond, format));
+    return Object(_continuous_js__WEBPACK_IMPORTED_MODULE_2__["copy"])(scale, calendar(ticks, tickInterval, year, month, week, day, hour, minute, second, format));
   };
 
   return scale;
 }
 
 function time() {
-  return _init_js__WEBPACK_IMPORTED_MODULE_4__["initRange"].apply(calendar(d3_time__WEBPACK_IMPORTED_MODULE_1__["timeYear"], d3_time__WEBPACK_IMPORTED_MODULE_1__["timeMonth"], d3_time__WEBPACK_IMPORTED_MODULE_1__["timeWeek"], d3_time__WEBPACK_IMPORTED_MODULE_1__["timeDay"], d3_time__WEBPACK_IMPORTED_MODULE_1__["timeHour"], d3_time__WEBPACK_IMPORTED_MODULE_1__["timeMinute"], d3_time__WEBPACK_IMPORTED_MODULE_1__["timeSecond"], d3_time__WEBPACK_IMPORTED_MODULE_1__["timeMillisecond"], d3_time_format__WEBPACK_IMPORTED_MODULE_2__["timeFormat"]).domain([new Date(2000, 0, 1), new Date(2000, 0, 2)]), arguments);
+  return _init_js__WEBPACK_IMPORTED_MODULE_3__["initRange"].apply(calendar(d3_time__WEBPACK_IMPORTED_MODULE_0__["timeTicks"], d3_time__WEBPACK_IMPORTED_MODULE_0__["timeTickInterval"], d3_time__WEBPACK_IMPORTED_MODULE_0__["timeYear"], d3_time__WEBPACK_IMPORTED_MODULE_0__["timeMonth"], d3_time__WEBPACK_IMPORTED_MODULE_0__["timeWeek"], d3_time__WEBPACK_IMPORTED_MODULE_0__["timeDay"], d3_time__WEBPACK_IMPORTED_MODULE_0__["timeHour"], d3_time__WEBPACK_IMPORTED_MODULE_0__["timeMinute"], d3_time__WEBPACK_IMPORTED_MODULE_0__["timeSecond"], d3_time_format__WEBPACK_IMPORTED_MODULE_1__["timeFormat"]).domain([new Date(2000, 0, 1), new Date(2000, 0, 2)]), arguments);
 }
 
 
@@ -27482,9 +27416,9 @@ function time() {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return utcTime; });
-/* harmony import */ var _time_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./time.js */ "./node_modules/d3-scale/src/time.js");
+/* harmony import */ var d3_time__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! d3-time */ "./node_modules/d3-time/src/index.js");
 /* harmony import */ var d3_time_format__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! d3-time-format */ "./node_modules/d3-time-format/src/index.js");
-/* harmony import */ var d3_time__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! d3-time */ "./node_modules/d3-time/src/index.js");
+/* harmony import */ var _time_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./time.js */ "./node_modules/d3-scale/src/time.js");
 /* harmony import */ var _init_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./init.js */ "./node_modules/d3-scale/src/init.js");
 
 
@@ -27492,7 +27426,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 function utcTime() {
-  return _init_js__WEBPACK_IMPORTED_MODULE_3__["initRange"].apply(Object(_time_js__WEBPACK_IMPORTED_MODULE_0__["calendar"])(d3_time__WEBPACK_IMPORTED_MODULE_2__["utcYear"], d3_time__WEBPACK_IMPORTED_MODULE_2__["utcMonth"], d3_time__WEBPACK_IMPORTED_MODULE_2__["utcWeek"], d3_time__WEBPACK_IMPORTED_MODULE_2__["utcDay"], d3_time__WEBPACK_IMPORTED_MODULE_2__["utcHour"], d3_time__WEBPACK_IMPORTED_MODULE_2__["utcMinute"], d3_time__WEBPACK_IMPORTED_MODULE_2__["utcSecond"], d3_time__WEBPACK_IMPORTED_MODULE_2__["utcMillisecond"], d3_time_format__WEBPACK_IMPORTED_MODULE_1__["utcFormat"]).domain([Date.UTC(2000, 0, 1), Date.UTC(2000, 0, 2)]), arguments);
+  return _init_js__WEBPACK_IMPORTED_MODULE_3__["initRange"].apply(Object(_time_js__WEBPACK_IMPORTED_MODULE_2__["calendar"])(d3_time__WEBPACK_IMPORTED_MODULE_0__["utcTicks"], d3_time__WEBPACK_IMPORTED_MODULE_0__["utcTickInterval"], d3_time__WEBPACK_IMPORTED_MODULE_0__["utcYear"], d3_time__WEBPACK_IMPORTED_MODULE_0__["utcMonth"], d3_time__WEBPACK_IMPORTED_MODULE_0__["utcWeek"], d3_time__WEBPACK_IMPORTED_MODULE_0__["utcDay"], d3_time__WEBPACK_IMPORTED_MODULE_0__["utcHour"], d3_time__WEBPACK_IMPORTED_MODULE_0__["utcMinute"], d3_time__WEBPACK_IMPORTED_MODULE_0__["utcSecond"], d3_time_format__WEBPACK_IMPORTED_MODULE_1__["utcFormat"]).domain([Date.UTC(2000, 0, 1), Date.UTC(2000, 0, 2)]), arguments);
 }
 
 
@@ -33193,7 +33127,7 @@ var days = day.range;
 /*!**********************************************!*\
   !*** ./node_modules/d3-time/src/duration.js ***!
   \**********************************************/
-/*! exports provided: durationSecond, durationMinute, durationHour, durationDay, durationWeek */
+/*! exports provided: durationSecond, durationMinute, durationHour, durationDay, durationWeek, durationMonth, durationYear */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -33203,11 +33137,15 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "durationHour", function() { return durationHour; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "durationDay", function() { return durationDay; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "durationWeek", function() { return durationWeek; });
-var durationSecond = 1e3;
-var durationMinute = 6e4;
-var durationHour = 36e5;
-var durationDay = 864e5;
-var durationWeek = 6048e5;
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "durationMonth", function() { return durationMonth; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "durationYear", function() { return durationYear; });
+const durationSecond = 1000;
+const durationMinute = durationSecond * 60;
+const durationHour = durationMinute * 60;
+const durationDay = durationHour * 24;
+const durationWeek = durationDay * 7;
+const durationMonth = durationDay * 30;
+const durationYear = durationDay * 365;
 
 
 /***/ }),
@@ -33247,7 +33185,7 @@ var hours = hour.range;
 /*!*******************************************!*\
   !*** ./node_modules/d3-time/src/index.js ***!
   \*******************************************/
-/*! exports provided: timeInterval, timeMillisecond, timeMilliseconds, utcMillisecond, utcMilliseconds, timeSecond, timeSeconds, utcSecond, utcSeconds, timeMinute, timeMinutes, timeHour, timeHours, timeDay, timeDays, timeWeek, timeWeeks, timeSunday, timeSundays, timeMonday, timeMondays, timeTuesday, timeTuesdays, timeWednesday, timeWednesdays, timeThursday, timeThursdays, timeFriday, timeFridays, timeSaturday, timeSaturdays, timeMonth, timeMonths, timeYear, timeYears, utcMinute, utcMinutes, utcHour, utcHours, utcDay, utcDays, utcWeek, utcWeeks, utcSunday, utcSundays, utcMonday, utcMondays, utcTuesday, utcTuesdays, utcWednesday, utcWednesdays, utcThursday, utcThursdays, utcFriday, utcFridays, utcSaturday, utcSaturdays, utcMonth, utcMonths, utcYear, utcYears */
+/*! exports provided: timeInterval, timeMillisecond, timeMilliseconds, utcMillisecond, utcMilliseconds, timeSecond, timeSeconds, utcSecond, utcSeconds, timeMinute, timeMinutes, timeHour, timeHours, timeDay, timeDays, timeWeek, timeWeeks, timeSunday, timeSundays, timeMonday, timeMondays, timeTuesday, timeTuesdays, timeWednesday, timeWednesdays, timeThursday, timeThursdays, timeFriday, timeFridays, timeSaturday, timeSaturdays, timeMonth, timeMonths, timeYear, timeYears, utcMinute, utcMinutes, utcHour, utcHours, utcDay, utcDays, utcWeek, utcWeeks, utcSunday, utcSundays, utcMonday, utcMondays, utcTuesday, utcTuesdays, utcWednesday, utcWednesdays, utcThursday, utcThursdays, utcFriday, utcFridays, utcSaturday, utcSaturdays, utcMonth, utcMonths, utcYear, utcYears, utcTicks, utcTickInterval, timeTicks, timeTickInterval */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -33388,6 +33326,17 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "utcYear", function() { return _utcYear_js__WEBPACK_IMPORTED_MODULE_14__["default"]; });
 
 /* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "utcYears", function() { return _utcYear_js__WEBPACK_IMPORTED_MODULE_14__["utcYears"]; });
+
+/* harmony import */ var _ticks_js__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ./ticks.js */ "./node_modules/d3-time/src/ticks.js");
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "utcTicks", function() { return _ticks_js__WEBPACK_IMPORTED_MODULE_15__["utcTicks"]; });
+
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "utcTickInterval", function() { return _ticks_js__WEBPACK_IMPORTED_MODULE_15__["utcTickInterval"]; });
+
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "timeTicks", function() { return _ticks_js__WEBPACK_IMPORTED_MODULE_15__["timeTicks"]; });
+
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "timeTickInterval", function() { return _ticks_js__WEBPACK_IMPORTED_MODULE_15__["timeTickInterval"]; });
+
+
 
 
 
@@ -33635,6 +33584,103 @@ var second = Object(_interval_js__WEBPACK_IMPORTED_MODULE_0__["default"])(functi
 
 /* harmony default export */ __webpack_exports__["default"] = (second);
 var seconds = second.range;
+
+
+/***/ }),
+
+/***/ "./node_modules/d3-time/src/ticks.js":
+/*!*******************************************!*\
+  !*** ./node_modules/d3-time/src/ticks.js ***!
+  \*******************************************/
+/*! exports provided: utcTicks, utcTickInterval, timeTicks, timeTickInterval */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "utcTicks", function() { return utcTicks; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "utcTickInterval", function() { return utcTickInterval; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "timeTicks", function() { return timeTicks; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "timeTickInterval", function() { return timeTickInterval; });
+/* harmony import */ var d3_array__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! d3-array */ "./node_modules/d3-array/src/index.js");
+/* harmony import */ var _duration_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./duration.js */ "./node_modules/d3-time/src/duration.js");
+/* harmony import */ var _millisecond_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./millisecond.js */ "./node_modules/d3-time/src/millisecond.js");
+/* harmony import */ var _second_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./second.js */ "./node_modules/d3-time/src/second.js");
+/* harmony import */ var _minute_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./minute.js */ "./node_modules/d3-time/src/minute.js");
+/* harmony import */ var _hour_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./hour.js */ "./node_modules/d3-time/src/hour.js");
+/* harmony import */ var _day_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./day.js */ "./node_modules/d3-time/src/day.js");
+/* harmony import */ var _week_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./week.js */ "./node_modules/d3-time/src/week.js");
+/* harmony import */ var _month_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./month.js */ "./node_modules/d3-time/src/month.js");
+/* harmony import */ var _year_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./year.js */ "./node_modules/d3-time/src/year.js");
+/* harmony import */ var _utcMinute_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./utcMinute.js */ "./node_modules/d3-time/src/utcMinute.js");
+/* harmony import */ var _utcHour_js__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./utcHour.js */ "./node_modules/d3-time/src/utcHour.js");
+/* harmony import */ var _utcDay_js__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./utcDay.js */ "./node_modules/d3-time/src/utcDay.js");
+/* harmony import */ var _utcWeek_js__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ./utcWeek.js */ "./node_modules/d3-time/src/utcWeek.js");
+/* harmony import */ var _utcMonth_js__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ./utcMonth.js */ "./node_modules/d3-time/src/utcMonth.js");
+/* harmony import */ var _utcYear_js__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ./utcYear.js */ "./node_modules/d3-time/src/utcYear.js");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function ticker(year, month, week, day, hour, minute) {
+
+  const tickIntervals = [
+    [_second_js__WEBPACK_IMPORTED_MODULE_3__["default"],  1,      _duration_js__WEBPACK_IMPORTED_MODULE_1__["durationSecond"]],
+    [_second_js__WEBPACK_IMPORTED_MODULE_3__["default"],  5,  5 * _duration_js__WEBPACK_IMPORTED_MODULE_1__["durationSecond"]],
+    [_second_js__WEBPACK_IMPORTED_MODULE_3__["default"], 15, 15 * _duration_js__WEBPACK_IMPORTED_MODULE_1__["durationSecond"]],
+    [_second_js__WEBPACK_IMPORTED_MODULE_3__["default"], 30, 30 * _duration_js__WEBPACK_IMPORTED_MODULE_1__["durationSecond"]],
+    [minute,  1,      _duration_js__WEBPACK_IMPORTED_MODULE_1__["durationMinute"]],
+    [minute,  5,  5 * _duration_js__WEBPACK_IMPORTED_MODULE_1__["durationMinute"]],
+    [minute, 15, 15 * _duration_js__WEBPACK_IMPORTED_MODULE_1__["durationMinute"]],
+    [minute, 30, 30 * _duration_js__WEBPACK_IMPORTED_MODULE_1__["durationMinute"]],
+    [  hour,  1,      _duration_js__WEBPACK_IMPORTED_MODULE_1__["durationHour"]  ],
+    [  hour,  3,  3 * _duration_js__WEBPACK_IMPORTED_MODULE_1__["durationHour"]  ],
+    [  hour,  6,  6 * _duration_js__WEBPACK_IMPORTED_MODULE_1__["durationHour"]  ],
+    [  hour, 12, 12 * _duration_js__WEBPACK_IMPORTED_MODULE_1__["durationHour"]  ],
+    [   day,  1,      _duration_js__WEBPACK_IMPORTED_MODULE_1__["durationDay"]   ],
+    [   day,  2,  2 * _duration_js__WEBPACK_IMPORTED_MODULE_1__["durationDay"]   ],
+    [  week,  1,      _duration_js__WEBPACK_IMPORTED_MODULE_1__["durationWeek"]  ],
+    [ month,  1,      _duration_js__WEBPACK_IMPORTED_MODULE_1__["durationMonth"] ],
+    [ month,  3,  3 * _duration_js__WEBPACK_IMPORTED_MODULE_1__["durationMonth"] ],
+    [  year,  1,      _duration_js__WEBPACK_IMPORTED_MODULE_1__["durationYear"]  ]
+  ];
+
+  function ticks(start, stop, count) {
+    const reverse = stop < start;
+    if (reverse) [start, stop] = [stop, start];
+    const interval = count && typeof count.range === "function" ? count : tickInterval(start, stop, count);
+    const ticks = interval ? interval.range(start, +stop + 1) : []; // inclusive stop
+    return reverse ? ticks.reverse() : ticks;
+  }
+
+  function tickInterval(start, stop, count) {
+    const target = Math.abs(stop - start) / count;
+    const i = Object(d3_array__WEBPACK_IMPORTED_MODULE_0__["bisector"])(([,, step]) => step).right(tickIntervals, target);
+    if (i === tickIntervals.length) return year.every(Object(d3_array__WEBPACK_IMPORTED_MODULE_0__["tickStep"])(start / _duration_js__WEBPACK_IMPORTED_MODULE_1__["durationYear"], stop / _duration_js__WEBPACK_IMPORTED_MODULE_1__["durationYear"], count));
+    if (i === 0) return _millisecond_js__WEBPACK_IMPORTED_MODULE_2__["default"].every(Math.max(Object(d3_array__WEBPACK_IMPORTED_MODULE_0__["tickStep"])(start, stop, count), 1));
+    const [t, step] = tickIntervals[target / tickIntervals[i - 1][2] < tickIntervals[i][2] / target ? i - 1 : i];
+    return t.every(step);
+  }
+
+  return [ticks, tickInterval];
+}
+
+const [utcTicks, utcTickInterval] = ticker(_utcYear_js__WEBPACK_IMPORTED_MODULE_15__["default"], _utcMonth_js__WEBPACK_IMPORTED_MODULE_14__["default"], _utcWeek_js__WEBPACK_IMPORTED_MODULE_13__["utcSunday"], _utcDay_js__WEBPACK_IMPORTED_MODULE_12__["default"], _utcHour_js__WEBPACK_IMPORTED_MODULE_11__["default"], _utcMinute_js__WEBPACK_IMPORTED_MODULE_10__["default"]);
+const [timeTicks, timeTickInterval] = ticker(_year_js__WEBPACK_IMPORTED_MODULE_9__["default"], _month_js__WEBPACK_IMPORTED_MODULE_8__["default"], _week_js__WEBPACK_IMPORTED_MODULE_7__["sunday"], _day_js__WEBPACK_IMPORTED_MODULE_6__["default"], _hour_js__WEBPACK_IMPORTED_MODULE_5__["default"], _minute_js__WEBPACK_IMPORTED_MODULE_4__["default"]);
+
+
 
 
 /***/ }),
@@ -43233,7 +43279,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "devDependencies", function() { return devDependencies; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "dependencies", function() { return dependencies; });
 var name = "d3";
-var version = "6.6.2";
+var version = "6.7.0";
 var description = "Data-Driven Documents";
 var keywords = ["dom","visualization","svg","animation","canvas"];
 var homepage = "https://d3js.org";
@@ -43256,7 +43302,7 @@ var dependencies = {"d3-array":"2","d3-axis":"2","d3-brush":"2","d3-chord":"2","
 /*!**********************************!*\
   !*** ./node_modules/d3/index.js ***!
   \**********************************/
-/*! exports provided: version, bisect, bisectRight, bisectLeft, bisectCenter, ascending, bisector, count, cross, cumsum, descending, deviation, extent, Adder, fsum, fcumsum, group, groups, index, indexes, rollup, rollups, groupSort, bin, histogram, thresholdFreedmanDiaconis, thresholdScott, thresholdSturges, max, maxIndex, mean, median, merge, min, minIndex, nice, pairs, permute, quantile, quantileSorted, quickselect, range, least, leastIndex, greatest, greatestIndex, scan, shuffle, shuffler, sum, ticks, tickIncrement, tickStep, transpose, variance, zip, every, some, filter, map, reduce, reverse, sort, difference, disjoint, intersection, subset, superset, union, InternMap, InternSet, axisTop, axisRight, axisBottom, axisLeft, brush, brushX, brushY, brushSelection, chord, chordTranspose, chordDirected, ribbon, ribbonArrow, color, rgb, hsl, lab, hcl, lch, gray, cubehelix, contours, contourDensity, Delaunay, Voronoi, dispatch, drag, dragDisable, dragEnable, dsvFormat, csvParse, csvParseRows, csvFormat, csvFormatBody, csvFormatRows, csvFormatRow, csvFormatValue, tsvParse, tsvParseRows, tsvFormat, tsvFormatBody, tsvFormatRows, tsvFormatRow, tsvFormatValue, autoType, easeLinear, easeQuad, easeQuadIn, easeQuadOut, easeQuadInOut, easeCubic, easeCubicIn, easeCubicOut, easeCubicInOut, easePoly, easePolyIn, easePolyOut, easePolyInOut, easeSin, easeSinIn, easeSinOut, easeSinInOut, easeExp, easeExpIn, easeExpOut, easeExpInOut, easeCircle, easeCircleIn, easeCircleOut, easeCircleInOut, easeBounce, easeBounceIn, easeBounceOut, easeBounceInOut, easeBack, easeBackIn, easeBackOut, easeBackInOut, easeElastic, easeElasticIn, easeElasticOut, easeElasticInOut, blob, buffer, dsv, csv, tsv, image, json, text, xml, html, svg, forceCenter, forceCollide, forceLink, forceManyBody, forceRadial, forceSimulation, forceX, forceY, formatDefaultLocale, format, formatPrefix, formatLocale, formatSpecifier, FormatSpecifier, precisionFixed, precisionPrefix, precisionRound, geoArea, geoBounds, geoCentroid, geoCircle, geoClipAntimeridian, geoClipCircle, geoClipExtent, geoClipRectangle, geoContains, geoDistance, geoGraticule, geoGraticule10, geoInterpolate, geoLength, geoPath, geoAlbers, geoAlbersUsa, geoAzimuthalEqualArea, geoAzimuthalEqualAreaRaw, geoAzimuthalEquidistant, geoAzimuthalEquidistantRaw, geoConicConformal, geoConicConformalRaw, geoConicEqualArea, geoConicEqualAreaRaw, geoConicEquidistant, geoConicEquidistantRaw, geoEqualEarth, geoEqualEarthRaw, geoEquirectangular, geoEquirectangularRaw, geoGnomonic, geoGnomonicRaw, geoIdentity, geoProjection, geoProjectionMutator, geoMercator, geoMercatorRaw, geoNaturalEarth1, geoNaturalEarth1Raw, geoOrthographic, geoOrthographicRaw, geoStereographic, geoStereographicRaw, geoTransverseMercator, geoTransverseMercatorRaw, geoRotation, geoStream, geoTransform, cluster, hierarchy, pack, packSiblings, packEnclose, partition, stratify, tree, treemap, treemapBinary, treemapDice, treemapSlice, treemapSliceDice, treemapSquarify, treemapResquarify, interpolate, interpolateArray, interpolateBasis, interpolateBasisClosed, interpolateDate, interpolateDiscrete, interpolateHue, interpolateNumber, interpolateNumberArray, interpolateObject, interpolateRound, interpolateString, interpolateTransformCss, interpolateTransformSvg, interpolateZoom, interpolateRgb, interpolateRgbBasis, interpolateRgbBasisClosed, interpolateHsl, interpolateHslLong, interpolateLab, interpolateHcl, interpolateHclLong, interpolateCubehelix, interpolateCubehelixLong, piecewise, quantize, path, polygonArea, polygonCentroid, polygonHull, polygonContains, polygonLength, quadtree, randomUniform, randomInt, randomNormal, randomLogNormal, randomBates, randomIrwinHall, randomExponential, randomPareto, randomBernoulli, randomGeometric, randomBinomial, randomGamma, randomBeta, randomWeibull, randomCauchy, randomLogistic, randomPoisson, randomLcg, scaleBand, scalePoint, scaleIdentity, scaleLinear, scaleLog, scaleSymlog, scaleOrdinal, scaleImplicit, scalePow, scaleSqrt, scaleRadial, scaleQuantile, scaleQuantize, scaleThreshold, scaleTime, scaleUtc, scaleSequential, scaleSequentialLog, scaleSequentialPow, scaleSequentialSqrt, scaleSequentialSymlog, scaleSequentialQuantile, scaleDiverging, scaleDivergingLog, scaleDivergingPow, scaleDivergingSqrt, scaleDivergingSymlog, tickFormat, schemeCategory10, schemeAccent, schemeDark2, schemePaired, schemePastel1, schemePastel2, schemeSet1, schemeSet2, schemeSet3, schemeTableau10, interpolateBrBG, schemeBrBG, interpolatePRGn, schemePRGn, interpolatePiYG, schemePiYG, interpolatePuOr, schemePuOr, interpolateRdBu, schemeRdBu, interpolateRdGy, schemeRdGy, interpolateRdYlBu, schemeRdYlBu, interpolateRdYlGn, schemeRdYlGn, interpolateSpectral, schemeSpectral, interpolateBuGn, schemeBuGn, interpolateBuPu, schemeBuPu, interpolateGnBu, schemeGnBu, interpolateOrRd, schemeOrRd, interpolatePuBuGn, schemePuBuGn, interpolatePuBu, schemePuBu, interpolatePuRd, schemePuRd, interpolateRdPu, schemeRdPu, interpolateYlGnBu, schemeYlGnBu, interpolateYlGn, schemeYlGn, interpolateYlOrBr, schemeYlOrBr, interpolateYlOrRd, schemeYlOrRd, interpolateBlues, schemeBlues, interpolateGreens, schemeGreens, interpolateGreys, schemeGreys, interpolatePurples, schemePurples, interpolateReds, schemeReds, interpolateOranges, schemeOranges, interpolateCividis, interpolateCubehelixDefault, interpolateRainbow, interpolateWarm, interpolateCool, interpolateSinebow, interpolateTurbo, interpolateViridis, interpolateMagma, interpolateInferno, interpolatePlasma, create, creator, local, matcher, namespace, namespaces, pointer, pointers, select, selectAll, selection, selector, selectorAll, style, window, arc, area, line, pie, areaRadial, radialArea, lineRadial, radialLine, pointRadial, linkHorizontal, linkVertical, linkRadial, symbol, symbols, symbolCircle, symbolCross, symbolDiamond, symbolSquare, symbolStar, symbolTriangle, symbolWye, curveBasisClosed, curveBasisOpen, curveBasis, curveBumpX, curveBumpY, curveBundle, curveCardinalClosed, curveCardinalOpen, curveCardinal, curveCatmullRomClosed, curveCatmullRomOpen, curveCatmullRom, curveLinearClosed, curveLinear, curveMonotoneX, curveMonotoneY, curveNatural, curveStep, curveStepAfter, curveStepBefore, stack, stackOffsetExpand, stackOffsetDiverging, stackOffsetNone, stackOffsetSilhouette, stackOffsetWiggle, stackOrderAppearance, stackOrderAscending, stackOrderDescending, stackOrderInsideOut, stackOrderNone, stackOrderReverse, timeInterval, timeMillisecond, timeMilliseconds, utcMillisecond, utcMilliseconds, timeSecond, timeSeconds, utcSecond, utcSeconds, timeMinute, timeMinutes, timeHour, timeHours, timeDay, timeDays, timeWeek, timeWeeks, timeSunday, timeSundays, timeMonday, timeMondays, timeTuesday, timeTuesdays, timeWednesday, timeWednesdays, timeThursday, timeThursdays, timeFriday, timeFridays, timeSaturday, timeSaturdays, timeMonth, timeMonths, timeYear, timeYears, utcMinute, utcMinutes, utcHour, utcHours, utcDay, utcDays, utcWeek, utcWeeks, utcSunday, utcSundays, utcMonday, utcMondays, utcTuesday, utcTuesdays, utcWednesday, utcWednesdays, utcThursday, utcThursdays, utcFriday, utcFridays, utcSaturday, utcSaturdays, utcMonth, utcMonths, utcYear, utcYears, timeFormatDefaultLocale, timeFormat, timeParse, utcFormat, utcParse, timeFormatLocale, isoFormat, isoParse, now, timer, timerFlush, timeout, interval, transition, active, interrupt, zoom, zoomTransform, zoomIdentity */
+/*! exports provided: version, bisect, bisectRight, bisectLeft, bisectCenter, ascending, bisector, count, cross, cumsum, descending, deviation, extent, Adder, fsum, fcumsum, group, groups, index, indexes, rollup, rollups, groupSort, bin, histogram, thresholdFreedmanDiaconis, thresholdScott, thresholdSturges, max, maxIndex, mean, median, merge, min, minIndex, nice, pairs, permute, quantile, quantileSorted, quickselect, range, least, leastIndex, greatest, greatestIndex, scan, shuffle, shuffler, sum, ticks, tickIncrement, tickStep, transpose, variance, zip, every, some, filter, map, reduce, reverse, sort, difference, disjoint, intersection, subset, superset, union, InternMap, InternSet, axisTop, axisRight, axisBottom, axisLeft, brush, brushX, brushY, brushSelection, chord, chordTranspose, chordDirected, ribbon, ribbonArrow, color, rgb, hsl, lab, hcl, lch, gray, cubehelix, contours, contourDensity, Delaunay, Voronoi, dispatch, drag, dragDisable, dragEnable, dsvFormat, csvParse, csvParseRows, csvFormat, csvFormatBody, csvFormatRows, csvFormatRow, csvFormatValue, tsvParse, tsvParseRows, tsvFormat, tsvFormatBody, tsvFormatRows, tsvFormatRow, tsvFormatValue, autoType, easeLinear, easeQuad, easeQuadIn, easeQuadOut, easeQuadInOut, easeCubic, easeCubicIn, easeCubicOut, easeCubicInOut, easePoly, easePolyIn, easePolyOut, easePolyInOut, easeSin, easeSinIn, easeSinOut, easeSinInOut, easeExp, easeExpIn, easeExpOut, easeExpInOut, easeCircle, easeCircleIn, easeCircleOut, easeCircleInOut, easeBounce, easeBounceIn, easeBounceOut, easeBounceInOut, easeBack, easeBackIn, easeBackOut, easeBackInOut, easeElastic, easeElasticIn, easeElasticOut, easeElasticInOut, blob, buffer, dsv, csv, tsv, image, json, text, xml, html, svg, forceCenter, forceCollide, forceLink, forceManyBody, forceRadial, forceSimulation, forceX, forceY, formatDefaultLocale, format, formatPrefix, formatLocale, formatSpecifier, FormatSpecifier, precisionFixed, precisionPrefix, precisionRound, geoArea, geoBounds, geoCentroid, geoCircle, geoClipAntimeridian, geoClipCircle, geoClipExtent, geoClipRectangle, geoContains, geoDistance, geoGraticule, geoGraticule10, geoInterpolate, geoLength, geoPath, geoAlbers, geoAlbersUsa, geoAzimuthalEqualArea, geoAzimuthalEqualAreaRaw, geoAzimuthalEquidistant, geoAzimuthalEquidistantRaw, geoConicConformal, geoConicConformalRaw, geoConicEqualArea, geoConicEqualAreaRaw, geoConicEquidistant, geoConicEquidistantRaw, geoEqualEarth, geoEqualEarthRaw, geoEquirectangular, geoEquirectangularRaw, geoGnomonic, geoGnomonicRaw, geoIdentity, geoProjection, geoProjectionMutator, geoMercator, geoMercatorRaw, geoNaturalEarth1, geoNaturalEarth1Raw, geoOrthographic, geoOrthographicRaw, geoStereographic, geoStereographicRaw, geoTransverseMercator, geoTransverseMercatorRaw, geoRotation, geoStream, geoTransform, cluster, hierarchy, pack, packSiblings, packEnclose, partition, stratify, tree, treemap, treemapBinary, treemapDice, treemapSlice, treemapSliceDice, treemapSquarify, treemapResquarify, interpolate, interpolateArray, interpolateBasis, interpolateBasisClosed, interpolateDate, interpolateDiscrete, interpolateHue, interpolateNumber, interpolateNumberArray, interpolateObject, interpolateRound, interpolateString, interpolateTransformCss, interpolateTransformSvg, interpolateZoom, interpolateRgb, interpolateRgbBasis, interpolateRgbBasisClosed, interpolateHsl, interpolateHslLong, interpolateLab, interpolateHcl, interpolateHclLong, interpolateCubehelix, interpolateCubehelixLong, piecewise, quantize, path, polygonArea, polygonCentroid, polygonHull, polygonContains, polygonLength, quadtree, randomUniform, randomInt, randomNormal, randomLogNormal, randomBates, randomIrwinHall, randomExponential, randomPareto, randomBernoulli, randomGeometric, randomBinomial, randomGamma, randomBeta, randomWeibull, randomCauchy, randomLogistic, randomPoisson, randomLcg, scaleBand, scalePoint, scaleIdentity, scaleLinear, scaleLog, scaleSymlog, scaleOrdinal, scaleImplicit, scalePow, scaleSqrt, scaleRadial, scaleQuantile, scaleQuantize, scaleThreshold, scaleTime, scaleUtc, scaleSequential, scaleSequentialLog, scaleSequentialPow, scaleSequentialSqrt, scaleSequentialSymlog, scaleSequentialQuantile, scaleDiverging, scaleDivergingLog, scaleDivergingPow, scaleDivergingSqrt, scaleDivergingSymlog, tickFormat, schemeCategory10, schemeAccent, schemeDark2, schemePaired, schemePastel1, schemePastel2, schemeSet1, schemeSet2, schemeSet3, schemeTableau10, interpolateBrBG, schemeBrBG, interpolatePRGn, schemePRGn, interpolatePiYG, schemePiYG, interpolatePuOr, schemePuOr, interpolateRdBu, schemeRdBu, interpolateRdGy, schemeRdGy, interpolateRdYlBu, schemeRdYlBu, interpolateRdYlGn, schemeRdYlGn, interpolateSpectral, schemeSpectral, interpolateBuGn, schemeBuGn, interpolateBuPu, schemeBuPu, interpolateGnBu, schemeGnBu, interpolateOrRd, schemeOrRd, interpolatePuBuGn, schemePuBuGn, interpolatePuBu, schemePuBu, interpolatePuRd, schemePuRd, interpolateRdPu, schemeRdPu, interpolateYlGnBu, schemeYlGnBu, interpolateYlGn, schemeYlGn, interpolateYlOrBr, schemeYlOrBr, interpolateYlOrRd, schemeYlOrRd, interpolateBlues, schemeBlues, interpolateGreens, schemeGreens, interpolateGreys, schemeGreys, interpolatePurples, schemePurples, interpolateReds, schemeReds, interpolateOranges, schemeOranges, interpolateCividis, interpolateCubehelixDefault, interpolateRainbow, interpolateWarm, interpolateCool, interpolateSinebow, interpolateTurbo, interpolateViridis, interpolateMagma, interpolateInferno, interpolatePlasma, create, creator, local, matcher, namespace, namespaces, pointer, pointers, select, selectAll, selection, selector, selectorAll, style, window, arc, area, line, pie, areaRadial, radialArea, lineRadial, radialLine, pointRadial, linkHorizontal, linkVertical, linkRadial, symbol, symbols, symbolCircle, symbolCross, symbolDiamond, symbolSquare, symbolStar, symbolTriangle, symbolWye, curveBasisClosed, curveBasisOpen, curveBasis, curveBumpX, curveBumpY, curveBundle, curveCardinalClosed, curveCardinalOpen, curveCardinal, curveCatmullRomClosed, curveCatmullRomOpen, curveCatmullRom, curveLinearClosed, curveLinear, curveMonotoneX, curveMonotoneY, curveNatural, curveStep, curveStepAfter, curveStepBefore, stack, stackOffsetExpand, stackOffsetDiverging, stackOffsetNone, stackOffsetSilhouette, stackOffsetWiggle, stackOrderAppearance, stackOrderAscending, stackOrderDescending, stackOrderInsideOut, stackOrderNone, stackOrderReverse, timeInterval, timeMillisecond, timeMilliseconds, utcMillisecond, utcMilliseconds, timeSecond, timeSeconds, utcSecond, utcSeconds, timeMinute, timeMinutes, timeHour, timeHours, timeDay, timeDays, timeWeek, timeWeeks, timeSunday, timeSundays, timeMonday, timeMondays, timeTuesday, timeTuesdays, timeWednesday, timeWednesdays, timeThursday, timeThursdays, timeFriday, timeFridays, timeSaturday, timeSaturdays, timeMonth, timeMonths, timeYear, timeYears, utcMinute, utcMinutes, utcHour, utcHours, utcDay, utcDays, utcWeek, utcWeeks, utcSunday, utcSundays, utcMonday, utcMondays, utcTuesday, utcTuesdays, utcWednesday, utcWednesdays, utcThursday, utcThursdays, utcFriday, utcFridays, utcSaturday, utcSaturdays, utcMonth, utcMonths, utcYear, utcYears, utcTicks, utcTickInterval, timeTicks, timeTickInterval, timeFormatDefaultLocale, timeFormat, timeParse, utcFormat, utcParse, timeFormatLocale, isoFormat, isoParse, now, timer, timerFlush, timeout, interval, transition, active, interrupt, zoom, zoomTransform, zoomIdentity */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -44345,6 +44391,14 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "utcYear", function() { return d3_time__WEBPACK_IMPORTED_MODULE_26__["utcYear"]; });
 
 /* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "utcYears", function() { return d3_time__WEBPACK_IMPORTED_MODULE_26__["utcYears"]; });
+
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "utcTicks", function() { return d3_time__WEBPACK_IMPORTED_MODULE_26__["utcTicks"]; });
+
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "utcTickInterval", function() { return d3_time__WEBPACK_IMPORTED_MODULE_26__["utcTickInterval"]; });
+
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "timeTicks", function() { return d3_time__WEBPACK_IMPORTED_MODULE_26__["timeTicks"]; });
+
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "timeTickInterval", function() { return d3_time__WEBPACK_IMPORTED_MODULE_26__["timeTickInterval"]; });
 
 /* harmony import */ var d3_time_format__WEBPACK_IMPORTED_MODULE_27__ = __webpack_require__(/*! d3-time-format */ "./node_modules/d3-time-format/src/index.js");
 /* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "timeFormatDefaultLocale", function() { return d3_time_format__WEBPACK_IMPORTED_MODULE_27__["timeFormatDefaultLocale"]; });
@@ -96474,13 +96528,6 @@ class Orbit extends OrbitingElement_1.OrbitingElement {
     }
     free() { return; }
     clone() { return new Orbit(this.getWorldData()).copyLogic(this); }
-    guiSelect(slectPane, gui) {
-        slectPane.addMonitor(this, "isInHabZone");
-        slectPane.addMonitor(this, "eccentricity");
-        slectPane.addMonitor(this.semimajor_axis, 'Gm', { label: "semimajor axis Gm" });
-        slectPane.addMonitor(this.orbitalPeriod, 'ey', { label: "orbital Period" });
-        super.guiSelect(slectPane, gui);
-    }
 }
 exports.Orbit = Orbit;
 
@@ -96665,27 +96712,6 @@ class OrbitingElement extends ObjectsHacker_1.Identifiable {
                 return parentOrbit;
             parentOrbit = this.getWorldData().idObjMap.get(parentOrbit.parentId);
         }
-    }
-    guiPopSelectChildren(slectPane, gui, generalAct) {
-        this.getSats().forEach((sat_, index) => {
-            var title = `${sat_.type} ${sat_.id}`;
-            generalAct.addButton({ title: title }).on('click', () => {
-                gui.selectOrbElement(sat_);
-            });
-        });
-    }
-    guiSelect(slectPane, gui) {
-        console.debug("#HERELINE OrbitingElement populateSelectGUI ");
-        slectPane.addMonitor(this, "id", { index: 2 });
-        slectPane.addMonitor(this, "type", { index: 3 });
-        slectPane.addMonitor(this, "depth", { index: 4 });
-        const generalAct = slectPane.addFolder({ title: 'Select', expanded: true, index: 10000 });
-        var parent = this.getParent();
-        if (parent)
-            generalAct.addButton({ title: `Parent ${parent.type} ${parent.id}` }).on('click', () => {
-                gui.selectOrbElement(parent);
-            });
-        this.guiPopSelectChildren(slectPane, gui, generalAct);
     }
 }
 exports.OrbitingElement = OrbitingElement;
@@ -96875,17 +96901,17 @@ class Planet extends OrbitingElement_1.OrbitingElement {
     getMass() {
         return this.mass;
     }
-    guiSelect(slectPane, gui) {
-        slectPane.addInput(this.color, 'value', { label: "color" });
-        slectPane.addInput(this.radius, 'km', { label: "radius km" });
-        slectPane.addInput(this.mass, 'Yg', { label: "mass Yg" });
-        slectPane.addMonitor(this.orbLimitIn, 'km', { label: "lim in" });
-        slectPane.addMonitor(this.orbLimitOut, 'km', { label: "lim out" });
-        slectPane.addMonitor(this.density, 'gcm3', { label: "density" });
-        slectPane.addMonitor(this, "planetType");
-        slectPane.addMonitor(this, "isInHabZone");
-        super.guiSelect(slectPane, gui);
-    }
+    // public guiSelect(slectPane: Tweakpane, gui: WorldGui) {
+    //     slectPane.addInput(this.color, 'value', { label: "color" })
+    //     slectPane.addInput(this.radius, 'km', { label: "radius km" });
+    //     slectPane.addInput(this.mass, 'Yg', { label: "mass Yg" });
+    //     slectPane.addMonitor(this.orbLimitIn, 'km', { label: "lim in" });
+    //     slectPane.addMonitor(this.orbLimitOut, 'km', { label: "lim out" });
+    //     slectPane.addMonitor(this.density, 'gcm3', { label: "density" });
+    //     slectPane.addMonitor(this, "planetType");
+    //     slectPane.addMonitor(this, "isInHabZone");
+    //     super.guiSelect(slectPane, gui);
+    // }
     clone() { return new Planet(this.getWorldData()).copyLogic(this); }
 }
 exports.Planet = Planet;
@@ -96948,16 +96974,6 @@ class PlanetarySystem extends OrbitingElement_1.OrbitingElement {
         var satObjs = [];
         this.allElemsDepth(satObjs, this);
         return satObjs;
-    }
-    guiSelect(slectPane, gui) {
-        // const plsys_tp = this.mainPane.addFolder({ title: 'Planet System', expanded: false });
-        slectPane.addInput(this.hab_zone_in, 'km', { label: "hab_zone_in" });
-        slectPane.addInput(this.hab_zone, 'km', { label: "hab_zone" });
-        slectPane.addInput(this.hab_zone_out, 'km', { label: "hab_zone_out" });
-        slectPane.addInput(this.orbits_limit_in, 'km', { label: "orbits_limit_in" });
-        slectPane.addInput(this.frost_line, 'km', { label: "frost_line" });
-        slectPane.addInput(this.orbits_limit_out, 'km', { label: "orbits_limit_out" });
-        super.guiSelect(slectPane, gui);
     }
 }
 exports.PlanetarySystem = PlanetarySystem;
@@ -97404,16 +97420,6 @@ class SpaceGroup extends OrbitingElement_1.OrbitingElement {
         return this.tmp_mass;
     }
     clone() { return new SpaceGroup(this.getWorldData()).copyLogic(this); }
-    guiPopSelectChildren(slectPane, gui, generalAct) {
-        this.getSats().forEach((sat_, index) => {
-            var title = ` ${sat_.type} ${sat_.id}`;
-            if (this.groupedSatelites.includes(sat_.id))
-                title += ` (gr ${this.id})`;
-            generalAct.addButton({ title: title }).on('click', () => {
-                gui.selectOrbElement(sat_);
-            });
-        });
-    }
 }
 exports.SpaceGroup = SpaceGroup;
 
@@ -97586,16 +97592,6 @@ class Star extends OrbitingElement_1.OrbitingElement {
         return this.makeClassG(); // Like the Sun
     }
     clone() { return new Star(this.getWorldData()).copyLogic(this); }
-    guiSelect(slectPane, gui) {
-        slectPane.addInput(this.color, 'value', { label: "color" });
-        slectPane.addInput(this.radius, 'km', { label: "radius km" });
-        slectPane.addInput(this.mass, 'Yg', { label: "mass Yg" });
-        slectPane.addInput(this, 'sclass');
-        slectPane.addInput(this.luminosity, 'watt', { label: "luminosity watt" });
-        slectPane.addInput(this.temperature, 'kelvin', { label: "temperature kelvin" });
-        slectPane.addInput(this.lifetime, 'eby', { label: "lifetime eby" });
-        super.guiSelect(slectPane, gui);
-    }
 }
 exports.Star = Star;
 
@@ -98172,7 +98168,7 @@ class DrawD3Terrain {
     }
     initBase() {
         console.debug(`#HERELINE ${this.type} initBase `);
-        this.translation = [this.canvasOffscreen.width / 2.4, this.canvasOffscreen.height / 2];
+        this.translation = [this.canvasOffscreen.width / 2, this.canvasOffscreen.height / 2];
         this.graticule = d3.geoGraticule();
         // this.projection = d3.geoOrthographic()
         // this.projection = d3.geoMercator()
@@ -98262,12 +98258,6 @@ class DrawD3Terrain {
         ret_.set("geoOrthographic", () => d3.geoOrthographic().clipAngle(90).scale(350));
         ret_.set("geoMercator", () => d3.geoMercator().scale(130));
         return ret_;
-    }
-    static guiMainStatic(pane_, gui) {
-        var map_ = {};
-        [...DrawD3Terrain.getGeoViewsMap().keys()].forEach(obj_ => map_[obj_] = obj_);
-        pane_.addInput(gui.manager.config, 'terrain_geo_view', { options: map_ });
-        // .on('change', () => { gui.refreshConfig(); });
     }
 }
 exports.DrawD3Terrain = DrawD3Terrain;

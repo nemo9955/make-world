@@ -7,8 +7,6 @@ import { ObjectPool } from "../utils/ObjectPool";
 import { WorldData } from "../modules/WorldData";
 import { OrbitingElement } from "./OrbitingElement";
 import type { PlanetarySystem } from "./PlanetarySystem";
-import * as Tweakpane from "tweakpane/dist/tweakpane.js"
-import { WorldGui } from "../modules/WorldGui";
 
 
 
@@ -256,13 +254,13 @@ export class Orbit extends OrbitingElement {
     public clone() { return new Orbit(this.getWorldData()).copyLogic(this) }
 
 
-    public guiSelect(slectPane: Tweakpane, gui: WorldGui) {
-        slectPane.addMonitor(this, "isInHabZone");
-        slectPane.addMonitor(this, "eccentricity");
-        slectPane.addMonitor(this.semimajor_axis, 'Gm', { label: "semimajor axis Gm" });
-        slectPane.addMonitor(this.orbitalPeriod, 'ey', { label: "orbital Period" });
-        super.guiSelect(slectPane, gui);
-    }
+    // public guiSelect(slectPane: Tweakpane, gui: WorldGui) {
+    //     slectPane.addMonitor(this, "isInHabZone");
+    //     slectPane.addMonitor(this, "eccentricity");
+    //     slectPane.addMonitor(this.semimajor_axis, 'Gm', { label: "semimajor axis Gm" });
+    //     slectPane.addMonitor(this.orbitalPeriod, 'ey', { label: "orbital Period" });
+    //     super.guiSelect(slectPane, gui);
+    // }
 
 }
 

@@ -6,8 +6,6 @@ import * as Convert from "../utils/Convert"
 import { ObjectPool } from "../utils/ObjectPool";
 import { WorldData } from "../modules/WorldData";
 import { OrbitingElement } from "./OrbitingElement";
-import * as Tweakpane from "tweakpane/dist/tweakpane.js"
-import { WorldGui } from "../modules/WorldGui";
 
 
 import type { Orbit } from "./Orbit";
@@ -71,16 +69,16 @@ export class SpaceGroup extends OrbitingElement {
 
     public clone() { return new SpaceGroup(this.getWorldData()).copyLogic(this) }
 
-    protected guiPopSelectChildren(slectPane: Tweakpane, gui: WorldGui, generalAct: Tweakpane.FolderApi) {
-        this.getSats().forEach((sat_, index) => {
-            var title = ` ${sat_.type} ${sat_.id}`
-            if (this.groupedSatelites.includes(sat_.id))
-                title += ` (gr ${this.id})`
-            generalAct.addButton({ title: title }).on('click', () => {
-                gui.selectOrbElement(sat_);
-            });
-        });
-    }
+    // protected guiPopSelectChildren(slectPane: Tweakpane, gui: WorldGui, generalAct: Tweakpane.FolderApi) {
+    //     this.getSats().forEach((sat_, index) => {
+    //         var title = ` ${sat_.type} ${sat_.id}`
+    //         if (this.groupedSatelites.includes(sat_.id))
+    //             title += ` (gr ${this.id})`
+    //         generalAct.addButton({ title: title }).on('click', () => {
+    //             gui.selectOrbElement(sat_);
+    //         });
+    //     });
+    // }
 
 
 }
