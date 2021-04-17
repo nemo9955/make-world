@@ -4,7 +4,10 @@ node_js:
   - lts/*
 
 script:
+  - ls -ila
   - npm run dev
+  - ls -ila
+  - ls -ila dist
 
 deploy:
   provider: pages
@@ -15,5 +18,5 @@ deploy:
   on:
     branch: master
   target_branch: gh-pages
-  commit_message: Deploy %{git_commit_msg}
+  # commit_message: Deploy %{git_commit_msg}
   edge: true # opt in to dpl v2
