@@ -11,6 +11,7 @@ import { PlanetSysWorker } from "./PlanetSysWorker";
 import { TerrainWorker } from "./TerrainWorker";
 
 
+
 export var workerTypes: Map<string, typeof BaseWorker> = new Map();
 workerTypes["TerrainWorker"] = TerrainWorker;
 workerTypes["PlanetSysWorker"] = PlanetSysWorker;

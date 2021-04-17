@@ -8,8 +8,6 @@ import { Uniform } from "three";
 import * as Units from "../utils/Units"
 import * as Convert from "../utils/Convert"
 import { WorldData } from "../modules/WorldData";
-import * as Tweakpane from "tweakpane/dist/tweakpane.js"
-import { WorldGui } from "../modules/WorldGui";
 
 
 // https://www.youtube.com/watch?v=J5xU-8Kb63Y&list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&index=11&ab_channel=Artifexian
@@ -68,16 +66,16 @@ export class PlanetarySystem extends OrbitingElement {
     }
 
 
-    public guiSelect(slectPane: Tweakpane, gui: WorldGui) {
-        // const plsys_tp = this.mainPane.addFolder({ title: 'Planet System', expanded: false });
-        slectPane.addInput(this.hab_zone_in, 'km', { label: "hab_zone_in" });
-        slectPane.addInput(this.hab_zone, 'km', { label: "hab_zone" });
-        slectPane.addInput(this.hab_zone_out, 'km', { label: "hab_zone_out" });
-        slectPane.addInput(this.orbits_limit_in, 'km', { label: "orbits_limit_in" });
-        slectPane.addInput(this.frost_line, 'km', { label: "frost_line" });
-        slectPane.addInput(this.orbits_limit_out, 'km', { label: "orbits_limit_out" });
-        super.guiSelect(slectPane, gui);
-    }
+    // public guiSelect(slectPane: Tweakpane, gui: WorldGui) {
+    //     // const plsys_tp = this.mainPane.addFolder({ title: 'Planet System', expanded: false });
+    //     slectPane.addInput(this.hab_zone_in, 'km', { label: "hab_zone_in" });
+    //     slectPane.addInput(this.hab_zone, 'km', { label: "hab_zone" });
+    //     slectPane.addInput(this.hab_zone_out, 'km', { label: "hab_zone_out" });
+    //     slectPane.addInput(this.orbits_limit_in, 'km', { label: "orbits_limit_in" });
+    //     slectPane.addInput(this.frost_line, 'km', { label: "frost_line" });
+    //     slectPane.addInput(this.orbits_limit_out, 'km', { label: "orbits_limit_out" });
+    //     super.guiSelect(slectPane, gui);
+    // }
 
 
 

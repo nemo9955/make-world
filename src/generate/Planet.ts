@@ -8,8 +8,6 @@ import { WorldData } from "../modules/WorldData";
 import { Orbit } from "./Orbit";
 import { OrbitingElement } from "./OrbitingElement";
 import { PlanetarySystem } from "./PlanetarySystem";
-import * as Tweakpane from "tweakpane/dist/tweakpane.js"
-import { WorldGui } from "../modules/WorldGui";
 import { Terrain } from "./Terrain";
 
 // https://en.wikipedia.org/wiki/List_of_gravitationally_rounded_objects_of_the_Solar_System
@@ -241,17 +239,17 @@ export class Planet extends OrbitingElement {
         return this.mass;
     }
 
-    public guiSelect(slectPane: Tweakpane, gui: WorldGui) {
-        slectPane.addInput(this.color, 'value', { label: "color" })
-        slectPane.addInput(this.radius, 'km', { label: "radius km" });
-        slectPane.addInput(this.mass, 'Yg', { label: "mass Yg" });
-        slectPane.addMonitor(this.orbLimitIn, 'km', { label: "lim in" });
-        slectPane.addMonitor(this.orbLimitOut, 'km', { label: "lim out" });
-        slectPane.addMonitor(this.density, 'gcm3', { label: "density" });
-        slectPane.addMonitor(this, "planetType");
-        slectPane.addMonitor(this, "isInHabZone");
-        super.guiSelect(slectPane, gui);
-    }
+    // public guiSelect(slectPane: Tweakpane, gui: WorldGui) {
+    //     slectPane.addInput(this.color, 'value', { label: "color" })
+    //     slectPane.addInput(this.radius, 'km', { label: "radius km" });
+    //     slectPane.addInput(this.mass, 'Yg', { label: "mass Yg" });
+    //     slectPane.addMonitor(this.orbLimitIn, 'km', { label: "lim in" });
+    //     slectPane.addMonitor(this.orbLimitOut, 'km', { label: "lim out" });
+    //     slectPane.addMonitor(this.density, 'gcm3', { label: "density" });
+    //     slectPane.addMonitor(this, "planetType");
+    //     slectPane.addMonitor(this, "isInHabZone");
+    //     super.guiSelect(slectPane, gui);
+    // }
 
     public clone() { return new Planet(this.getWorldData()).copyLogic(this) }
 

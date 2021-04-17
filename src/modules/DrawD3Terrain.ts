@@ -22,8 +22,6 @@ import { SpaceGroup } from "../generate/SpaceGroup";
 import { PlanetarySystem } from "../generate/PlanetarySystem";
 import { Color } from "../utils/Color"
 
-import type Tweakpane from "tweakpane";
-import { WorldGui } from "../modules/WorldGui";
 
 import Noise = require("noisejs")
 import { pointGeoArr } from "../utils/Points"
@@ -150,7 +148,7 @@ export class DrawD3Terrain implements DrawWorkerInstance {
 
     public initBase() {
         console.debug(`#HERELINE ${this.type} initBase `);
-        this.translation = [this.canvasOffscreen.width / 2.4, this.canvasOffscreen.height / 2];
+        this.translation = [this.canvasOffscreen.width / 2, this.canvasOffscreen.height / 2];
         this.graticule = d3.geoGraticule();
 
 
@@ -278,13 +276,13 @@ export class DrawD3Terrain implements DrawWorkerInstance {
         return ret_
     }
 
-    public static guiMainStatic(pane_: Tweakpane, gui: WorldGui) {
-        var map_ = {};
-        [...DrawD3Terrain.getGeoViewsMap().keys()].forEach(obj_ => map_[obj_] = obj_)
+    // public static guiMainStatic(pane_: Tweakpane, gui: WorldGui) {
+    //     var map_ = {};
+    //     [...DrawD3Terrain.getGeoViewsMap().keys()].forEach(obj_ => map_[obj_] = obj_)
 
-        pane_.addInput(gui.manager.config, 'terrain_geo_view', { options: map_ })
-        // .on('change', () => { gui.refreshConfig(); });
-    }
+    //     pane_.addInput(gui.manager.config, 'terrain_geo_view', { options: map_ })
+    //     // .on('change', () => { gui.refreshConfig(); });
+    // }
 
 }
 

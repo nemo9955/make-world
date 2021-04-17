@@ -4,14 +4,11 @@ import * as Convert from "../utils/Convert"
 import { ObjectPool } from "../utils/ObjectPool";
 import { WorldData } from "../modules/WorldData";
 
-import * as Tweakpane from "tweakpane/dist/tweakpane.js"
-
 import type { Orbit } from "./Orbit";
 import type { Planet } from "./Planet";
 import type { Star } from "./Star";
 import type { PlanetarySystem } from "./PlanetarySystem";
 import type { SpaceGroup } from "./SpaceGroup";
-import { WorldGui } from "../modules/WorldGui";
 import { Identifiable } from "../modules/ObjectsHacker";
 
 
@@ -206,30 +203,30 @@ export class OrbitingElement extends Identifiable {
     }
 
 
-    protected guiPopSelectChildren(slectPane: Tweakpane, gui: WorldGui, generalAct: Tweakpane.FolderApi) {
-        this.getSats().forEach((sat_, index) => {
-            var title = `${sat_.type} ${sat_.id}`
-            generalAct.addButton({ title: title }).on('click', () => {
-                gui.selectOrbElement(sat_);
-            });
-        });
-    }
+    // protected guiPopSelectChildren(slectPane: Tweakpane, gui: WorldGui, generalAct: Tweakpane.FolderApi) {
+    //     this.getSats().forEach((sat_, index) => {
+    //         var title = `${sat_.type} ${sat_.id}`
+    //         generalAct.addButton({ title: title }).on('click', () => {
+    //             gui.selectOrbElement(sat_);
+    //         });
+    //     });
+    // }
 
 
-    public guiSelect(slectPane: Tweakpane, gui: WorldGui) {
-        console.debug("#HERELINE OrbitingElement populateSelectGUI ");
-        slectPane.addMonitor(this, "id", { index: 2 });
-        slectPane.addMonitor(this, "type", { index: 3 });
-        slectPane.addMonitor(this, "depth", { index: 4 });
+    // public guiSelect(slectPane: Tweakpane, gui: WorldGui) {
+    //     console.debug("#HERELINE OrbitingElement populateSelectGUI ");
+    //     slectPane.addMonitor(this, "id", { index: 2 });
+    //     slectPane.addMonitor(this, "type", { index: 3 });
+    //     slectPane.addMonitor(this, "depth", { index: 4 });
 
-        const generalAct = slectPane.addFolder({ title: 'Select', expanded: true, index: 10000 });
-        var parent = this.getParent();
-        if (parent)
-            generalAct.addButton({ title: `Parent ${parent.type} ${parent.id}` }).on('click', () => {
-                gui.selectOrbElement(parent);
-            });
-        this.guiPopSelectChildren(slectPane, gui, generalAct)
-    }
+    //     const generalAct = slectPane.addFolder({ title: 'Select', expanded: true, index: 10000 });
+    //     var parent = this.getParent();
+    //     if (parent)
+    //         generalAct.addButton({ title: `Parent ${parent.type} ${parent.id}` }).on('click', () => {
+    //             gui.selectOrbElement(parent);
+    //         });
+    //     this.guiPopSelectChildren(slectPane, gui, generalAct)
+    // }
 
 
 }

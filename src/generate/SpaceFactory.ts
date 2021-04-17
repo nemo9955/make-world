@@ -10,8 +10,6 @@ import * as Convert from "../utils/Convert"
 import { PlanetarySystem } from "./PlanetarySystem";
 import { WorldData } from "../modules/WorldData";
 import { SpaceGroup } from "./SpaceGroup";
-import * as Tweakpane from "tweakpane/dist/tweakpane.js"
-import { WorldGui } from "../modules/WorldGui";
 import { Config } from "../modules/Config";
 import { tree } from "d3";
 

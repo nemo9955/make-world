@@ -1,7 +1,6 @@
 import * as CanvasUtils from "../utils/CanvasUtils"
 
 import { WorldData } from "./WorldData"
-import { WorldGui } from "./WorldGui"
 import * as Units from "../utils/Units"
 import GenericWorkerInstance from "worker-loader!./GenWorkerInstance.ts";
 import { Config, MessageType, WorkerEvent, WorkerPacket } from "./Config"
@@ -21,7 +20,6 @@ import { JsonToGUI } from "../gui/JsonToGUI";
 export class MainManager {
     cam_timeout: any = null;
 
-    gui: WorldGui;
     jgui: JsonToGUI;
 
     workers: GenericWorkerInstance[] = [];
@@ -34,7 +32,6 @@ export class MainManager {
     viewableThings: HTMLElement[] = [];
 
     constructor() {
-        this.gui = new WorldGui();
         this.jgui = new JsonToGUI();
         this.config = new Config();
         this.world = new WorldData(this.config.WORLD_DATABASE_NAME, "MainManager");
@@ -56,7 +53,6 @@ export class MainManager {
         }).then(() => {
             // return this.world.initTerrain();
         }).then(() => {
-            this.gui.init();
         }).then(() => {
             return this.writeDeep();
         }).then(() => {
@@ -68,7 +64,7 @@ export class MainManager {
     }
 
     public spread_objects() {
-        var to_spread: any[] = [this.world, this.gui]
+        var to_spread: any[] = [this.world]
         for (const object_ of to_spread) {
             if (object_.manager === null) object_.manager = this;
             if (object_.config === null) object_.config = this.config;
@@ -243,7 +239,6 @@ export class MainManager {
                 this.jgui.refreshJgui(the_worker, event); break;
             case MessageType.CanvasMake:
                 CanvasUtils.makeWorkerCanvas(this, the_worker, event);
-                this.gui.regenerate(false);
                 break;
             default:
                 console.warn("DEFAULT not implemented !"); break
