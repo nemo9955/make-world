@@ -6,7 +6,9 @@ node_js:
 script:
   - ls -ila
   - npm run dev
+  - mkdir dist ; mv ./make-world/dist/* ./dist/
   - ls -ila
+  - ls -ila dist
 
 deploy:
   provider: pages
