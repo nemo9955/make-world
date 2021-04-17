@@ -43,11 +43,11 @@ module.exports = smp.wrap({
         //     chunks: 'all',
         // },
     },
-    devServer: {
-        disableHostCheck: true,
-        headers: {
-            "Cross-Origin-Embedder-Policy": " require-corp",
-            "Cross-Origin-Opener-Policy": " same-origin",
-        },
-    },
+    // devServer: {
+    //     disableHostCheck: true,
+    //     headers: {
+    //         "Cross-Origin-Embedder-Policy": " require-corp",
+    //         "Cross-Origin-Opener-Policy": " same-origin",
+    //     },
+    // },
 });
