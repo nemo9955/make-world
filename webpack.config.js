@@ -2,6 +2,7 @@ const path = require("path");
 const SpeedMeasurePlugin = require("speed-measure-webpack-plugin");
 const smp = new SpeedMeasurePlugin();
 
+const ASSET_PATH = process.env.ASSET_PATH || '/dist/';
 
 module.exports = smp.wrap({
     entry: './src/index.ts',
@@ -28,8 +29,8 @@ module.exports = smp.wrap({
         // publicPath: "/dist/",
         // publicPath: "../dist/",
         // publicPath: path.resolve(__dirname, "dist/"),
-        publicPath: "/dist/",
-        path: path.join(__dirname, "make-world/dist"),
+        publicPath: ASSET_PATH,
+        path: path.join(__dirname, "dist"),
         // path: "./dist/",
         // publicPath: path.join(__dirname, "dist"),
         // path: path.join(__dirname, "dist"),
