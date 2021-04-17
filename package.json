@@ -5,8 +5,8 @@
     "main": "dist/main.js",
     "private": true,
     "scripts": {
-        "starto": "webpack-dev-server --host 0.0.0.0 --devtool source-map --mode development --open",
-        "start": "webpack-dev-server --host 0.0.0.0 --devtool source-map --mode development",
+        "starto": "webpack serve --host 0.0.0.0 --devtool source-map --mode development --open",
+        "start": "webpack serve --host 0.0.0.0 --devtool source-map --mode development",
         "dev": "webpack --mode development --devtool source-map",
         "build": "webpack --mode production --devtool source-map",
         "test": "jest"
@@ -25,6 +25,7 @@
     "devDependencies": {
         "@types/d3": "^6.3.0",
         "@types/jest": "^26.0.22",
+        "@types/noisejs": "0.0.28",
         "fake-indexeddb": "^3.1.2",
         "jest": "^26.6.3",
         "schema-utils": "^3.0.0",
@@ -33,10 +34,9 @@
         "ts-loader": "^8.1.0",
         "ts-node": "^9.1.1",
         "typescript": "^4.2.4",
-        "webpack": "^4.46.0",
-        "webpack-cli": "^3.3.12",
-        "webpack-dev-server": "^3.11.2",
-        "@types/noisejs": "0.0.28",
+        "webpack": "^5.33.2",
+        "webpack-cli": "^4.6.0",
+        "webpack-dev-server": "^4.0.0-beta.2",
         "worker-loader": "^3.0.8"
     },
     "dependencies": {
