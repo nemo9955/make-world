@@ -9,6 +9,8 @@ import { Orbit } from "./Orbit";
 import { OrbitingElement } from "./OrbitingElement";
 import { PlanetarySystem } from "./PlanetarySystem";
 import { Terrain } from "./Terrain";
+import { jguiData } from "../gui/JguiUtils";
+import { WorkerEvent } from "../modules/Config";
 
 // https://en.wikipedia.org/wiki/List_of_gravitationally_rounded_objects_of_the_Solar_System
 
@@ -250,6 +252,18 @@ export class Planet extends OrbitingElement {
     //     slectPane.addMonitor(this, "isInHabZone");
     //     super.guiSelect(slectPane, gui);
     // }
+
+
+    public addToJgui(jData: jguiData) {
+        jData.jgui.addColor("Color", this.color.getRgb().formatHex())
+            .addEventListener(jData.jguiMng, "input", (event: WorkerEvent) => {
+                this.color.set_color(event.data.event.target.value)
+            })
+
+        super.addToJgui(jData);
+    }
+
+
 
     public clone() { return new Planet(this.getWorldData()).copyLogic(this) }
 

@@ -4,6 +4,7 @@ import * as Units from "../utils/Units"
 import { Config, MessageType, WorkerEvent, WorkerPacket } from "./Config";
 import { DrawD3Terrain } from "./DrawD3Terrain";
 import { JguiMake } from "../gui/JguiMake";
+import { setMainContainer } from "../gui/JguiUtils";
 
 export class TerrainWorker extends BaseDrawUpdateWorker {
 
@@ -137,14 +138,7 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
         })
 
 
-
-        this.worker.postMessage(<WorkerPacket>{
-            message: MessageType.RefreshJGUI,
-            jgui: this.workerJguiMain,
-            metadata: {
-                isMainWorkerContainer: true,
-            }
-        });
+        setMainContainer(this.worker, this.workerJguiMain)
     }
 
 

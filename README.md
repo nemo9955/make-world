@@ -1,5 +1,7 @@
 # make-world
-Make a realistic world by simulating as many aspects as possible
+Make a realistic world by simulating as many aspects as possible.
+
+Latest build can be accesed here: https://nemo9955.github.io/make-world/pages/World.html
 
 
 [![Build Status](https://travis-ci.com/nemo9955/make-world.svg?branch=master)](https://travis-ci.com/nemo9955/make-world)

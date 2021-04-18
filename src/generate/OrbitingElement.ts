@@ -10,6 +10,8 @@ import type { Star } from "./Star";
 import type { PlanetarySystem } from "./PlanetarySystem";
 import type { SpaceGroup } from "./SpaceGroup";
 import { Identifiable } from "../modules/ObjectsHacker";
+import { JguiMake, JguiManager } from "../gui/JguiMake";
+import { jguiData } from "../gui/JguiUtils";
 
 
 // https://stackoverflow.com/a/65337891/2948519
@@ -227,6 +229,14 @@ export class OrbitingElement extends Identifiable {
     //         });
     //     this.guiPopSelectChildren(slectPane, gui, generalAct)
     // }
+
+    public addToJgui(jData: jguiData) {
+        jData.jgui.addLabel(`id : ${this.id}`);
+        jData.jgui.addLabel(`type : ${this.type}`);
+        jData.jgui.addLabel(`depth : ${this.depth}`);
+    }
+
+
 
 
 }

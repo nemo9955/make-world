@@ -9,6 +9,7 @@ import { WorldData } from "./WorldData";
 import { WorkerDOM } from "../utils/WorkerDOM";
 import { DrawD3Plsys } from "./DrawD3Plsys";
 import { JguiMake } from "../gui/JguiMake";
+import { setMainContainer } from "../gui/JguiUtils";
 
 
 // TODO move generation in this worker instead of in the main thread
@@ -214,13 +215,8 @@ export class PlanetSysWorker extends BaseDrawUpdateWorker {
 
         // console.log("this.workerJguiMain", this.workerJguiMain);
 
-        this.worker.postMessage(<WorkerPacket>{
-            message: MessageType.RefreshJGUI,
-            jgui: this.workerJguiMain,
-            metadata: {
-                isMainWorkerContainer: true,
-            }
-        });
+        setMainContainer(this.worker, this.workerJguiMain)
+
     }
 
 

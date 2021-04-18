@@ -1,6 +1,6 @@
 {
     "name": "make-world",
-    "version": "0.45.3",
+    "version": "0.45.4",
     "description": "Make a realistic world by simulating as many aspects as possible",
     "main": "dist/main.js",
     "private": true,

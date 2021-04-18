@@ -21,6 +21,8 @@ import { WorkerDOM } from "../utils/WorkerDOM";
 import { OrbitingElement } from "../generate/OrbitingElement";
 import { SpaceGroup } from "../generate/SpaceGroup";
 import { PlanetarySystem } from "../generate/PlanetarySystem";
+import { jguiData, setTempContainer } from "../gui/JguiUtils";
+import { JguiMake, JguiManager } from "../gui/JguiMake";
 
 // https://orbitalmechanics.info/
 
@@ -245,11 +247,37 @@ export class DrawThreePlsys implements DrawWorkerInstance {
         // console.log("event", event);
         // console.log("this.canvasSelectionData", this.canvasSelectionData);
     }
+
+
+    public workerJguiManager: JguiManager = null;
+    worker: Worker = null;
+
     private hoverClick(event: any) {
         if (this.canvasSelectionData.selectedId !== this.canvasSelectionData.hoverId) {
             this.canvasSelectionData.selectedId = this.canvasSelectionData.hoverId;
             // var selected = mngr.world.idObjMap.get(this.canvasSelectionData.hoverId)
             // mngr.gui.selectOrbElement(selected as OrbitingElement);
+
+            var selOrbElem = this.world.idObjMap.get(this.canvasSelectionData.selectedId) as OrbitingElement;
+
+            if (selOrbElem) {
+                var tempJgui = new JguiMake(null).mkContainer()
+
+                // tempJgui.addButton("genStartingPlanetSystem")
+                //     .addEventListener(this.workerJguiManager, "click", (event: WorkerEvent) => {
+                //         console.log(`!!!!!!!!!!!!!!!!!!`);
+                //     })
+
+                var jData: jguiData = {
+                    jgui: tempJgui,
+                    jguiMng: this.workerJguiManager,
+                }
+
+                selOrbElem.addToJgui(jData)
+
+
+                setTempContainer(this.worker, tempJgui)
+            }
         }
     }
 
@@ -627,6 +655,7 @@ export class DrawThreePlsys implements DrawWorkerInstance {
 
     public draw() {
         // console.debug("#HERELINE "+this.type+" draw ", this.world.planetary_system.time.ey);
+        this.updateShallow();
 
         if (this.selectedThing) {
             this.selectedPrevPos.copy(this.selectedThing.position)
