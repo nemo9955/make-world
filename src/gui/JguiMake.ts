@@ -1,7 +1,6 @@
 
 
 import * as d3 from "d3"
-import { color } from "d3";
 import { WorkerEvent } from "../modules/Config";
 import { randomAlphabetString } from "../utils/Random";
 
@@ -122,9 +121,10 @@ export class JguiMake {
     }
 
     public mkRow(): JguiMake {
-        // https://getbootstrap.com/docs/5.0/layout/gutters/#row-columns-gutters
+        // https://getbootstrap.com/docs/5.0/utilities/flex/
         this.tag = "div";
-        this.class = "row align-items-start";
+        // this.class = "row align-items-start";
+        this.class = "d-flex flex-row bd-highlight";
         return this;
     }
 
@@ -170,6 +170,59 @@ export class JguiMake {
 
         return rangeObj;
     }
+
+
+
+    public addNumber(numName: string, numValue: number): JguiMake {
+        // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/color
+        var rowObj = new JguiMake(null).mkRow()
+        var numObj = new JguiMake("input")
+
+        numObj.attr.type = "number"
+        numObj.attr.value = numValue
+        numObj.style.width = "100%"
+
+        rowObj.addLabel(numName)
+        rowObj.appendHtml(numObj)
+
+        this.appendHtml(rowObj)
+
+        return numObj;
+    }
+
+
+    public addColor(colName: string, colValue: string): JguiMake {
+        // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/color
+        var rowObj = new JguiMake(null).mkRow()
+        var colObj = new JguiMake("input")
+        colObj.attr.type = "color"
+        colObj.attr.value = colValue
+        colObj.style.width = "100%"
+
+        rowObj.addLabel(colName)
+        rowObj.appendHtml(colObj)
+
+        this.appendHtml(rowObj)
+
+        return colObj;
+    }
+
+
+    public addLabel(labName: string): JguiMake {
+        // https://getbootstrap.com/docs/5.0/forms/floating-labels/
+        // var labObj = new JguiMake("div")
+        // labObj.class = "d-inline-flex p-2 bd-highlight";
+
+        var labObj = new JguiMake("label")
+
+        labObj.html = labName;
+        labObj.style["padding-right"] = "0.5rem"
+
+        this.appendHtml(labObj)
+        return labObj;
+    }
+
+
 
 
     public genId() {

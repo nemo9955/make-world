@@ -92901,6 +92901,32 @@ class OrbitingElement extends ObjectsHacker_1.Identifiable {
             parentOrbit = this.getWorldData().idObjMap.get(parentOrbit.parentId);
         }
     }
+    // protected guiPopSelectChildren(slectPane: Tweakpane, gui: WorldGui, generalAct: Tweakpane.FolderApi) {
+    //     this.getSats().forEach((sat_, index) => {
+    //         var title = `${sat_.type} ${sat_.id}`
+    //         generalAct.addButton({ title: title }).on('click', () => {
+    //             gui.selectOrbElement(sat_);
+    //         });
+    //     });
+    // }
+    // public guiSelect(slectPane: Tweakpane, gui: WorldGui) {
+    //     console.debug("#HERELINE OrbitingElement populateSelectGUI ");
+    //     slectPane.addMonitor(this, "id", { index: 2 });
+    //     slectPane.addMonitor(this, "type", { index: 3 });
+    //     slectPane.addMonitor(this, "depth", { index: 4 });
+    //     const generalAct = slectPane.addFolder({ title: 'Select', expanded: true, index: 10000 });
+    //     var parent = this.getParent();
+    //     if (parent)
+    //         generalAct.addButton({ title: `Parent ${parent.type} ${parent.id}` }).on('click', () => {
+    //             gui.selectOrbElement(parent);
+    //         });
+    //     this.guiPopSelectChildren(slectPane, gui, generalAct)
+    // }
+    addToJgui(jData) {
+        jData.jgui.addLabel(`id : ${this.id}`);
+        jData.jgui.addLabel(`type : ${this.type}`);
+        jData.jgui.addLabel(`depth : ${this.depth}`);
+    }
 }
 exports.OrbitingElement = OrbitingElement;
 
@@ -93098,6 +93124,13 @@ class Planet extends OrbitingElement_1.OrbitingElement {
     //     slectPane.addMonitor(this, "isInHabZone");
     //     super.guiSelect(slectPane, gui);
     // }
+    addToJgui(jData) {
+        jData.jgui.addColor("Color", this.color.getRgb().formatHex())
+            .addEventListener(jData.jguiMng, "input", (event) => {
+            this.color.set_color(event.data.event.target.value);
+        });
+        super.addToJgui(jData);
+    }
     clone() { return new Planet(this.getWorldData()).copyLogic(this); }
 }
 exports.Planet = Planet;
@@ -93770,6 +93803,35 @@ class Star extends OrbitingElement_1.OrbitingElement {
         return this.makeClassG(); // Like the Sun
     }
     clone() { return new Star(this.getWorldData()).copyLogic(this); }
+    // public guiSelect(slectPane: Tweakpane, gui: WorldGui) {
+    //     slectPane.addInput(this.color, 'value', { label: "color" })
+    //     slectPane.addInput(this.radius, 'km', { label: "radius km" });
+    //     slectPane.addInput(this.mass, 'Yg', { label: "mass Yg" });
+    //     slectPane.addInput(this, 'sclass');
+    //     slectPane.addInput(this.luminosity, 'watt', { label: "luminosity watt" });
+    //     slectPane.addInput(this.temperature, 'kelvin', { label: "temperature kelvin" });
+    //     slectPane.addInput(this.lifetime, 'eby', { label: "lifetime eby" });
+    //     super.guiSelect(slectPane, gui);
+    // }
+    addToJgui(jData) {
+        super.addToJgui(jData);
+        jData.jgui.addColor("Color", this.color.getRgb().formatHex())
+            .addEventListener(jData.jguiMng, "input", (event) => {
+            this.color.set_color(event.data.event.target.value);
+        });
+        jData.jgui.addNumber("radius.km", this.radius.km)
+            .addEventListener(jData.jguiMng, "input", (event) => {
+            this.radius.km = event.data.event.target.value;
+        });
+        jData.jgui.addNumber("mass.Yg", this.mass.Yg)
+            .addEventListener(jData.jguiMng, "input", (event) => {
+            this.mass.Yg = event.data.event.target.value;
+        });
+        jData.jgui.addNumber("lifetime.eby", this.lifetime.eby)
+            .addEventListener(jData.jguiMng, "input", (event) => {
+            this.lifetime.eby = event.data.event.target.value;
+        });
+    }
 }
 exports.Star = Star;
 
@@ -93909,9 +93971,10 @@ class JguiMake {
         return colObj;
     }
     mkRow() {
-        // https://getbootstrap.com/docs/5.0/layout/gutters/#row-columns-gutters
+        // https://getbootstrap.com/docs/5.0/utilities/flex/
         this.tag = "div";
-        this.class = "row align-items-start";
+        // this.class = "row align-items-start";
+        this.class = "d-flex flex-row bd-highlight";
         return this;
     }
     addSlider(slideName, min, max, step) {
@@ -93945,6 +94008,40 @@ class JguiMake {
         // rowObj.appendHtml(rangeObj)
         // this.appendHtml(rowObj)
         return rangeObj;
+    }
+    addNumber(numName, numValue) {
+        // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/color
+        var rowObj = new JguiMake(null).mkRow();
+        var numObj = new JguiMake("input");
+        numObj.attr.type = "number";
+        numObj.attr.value = numValue;
+        numObj.style.width = "100%";
+        rowObj.addLabel(numName);
+        rowObj.appendHtml(numObj);
+        this.appendHtml(rowObj);
+        return numObj;
+    }
+    addColor(colName, colValue) {
+        // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/color
+        var rowObj = new JguiMake(null).mkRow();
+        var colObj = new JguiMake("input");
+        colObj.attr.type = "color";
+        colObj.attr.value = colValue;
+        colObj.style.width = "100%";
+        rowObj.addLabel(colName);
+        rowObj.appendHtml(colObj);
+        this.appendHtml(rowObj);
+        return colObj;
+    }
+    addLabel(labName) {
+        // https://getbootstrap.com/docs/5.0/forms/floating-labels/
+        // var labObj = new JguiMake("div")
+        // labObj.class = "d-inline-flex p-2 bd-highlight";
+        var labObj = new JguiMake("label");
+        labObj.html = labName;
+        labObj.style["padding-right"] = "0.5rem";
+        this.appendHtml(labObj);
+        return labObj;
     }
     genId() {
         var bid = Random_1.randomAlphabetString(5);
@@ -93990,6 +94087,40 @@ class JguiManager {
     }
 }
 exports.JguiManager = JguiManager;
+
+
+/***/ }),
+
+/***/ "./src/gui/JguiUtils.ts":
+/*!******************************!*\
+  !*** ./src/gui/JguiUtils.ts ***!
+  \******************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.setTempContainer = exports.setMainContainer = void 0;
+const Config_1 = __webpack_require__(/*! ../modules/Config */ "./src/modules/Config.ts");
+function setMainContainer(the_worker, workerJgui) {
+    the_worker.postMessage({
+        message: Config_1.MessageType.RefreshJGUI,
+        jgui: workerJgui,
+        metadata: {
+            isMainWorkerContainer: true,
+        }
+    });
+}
+exports.setMainContainer = setMainContainer;
+function setTempContainer(the_worker, workerJgui) {
+    the_worker.postMessage({
+        message: Config_1.MessageType.RefreshJGUI,
+        jgui: workerJgui,
+        metadata: {
+            isTempWorkerContainer: true,
+        }
+    });
+}
+exports.setTempContainer = setTempContainer;
 
 
 /***/ }),
@@ -94483,6 +94614,8 @@ const Orbit_1 = __webpack_require__(/*! ../generate/Orbit */ "./src/generate/Orb
 const Planet_1 = __webpack_require__(/*! ../generate/Planet */ "./src/generate/Planet.ts");
 const Star_1 = __webpack_require__(/*! ../generate/Star */ "./src/generate/Star.ts");
 const WorkerDOM_1 = __webpack_require__(/*! ../utils/WorkerDOM */ "./src/utils/WorkerDOM.ts");
+const JguiUtils_1 = __webpack_require__(/*! ../gui/JguiUtils */ "./src/gui/JguiUtils.ts");
+const JguiMake_1 = __webpack_require__(/*! ../gui/JguiMake */ "./src/gui/JguiMake.ts");
 class DrawThreePlsys {
     constructor() {
         this.type = this.constructor.name;
@@ -94511,6 +94644,8 @@ class DrawThreePlsys {
         this.selectedThing = null;
         this.distToTarget = 0;
         this.canvasSelectionData = { mousex: 0, mousey: 0, hoverId: 0, selectedId: 0 };
+        this.workerJguiManager = null;
+        this.worker = null;
         this.raycaster.params.Line.threshold = 10; // DRAWUNIT
         this.tjs_pool_lines = new ObjectPool_1.ObjectPool(() => {
             const geometry = new THREE.BufferGeometry();
@@ -94646,6 +94781,20 @@ class DrawThreePlsys {
             this.canvasSelectionData.selectedId = this.canvasSelectionData.hoverId;
             // var selected = mngr.world.idObjMap.get(this.canvasSelectionData.hoverId)
             // mngr.gui.selectOrbElement(selected as OrbitingElement);
+            var selOrbElem = this.world.idObjMap.get(this.canvasSelectionData.selectedId);
+            if (selOrbElem) {
+                var tempJgui = new JguiMake_1.JguiMake(null).mkContainer();
+                // tempJgui.addButton("genStartingPlanetSystem")
+                //     .addEventListener(this.workerJguiManager, "click", (event: WorkerEvent) => {
+                //         console.log(`!!!!!!!!!!!!!!!!!!`);
+                //     })
+                var jData = {
+                    jgui: tempJgui,
+                    jguiMng: this.workerJguiManager,
+                };
+                selOrbElem.addToJgui(jData);
+                JguiUtils_1.setTempContainer(this.worker, tempJgui);
+            }
         }
     }
     handleOrbit(element_, parent_, root_) {
@@ -94929,8 +95078,9 @@ class DrawThreePlsys {
         }
     }
     draw() {
-        // console.debug("#HERELINE "+this.type+" draw ", this.world.planetary_system.time.ey);
         var _a;
+        // console.debug("#HERELINE "+this.type+" draw ", this.world.planetary_system.time.ey);
+        this.updateShallow();
         if (this.selectedThing) {
             this.selectedPrevPos.copy(this.selectedThing.position);
         }
@@ -95074,6 +95224,8 @@ class BaseWorker {
             object_.config = this.config;
         if (object_.world === null)
             object_.world = this.world;
+        if (object_.worker === null)
+            object_.worker = this.worker;
     }
     getMessage(event) {
         var _a;
@@ -95114,6 +95266,8 @@ class BaseDrawUpdateWorker extends BaseWorker {
     constructor(config, worker, workerName, event) {
         super(config, worker, workerName, event);
         this.mapDraws = new Map();
+        this.workerJguiMain = null;
+        this.workerJguiManager = null;
         this.workerJguiManager = new JguiMake_1.JguiManager(worker, workerName);
     }
     callEvent(woEvent) {
@@ -95127,6 +95281,11 @@ class BaseDrawUpdateWorker extends BaseWorker {
             var drawRedirect = this.mapDraws.get(event_id);
             drawRedirect.fakeDOM.dispatchEvent(event);
         }
+    }
+    spread_objects(object_) {
+        super.spread_objects(object_);
+        if (object_.workerJguiManager === null)
+            object_.workerJguiManager = this.workerJguiManager;
     }
 }
 exports.BaseDrawUpdateWorker = BaseDrawUpdateWorker;
@@ -95196,6 +95355,7 @@ const Config_1 = __webpack_require__(/*! ./Config */ "./src/modules/Config.ts");
 const DrawThreePlsys_1 = __webpack_require__(/*! ./DrawThreePlsys */ "./src/modules/DrawThreePlsys.ts");
 const DrawD3Plsys_1 = __webpack_require__(/*! ./DrawD3Plsys */ "./src/modules/DrawD3Plsys.ts");
 const JguiMake_1 = __webpack_require__(/*! ../gui/JguiMake */ "./src/gui/JguiMake.ts");
+const JguiUtils_1 = __webpack_require__(/*! ../gui/JguiUtils */ "./src/gui/JguiUtils.ts");
 // TODO move generation in this worker instead of in the main thread
 // TODO simplify the refresh deep/shallow mechanisms since most actions will be done in this worker
 // TODO store position and rotation of objects inside themselves after time/orbit update so other workers can do "basic" checks and calculations
@@ -95368,13 +95528,7 @@ class PlanetSysWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
         //     this.refreshDeep()
         // })
         // console.log("this.workerJguiMain", this.workerJguiMain);
-        this.worker.postMessage({
-            message: Config_1.MessageType.RefreshJGUI,
-            jgui: this.workerJguiMain,
-            metadata: {
-                isMainWorkerContainer: true,
-            }
-        });
+        JguiUtils_1.setMainContainer(this.worker, this.workerJguiMain);
     }
 }
 exports.PlanetSysWorker = PlanetSysWorker;
@@ -95395,6 +95549,7 @@ const GenWorkerMetadata_1 = __webpack_require__(/*! ./GenWorkerMetadata */ "./sr
 const Config_1 = __webpack_require__(/*! ./Config */ "./src/modules/Config.ts");
 const DrawD3Terrain_1 = __webpack_require__(/*! ./DrawD3Terrain */ "./src/modules/DrawD3Terrain.ts");
 const JguiMake_1 = __webpack_require__(/*! ../gui/JguiMake */ "./src/gui/JguiMake.ts");
+const JguiUtils_1 = __webpack_require__(/*! ../gui/JguiUtils */ "./src/gui/JguiUtils.ts");
 class TerrainWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
     constructor(config, worker, workerName, event) {
         super(config, worker, workerName, event);
@@ -95508,13 +95663,7 @@ class TerrainWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
         workerJgui.addButton("Test 1").addEventListener(this.workerJguiManager, "click", (event) => {
             console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!! event", event.data.event);
         });
-        this.worker.postMessage({
-            message: Config_1.MessageType.RefreshJGUI,
-            jgui: this.workerJguiMain,
-            metadata: {
-                isMainWorkerContainer: true,
-            }
-        });
+        JguiUtils_1.setMainContainer(this.worker, this.workerJguiMain);
     }
 }
 exports.TerrainWorker = TerrainWorker;

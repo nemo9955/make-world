@@ -56,7 +56,8 @@ type d3UpdateType = d3.Selection<d3.BaseType, JguiMake, HTMLDivElement, unknown>
 export class JsonToGUI {
 
     allContainer: d3.Selection<HTMLDivElement, unknown, HTMLElement, any> = null;
-    mainGuiContainer: d3.Selection<HTMLDivElement, unknown, HTMLElement, any> = null;
+    mainGuiCont: d3.Selection<HTMLDivElement, unknown, HTMLElement, any> = null;
+    tempGuiCont: d3.Selection<HTMLDivElement, unknown, HTMLElement, any> = null;
 
     public mainGUI: JguiMake;
     workerJguiMap = new Map<GenericWorkerInstance, JguiMake>();
@@ -71,7 +72,7 @@ export class JsonToGUI {
             .style("top", "0px")
             .style("left", "0px")
 
-        this.mainGuiContainer = this.allContainer
+        this.mainGuiCont = this.allContainer
             .append("div")
             .attr("class", "d-grid gap-1 bg-light border shadow-sm rounded ")
             .attr("id", "MainWorkerJguiDiv")
@@ -80,6 +81,17 @@ export class JsonToGUI {
             .style("top", "10px")
             .style("left", "10px")
             .style("width", "200px")
+
+        this.tempGuiCont = this.allContainer
+            .append("div")
+            .attr("class", "d-grid gap-1 bg-light rounded ")
+            .attr("id", "MainWorkerJguiDiv")
+            .style("zIndex", "200")
+            .style("position", "fixed")
+            .style("bottom", "50px")
+            .style("left", "10px")
+            .style("width", "200px")
+            .style("padding", "0.4rem")
     }
 
 
@@ -94,8 +106,15 @@ export class JsonToGUI {
                 return (textA < textB) ? -1 : (textA > textB) ? 1 : 0;
             })
             // console.log("allJgui", allJgui);
-            var dat = this.mainGuiContainer.selectChildren("*")
+            var dat = this.mainGuiCont.selectChildren("*")
                 .data(allJgui, this.getId)
+            dat.enter().call(this.enterSelectTags.bind(this))
+            dat.exit().call(this.exitSelectTags.bind(this))
+        }
+
+        if (event.data.metadata.isTempWorkerContainer) {
+            var dat = this.tempGuiCont.selectChildren("*")
+                .data([workerJgui], this.getId)
             dat.enter().call(this.enterSelectTags.bind(this))
             dat.exit().call(this.exitSelectTags.bind(this))
         }
@@ -129,8 +148,9 @@ export class JsonToGUI {
                     // console.log("event", event);
                     var worker = this.listenersJguiMap.get(listen.id);
                     if (worker) {
-
+                        // console.log("RAW event ::: ", event);
                         var basicEvent = EventUtils.getBasicEvent(event);
+                        // console.log("basicEvent", basicEvent);
                         worker.postMessage(<WorkerPacket>{
                             message: MessageType.Event,
                             event: basicEvent,
@@ -200,7 +220,6 @@ export class JsonToGUI {
     }
 
     private exitSelectTags(remove: d3UpdateType) {
-        remove.each(console.log)
         remove.remove();
     }
 

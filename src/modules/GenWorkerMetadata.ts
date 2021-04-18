@@ -41,6 +41,7 @@ export abstract class BaseWorker {
     public spread_objects(object_: any) {
         if (object_.config === null) object_.config = this.config
         if (object_.world === null) object_.world = this.world
+        if (object_.worker === null) object_.worker = this.worker
     }
 
     public abstract updateInterval(): void;
@@ -103,8 +104,8 @@ export interface DrawWorkerInstance {
 export abstract class BaseDrawUpdateWorker extends BaseWorker {
 
     public mapDraws = new Map<any, DrawWorkerInstance>();
-    public workerJguiMain: JguiMake;
-    public workerJguiManager: JguiManager;
+    public workerJguiMain: JguiMake= null;
+    public workerJguiManager: JguiManager= null;
 
 
 
@@ -123,8 +124,14 @@ export abstract class BaseDrawUpdateWorker extends BaseWorker {
             var drawRedirect = this.mapDraws.get(event_id);
             drawRedirect.fakeDOM.dispatchEvent(event);
         }
-
     }
+
+
+    public spread_objects(object_: any) {
+        super.spread_objects(object_);
+        if (object_.workerJguiManager === null) object_.workerJguiManager = this.workerJguiManager;
+    }
+
 
 
 }

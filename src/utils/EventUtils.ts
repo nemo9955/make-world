@@ -14,6 +14,10 @@ const BASIC_OBJECTS = ["number", "boolean", "string"]
 // Add posibility for this value to be altered per-event optionally
 const THROTTHE_TIME = 50;
 
+const keysToMove = [
+    "defaultValue", "value",
+]
+
 
 /*
 
@@ -34,12 +38,18 @@ export function getBasicEvent(source_: any) {
 
     if (typeof source_.target == "object") {
         target_.target = {}
-        for (const key in source_.target) {
-            var type_ = typeof source_.target[key]
-            if (BASIC_OBJECTS.includes(type_) == false) continue
-            // console.log("key", key, type_);
-            target_.target[key] = source_.target[key];
+        for (const key of keysToMove) {
+            // if (source_?.target?.[key])
+            // if (source_.target.hasOwnProperty(key))
+            if (key in source_.target)
+                target_.target[key] = source_.target[key];
         }
+        // for (const key in source_.target) {
+        //     var type_ = typeof source_.target[key]
+        //     if (BASIC_OBJECTS.includes(type_) == false) continue
+        //     // console.log("key", key, type_);
+        //     target_.target[key] = source_.target[key];
+        // }
     }
 
     return target_
