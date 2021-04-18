@@ -65,7 +65,7 @@ export function addRightClickStuff(metaCanvas: MetaCanvas, mngr: MainManager, th
 
         var basic_event = getBasicEvent(evt_)
         basic_event["event_id"] = canvas.id;
-        console.log("event_name, event", event_name, basic_event);
+        // console.log("event_name, event", event_name, basic_event);
         the_worker.postMessage(<WorkerPacket>{
             message: MessageType.Event,
             event_id: canvas.id,
