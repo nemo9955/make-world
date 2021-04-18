@@ -3,9 +3,10 @@
 
 
 import GenericWorkerInstance from "worker-loader!./GenWorkerInstance.ts";
-import { MessageType, WorkerPacket } from "../modules/Config";
+import { MessageType, MetaCanvas, WorkerPacket } from "../modules/Config";
 
 import { throttle } from 'lodash-es';
+import { MainManager } from "../modules/MainManager";
 
 const BASIC_OBJECTS = ["number", "boolean", "string"]
 
@@ -43,6 +44,28 @@ export function getBasicEvent(source_: any) {
 
     return target_
 }
+
+
+export function addRightClickStuff(metaCanvas: MetaCanvas, mngr: MainManager, the_worker: GenericWorkerInstance, canvas: HTMLCanvasElement): void {
+    var event_name = "contextmenu";
+    var rightClick = (evt_) => {
+
+        canvas.focus(); // special for contextmenu
+        evt_.preventDefault(); // special for contextmenu
+
+        var basic_event = getBasicEvent(evt_)
+        basic_event["event_id"] = canvas.id;
+        // console.log("event_name, event", event_name, basic_event);
+        the_worker.postMessage(<WorkerPacket>{
+            message: MessageType.Event,
+            event_id: canvas.id,
+            event: basic_event,
+        });
+    }
+
+    canvas.addEventListener(event_name, rightClick);
+}
+
 
 
 export function genericRedirect(event_name: string, canvas: HTMLElement, canvas_id: any, worker: GenericWorkerInstance) {
@@ -130,10 +153,13 @@ export function addResizeEvents(canvas: HTMLElement, canvas_id: any, worker: Gen
 export function addOrbitCtrlEvents(canvas: HTMLElement, canvas_id: any, worker: GenericWorkerInstance) {
     // disable right-click context on canvas ... TODO do cool stuff !!!!
     // canvas.addEventListener("contextmenu", (evt_) => { evt_.preventDefault() });
-
+    /////// "mousedown" "mouseenter" "mouseleave" "mousemove" "mouseout" "mouseover" "mouseup":
     // genericRedirect("keydown", canvas, canvas_id, worker)
 
-    // TODO maybe limit somehow the amount of events (pointermove,touchmove) being sent ???
+    // genericRedirect("pointermove", canvas, canvas_id, worker)
+    genericRedirect("mousemove", canvas, canvas_id, worker)
+    // genericRedirect("mouseleave", canvas, canvas_id, worker)
+
     conditionalRedirect("pointermove", "pointerdown", "pointerup", canvas, canvas_id, worker)
     genericConditionalRedirect("wheel", canvas, canvas_id, worker, isShiftPressed.bind(this))
 
