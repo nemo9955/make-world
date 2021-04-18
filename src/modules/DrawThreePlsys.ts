@@ -177,6 +177,9 @@ export class DrawThreePlsys implements DrawWorkerInstance {
         this.controls.addEventListener("change", this.cameraMoved.bind(this))
         this.cameraMoved();
 
+        this.fakeDOM.addEventListener("mousemove", this.hoverMoved.bind(this)) // mouseleave
+        this.fakeDOM.addEventListener("contextmenu", this.hoverClick.bind(this))
+
 
         this.tjs_pool_lines.expand(20);
         this.tjs_pool_orbobjects.expand(20);
@@ -230,6 +233,25 @@ export class DrawThreePlsys implements DrawWorkerInstance {
         // console.log("this.camera.position", this.camera.position);
     }
 
+
+
+    private canvasSelectionData = { mousex: 0, mousey: 0, hoverId: 0, selectedId: 0 };
+    private hoverMoved(event: any) {
+        this.canvasSelectionData.mousex = event.offsetX;
+        this.canvasSelectionData.mousey = event.offsetY;
+        // var rect = canvas.getBoundingClientRect();
+        // this.canvasSelectionData.mousex = event.clientX - rect.left;
+        // this.canvasSelectionData.mousey = event.clientY - rect.top;
+        // console.log("event", event);
+        // console.log("this.canvasSelectionData", this.canvasSelectionData);
+    }
+    private hoverClick(event: any) {
+        if (this.canvasSelectionData.selectedId !== this.canvasSelectionData.hoverId) {
+            this.canvasSelectionData.selectedId = this.canvasSelectionData.hoverId;
+            // var selected = mngr.world.idObjMap.get(this.canvasSelectionData.hoverId)
+            // mngr.gui.selectOrbElement(selected as OrbitingElement);
+        }
+    }
 
     public handleOrbit(element_: Orbit, parent_: THREE.Object3D, root_: THREE.Object3D) {
         element_.updateMajEcc();
@@ -614,71 +636,71 @@ export class DrawThreePlsys implements DrawWorkerInstance {
             this.calculatePos(iterator);
         }
 
-        // this.hoverSphere.visible = false;
-        // if (this.config.follow_pointed_orbit !== "none") {
-        //     if (this.sharedData.mousex != 0 && this.sharedData.mousey != 0) {
-        //         this.mouse.x = (this.sharedData.mousex / this.canvasOffscreen.width) * 2 - 1;
-        //         this.mouse.y = - (this.sharedData.mousey / this.canvasOffscreen.height) * 2 + 1;
-        //         // console.log("this.mouse", this.mouse);
+        this.hoverSphere.visible = false;
+        if (this.config.follow_pointed_orbit !== "none") {
+            if (this.canvasSelectionData.mousex != 0 && this.canvasSelectionData.mousey != 0) {
+                this.mouse.x = (this.canvasSelectionData.mousex / this.canvasOffscreen.width) * 2 - 1;
+                this.mouse.y = - (this.canvasSelectionData.mousey / this.canvasOffscreen.height) * 2 + 1;
+                // console.log("this.mouse", this.mouse);
 
-        //         // var allIntersect = [...this.orb_lines, ...this.orb_planets]
-        //         // const intersects = this.raycaster.intersectObjects(allIntersect, false);
-        //         this.raycaster.setFromCamera(this.mouse, this.camera);
-        //         const intersects = this.raycaster.intersectObjects(this.scene.children, true);
-        //         if (intersects.length > 0) {
-        //             var orb_ = intersects[0]
-        //             var targ_ = orb_.object.parent.userData as ThreeUserData
-        //             if (targ_?.orbitingElement?.id) {
-        //                 this.hoverSphere.visible = true;
-        //                 this.hoverSphere.position.copy(orb_.point)
-        //                 this.sharedData.hoverId = targ_.orbitingElement.id
-        //             }
-        //             // console.log("targ_", targ_);
-        //             // this.camera.lookAt(targ_.position)
-        //             // this.controls.target = targ_.position
-        //             // TODO set a shared data variable with the ID of the selected/focused WORLD thing (orbit,planet,cell,etc.)
-        //         } else {
-        //             this.sharedData.hoverId = null;
-        //         }
-        //     }
-        // }
+                // var allIntersect = [...this.orb_lines, ...this.orb_planets]
+                // const intersects = this.raycaster.intersectObjects(allIntersect, false);
+                this.raycaster.setFromCamera(this.mouse, this.camera);
+                const intersects = this.raycaster.intersectObjects(this.scene.children, true);
+                if (intersects.length > 0) {
+                    var orb_ = intersects[0]
+                    var targ_ = orb_.object.parent.userData as ThreeUserData
+                    if (targ_?.orbitingElement?.id) {
+                        this.hoverSphere.visible = true;
+                        this.hoverSphere.position.copy(orb_.point)
+                        this.canvasSelectionData.hoverId = targ_.orbitingElement.id
+                    }
+                    // console.log("targ_", targ_);
+                    // this.camera.lookAt(targ_.position)
+                    // this.controls.target = targ_.position
+                    // TODO set a shared data variable with the ID of the selected/focused WORLD thing (orbit,planet,cell,etc.)
+                } else {
+                    this.canvasSelectionData.hoverId = null;
+                }
+            }
+        }
 
 
-        // if (this.selectedThing) {
-        //     this.selectedPrevPos.sub(this.selectedThing.position);//reuse Vec3 for delta
-        //     this.camera.position.sub(this.selectedPrevPos);
-        //     // this.camera.lookAt(this.selectedThing.position)
-        //     this.selectedPrevPos.copy(this.selectedThing.position);
-        // }
+        if (this.selectedThing) {
+            this.selectedPrevPos.sub(this.selectedThing.position);//reuse Vec3 for delta
+            this.camera.position.sub(this.selectedPrevPos);
+            // this.camera.lookAt(this.selectedThing.position)
+            this.selectedPrevPos.copy(this.selectedThing.position);
+        }
 
-        // // https://stackoverflow.com/questions/37482231/camera-position-changes-in-three-orbitcontrols-in-three-js
-        // // https://stackoverflow.com/questions/53292145/forcing-orbitcontrols-to-navigate-around-a-moving-object-almost-working
-        // // https://github.com/mrdoob/three.js/pull/16374#issuecomment-489773834
+        // https://stackoverflow.com/questions/37482231/camera-position-changes-in-three-orbitcontrols-in-three-js
+        // https://stackoverflow.com/questions/53292145/forcing-orbitcontrols-to-navigate-around-a-moving-object-almost-working
+        // https://github.com/mrdoob/three.js/pull/16374#issuecomment-489773834
 
-        // if (this.lastSelectedId != this.sharedData.selectedId) {
-        //     this.lastSelectedId = this.sharedData.selectedId;
-        //     // console.log("this.lastSelectedId", this.lastSelectedId);
-        //     var selOrbElem = this.world.idObjMap.get(this.lastSelectedId) as OrbitingElement
-        //     if (selOrbElem) {
-        //         var fosusElem = selOrbElem;
-        //         if (this.config.follow_pointed_orbit === "auto") {
-        //             var firstSat = selOrbElem.getSatIndex(0) // better focuss on Sat
-        //             if (firstSat && selOrbElem instanceof Orbit) fosusElem = firstSat; // better focuss on Sat
-        //         }
-        //         var orbElemGr = this.orbElemToGroup.get(fosusElem) as THREE.Object3D;
-        //         // console.log("orbElemGr", orbElemGr);
-        //         this.selectedThing = orbElemGr;
-        //         this.controls.target = orbElemGr.position
-        //         this.camera.lookAt(orbElemGr.position)
-        //         // orbElemGr.add(this.camera)
-        //     } else {
-        //         this.selectedThing = null;
-        //         this.controls.target = this.scene.position;
-        //         this.camera.lookAt(this.scene.position)
-        //         // this.scene.add(this.camera)
-        //     }
-        //     this.cameraMoved();
-        // }
+        if (this.lastSelectedId != this.canvasSelectionData.selectedId) {
+            this.lastSelectedId = this.canvasSelectionData.selectedId;
+            // console.log("this.lastSelectedId", this.lastSelectedId);
+            var selOrbElem = this.world.idObjMap.get(this.lastSelectedId) as OrbitingElement
+            if (selOrbElem) {
+                var fosusElem = selOrbElem;
+                if (this.config.follow_pointed_orbit === "auto") {
+                    var firstSat = selOrbElem.getSatIndex(0) // better focuss on Sat
+                    if (firstSat && selOrbElem instanceof Orbit) fosusElem = firstSat; // better focuss on Sat
+                }
+                var orbElemGr = this.orbElemToGroup.get(fosusElem) as THREE.Object3D;
+                // console.log("orbElemGr", orbElemGr);
+                this.selectedThing = orbElemGr;
+                this.controls.target = orbElemGr.position
+                this.camera.lookAt(orbElemGr.position)
+                // orbElemGr.add(this.camera)
+            } else {
+                this.selectedThing = null;
+                this.controls.target = this.scene.position;
+                this.camera.lookAt(this.scene.position)
+                // this.scene.add(this.camera)
+            }
+            this.cameraMoved();
+        }
 
         this.renderer.render(this.scene, this.camera);
     }

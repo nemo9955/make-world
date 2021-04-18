@@ -18,7 +18,7 @@ export function makeWorkerCanvas(mngr: MainManager, the_worker: GenericWorkerIns
     sortExistingElements(metaCanvas, mngr, the_worker)
     addMouseSharedBuffer(metaCanvas, mngr, the_worker, canvas); // TODO proper mouse sharedData
     addResizeListener(metaCanvas, mngr, the_worker, canvas);
-    addRightClickStuff(metaCanvas, mngr, the_worker, canvas);
+    EventUtils.addRightClickStuff(metaCanvas, mngr, the_worker, canvas);
 
     mngr.viewableThings.push(canvas);
 
@@ -46,29 +46,9 @@ export function makeWorkerCanvas(mngr: MainManager, the_worker: GenericWorkerIns
 
 
 
-function addRightClickStuff(metaCanvas: MetaCanvas, mngr: MainManager, the_worker: GenericWorkerInstance, canvas: HTMLCanvasElement): void {
-
-
-    var selectListener = (evt_: Event) => {
-        canvas.focus()
-        evt_.preventDefault();
-
-        // if (metaCanvas.generalFlags.includes("orbit"))
-        //     if (mngr.sharedData.selectedId !== mngr.sharedData.hoverId) {
-
-        //         var selected = mngr.world.idObjMap.get(mngr.sharedData.hoverId)
-        //         mngr.gui.selectOrbElement(selected as OrbitingElement);
-        //     }
-    };
-    canvas.addEventListener("contextmenu", selectListener.bind(mngr));
-
-}
-
-
-
 function addMouseSharedBuffer(metaCanvas: MetaCanvas, mngr: MainManager, the_worker: GenericWorkerInstance, canvas: HTMLCanvasElement): void {
     // console.log("canvas", canvas);
-    // "mousedown" "mouseenter" "mouseleave" "mousemove" "mouseout" "mouseover" "mouseup":
+    // // "mousedown" "mouseenter" "mouseleave" "mousemove" "mouseout" "mouseover" "mouseup":
     // if (metaCanvas.generalFlags.includes("orbit")) {
     //     canvas.addEventListener('mousemove', (evt) => {
     //         var rect = canvas.getBoundingClientRect();
