@@ -52,6 +52,8 @@ module.exports = smp.wrap({
     },
     devServer: {
         static: __dirname,
+        hot: false,
+        // hotOnly: true,
         // compress: true,
         // injectClient: false,
         // disableHostCheck: true,

@@ -244,6 +244,7 @@ export class DrawD3Terrain implements DrawWorkerInstance {
     public zoomed(event: d3.D3ZoomEvent<any, any>) {
         var dx = event.sourceEvent.movementX;
         var dy = event.sourceEvent.movementY;
+        const globe_pan_speed_mod = 4;
 
         var event_type = event.sourceEvent.type;
 
@@ -255,7 +256,10 @@ export class DrawD3Terrain implements DrawWorkerInstance {
             this.previousScaleFactor = scaleFactor;
         } else {
             var r = this.projection.rotate();
-            this.rotation = [r[0] + dx * 0.4, r[1] - dy * 0.5, r[2]];
+            this.rotation = [
+                r[0] + dx * 0.4 * globe_pan_speed_mod,
+                r[1] - dy * 0.5 * globe_pan_speed_mod,
+                r[2]];
             this.projection.rotate(this.rotation);
         }
         // TODO make an drawFast variant in the future for this situation !!!!!

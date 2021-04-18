@@ -5,7 +5,13 @@
 import GenericWorkerInstance from "worker-loader!./GenWorkerInstance.ts";
 import { MessageType, WorkerPacket } from "../modules/Config";
 
+import { throttle } from 'lodash-es';
+
 const BASIC_OBJECTS = ["number", "boolean", "string"]
+
+
+// Add posibility for this value to be altered per-event optionally
+const THROTTHE_TIME = 50;
 
 
 /*
@@ -41,7 +47,8 @@ export function getBasicEvent(source_: any) {
 
 export function genericRedirect(event_name: string, canvas: HTMLElement, canvas_id: any, worker: GenericWorkerInstance) {
     // console.log("event_name", event_name);
-    canvas.addEventListener(event_name, (evt_) => {
+
+    var throttled = throttle((evt_) => {
         var basic_event = getBasicEvent(evt_)
         basic_event["event_id"] = canvas_id;
         // console.log("event_name, event", event_name, basic_event);
@@ -50,12 +57,15 @@ export function genericRedirect(event_name: string, canvas: HTMLElement, canvas_
             event_id: canvas_id,
             event: basic_event,
         });
-    });
+    }, THROTTHE_TIME)
+
+    canvas.addEventListener(event_name, throttled);
 }
 
 export function genericConditionalRedirect(event_name: string, canvas: HTMLElement, canvas_id: any, worker: GenericWorkerInstance, eventCondition: any) {
     // console.log("event_name", event_name);
-    canvas.addEventListener(event_name, (evt_) => {
+
+    var throttled = throttle((evt_) => {
         if (eventCondition(evt_) == false) return;
 
         var basic_event = getBasicEvent(evt_)
@@ -66,11 +76,13 @@ export function genericConditionalRedirect(event_name: string, canvas: HTMLEleme
             event_id: canvas_id,
             event: basic_event,
         });
-    });
+    }, THROTTHE_TIME)
+
+    canvas.addEventListener(event_name, throttled);
 }
 
 export function conditionalRedirect(event_do: string, event_in: string, event_out: string, canvas: HTMLElement, canvas_id: any, worker: GenericWorkerInstance) {
-    var ev_do_fun = (evt_) => {
+    var throttled = throttle((evt_) => {
         var basic_event = getBasicEvent(evt_)
         basic_event["event_id"] = canvas_id;
         // console.log("event_do, event", event_do, basic_event);
@@ -79,13 +91,13 @@ export function conditionalRedirect(event_do: string, event_in: string, event_ou
             event_id: canvas_id,
             event: basic_event,
         });
-    }
+    }, THROTTHE_TIME)
 
     canvas.addEventListener(event_in, (evt_) => {
         var basic_event = getBasicEvent(evt_)
         basic_event["event_id"] = canvas_id;
         // console.log("event_in, event", event_in, basic_event);
-        canvas.addEventListener(event_do, ev_do_fun); ///////////////////
+        canvas.addEventListener(event_do, throttled); ///////////////////
         worker.postMessage(<WorkerPacket>{
             message: MessageType.Event,
             event_id: canvas_id,
@@ -97,7 +109,7 @@ export function conditionalRedirect(event_do: string, event_in: string, event_ou
         var basic_event = getBasicEvent(evt_)
         basic_event["event_id"] = canvas_id;
         // console.log("event_out, event", event_out, basic_event);
-        canvas.removeEventListener(event_do, ev_do_fun); ///////////////////
+        canvas.removeEventListener(event_do, throttled); ///////////////////
         worker.postMessage(<WorkerPacket>{
             message: MessageType.Event,
             event_id: canvas_id,
