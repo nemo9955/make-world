@@ -94,8 +94,8 @@ export interface DrawWorkerInstance {
     config: Config;
     fakeDOM: WorkerDOM;
 
-    updateShallow(): void;
     init(event: WorkerEvent): void;
+    updateShallow(): void;
     updateDeep(): void;
     draw(): void;
 }
@@ -103,11 +103,12 @@ export interface DrawWorkerInstance {
 
 export abstract class BaseDrawUpdateWorker extends BaseWorker {
 
+    public doUpdate = true;
+    public doDraw = true;
+
     public mapDraws = new Map<any, DrawWorkerInstance>();
-    public workerJguiMain: JguiMake= null;
-    public workerJguiManager: JguiManager= null;
-
-
+    public workerJguiMain: JguiMake = null;
+    public workerJguiManager: JguiManager = null;
 
     constructor(config: Config, worker: Worker, workerName: string, event: WorkerEvent) {
         super(config, worker, workerName, event);

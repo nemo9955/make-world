@@ -11,6 +11,18 @@ Sphere stuff :
     https://www.redblobgames.com/x/1938-square-tiling-of-sphere/ Tiling a sphere with squares
 
 
+Points stuff :
+    1 Million Points in Three.js
+    https://observablehq.com/@joewdavies/1-million-points-in-three-js
+
+    three points examples :
+    https://threejs.org/examples/?q=point#webgl_interactive_raycasting_points
+
+    Three.js Optimize Lots of Objects
+    https://threejsfundamentals.org/threejs/lessons/threejs-optimize-lots-of-objects.html
+
+
+
 Procedural Tectonic Planets
     https://perso.liris.cnrs.fr/eric.galin/Articles/2019-planets.pdf
     https://www.redblobgames.com/x/1843-planet-generation/

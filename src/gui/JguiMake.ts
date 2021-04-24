@@ -77,6 +77,82 @@ export class JguiMake {
     }
 
 
+    public add2Buttons(btnName1: string, btnName2: string): [JguiMake, JguiMake] {
+        // https://getbootstrap.com/docs/5.0/components/buttons/
+
+        var rowObj = new JguiMake(null).mkRow()
+        var btnObj1 = new JguiMake(null).mkButton(btnName1)
+        var btnObj2 = new JguiMake(null).mkButton(btnName2)
+
+        btnObj1.style.width = "50%";
+        btnObj2.style.width = "50%";
+
+        rowObj.appendHtml(btnObj1)
+        rowObj.appendHtml(btnObj2)
+        this.appendHtml(rowObj)
+        return [btnObj1, btnObj2];
+    }
+
+
+    public addCheckButton(chboxName: string, chboxVal: boolean): [JguiMake, JguiMake] {
+        // https://getbootstrap.com/docs/5.0/forms/checks-radios/
+
+        var cdiv = new JguiMake("div")
+
+        var cswitch = new JguiMake("input")
+        cswitch.type = "checkbox"
+        cswitch.class = "form-check-input"
+        // cswitch.attr.autocomplete = "off"
+
+        if (chboxVal)
+            cswitch.attr.checked = "true"
+
+        var cbutton = new JguiMake("label")
+        cbutton.class = "form-check-label"
+        cbutton.attr.for = cswitch.id
+        cbutton.html = chboxName
+
+        cdiv.appendHtml(cswitch)
+        cdiv.appendHtml(cbutton)
+        this.appendHtml(cdiv)
+
+        return [cswitch, cbutton];
+    }
+
+    // public addCheckButton(chboxName: string, value: boolean): [JguiMake, JguiMake] {
+    //     // https://getbootstrap.com/docs/5.0/forms/checks-radios/
+    //     var cswitch = new JguiMake("input")
+    //     cswitch.type = "checkbox"
+    //     cswitch.class = "btn-check"
+    //     cswitch.attr.autocomplete = "off"
+
+    //     if (value)
+    //         cswitch.attr.checked = null
+
+    //     var cbutton = new JguiMake("label")
+    //     cbutton.class = "btn btn-outline-primary"
+    //     cbutton.attr.for = cswitch.id
+    //     cbutton.html = chboxName
+
+    //     this.appendHtml(cswitch)
+    //     this.appendHtml(cbutton)
+
+    //     return [cswitch, cbutton];
+    // }
+
+    public add2CheckButtons(chboxName1: string, chboxVal1: boolean, chboxName2: string, chboxVal2: boolean): [JguiMake, JguiMake] {
+        // https://getbootstrap.com/docs/5.0/forms/checks-radios/
+        var cdiv = new JguiMake(null).mkRow()
+
+
+        var swArr1 = cdiv.addCheckButton(chboxName1, chboxVal1)
+        var swArr2 = cdiv.addCheckButton(chboxName2, chboxVal2)
+
+        this.appendHtml(cdiv)
+
+        return [swArr1[0], swArr2[0]];
+    }
+
 
     public mkColapse(name: string, expanded): JguiMake {
         // https://getbootstrap.com/docs/5.0/components/collapse/

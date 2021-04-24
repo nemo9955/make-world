@@ -79,17 +79,17 @@ export class WorldData {
         return Promise.reject();
     }
 
-    public async initTerrain() {
-        console.debug("#HERELINE WorldData initTerrain");
-        for (const element of this.planetarySystem.getAllSats()) {
-            if (element instanceof Planet && element.isInHabZone) {
-                if (element.planetType == "Normal") {
-                    Terrain.initForPlanet(element);
-                    return; // TODO TMP FIXME limit to 1 terrain while testing !!!!!!!!!!!!!!!!!
-                }
-            }
-        }
-    }
+    // public async initTerrain() {
+    //     console.debug("#HERELINE WorldData initTerrain");
+    //     for (const element of this.planetarySystem.getAllSats()) {
+    //         if (element instanceof Planet && element.isInHabZone) {
+    //             if (element.planetType == "Normal") {
+    //                 Terrain.initForPlanet(element);
+    //                 return; // TODO TMP FIXME limit to 1 terrain while testing !!!!!!!!!!!!!!!!!
+    //             }
+    //         }
+    //     }
+    // }
 
     public initWorker() {
         console.debug("#HERELINE WorldData initWorker");

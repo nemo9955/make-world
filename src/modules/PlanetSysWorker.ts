@@ -19,6 +19,8 @@ import { setMainContainer } from "../gui/JguiUtils";
 
 export class PlanetSysWorker extends BaseDrawUpdateWorker {
 
+
+
     constructor(config: Config, worker: Worker, workerName: string, event: WorkerEvent) {
         super(config, worker, workerName, event);
         // this.ticker.tick_interval = Units.LOOP_INTERVAL * 50;
@@ -154,8 +156,12 @@ export class PlanetSysWorker extends BaseDrawUpdateWorker {
         // console.debug("#HERELINE DrawWorker refreshShallow");
         // await this.world.readShallow();
         if (doSpecial) {
-            this.updatePlSys();
-            for (const draw_ of this.mapDraws.values()) draw_.draw();
+
+            this.doUpdate && this.updatePlSys();
+
+            if (this.doDraw)
+                for (const draw_ of this.mapDraws.values())
+                    draw_.draw();
             // await this.world.writeShallow();
             // this.tellMainToUpdate();
         }
@@ -179,6 +185,16 @@ export class PlanetSysWorker extends BaseDrawUpdateWorker {
         var workerJgui: JguiMake;
 
         [this.workerJguiMain, workerJgui] = new JguiMake(null).mkWorkerJgui("plsys", "200");
+
+
+        var chboxUpd: JguiMake, chboxDraw: JguiMake;
+        [chboxUpd, chboxDraw] = workerJgui.add2CheckButtons("Update", this.doUpdate, "Draw", this.doDraw)
+        chboxUpd.addEventListener(this.workerJguiManager, "change", (event: WorkerEvent) => {
+            this.doUpdate = event.data.event.target.checked;
+        })
+        chboxDraw.addEventListener(this.workerJguiManager, "change", (event: WorkerEvent) => {
+            this.doDraw = event.data.event.target.checked;
+        })
 
 
         workerJgui.addButton("genStartingPlanetSystem").addEventListener(this.workerJguiManager, "click", (event: WorkerEvent) => {

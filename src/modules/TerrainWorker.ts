@@ -5,11 +5,17 @@ import { Config, MessageType, WorkerEvent, WorkerPacket } from "./Config";
 import { DrawD3Terrain } from "./DrawD3Terrain";
 import { JguiMake } from "../gui/JguiMake";
 import { setMainContainer } from "../gui/JguiUtils";
+import { Terrain } from "../generate/Terrain";
+import { DrawThreeTerrain } from "./DrawThreeTerrain";
 
 export class TerrainWorker extends BaseDrawUpdateWorker {
 
+
+    public terrain: Terrain;
+
     constructor(config: Config, worker: Worker, workerName: string, event: WorkerEvent) {
         super(config, worker, workerName, event);
+        this.terrain = new Terrain(this.world);
     }
 
 
@@ -18,13 +24,23 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
             this.worker.postMessage(<WorkerPacket>{
                 message: MessageType.CanvasMake,
                 metaCanvas: {
+                    id: `${this.name}-canvas-DrawThreeTerrain`,
+                    order: "100",
+                    generalFlags: ["orbit"],
+                }
+            });
+            this.worker.postMessage(<WorkerPacket>{
+                message: MessageType.CanvasMake,
+                metaCanvas: {
                     id: `${this.name}-canvas-DrawD3Terrain`,
-                    order: "500",
+                    order: "200",
                     generalFlags: ["d3"],
                 }
             });
         }).then(() => {
             this.makeJgiu();
+        }).then(() => {
+            this.terrain.init();
         })
     }
 
@@ -32,6 +48,12 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
     public CanvasReady(event: WorkerEvent): void {
         console.log(`CanvasReady ${this.name}`);
         switch (event.data.metaCanvas.id) {
+            case `${this.name}-canvas-DrawThreeTerrain`:
+                var draw1_ = new DrawThreeTerrain();
+                this.mapDraws.set(event.data.canvas_id, draw1_);
+                this.spread_objects(draw1_)
+                draw1_.init(event);
+                break;
             case `${this.name}-canvas-DrawD3Terrain`:
                 var draw2_ = new DrawD3Terrain();
                 this.mapDraws.set(event.data.canvas_id, draw2_);
@@ -43,6 +65,11 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
         }
     }
 
+
+    public spread_objects(object_: any) {
+        super.spread_objects(object_);
+        if (object_.terrain === null) object_.terrain = this.terrain;
+    }
 
     public getMessageExtra(event: WorkerEvent) {
         // console.debug(`#HERELINE ${this.name} getMessageExtra  ${event.data.message}`);
@@ -121,7 +148,9 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
         // await this.world.readShallow();
         if (doSpecial) {
             // this.updatePlSys();
-            for (const draw_ of this.mapDraws.values()) draw_.draw();
+            if (this.doDraw)
+                for (const draw_ of this.mapDraws.values())
+                    draw_.draw();
             // await this.world.writeShallow();
             // this.tellMainToUpdate();
         }
@@ -133,10 +162,18 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
 
         [this.workerJguiMain, workerJgui] = new JguiMake(null).mkWorkerJgui("terr", "600");
 
+        var chboxUpd: JguiMake, chboxDraw: JguiMake;
+        [chboxUpd, chboxDraw] = workerJgui.add2CheckButtons("Update", this.doUpdate, "Draw", this.doDraw)
+        chboxUpd.addEventListener(this.workerJguiManager, "change", (event: WorkerEvent) => {
+            this.doUpdate = event.data.event.target.checked;
+        })
+        chboxDraw.addEventListener(this.workerJguiManager, "change", (event: WorkerEvent) => {
+            this.doDraw = event.data.event.target.checked;
+        })
+
         workerJgui.addButton("Test 1").addEventListener(this.workerJguiManager, "click", (event: WorkerEvent) => {
             console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!! event", event.data.event);
         })
-
 
         setMainContainer(this.worker, this.workerJguiMain)
     }
