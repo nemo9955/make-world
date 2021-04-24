@@ -117523,6 +117523,8 @@ class DrawD3Terrain {
         this.config = null;
         this.fakeDOM = new WorkerDOM_1.WorkerDOM();
         this.ctx = null;
+        // private ctx: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D = null;
+        this.terrain = null;
         this.previousScaleFactor = 1;
         // voronoi: any;
         // polys: any;
@@ -117559,7 +117561,7 @@ class DrawD3Terrain {
         this.drawOnce();
     }
     draw() {
-        this.drawOnce();
+        // this.drawOnce();
     }
     initBase() {
         console.debug(`#HERELINE ${this.type} initBase `);
@@ -117577,7 +117579,7 @@ class DrawD3Terrain {
         this.path = d3.geoPath()
             .projection(this.projection)
             .context(this.ctx)
-            .pointRadius(1.5);
+            .pointRadius(1);
         this.grid = this.graticule();
         this.zoom = d3.zoom()
             .scaleExtent([0.2, 7])
@@ -117620,8 +117622,18 @@ class DrawD3Terrain {
         //         this.ctx.fill();
         //     }
         // }
+        var ptsWrapper = {
+            type: "MultiPoint",
+            coordinates: this.terrain.ptsGeo,
+        };
+        // this.points = {
+        //     type: "MultiPoint",
+        //     // coordinates: Points.makeGeoPtsSquares(0)
+        //     coordinates: Points.makeGeoPtsFibb(1000)
+        //     // coordinates: Points.makeGeoPtsRandOk(1000)
+        // }
         this.ctx.beginPath();
-        // this.path(this.points);
+        this.path(ptsWrapper);
         this.ctx.fillStyle = "tomato";
         this.ctx.fill();
         this.ctx.restore();
@@ -117649,7 +117661,7 @@ class DrawD3Terrain {
         }
         // TODO make an drawFast variant in the future for this situation !!!!!
         // this.setTmpFastDraw();
-        // this.drawOnce(); // activate for smoother panning/zooming
+        this.drawOnce(); // activate for smoother panning/zooming
     }
     // public static defaultGeoViews() { return "geoOrthographic"; }
     static defaultGeoViews() { return "geoMercator"; }
