@@ -57,7 +57,7 @@ export class DrawD3Terrain implements DrawWorkerInstance {
 
     private ctx: OffscreenCanvasRenderingContext2D = null;
     // private ctx: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D = null;
-    public terrain: Terrain;
+    public terrain: Terrain = null;
 
 
     originalScale: number;
@@ -117,7 +117,7 @@ export class DrawD3Terrain implements DrawWorkerInstance {
     }
 
     public draw() {
-        this.drawOnce();
+        // this.drawOnce();
     }
 
 
@@ -143,7 +143,7 @@ export class DrawD3Terrain implements DrawWorkerInstance {
         this.path = d3.geoPath()
             .projection(this.projection)
             .context(this.ctx)
-            .pointRadius(1.5);
+            .pointRadius(1);
 
         this.grid = this.graticule();
 
@@ -206,8 +206,21 @@ export class DrawD3Terrain implements DrawWorkerInstance {
         //     }
         // }
 
+
+        var ptsWrapper = {
+            type: "MultiPoint",
+            coordinates: this.terrain.ptsGeo,
+        }
+        // this.points = {
+        //     type: "MultiPoint",
+        //     // coordinates: Points.makeGeoPtsSquares(0)
+        //     coordinates: Points.makeGeoPtsFibb(1000)
+        //     // coordinates: Points.makeGeoPtsRandOk(1000)
+        // }
+
+
         this.ctx.beginPath();
-        // this.path(this.points);
+        this.path(ptsWrapper);
         this.ctx.fillStyle = "tomato"
         this.ctx.fill();
 
@@ -241,7 +254,7 @@ export class DrawD3Terrain implements DrawWorkerInstance {
         }
         // TODO make an drawFast variant in the future for this situation !!!!!
         // this.setTmpFastDraw();
-        // this.drawOnce(); // activate for smoother panning/zooming
+        this.drawOnce(); // activate for smoother panning/zooming
     }
 
 
