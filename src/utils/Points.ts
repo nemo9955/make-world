@@ -6,6 +6,37 @@ export type latitude = number
 export type longitude = number
 export type pointGeo = [latitude, longitude]
 export type pointGeoArr = pointGeo[]
+export type arr3numb = [number, number, number];
+
+
+
+var pi = Math.PI;
+var halfPi = pi / 2;
+var degrees = 180 / pi;
+var radians = pi / 180;
+
+
+// Converts 3D Cartesian to spherical coordinates (degrees).
+export function spherical(cartesian): pointGeo {
+    return [
+        Math.atan2(cartesian[1], cartesian[0]) * degrees,
+        Math.asin(Math.max(-1, Math.min(1, cartesian[2]))) * degrees
+    ];
+}
+
+// Converts spherical coordinates (degrees) to 3D Cartesian.
+export function cartesian(coordinates: pointGeo): arr3numb {
+    var lambda = coordinates[0] * radians,
+        phi = coordinates[1] * radians,
+        cosphi = Math.cos(phi);
+    return [cosphi * Math.cos(lambda), cosphi * Math.sin(lambda), Math.sin(phi)];
+}
+export function cartesianRadius(coordinates: pointGeo, radius: number): arr3numb {
+    var lambda = coordinates[0] * radians,
+        phi = coordinates[1] * radians,
+        cosphi = Math.cos(phi);
+    return [cosphi * Math.cos(lambda) * radius, cosphi * Math.sin(lambda) * radius, Math.sin(phi) * radius];
+}
 
 
 export function linearDistance(a: pointGeo, b: pointGeo) {
@@ -106,7 +137,7 @@ export function makeGeoPtsSquares(splits: number): pointGeoArr {
 
     for (var i = 0; i < 360; i += 360 / 4) {
         // arr.push([i, 0])
-        var part = getGeoSquareArr( i - (360 / 8), i + (360 / 8),-45, 45, splitArr)
+        var part = getGeoSquareArr(i - (360 / 8), i + (360 / 8), -45, 45, splitArr)
         arr.push(...part)
     }
 

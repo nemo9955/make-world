@@ -23,32 +23,9 @@ import { PlanetarySystem } from "../generate/PlanetarySystem";
 import { Color } from "../utils/Color"
 
 
-import Noise = require("noisejs")
 import { pointGeoArr } from "../utils/Points"
 import { DrawWorkerInstance } from "./GenWorkerMetadata"
-
-
-
-/*
-
-about octaves and persistence : https://adrianb.io/2014/08/09/perlinnoise.html
-with generic js implementation  : https://github.com/joshforisha/fractal-noise-js/blob/main/src/index.ts
-
-https://medium.com/@yvanscher/playing-with-perlin-noise-generating-realistic-archipelagos-b59f004d8401
-
-Also see for 4D noise  :
-https://github.com/joshforisha/open-simplex-noise-js
-
-
-https://www.npmjs.com/package/noisejs
-var noise = new Noise(Math.random());
-simplex2(x, y): 2D Simplex noise function
-simplex3(x, y, z): 3D Simplex noise function
-perlin2(x, y): 2D Perlin noise function
-perlin3(x, y, z): 3D Perlin noise function
-seed(val): Seed the noise functions. Only 65536 different seeds are supported. Use a float between 0 and 1 or an integer from 1 to 65536.
-
-*/
+import { Terrain } from "../generate/Terrain"
 
 
 
@@ -67,7 +44,6 @@ The red circles don't allow scroll-wheel zooming and drag-based panning
 https://bl.ocks.org/mbostock/6675193
 
 
-https://github.com/joshforisha/open-simplex-noise-js
 
 */
 
@@ -81,6 +57,7 @@ export class DrawD3Terrain implements DrawWorkerInstance {
 
     private ctx: OffscreenCanvasRenderingContext2D = null;
     // private ctx: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D = null;
+    public terrain: Terrain;
 
 
     originalScale: number;
@@ -93,7 +70,7 @@ export class DrawD3Terrain implements DrawWorkerInstance {
     zoom: d3.ZoomBehavior<Element, unknown>;
     rotation: any;
     previousScaleFactor = 1;
-    points: { coordinates: pointGeoArr; type: string }
+    // points: { coordinates: pointGeoArr; type: string }
 
 
 
@@ -177,22 +154,22 @@ export class DrawD3Terrain implements DrawWorkerInstance {
         var fakeSelect = d3.select(this.fakeDOM).selection()
         fakeSelect.call(this.zoom);
 
-        this.points = {
-            type: "MultiPoint",
-            // coordinates: Points.makeGeoPtsSquares(0)
-            coordinates: Points.makeGeoPtsFibb(1000)
-            // coordinates: Points.makeGeoPtsRandOk(1000)
-        }
+        // this.points = {
+        //     type: "MultiPoint",
+        //     // coordinates: Points.makeGeoPtsSquares(0)
+        //     coordinates: Points.makeGeoPtsFibb(1000)
+        //     // coordinates: Points.makeGeoPtsRandOk(1000)
+        // }
 
-        this.voronoi = geoVoronoi()(this.points.coordinates);
-        // console.log("this.voronoi", this.voronoi);
-        this.polys = this.voronoi.polygons()
-        console.log("this.polys", this.polys);
+        // this.voronoi = geoVoronoi()(this.points.coordinates);
+        // // console.log("this.voronoi", this.voronoi);
+        // this.polys = this.voronoi.polygons()
+        // console.log("this.polys", this.polys);
 
     }
 
-    voronoi: any;
-    polys: any;
+    // voronoi: any;
+    // polys: any;
 
     fastDrawTimeout = 0;
     public setTmpFastDraw() {
@@ -215,22 +192,22 @@ export class DrawD3Terrain implements DrawWorkerInstance {
         this.ctx.strokeStyle = '#ddd';
         this.ctx.stroke();
 
-        if (this.fastDrawTimeout == 0) {
-            for (let index = 0; index < this.polys.features.length; index++) {
-                const poly = this.polys.features[index];
+        // if (this.fastDrawTimeout == 0) {
+        //     for (let index = 0; index < this.polys.features.length; index++) {
+        //         const poly = this.polys.features[index];
 
-                this.ctx.beginPath();
-                this.path(poly);
-                // this.ctx.fillStyle = "tomato"
-                // this.ctx.fillStyle = `rgba(${153 * (50 + index) % 250}, ${79 * (49 + index) % 250}, ${555 * (17 + index) % 250}, 0.5)`;
-                this.ctx.fillStyle = `rgba(${37 * (150 + index) % 250}, ${13 * (49 + index) % 250}, ${17 * (17 + index) % 250}, 0.4)`;
-                this.ctx.fill();
+        //         this.ctx.beginPath();
+        //         this.path(poly);
+        //         // this.ctx.fillStyle = "tomato"
+        //         // this.ctx.fillStyle = `rgba(${153 * (50 + index) % 250}, ${79 * (49 + index) % 250}, ${555 * (17 + index) % 250}, 0.5)`;
+        //         this.ctx.fillStyle = `rgba(${37 * (150 + index) % 250}, ${13 * (49 + index) % 250}, ${17 * (17 + index) % 250}, 0.4)`;
+        //         this.ctx.fill();
 
-            }
-        }
+        //     }
+        // }
 
         this.ctx.beginPath();
-        this.path(this.points);
+        // this.path(this.points);
         this.ctx.fillStyle = "tomato"
         this.ctx.fill();
 

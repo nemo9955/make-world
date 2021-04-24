@@ -15,7 +15,7 @@ const BASIC_OBJECTS = ["number", "boolean", "string"]
 const THROTTHE_TIME = 50;
 
 const keysToMove = [
-    "defaultValue", "value",
+    "defaultValue", "value","checked","autocomplete"
 ]
 
 
@@ -168,7 +168,8 @@ export function addOrbitCtrlEvents(canvas: HTMLElement, canvas_id: any, worker: 
 
     // genericRedirect("pointermove", canvas, canvas_id, worker)
     genericRedirect("mousemove", canvas, canvas_id, worker)
-    // genericRedirect("mouseleave", canvas, canvas_id, worker)
+    genericRedirect("mouseleave", canvas, canvas_id, worker)
+    genericRedirect("mouseenter", canvas, canvas_id, worker)
 
     conditionalRedirect("pointermove", "pointerdown", "pointerup", canvas, canvas_id, worker)
     genericConditionalRedirect("wheel", canvas, canvas_id, worker, isShiftPressed.bind(this))
