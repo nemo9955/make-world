@@ -31,7 +31,7 @@ export class JguiMake {
     public get type(): string { return this.attr.type; }
     public set type(value: string) { this.attr.type = value; }
 
-    public mkWorkerJgui(id: string, order: string): [JguiMake, JguiMake] {
+    public mkWorkerJgui(id: string, order: string, expanded = true): [JguiMake, JguiMake] {
         this.tag = "div";
         this.id = id;
         this.class = "d-grid gap-1 bg-light border shadow-sm rounded ";
@@ -43,7 +43,7 @@ export class JguiMake {
         this.attr.jguiOrder = order;
 
 
-        var coll = this.addColapse(id, true)
+        var coll = this.addColapse(id, expanded)
 
         return [this, coll];
     }

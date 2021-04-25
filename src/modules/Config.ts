@@ -24,6 +24,7 @@ export class Config {
     genEnsureCenteredInHabZone = true;
     genEnsureMoonInHabZone = true;
 
+    incrementId = 5;
 
     keepDbAtPageRefresh = false; // EXPERIMENTAL
     WORLD_DATABASE_NAME: string = "WORLD-123"; // TODO properly generate at right time
@@ -51,6 +52,7 @@ export type WorkerPacket = {
     event?: any,
     event_id?: string,
     metadata?: any,
+    startId?: number,
 }
 
 export type MetaCanvas = {

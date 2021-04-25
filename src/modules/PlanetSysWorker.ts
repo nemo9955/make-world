@@ -184,7 +184,7 @@ export class PlanetSysWorker extends BaseDrawUpdateWorker {
         var plsys = this.world.planetarySystem
         var workerJgui: JguiMake;
 
-        [this.workerJguiMain, workerJgui] = new JguiMake(null).mkWorkerJgui("plsys", "200");
+        [this.workerJguiMain, workerJgui] = new JguiMake(null).mkWorkerJgui("plsys", "200", false);
 
 
         var chboxUpd: JguiMake, chboxDraw: JguiMake;

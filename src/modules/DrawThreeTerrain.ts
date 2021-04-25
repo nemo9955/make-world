@@ -5,8 +5,11 @@ import { WorldData } from "./WorldData";
 
 import * as Convert from "../utils/Convert"
 
+import * as d3 from "d3"
+import { geoDelaunay, geoVoronoi, geoContour } from "d3-geo-voronoi"
+// node_modules/d3-geo-voronoi/dist/d3-geo-voronoi.js
 
-import * as THREE from "three";
+import * as THREE from "three"; // node_modules/three/build/three.js
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 import { Terrain } from "../generate/Terrain";
 
@@ -80,7 +83,7 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
         this.fakeDOM.addEventListener("mouseleave", this.hoverleave.bind(this)) // mouseleave
         this.fakeDOM.addEventListener("contextmenu", this.hoverClick.bind(this))
 
-        this.initPointssData();
+        this.initData();
         this.refreshTerrain();
 
     }
@@ -129,36 +132,50 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
     private hoverClick(event: any) {
     }
 
-    geometry: THREE.BufferGeometry = new THREE.BufferGeometry();
+    ptsGeometry: THREE.BufferGeometry;
+    ptsMaterial: THREE.PointsMaterial;
     ptsObject: THREE.Points;
-    material: THREE.PointsMaterial;
 
-    public initPointssData() {
+    lineGeometry: THREE.BufferGeometry;
+    lineMaterial: THREE.LineBasicMaterial;
+    lineObject: THREE.LineSegments;
+
+    public initData() {
         console.debug(`#HERELINE DrawThreeTerrain 116 `);
 
-        this.material = new THREE.PointsMaterial({
+
+        this.ptsGeometry = new THREE.BufferGeometry();
+        this.ptsMaterial = new THREE.PointsMaterial({
             size: 10,
             // sizeAttenuation: false,
-            vertexColors: THREE.VertexColors
+            vertexColors: true,
         });
-
-        this.ptsObject = new THREE.Points(this.geometry, this.material);
+        this.ptsObject = new THREE.Points(this.ptsGeometry, this.ptsMaterial);
         this.scene.add(this.ptsObject);
 
-
+        // this.lineGeometry = new THREE.BufferGeometry();
+        // this.lineMaterial = new THREE.LineBasicMaterial({
+        //     linewidth: 5,
+        // });
+        // this.lineObject = new THREE.LineSegments(this.lineGeometry, this.lineMaterial);
+        // this.scene.add(this.lineObject);
     }
 
 
     public refreshTerrain() {
         console.debug(`#HERELINE DrawThreeTerrain 130 `);
 
-        const posAttr = new THREE.Float32BufferAttribute(this.terrain.ptsCart, 3);
+        const ptsPosAttr = new THREE.Float32BufferAttribute(this.terrain.ptsCart, 3);
+        const ptsColAttr = new THREE.Float32BufferAttribute(this.terrain.ptsColor, 3);
 
-        const colAttr = new THREE.Float32BufferAttribute(this.terrain.ptsColor, 3);
+        this.ptsGeometry.setAttribute('position', ptsPosAttr);
+        this.ptsGeometry.setAttribute('color', ptsColAttr);
+        this.ptsGeometry.computeBoundingSphere();
 
-        this.geometry.setAttribute('position', posAttr);
-        this.geometry.setAttribute('color', colAttr);
-        this.geometry.computeBoundingSphere();
+        // const linePosAttr = new THREE.Float32BufferAttribute(this.terrain.ptsLines, 3);
+        // this.lineGeometry.setAttribute('position', linePosAttr);
+        // this.lineGeometry.computeBoundingSphere();
+
 
         // console.log("this.terrain.ptsCart", this.terrain.ptsCart);
         // console.log("posAttr", posAttr);

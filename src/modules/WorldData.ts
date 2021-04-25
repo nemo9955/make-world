@@ -47,9 +47,18 @@ export class WorldData {
     public dbm: DataBaseManager;
 
     public readonly spaceFactory: SpaceFactory;
+    public readonly startId: number;
 
-    constructor(targetTable: string, name: string) {
+    constructor(targetTable: string, name: string, startId: number, config: Config) {
         this.name = name;
+        this.startId = startId;
+        this.config = config;
+
+        if (WorldData.wdMaxId > 0)
+            console.error(`WorldData.wdMaxId was already set, it should be set only one per worker : ${WorldData.wdMaxId}`, this);
+        WorldData.wdMaxId = this.startId;
+        console.debug("this.startId", this.startId);
+
         this.dbm = new DataBaseManager(targetTable, name);
         this.spaceFactory = new SpaceFactory(this);
 
@@ -107,9 +116,9 @@ export class WorldData {
 
 
 
-    public static wdMaxId = 10;
+    public static wdMaxId: number = -999999;
     public getFreeID() {
-        return WorldData.wdMaxId++;
+        return WorldData.wdMaxId += this.config.incrementId;
         // if (!this.sharedData) return Math.ceil(Math.random() * 10000) + 1000;
         // var id_ = this.sharedData.maxId++;
         // while (this.idObjMap.has(id_))

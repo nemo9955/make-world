@@ -25,7 +25,7 @@ export abstract class BaseWorker {
         this.name = workerName;
         this.worker = worker;
         this.config = new Config().copy(config);
-        this.world = new WorldData(this.config.WORLD_DATABASE_NAME, this.name);
+        this.world = new WorldData(this.config.WORLD_DATABASE_NAME, this.name, event.data.startId, this.config);
         this.ticker = new Ticker(false, this.updateInterval.bind(this), Units.LOOP_INTERVAL)
     }
 

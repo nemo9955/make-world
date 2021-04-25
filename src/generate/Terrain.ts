@@ -18,6 +18,7 @@ import * as Points from "../utils/Points"
 import * as THREE from "three";
 
 import noise_lib = require("noisejs")
+import { d3GeoWrapper, Graph } from "../utils/Graph";
 // node_modules/@types/noisejs/index.d.ts
 
 
@@ -49,6 +50,18 @@ https://github.com/joshforisha/open-simplex-noise-js
 
 
 
+export class TectonicPlate extends Identifiable {
+    public maxSize: number;
+    public size: number;
+    private overheadValue = 1.1; // make arrays slightly bigger to allow for wiggle
+
+    public readonly position: Float32Array;
+    public readonly color: Float32Array;
+    public readonly birth: Float32Array;
+    public readonly mask: Uint16Array;
+
+    // public readonly edgeIndex: Uint32Array;
+}
 
 
 
@@ -71,24 +84,32 @@ export class Terrain extends Identifiable {
     ptsCart: Float32Array;
     ptsColor: Float32Array;
 
+    ptsLines: Float32Array;
+
 
 
     public init() {
-        console.log("noise_lib", noise_lib);
-        this.noise = new (noise_lib as any).Noise(Math.random());
+        this.noise = new (noise_lib as any).Noise(Math.random()); // todo make a NoiseWrapper
 
         var color: THREE.Color = new THREE.Color();
 
-        // this.ptsGeo = Points.makeGeoPtsSquares(0);
-        this.ptsGeo = Points.makeGeoPtsFibb(1000 * 50);
-        // this.ptsGeo = Points.makeGeoPtsRandOk(1000 * 50);
-
-        this.ptsCart = new Float32Array(this.ptsGeo.length * 3)
-        this.ptsColor = new Float32Array(this.ptsGeo.length * 3)
 
         var sphSize = 500;
         var maxElev = 50;
         var cartPts: arr3numb;
+
+        // this.ptsGeo = Points.makeGeoPtsSquares(0);
+        this.ptsGeo = Points.makeGeoPtsFibb(1000 * 10);
+        // this.ptsGeo = Points.makeGeoPoissonDiscSample(1000 * 10);
+        // this.ptsGeo = Points.makeGeoPtsRandOk(1000 * 50);
+        // this.ptsGeo = Points.makeGeoPoissonDiscSample(100);
+
+        // var graph = new Graph().mkUndirGeo(this.ptsGeo);
+
+
+        this.ptsCart = new Float32Array(this.ptsGeo.length * 3)
+        this.ptsColor = new Float32Array(this.ptsGeo.length * 3)
+
 
         for (let index = 0; index < this.ptsGeo.length; index++) {
             const stepInd = index * 3
@@ -127,6 +148,10 @@ export class Terrain extends Identifiable {
             this.ptsColor[stepInd + 1] = color.g
             this.ptsColor[stepInd + 2] = color.b
         }
+
+
+        this.ptsLines = new d3GeoWrapper(this.ptsGeo).getVoroLineSegsCart(this.ptsCart);
+
 
         // console.log("this.ptsGeo", this.ptsGeo);
         // console.log("this.ptsCart", this.ptsCart);
