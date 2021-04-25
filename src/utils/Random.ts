@@ -35,6 +35,18 @@ export function wiggle_down(number: number, amplitude: number) {
 
 
 
+
+export function randIndexes(cntIndex: number, maxIndex: number) {
+    var arr: number[] = [];
+
+    for (let index = 0; index < cntIndex; index++)
+        arr.push(random_int_clamp(0, maxIndex-1))
+
+    return arr;
+}
+
+
+
 export function pickAllOverlaping(spot: number, pickData: OverlapingData[]) {
     var validPicks: OverlapingData[] = []
 
@@ -115,4 +127,12 @@ export function randomPartOfArray(array: any[], size_: number) {
     return array.slice(0, size_).sort();
 
 }
+
+import { max } from "d3-array";
+import noise_lib = require("noisejs")
+export function makeNoise(seed: number): Noise {
+    return new (noise_lib as any).Noise(seed)
+}
+
+
 

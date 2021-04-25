@@ -2,7 +2,11 @@
 
 import * as d3 from "d3";
 
+
 class FlatQueue {
+    ids: any[];
+    values: any[];
+    length: number;
     // https://github.com/mourner/flatqueue
 
     constructor() {
@@ -158,8 +162,14 @@ export function shortest_paths(graph, tree) {
     return paths;
 }
 
+export type graphType = {
+    sources: number[],
+    targets: number[],
+    costs: number[],
+}
+
 // https://observablehq.com/@fil/dijkstra
-export function* shortest_tree({ graph, origins, cutoff, step }) {
+export function* shortest_tree({ graph, origins, cutoff = Number.POSITIVE_INFINITY, step = 0 }) {
     const start_time = performance.now(),
         _step = step === undefined ? 0 : +step,
         neigh = new Map();
@@ -184,6 +194,7 @@ export function* shortest_tree({ graph, origins, cutoff, step }) {
         status = {
             cost,
             predecessor,
+            performance: 0,
             origin,
             step: 0,
             front,
@@ -234,6 +245,86 @@ export function* shortest_tree({ graph, origins, cutoff, step }) {
     status.ended = true;
     status.performance = performance.now() - time;
     yield status;
+}
+
+
+
+export function shortestTreeCustom({ graph, origins, cutoff = Number.POSITIVE_INFINITY, step = 0 }) {
+    // const start_time = performance.now();
+    const _step = step === undefined ? 0 : +step;
+    const neigh = new Map();
+    let n = 0;
+
+    // populate a fast lookup Map of links indices for each source
+    for (let i = 0, l = graph.length; i < l; i++) {
+        const a = +graph[i][0],
+            b = +graph[i][1];
+        if (!neigh.has(a)) neigh.set(a, []);
+        neigh.get(a).push(i);
+
+        // keep track of the highest node’s id
+        n = Math.max(n, a + 1, b + 1);
+    }
+
+    const q = new FlatQueue(),
+        front = q.ids,
+        cost = new Float32Array(n).fill(Infinity),
+        predecessor = new Int32Array(n).fill(-1),
+        origin = new Int32Array(n).fill(-1),
+        status = {
+            cost,
+            predecessor,
+            // performance: 0,
+            origin,
+            step: 0,
+            front,
+            max_front_size: 0,
+            ended: false
+        };
+
+    origins.forEach(node => {
+        if (isFinite(node)) node = { id: node, cost: 0 };
+        if (node.id < n) {
+            origin[node.id] = node.id;
+            q.push(node.id, (cost[node.id] = node.cost));
+        }
+    });
+
+    // const time = performance.now();
+
+    while (q.length > 0) {
+        const curr = q.peekValue(),
+            node = q.pop();
+        if (curr > cost[node]) continue; // ignore obsolete elements
+
+        if (neigh.has(node)) {
+            for (const i of neigh.get(node)) {
+                const c = graph[i].length >= 3 ? +graph[i][2] : 1;
+                if (!isFinite(c)) continue;
+
+                const tentative = c + cost[node];
+                if (tentative > cutoff) continue;
+
+                const dest = graph[i][1];
+                if (tentative >= 0 && tentative < cost[dest]) {
+                    predecessor[dest] = node;
+                    origin[dest] = origin[node];
+                    q.push(dest, (cost[dest] = tentative));
+                    status.max_front_size = Math.max(status.max_front_size, front.length);
+                }
+            }
+        }
+
+        status.step++;
+        if (_step && status.step % _step === 0) {
+            // status.performance = performance.now() - time;
+            // yield status;
+        }
+    }
+
+    status.ended = true;
+    // status.performance = performance.now() - time;
+    return status;
 }
 
 
@@ -481,97 +572,97 @@ export function draw_connections(context, nodes, run) {
 // }
 
 
-// adapted from https://observablehq.com/@fil/contour-labels-canvas
-export function drawLabels(context, contour) {
-    const width = parseInt(context.canvas.style.width),
-        height = (context.canvas.height / context.canvas.width) * width,
-        scale = 1,
-        path = d3.geoPath().context(context);
+// // adapted from https://observablehq.com/@fil/contour-labels-canvas
+// export function drawLabels(context, contour) {
+//     const width = parseInt(context.canvas.style.width),
+//         height = (context.canvas.height / context.canvas.width) * width,
+//         scale = 1,
+//         path = d3.geoPath().context(context);
 
-    const threshold = contour.value,
-        labels = [],
-        steps = 30;
+//     const threshold = contour.value,
+//         labels = [],
+//         steps = 30;
 
-    contour.coordinates.forEach(polygon =>
-        polygon.forEach((ring, j) => {
-            const p = ring.slice(1, Infinity),
-                // best number of steps to divide ring.length
-                possibilities = d3.range(steps, steps * 1.4),
-                scores = possibilities.map(d => -((p.length - 1) % d)),
-                n = possibilities[d3.scan(scores)],
-                // best starting point: bottom for first rings, top for holes
-                start = 1 + (d3.scan(p.map(xy => (j === 0 ? -1 : 1) * xy[1])) % n),
-                margin = 2;
+//     contour.coordinates.forEach(polygon =>
+//         polygon.forEach((ring, j) => {
+//             const p = ring.slice(1, Infinity),
+//                 // best number of steps to divide ring.length
+//                 possibilities = d3.range(steps, steps * 1.4),
+//                 scores = possibilities.map(d => -((p.length - 1) % d)),
+//                 n = possibilities[d3.scan(scores)],
+//                 // best starting point: bottom for first rings, top for holes
+//                 start = 1 + (d3.scan(p.map(xy => (j === 0 ? -1 : 1) * xy[1])) % n),
+//                 margin = 2;
 
-            if (p.length < 15) return; // no label on small contours
+//             if (p.length < 15) return; // no label on small contours
 
-            p.forEach((xy, i) => {
-                if (
-                    i % n === start &&
-                    xy[0] > margin &&
-                    xy[0] < width - margin &&
-                    xy[1] > margin &&
-                    xy[1] < height - margin
-                ) {
-                    const a = (i - 2 + p.length) % p.length,
-                        b = (i + 2) % p.length,
-                        dx = p[b][0] - p[a][0],
-                        dy = p[b][1] - p[a][1];
-                    if (dx === 0 && dy === 0) return;
+//             p.forEach((xy, i) => {
+//                 if (
+//                     i % n === start &&
+//                     xy[0] > margin &&
+//                     xy[0] < width - margin &&
+//                     xy[1] > margin &&
+//                     xy[1] < height - margin
+//                 ) {
+//                     const a = (i - 2 + p.length) % p.length,
+//                         b = (i + 2) % p.length,
+//                         dx = p[b][0] - p[a][0],
+//                         dy = p[b][1] - p[a][1];
+//                     if (dx === 0 && dy === 0) return;
 
-                    labels.push({
-                        threshold, // value
-                        xy: xy.map(d => scale * d),
-                        angle: Math.atan2(dy, dx),
-                        text: `${threshold}`
-                    });
-                }
-            });
-        })
-    );
+//                     labels.push({
+//                         threshold, // value
+//                         xy: xy.map(d => scale * d),
+//                         angle: Math.atan2(dy, dx),
+//                         text: `${threshold}`
+//                     });
+//                 }
+//             });
+//         })
+//     );
 
-    // create the mask for this threshold:
-    // the full rectangle minus a rectangle around each label
-    context.save();
-    context.beginPath();
-    context.moveTo(0, 0),
-        context.lineTo(width, 0),
-        context.lineTo(width, height),
-        context.lineTo(0, height),
-        context.lineTo(0, 0);
-    const arc = d3.arc();
-    for (const label of labels) {
-        for (let i = 0; i < 2 * Math.PI; i += 0.2) {
-            const pos = [Math.cos(i) * 13, -Math.sin(i) * 10],
-                c = Math.cos(label.angle),
-                s = Math.sin(label.angle);
-            context[i === 0 ? "moveTo" : "lineTo"](
-                label.xy[0] + pos[0] * c - pos[1] * s,
-                label.xy[1] + pos[1] * c + pos[0] * s
-            );
-        }
-    }
-    // context.stroke(); // uncomment to see the mask
-    context.clip();
+//     // create the mask for this threshold:
+//     // the full rectangle minus a rectangle around each label
+//     context.save();
+//     context.beginPath();
+//     context.moveTo(0, 0),
+//         context.lineTo(width, 0),
+//         context.lineTo(width, height),
+//         context.lineTo(0, height),
+//         context.lineTo(0, 0);
+//     const arc = d3.arc();
+//     for (const label of labels) {
+//         for (let i = 0; i < 2 * Math.PI; i += 0.2) {
+//             const pos = [Math.cos(i) * 13, -Math.sin(i) * 10],
+//                 c = Math.cos(label.angle),
+//                 s = Math.sin(label.angle);
+//             context[i === 0 ? "moveTo" : "lineTo"](
+//                 label.xy[0] + pos[0] * c - pos[1] * s,
+//                 label.xy[1] + pos[1] * c + pos[0] * s
+//             );
+//         }
+//     }
+//     // context.stroke(); // uncomment to see the mask
+//     context.clip();
 
-    // draw white contour for this threshold
-    context.beginPath();
-    path(contour);
-    context.stroke();
+//     // draw white contour for this threshold
+//     context.beginPath();
+//     path(contour);
+//     context.stroke();
 
-    // draw labels for this threshold
-    context.restore();
-    for (const label of labels) {
-        addlabel(context, label);
-    }
+//     // draw labels for this threshold
+//     context.restore();
+//     for (const label of labels) {
+//         addlabel(context, label);
+//     }
 
-    function addlabel(context, label) {
-        context.save();
-        context.translate(...label.xy);
-        context.rotate(label.angle + (Math.cos(label.angle) < 0 ? Math.PI : 0));
-        context.fillText(label.text, -1, 4);
-        context.restore();
-    }
-}
+//     function addlabel(context, label) {
+//         context.save();
+//         context.translate(...label.xy);
+//         context.rotate(label.angle + (Math.cos(label.angle) < 0 ? Math.PI : 0));
+//         context.fillText(label.text, -1, 4);
+//         context.restore();
+//     }
+// }
 
 

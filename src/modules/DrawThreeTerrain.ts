@@ -9,6 +9,14 @@ import * as d3 from "d3"
 import { geoDelaunay, geoVoronoi, geoContour } from "d3-geo-voronoi"
 // node_modules/d3-geo-voronoi/dist/d3-geo-voronoi.js
 
+
+
+// Would be nice to have THICKER lines
+// https://github.com/mrdoob/three.js/blob/master/examples/webgl_lines_fat.html
+// import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2"
+// import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeometry"
+// import { LineMaterial } from "three/examples/jsm/lines/LineMaterial"
+
 import * as THREE from "three"; // node_modules/three/build/three.js
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 import { Terrain } from "../generate/Terrain";
@@ -136,9 +144,9 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
     ptsMaterial: THREE.PointsMaterial;
     ptsObject: THREE.Points;
 
-    lineGeometry: THREE.BufferGeometry;
-    lineMaterial: THREE.LineBasicMaterial;
-    lineObject: THREE.LineSegments;
+    lineGeometry: THREE.BufferGeometry; // LineSegmentsGeometry or THREE.BufferGeometry
+    lineMaterial: THREE.LineBasicMaterial; // LineMaterial or THREE.LineBasicMaterial
+    lineObject: THREE.LineSegments; // LineSegments2 or THREE.LineSegments
 
     public initData() {
         console.debug(`#HERELINE DrawThreeTerrain 116 `);
@@ -146,19 +154,23 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
 
         this.ptsGeometry = new THREE.BufferGeometry();
         this.ptsMaterial = new THREE.PointsMaterial({
-            size: 10,
+            size: 50,
             // sizeAttenuation: false,
             vertexColors: true,
         });
         this.ptsObject = new THREE.Points(this.ptsGeometry, this.ptsMaterial);
-        this.scene.add(this.ptsObject);
 
-        // this.lineGeometry = new THREE.BufferGeometry();
-        // this.lineMaterial = new THREE.LineBasicMaterial({
-        //     linewidth: 5,
-        // });
-        // this.lineObject = new THREE.LineSegments(this.lineGeometry, this.lineMaterial);
-        // this.scene.add(this.lineObject);
+        this.lineGeometry = new THREE.BufferGeometry();
+        this.lineMaterial = new THREE.LineBasicMaterial({
+            color: 0xffffff,
+            linewidth: 50,
+        });
+        this.lineObject = new THREE.LineSegments(this.lineGeometry, this.lineMaterial);
+        // this.lineObject.scale.set( 1, 1, 1 );
+
+
+        this.scene.add(this.ptsObject);
+        this.scene.add(this.lineObject);
     }
 
 
@@ -172,9 +184,10 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
         this.ptsGeometry.setAttribute('color', ptsColAttr);
         this.ptsGeometry.computeBoundingSphere();
 
-        // const linePosAttr = new THREE.Float32BufferAttribute(this.terrain.ptsLines, 3);
-        // this.lineGeometry.setAttribute('position', linePosAttr);
-        // this.lineGeometry.computeBoundingSphere();
+        const linePosAttr = new THREE.Float32BufferAttribute(this.terrain.ptsLines, 3);
+        this.lineGeometry.setAttribute('position', linePosAttr);
+        // this.lineGeometry.setPositions(this.terrain.ptsLines);
+        this.lineGeometry.computeBoundingSphere();
 
 
         // console.log("this.terrain.ptsCart", this.terrain.ptsCart);
@@ -195,18 +208,17 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
     draw(): void {
         // console.log(`#HERELINE DrawThreeTerrain draw `);
 
-        if (this.canvasSelectionData.mousep.x != null && this.canvasSelectionData.mousep.y != null) {
-            this.raycaster.setFromCamera(this.canvasSelectionData.mousep, this.camera);
-            const intersects = this.raycaster.intersectObjects([this.ptsObject], false);
-
-            if (intersects.length > 0) {
-                var orb_ = intersects[0]
-                this.hoverSphere.visible = true;
-                this.hoverSphere.position.copy(orb_.point)
-            } else {
-                this.hoverSphere.visible = false;
-            }
-        }
+        // if (this.canvasSelectionData.mousep.x != null && this.canvasSelectionData.mousep.y != null) {
+        //     this.raycaster.setFromCamera(this.canvasSelectionData.mousep, this.camera);
+        //     const intersects = this.raycaster.intersectObjects([this.ptsObject], false);
+        //     if (intersects.length > 0) {
+        //         var orb_ = intersects[0]
+        //         this.hoverSphere.visible = true;
+        //         this.hoverSphere.position.copy(orb_.point)
+        //     } else {
+        //         this.hoverSphere.visible = false;
+        //     }
+        // }
 
 
 
