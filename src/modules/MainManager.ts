@@ -34,7 +34,7 @@ export class MainManager {
     constructor() {
         this.jgui = new JsonToGUI();
         this.config = new Config();
-        this.world = new WorldData(this.config.WORLD_DATABASE_NAME, "MainManager");
+        this.world = new WorldData(this.config.WORLD_DATABASE_NAME, "MainManager", 10, this.config);
 
         // TODO Actions will need to tell everyone of cases when a readDeep will be need
         // Usual var updates will be ok readShallow, structure changes need readDeep
@@ -56,8 +56,8 @@ export class MainManager {
         }).then(() => {
             return this.writeDeep();
         }).then(() => {
-            this.initGenericWorker(PlanetSysWorker)
-            this.initGenericWorker(TerrainWorker)
+            this.initGenericWorker(PlanetSysWorker, 11)
+            this.initGenericWorker(TerrainWorker, 12)
             // this.refreshConfig()
         })
 
@@ -174,12 +174,12 @@ export class MainManager {
         console.timeEnd("#time MainManager writeShallow");
     }
 
-    public initGenericWorker(workerClass: typeof BaseWorker) {
+    public initGenericWorker(workerClass: typeof BaseWorker, startId: number) {
         var genWorker = new GenericWorkerInstance();
         genWorker.name = workerClass.name
 
         this.workers.push(genWorker);
-        genWorker.postMessage(<WorkerPacket>{ create: genWorker.name, config: this.config });
+        genWorker.postMessage(<WorkerPacket>{ create: genWorker.name, config: this.config, startId: startId });
 
         genWorker.addEventListener("message", (event) => {
             this.getMessage(genWorker, event)
@@ -190,23 +190,6 @@ export class MainManager {
             config: this.config
         });
     }
-
-    // public initWorker(workerType: string) {
-    //     var worker_ = new GenericWorkerInstance();
-    //     worker_.name = workerType
-    //     this.workers.push(worker_);
-    //     // this.workersData.set(worker_, { state: WorkerState.Paused })
-    //     worker_.postMessage(<WorkerPacket>{ create: workerType, sab: this.sharedData.sab });
-
-    //     worker_.addEventListener("message", (event) => {
-    //         this.getMessage(worker_, event)
-    //     });
-
-    //     worker_.postMessage(<WorkerPacket>{
-    //         message: MessageType.InitWorker,
-    //         config: this.config
-    //     });
-    // }
 
     private readyWorker(the_worker: GenericWorkerInstance) {
         // var workerData_ = this.workersData.get(the_worker)

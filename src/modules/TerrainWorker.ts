@@ -160,7 +160,7 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
     private makeJgiu() {
         var workerJgui: JguiMake;
 
-        [this.workerJguiMain, workerJgui] = new JguiMake(null).mkWorkerJgui("terr", "600");
+        [this.workerJguiMain, workerJgui] = new JguiMake(null).mkWorkerJgui("terr", "100");
 
         var chboxUpd: JguiMake, chboxDraw: JguiMake;
         [chboxUpd, chboxDraw] = workerJgui.add2CheckButtons("Update", this.doUpdate, "Draw", this.doDraw)

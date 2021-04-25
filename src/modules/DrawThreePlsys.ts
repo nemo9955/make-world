@@ -55,7 +55,7 @@ export class DrawThreePlsys implements DrawWorkerInstance {
     scene: THREE.Scene;
     camera: THREE.PerspectiveCamera;
     renderer: THREE.WebGLRenderer;
-    geometry: THREE.Geometry;
+    geometry: THREE.BufferGeometry;
     material: THREE.Material;
     controls: OrbitControls;
     // sun: THREE.Mesh;
