@@ -28,6 +28,7 @@ import { DrawWorkerInstance } from "./GenWorkerMetadata"
 import { Terrain } from "../generate/Terrain"
 
 
+import { JguiMake, JguiManager } from "../gui/JguiMake"
 
 
 /*
@@ -121,18 +122,24 @@ export class DrawD3Terrain implements DrawWorkerInstance {
     }
 
 
+    public updateProjection(prStr: string) {
+        console.log(`#HERELINE DrawD3Terrain updateProjection `, prStr);
 
+        var viewMap = DrawD3Terrain.getGeoViewsMap();
+        var newPro = viewMap.get(prStr)()
+            .translate(this.translation)
+            .rotate(this.projection.rotate())
 
-    public initBase() {
-        console.debug(`#HERELINE ${this.type} initBase `);
-        this.translation = [this.canvasOffscreen.width / 2, this.canvasOffscreen.height / 2];
-        this.graticule = d3.geoGraticule();
+        this.projection = newPro;
+        this.path.projection(this.projection)
+    }
 
+    public setProjection(prStr: string) {
 
         // this.projection = d3.geoOrthographic()
         // this.projection = d3.geoMercator()
         var viewMap = DrawD3Terrain.getGeoViewsMap();
-        this.projection = viewMap.get(this.config.terrain_geo_view)()
+        this.projection = viewMap.get(prStr)()
             .translate(this.translation)
         // .clipAngle(90);
         // .scale(this.scale)
@@ -143,7 +150,19 @@ export class DrawD3Terrain implements DrawWorkerInstance {
         this.path = d3.geoPath()
             .projection(this.projection)
             .context(this.ctx)
-            .pointRadius(1);
+            .pointRadius(5);
+    }
+
+
+    public initBase() {
+        console.debug(`#HERELINE ${this.type} initBase `);
+        this.translation = [this.canvasOffscreen.width / 2, this.canvasOffscreen.height / 2];
+        this.graticule = d3.geoGraticule();
+
+
+
+        this.setProjection(DrawD3Terrain.defaultGeoViews())
+
 
         this.grid = this.graticule();
 
@@ -168,14 +187,10 @@ export class DrawD3Terrain implements DrawWorkerInstance {
 
     }
 
-    // voronoi: any;
-    // polys: any;
-
     fastDrawTimeout = 0;
     public setTmpFastDraw() {
         this.fastDrawTimeout = 2;
     }
-
 
     public drawOnce() {
         if (this.fastDrawTimeout > 0) this.fastDrawTimeout--;
@@ -207,10 +222,6 @@ export class DrawD3Terrain implements DrawWorkerInstance {
         // }
 
 
-        var ptsWrapper = {
-            type: "MultiPoint",
-            coordinates: this.terrain.ptsGeo,
-        }
         // this.points = {
         //     type: "MultiPoint",
         //     // coordinates: Points.makeGeoPtsSquares(0)
@@ -219,14 +230,16 @@ export class DrawD3Terrain implements DrawWorkerInstance {
         // }
 
 
-        this.ctx.beginPath();
-        this.path(ptsWrapper);
-        this.ctx.fillStyle = "tomato"
-        this.ctx.fill();
-
-
-
-
+        for (const tkpl of this.terrain.tkplates) {
+            this.ctx.beginPath();
+            var ptsWrapper = {
+                type: "MultiPoint",
+                coordinates: tkpl.latlon,
+            }
+            this.path(ptsWrapper);
+            this.ctx.fillStyle = tkpl.colorId
+            this.ctx.fill();
+        }
 
         this.ctx.restore();
     }
@@ -260,8 +273,8 @@ export class DrawD3Terrain implements DrawWorkerInstance {
 
 
 
-    // public static defaultGeoViews() { return "geoOrthographic"; }
-    public static defaultGeoViews() { return "geoMercator"; }
+    public static defaultGeoViews() { return "geoOrthographic"; }
+    // public static defaultGeoViews() { return "geoMercator"; }
 
     public static getGeoViewsMap() {
         var ret_ = new Map();
@@ -277,6 +290,21 @@ export class DrawD3Terrain implements DrawWorkerInstance {
     //     pane_.addInput(gui.manager.config, 'terrain_geo_view', { options: map_ })
     //     // .on('change', () => { gui.refreshConfig(); });
     // }
+
+    public addJgui(workerJgui: JguiMake, workerJguiManager: JguiManager): void {
+        // TODO make me a drop down list
+        var mercBut: JguiMake, ortBut: JguiMake;
+        [mercBut, ortBut] = workerJgui.add2Buttons("Mercator", "Ortho")
+        mercBut.addEventListener(workerJguiManager, "click", (event: WorkerEvent) => {
+            this.updateProjection("geoMercator");
+            this.drawOnce();
+        })
+        ortBut.addEventListener(workerJguiManager, "click", (event: WorkerEvent) => {
+            this.updateProjection("geoOrthographic");
+            this.drawOnce();
+        })
+
+    }
 
 }
 

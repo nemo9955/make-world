@@ -20,6 +20,7 @@ import { geoDelaunay, geoVoronoi, geoContour } from "d3-geo-voronoi"
 import * as THREE from "three"; // node_modules/three/build/three.js
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 import { Terrain } from "../generate/Terrain";
+import { JguiMake, JguiManager } from "../gui/JguiMake";
 
 
 
@@ -46,15 +47,14 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
 
     }
 
-
     public init(event: WorkerEvent) {
         this.canvasOffscreen = event.data.canvas;
 
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(75,
             this.canvasOffscreen.width / this.canvasOffscreen.height, 0.1, 100000); // DRAWUNIT
-        this.camera.position.x = -1000 * 0.9; // DRAWUNIT
-        this.camera.position.y = 1000 * 0.9; // DRAWUNIT
+        this.camera.position.x = 1000 * 1.5; // DRAWUNIT
+        // this.camera.position.y = 1000 * 0.9; // DRAWUNIT
         this.camera.lookAt(0, 0, 0)
 
 
@@ -91,8 +91,7 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
         this.fakeDOM.addEventListener("mouseleave", this.hoverleave.bind(this)) // mouseleave
         this.fakeDOM.addEventListener("contextmenu", this.hoverClick.bind(this))
 
-        this.initData();
-        this.refreshTerrain();
+        this.syncTerrainData();
 
     }
 
@@ -140,62 +139,104 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
     private hoverClick(event: any) {
     }
 
-    ptsGeometry: THREE.BufferGeometry;
-    ptsMaterial: THREE.PointsMaterial;
-    ptsObject: THREE.Points;
+    // ptsGeometry: THREE.BufferGeometry;
+    // ptsMaterial: THREE.PointsMaterial;
+    // ptsObject: THREE.Points;
 
-    lineGeometry: THREE.BufferGeometry; // LineSegmentsGeometry or THREE.BufferGeometry
-    lineMaterial: THREE.LineBasicMaterial; // LineMaterial or THREE.LineBasicMaterial
-    lineObject: THREE.LineSegments; // LineSegments2 or THREE.LineSegments
-
-    public initData() {
-        console.debug(`#HERELINE DrawThreeTerrain 116 `);
+    // lineGeometry: THREE.BufferGeometry; // LineSegmentsGeometry or THREE.BufferGeometry
+    // lineMaterial: THREE.LineBasicMaterial; // LineMaterial or THREE.LineBasicMaterial
+    // lineObject: THREE.LineSegments; // LineSegments2 or THREE.LineSegments
 
 
-        this.ptsGeometry = new THREE.BufferGeometry();
-        this.ptsMaterial = new THREE.PointsMaterial({
-            size: 50,
-            // sizeAttenuation: false,
-            vertexColors: true,
-        });
-        this.ptsObject = new THREE.Points(this.ptsGeometry, this.ptsMaterial);
+    public terrData = {
+        tkpl: new Map<number, {
+            id: number,
+            pts: THREE.Points
+        }>(),
+    };
 
-        this.lineGeometry = new THREE.BufferGeometry();
-        this.lineMaterial = new THREE.LineBasicMaterial({
-            color: 0xffffff,
-            linewidth: 50,
-        });
-        this.lineObject = new THREE.LineSegments(this.lineGeometry, this.lineMaterial);
-        // this.lineObject.scale.set( 1, 1, 1 );
+    public syncTerrainData() {
+
+        for (const tkpl of this.terrain.tkplates) {
+
+            if (this.terrData.tkpl.has(tkpl.id) == false) {
+                var ptsGeometry = new THREE.BufferGeometry();
+                var ptsMaterial = new THREE.PointsMaterial({
+                    size: 40,
+                    // sizeAttenuation: false,
+                    vertexColors: true,
+                });
+                var ptsObject = new THREE.Points(ptsGeometry, ptsMaterial);
+
+                const ptsPosAttr = new THREE.Float32BufferAttribute(tkpl.position, 3);
+                const ptsColAttr = new THREE.Float32BufferAttribute(tkpl.color, 3);
+
+                ptsGeometry.setAttribute('position', ptsPosAttr);
+                ptsGeometry.setAttribute('color', ptsColAttr);
+                ptsGeometry.computeBoundingSphere();
+
+                var tkplDo = {
+                    id: tkpl.id,
+                    pts: ptsObject,
+                }
+                this.terrData.tkpl.set(tkpl.id, tkplDo)
+
+                this.scene.add(ptsObject);
+            }
+
+        }
 
 
-        this.scene.add(this.ptsObject);
-        this.scene.add(this.lineObject);
     }
 
-
-    public refreshTerrain() {
-        console.debug(`#HERELINE DrawThreeTerrain 130 `);
-
-        const ptsPosAttr = new THREE.Float32BufferAttribute(this.terrain.ptsCart, 3);
-        const ptsColAttr = new THREE.Float32BufferAttribute(this.terrain.ptsColor, 3);
-
-        this.ptsGeometry.setAttribute('position', ptsPosAttr);
-        this.ptsGeometry.setAttribute('color', ptsColAttr);
-        this.ptsGeometry.computeBoundingSphere();
-
-        const linePosAttr = new THREE.Float32BufferAttribute(this.terrain.ptsLines, 3);
-        this.lineGeometry.setAttribute('position', linePosAttr);
-        // this.lineGeometry.setPositions(this.terrain.ptsLines);
-        this.lineGeometry.computeBoundingSphere();
+    // public initData() {
+    //     console.debug(`#HERELINE DrawThreeTerrain 116 `);
 
 
-        // console.log("this.terrain.ptsCart", this.terrain.ptsCart);
-        // console.log("posAttr", posAttr);
-        // console.log("this.terrain.ptsColor", this.terrain.ptsColor);
-        // console.log("colAttr", colAttr);
+    //     this.ptsGeometry = new THREE.BufferGeometry();
+    //     this.ptsMaterial = new THREE.PointsMaterial({
+    //         size: 50,
+    //         // sizeAttenuation: false,
+    //         vertexColors: true,
+    //     });
+    //     this.ptsObject = new THREE.Points(this.ptsGeometry, this.ptsMaterial);
 
-    }
+    //     this.lineGeometry = new THREE.BufferGeometry();
+    //     this.lineMaterial = new THREE.LineBasicMaterial({
+    //         color: 0xffffff,
+    //         linewidth: 50,
+    //     });
+    //     this.lineObject = new THREE.LineSegments(this.lineGeometry, this.lineMaterial);
+    //     // this.lineObject.scale.set( 1, 1, 1 );
+
+
+    //     this.scene.add(this.ptsObject);
+    //     this.scene.add(this.lineObject);
+    // }
+
+
+    // public refreshTerrain() {
+    //     console.debug(`#HERELINE DrawThreeTerrain 130 `);
+
+    //     const ptsPosAttr = new THREE.Float32BufferAttribute(this.terrain.ptsCart, 3);
+    //     const ptsColAttr = new THREE.Float32BufferAttribute(this.terrain.ptsColor, 3);
+
+    //     this.ptsGeometry.setAttribute('position', ptsPosAttr);
+    //     this.ptsGeometry.setAttribute('color', ptsColAttr);
+    //     this.ptsGeometry.computeBoundingSphere();
+
+    //     const linePosAttr = new THREE.Float32BufferAttribute(this.terrain.ptsLines, 3);
+    //     this.lineGeometry.setAttribute('position', linePosAttr);
+    //     // this.lineGeometry.setPositions(this.terrain.ptsLines);
+    //     this.lineGeometry.computeBoundingSphere();
+
+
+    //     // console.log("this.terrain.ptsCart", this.terrain.ptsCart);
+    //     // console.log("posAttr", posAttr);
+    //     // console.log("this.terrain.ptsColor", this.terrain.ptsColor);
+    //     // console.log("colAttr", colAttr);
+
+    // }
 
 
 
@@ -225,5 +266,12 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
 
         this.renderer.render(this.scene, this.camera);
     }
+
+
+    public addJgui(workerJgui: JguiMake, workerJguiManager: JguiManager): void {
+    }
+
+
+
 
 }

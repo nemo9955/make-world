@@ -1,4 +1,4 @@
-import { BaseDrawUpdateWorker } from "./GenWorkerMetadata";
+import { BaseDrawUpdateWorker, DrawWorkerInstance } from "./GenWorkerMetadata";
 import * as Convert from "../utils/Convert"
 import * as Units from "../utils/Units"
 import { Config, MessageType, WorkerEvent, WorkerPacket } from "./Config";
@@ -52,12 +52,14 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
                 var draw1_ = new DrawThreeTerrain();
                 this.mapDraws.set(event.data.canvas_id, draw1_);
                 this.spread_objects(draw1_)
+                this.updateJgiu(draw1_)
                 draw1_.init(event);
                 break;
             case `${this.name}-canvas-DrawD3Terrain`:
                 var draw2_ = new DrawD3Terrain();
                 this.mapDraws.set(event.data.canvas_id, draw2_);
                 this.spread_objects(draw2_)
+                this.updateJgiu(draw2_)
                 draw2_.init(event);
                 break;
             default:
@@ -157,13 +159,13 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
     }
 
 
-    private makeJgiu() {
-        var workerJgui: JguiMake;
 
-        [this.workerJguiMain, workerJgui] = new JguiMake(null).mkWorkerJgui("terr", "100");
+    private makeJgiu() {
+
+        [this.workerJguiMain, this.workerJguiCont] = new JguiMake(null).mkWorkerJgui("terr", "100");
 
         var chboxUpd: JguiMake, chboxDraw: JguiMake;
-        [chboxUpd, chboxDraw] = workerJgui.add2CheckButtons("Update", this.doUpdate, "Draw", this.doDraw)
+        [chboxUpd, chboxDraw] = this.workerJguiCont.add2CheckButtons("Update", this.doUpdate, "Draw", this.doDraw)
         chboxUpd.addEventListener(this.workerJguiManager, "change", (event: WorkerEvent) => {
             this.doUpdate = event.data.event.target.checked;
         })
@@ -171,9 +173,6 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
             this.doDraw = event.data.event.target.checked;
         })
 
-        workerJgui.addButton("Test 1").addEventListener(this.workerJguiManager, "click", (event: WorkerEvent) => {
-            console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!! event", event.data.event);
-        })
 
         setMainContainer(this.worker, this.workerJguiMain)
     }

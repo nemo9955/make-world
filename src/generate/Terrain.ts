@@ -18,6 +18,7 @@ import * as Points from "../utils/Points"
 import * as THREE from "three";
 import * as dju from "../utils/dij_utils";
 
+import * as d3 from "d3"
 import { d3GeoWrapper, Graph } from "../utils/Graph";
 // node_modules/@types/noisejs/index.d.ts
 
@@ -50,25 +51,101 @@ https://github.com/joshforisha/open-simplex-noise-js
 
 
 
+// http://jnnnnn.github.io/category-colors-constrained.html // meh ....
+const colorArray = [
+    ...d3.schemeCategory10,
+    ...d3.schemeAccent,
+    ...d3.schemeTableau10,
+]
+
+
 export class TectonicPlate {
     public readonly id: number;
 
+    public readonly colorId: string;
     public maxSize: number;
     public size: number;
     private overheadValue = 1.1; // make arrays slightly bigger to allow for wiggle
 
+    public latlon: pointGeoArr;
     public readonly position: Float32Array;
     public readonly color: Float32Array;
     public readonly birth: Float32Array;
     public readonly mask: Uint16Array;
 
+    public noise: Noise;
     // public readonly edgeIndex: Uint32Array;
 
 
-    constructor(id: number) {
+    constructor(id: number, minAlocSize: number, noise: Noise) {
         this.id = id;
+        this.noise = noise;
+        this.size = 0;
+        this.maxSize = Math.ceil(minAlocSize * this.overheadValue);
+        this.colorId = colorArray[this.id];
+
+        this.position = new Float32Array(this.maxSize * 3);
+        this.color = new Float32Array(this.maxSize * 3);
+        this.birth = new Float32Array(this.maxSize);
+        this.mask = new Uint16Array(this.maxSize);
     }
 
+    public setFromGeo(tkplPoints: pointGeoArr) {
+        var color: THREE.Color = new THREE.Color();
+        var sphSize = 500;
+        var maxElev = 50;
+        var cartPts: arr3numb;
+
+        this.latlon = tkplPoints;
+        this.size = tkplPoints.length;
+
+        for (let index = 0; index < tkplPoints.length; index++) {
+            const stepInd = index * 3
+            const ptGeo = tkplPoints[index];
+
+
+            // TODO improve this by manually multipling position number with 1.0+ for height
+            // or just leave it sphere alligned .....
+
+            cartPts = Points.cartesianRadius(ptGeo, 2);
+            const rawh = Math.abs(this.noise.perlin3(...cartPts));
+            var elev = rawh * maxElev;
+            cartPts = Points.cartesianRadius(ptGeo, sphSize - elev);
+
+            // console.log(" -------------- ptGeo", ptGeo);
+
+            this.position[stepInd + 0] = cartPts[0]
+            this.position[stepInd + 1] = cartPts[1]
+            this.position[stepInd + 2] = cartPts[2]
+
+            // this.position[stepInd + 0] = (ptGeo[1]) * 4
+            // this.position[stepInd + 1] = elev
+            // this.position[stepInd + 2] = (ptGeo[0] - 180) * 4
+
+            // color.setRGB(Math.random(), Math.random(), Math.random());
+
+            // var vx = cartPts[0] / (sphSize + maxElev) + 0.5;
+            // var vy = cartPts[1] / (sphSize + maxElev) + 0.5;
+            // var vz = cartPts[2] / (sphSize + maxElev) + 0.5;
+            // color.setRGB(vx, vy, vz);
+            // var col = rawh;
+            // color.setRGB(col, col, col);
+            color.set(this.colorId);
+
+            // if (randIndexes.includes(index))
+            //     color.setRGB(1, 0, 0);
+
+            // this.color[index] = [color.r, color.g, color.b];
+            // this.color.push(color.r, color.g, color.b);
+
+            // this.color[stepInd + 0] = rawh
+            this.color[stepInd + 0] = color.r
+            this.color[stepInd + 1] = color.g
+            this.color[stepInd + 2] = color.b
+        }
+
+
+    }
 
 
 }
@@ -80,46 +157,37 @@ export class Terrain extends Identifiable {
     public orbitElemId: number = null;
     private noise: Noise;
 
-    // constructor(worldData: WorldData, data_: any) {
-    //     super(worldData);
-    // }
+    public tkplCurId: number = 0;
+    public tkplCnt: number = 0;
 
+    public tkplates: Array<TectonicPlate>;
 
     constructor(worldData: WorldData) {
         super(worldData);
+        this.tkplates = new Array<TectonicPlate>();
     }
 
 
-    ptsGeo: pointGeoArr;
-    ptsCart: Float32Array;
-    ptsColor: Float32Array;
 
-    ptsLines: Float32Array;
 
 
 
     public init() {
+        console.time(`#time Terrain init`);
         this.noise = Random.makeNoise(Math.random());
 
-        var color: THREE.Color = new THREE.Color();
+        // var ptsGeo = Points.makeGeoPtsSquares(0);
+        var ptsGeo = Points.makeGeoPtsFibb(1000 * 1);
+        // var ptsGeo = Points.makeGeoPoissonDiscSample(1000 * 10);
+        // var ptsGeo = Points.makeGeoPtsRandOk(1000 * 50);
+        // var ptsGeo = Points.makeGeoPoissonDiscSample(1000);
 
-
-        var sphSize = 500;
-        var maxElev = 50;
-        var cartPts: arr3numb;
-
-        // this.ptsGeo = Points.makeGeoPtsSquares(0);
-        this.ptsGeo = Points.makeGeoPtsFibb(1000 * 10);
-        // this.ptsGeo = Points.makeGeoPoissonDiscSample(1000 * 10);
-        // this.ptsGeo = Points.makeGeoPtsRandOk(1000 * 50);
-        // this.ptsGeo = Points.makeGeoPoissonDiscSample(1000);
-
-        this.ptsCart = new Float32Array(this.ptsGeo.length * 3)
-        this.ptsColor = new Float32Array(this.ptsGeo.length * 3)
+        // var this.position = new Float32Array(ptsGeo.length * 3)
+        // var this.color = new Float32Array(ptsGeo.length * 3)
 
 
 
-        var del = new d3GeoWrapper(this.ptsGeo)
+        var del = new d3GeoWrapper(ptsGeo)
 
 
 
@@ -131,13 +199,16 @@ export class Terrain extends Identifiable {
             var index = del.find(pt[0], pt[1]);
             randIndexes.push(index);
             // randCosts.push(Random.random_int_clamp(1, 50));
+            // TODO compute randCosts values from total points and seeds !!!!
             if (randIndexes.length % 2 == 0)
-                randCosts.push(Random.random_int_clamp(10, 20));
+                randCosts.push(Random.random_int_clamp(5, 10));
+            // randCosts.push(Random.random_int_clamp(10, 20));
             else
                 randCosts.push(Random.random_int_clamp(1, 5));
+            // TODO compute randCosts values from total points and seeds !!!!
         }
 
-        // var randIndexes = Random.randIndexes(Random.random_int_clamp(5, 10), this.ptsGeo.length);
+        // var randIndexes = Random.randIndexes(Random.random_int_clamp(5, 10), ptsGeo.length);
         console.log("randIndexes", randIndexes);
         console.log("randCosts", randCosts);
 
@@ -153,50 +224,6 @@ export class Terrain extends Identifiable {
             // }
         }
 
-        for (let index = 0; index < this.ptsGeo.length; index++) {
-            const stepInd = index * 3
-            const ptGeo = this.ptsGeo[index];
-
-            cartPts = Points.cartesianRadius(ptGeo, 2);
-            const rawh = Math.abs(this.noise.perlin3(...cartPts));
-            var elev = rawh * maxElev;
-            cartPts = Points.cartesianRadius(ptGeo, sphSize - elev);
-
-            // console.log(" -------------- ptGeo", ptGeo);
-
-            this.ptsCart[stepInd + 0] = cartPts[0]
-            this.ptsCart[stepInd + 1] = cartPts[1]
-            this.ptsCart[stepInd + 2] = cartPts[2]
-
-            // this.ptsCart[stepInd + 0] = (ptGeo[1]) * 4
-            // this.ptsCart[stepInd + 1] = elev
-            // this.ptsCart[stepInd + 2] = (ptGeo[0] - 180) * 4
-
-            // color.setRGB(Math.random(), Math.random(), Math.random());
-
-            // var vx = cartPts[0] / (sphSize + maxElev) + 0.5;
-            // var vy = cartPts[1] / (sphSize + maxElev) + 0.5;
-            // var vz = cartPts[2] / (sphSize + maxElev) + 0.5;
-            // color.setRGB(vx, vy, vz);
-            var col = rawh;
-            color.setRGB(col, col, col);
-
-            if (randIndexes.includes(index))
-                color.setRGB(1, 0, 0);
-
-            // this.ptsColor[index] = [color.r, color.g, color.b];
-            // this.ptsColor.push(color.r, color.g, color.b);
-
-            this.ptsColor[stepInd + 0] = color.r
-            this.ptsColor[stepInd + 1] = color.g
-            this.ptsColor[stepInd + 2] = color.b
-        }
-
-
-        // this.ptsLines = new d3GeoWrapper(this.ptsGeo).getVoroLineSegsCart(this.ptsCart);
-        // var graph = new Graph().mkUndirGeo(this.ptsGeo);
-
-
 
 
         var tree = dju.shortestTreeCustom({
@@ -206,33 +233,43 @@ export class Terrain extends Identifiable {
         console.log("tree", tree);
 
 
-        var lsPos = 0;
-        this.ptsLines = new Float32Array(this.ptsGeo.length * 2 * 3)
-        for (let index = 0; index < tree.predecessor.length; index++) {
-            const element = tree.predecessor[index];
-            // for (let index = 0; index < tree.origin.length; index++) {
-            //     const element = tree.origin[index];
-            if (element == -1) continue;
+        var tmpTkplData = {}
+        for (const iterator of randIndexes)
+            tmpTkplData[iterator] = []
 
-            this.ptsLines[lsPos++] = this.ptsCart[index * 3 + 0]
-            this.ptsLines[lsPos++] = this.ptsCart[index * 3 + 1]
-            this.ptsLines[lsPos++] = this.ptsCart[index * 3 + 2]
-            this.ptsLines[lsPos++] = this.ptsCart[element * 3 + 0]
-            this.ptsLines[lsPos++] = this.ptsCart[element * 3 + 1]
-            this.ptsLines[lsPos++] = this.ptsCart[element * 3 + 2]
+
+        for (let index = 0; index < tree.origin.length; index++) {
+            const tpIndex = tree.origin[index];
+            var geoPt = ptsGeo[index];
+            tmpTkplData[tpIndex].push(geoPt);
+        }
+        console.log("tmpTkplData", tmpTkplData);
+
+
+
+        for (const iterator of randIndexes) {
+            var tkplPoints = tmpTkplData[iterator];
+            var tkplPtSize = tmpTkplData[iterator].length;
+
+            var tkplObject = new TectonicPlate(this.newTkplId(), tkplPtSize, this.noise)
+            tkplObject.setFromGeo(tkplPoints);
+            this.addTkpl(tkplObject)
         }
 
+        console.log("this", this);
 
-        for (let index = 0; index < this.ptsCart.length; index++) {
-            this.ptsCart[index] *= 0.9;
-        }
-
-        // console.log("this.ptsGeo", this.ptsGeo);
-        // console.log("this.ptsCart", this.ptsCart);
-        // console.log("this.ptsLines", this.ptsLines);
-        // console.log("this.ptsColor", this.ptsColor);
+        console.timeEnd(`#time Terrain init`);
+    }
 
 
+    private addTkpl(tkplObj: TectonicPlate) {
+        this.tkplCnt++;
+        this.tkplates.push(tkplObj);
+    }
+
+
+    private newTkplId(): number {
+        return this.tkplCurId++;
     }
 
 
@@ -252,5 +289,85 @@ export class Terrain extends Identifiable {
 
     // // public clone() { return new Terrain(this.getWorldData()).copyLogic(this) }
     // public static clone(worldData: WorldData, data_: any) { return new Terrain(worldData).copyDeep(data_) }
+
+
+
+
+
+
+
+
+
+    // for (let index = 0; index < ptsGeo.length; index++) {
+    //     const stepInd = index * 3
+    //     const ptGeo = ptsGeo[index];
+
+    //     cartPts = Points.cartesianRadius(ptGeo, 2);
+    //     const rawh = Math.abs(this.noise.perlin3(...cartPts));
+    //     var elev = rawh * maxElev;
+    //     cartPts = Points.cartesianRadius(ptGeo, sphSize - elev);
+
+    //     // console.log(" -------------- ptGeo", ptGeo);
+
+    //     this.position[stepInd + 0] = cartPts[0]
+    //     this.position[stepInd + 1] = cartPts[1]
+    //     this.position[stepInd + 2] = cartPts[2]
+
+    //     // this.position[stepInd + 0] = (ptGeo[1]) * 4
+    //     // this.position[stepInd + 1] = elev
+    //     // this.position[stepInd + 2] = (ptGeo[0] - 180) * 4
+
+    //     // color.setRGB(Math.random(), Math.random(), Math.random());
+
+    //     // var vx = cartPts[0] / (sphSize + maxElev) + 0.5;
+    //     // var vy = cartPts[1] / (sphSize + maxElev) + 0.5;
+    //     // var vz = cartPts[2] / (sphSize + maxElev) + 0.5;
+    //     // color.setRGB(vx, vy, vz);
+    //     var col = rawh;
+    //     color.setRGB(col, col, col);
+
+    //     if (randIndexes.includes(index))
+    //         color.setRGB(1, 0, 0);
+
+    //     // this.color[index] = [color.r, color.g, color.b];
+    //     // this.color.push(color.r, color.g, color.b);
+
+    //     this.color[stepInd + 0] = color.r
+    //     this.color[stepInd + 1] = color.g
+    //     this.color[stepInd + 2] = color.b
+    // }
+
+
+    // ptsLines = new d3GeoWrapper(ptsGeo).getVoroLineSegsCart(this.position);
+    // var graph = new Graph().mkUndirGeo(ptsGeo);
+
+
+
+
+    // var lsPos = 0;
+    // var ptsLines = new Float32Array(ptsGeo.length * 2 * 3)
+    // for (let index = 0; index < tree.predecessor.length; index++) {
+    //     const element = tree.predecessor[index];
+    //     // for (let index = 0; index < tree.origin.length; index++) {
+    //     //     const element = tree.origin[index];
+    //     if (element == -1) continue;
+
+    //     ptsLines[lsPos++] = this.position[index * 3 + 0]
+    //     ptsLines[lsPos++] = this.position[index * 3 + 1]
+    //     ptsLines[lsPos++] = this.position[index * 3 + 2]
+    //     ptsLines[lsPos++] = this.position[element * 3 + 0]
+    //     ptsLines[lsPos++] = this.position[element * 3 + 1]
+    //     ptsLines[lsPos++] = this.position[element * 3 + 2]
+    // }
+
+
+    // for (let index = 0; index < this.position.length; index++) {
+    //     this.position[index] *= 0.9;
+    // }
+
+    // console.log("ptsGeo", ptsGeo);
+    // console.log("this.position", this.position);
+    // console.log("ptsLines", ptsLines);
+    // console.log("this.color", this.color);
 
 }

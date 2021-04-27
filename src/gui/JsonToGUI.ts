@@ -106,6 +106,11 @@ export class JsonToGUI {
                 return (textA < textB) ? -1 : (textA > textB) ? 1 : 0;
             })
             // console.log("allJgui", allJgui);
+
+            /// TODO FIXME draw's addJgui updates are too nested to be perceived as change for D3 ....
+            // so we need to clear the GUI and draw a new one :(
+            this.mainGuiCont.selectChildren("*").remove()
+
             var dat = this.mainGuiCont.selectChildren("*")
                 .data(allJgui, this.getId)
             dat.enter().call(this.enterSelectTags.bind(this))

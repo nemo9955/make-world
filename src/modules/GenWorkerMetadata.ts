@@ -9,6 +9,7 @@ import { TerrainWorker } from "./TerrainWorker";
 import { PlanetSysWorker } from "./PlanetSysWorker";
 import { WorkerDOM } from "../utils/WorkerDOM";
 import { JguiMake, JguiManager } from "../gui/JguiMake";
+import { setMainContainer } from "../gui/JguiUtils";
 
 
 export abstract class BaseWorker {
@@ -98,6 +99,7 @@ export interface DrawWorkerInstance {
     updateShallow(): void;
     updateDeep(): void;
     draw(): void;
+    addJgui(workerJgui: JguiMake, workerJguiManager: JguiManager): void;
 }
 
 
@@ -108,6 +110,7 @@ export abstract class BaseDrawUpdateWorker extends BaseWorker {
 
     public mapDraws = new Map<any, DrawWorkerInstance>();
     public workerJguiMain: JguiMake = null;
+    public workerJguiCont: JguiMake = null;
     public workerJguiManager: JguiManager = null;
 
     constructor(config: Config, worker: Worker, workerName: string, event: WorkerEvent) {
@@ -127,6 +130,11 @@ export abstract class BaseDrawUpdateWorker extends BaseWorker {
         }
     }
 
+
+    protected updateJgiu(draw_: DrawWorkerInstance) {
+        draw_.addJgui(this.workerJguiCont, this.workerJguiManager);
+        setMainContainer(this.worker, this.workerJguiMain)
+    }
 
     public spread_objects(object_: any) {
         super.spread_objects(object_);

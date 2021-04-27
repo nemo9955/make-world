@@ -29,9 +29,6 @@ export class Config {
     keepDbAtPageRefresh = false; // EXPERIMENTAL
     WORLD_DATABASE_NAME: string = "WORLD-123"; // TODO properly generate at right time
 
-
-    terrain_geo_view: string = DrawD3Terrain.defaultGeoViews();
-
     public copy(source_: Config) {
         Convert.copyShallow(this, source_)
         return this;
