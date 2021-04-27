@@ -177,7 +177,7 @@ export class Terrain extends Identifiable {
         this.noise = Random.makeNoise(Math.random());
 
         // var ptsGeo = Points.makeGeoPtsSquares(0);
-        var ptsGeo = Points.makeGeoPtsFibb(1000 * 1);
+        var ptsGeo = Points.makeGeoPtsFibb(1000 * 10);
         // var ptsGeo = Points.makeGeoPoissonDiscSample(1000 * 10);
         // var ptsGeo = Points.makeGeoPtsRandOk(1000 * 50);
         // var ptsGeo = Points.makeGeoPoissonDiscSample(1000);
@@ -201,8 +201,8 @@ export class Terrain extends Identifiable {
             // randCosts.push(Random.random_int_clamp(1, 50));
             // TODO compute randCosts values from total points and seeds !!!!
             if (randIndexes.length % 2 == 0)
-                randCosts.push(Random.random_int_clamp(5, 10));
-            // randCosts.push(Random.random_int_clamp(10, 20));
+                // randCosts.push(Random.random_int_clamp(5, 10));
+                randCosts.push(Random.random_int_clamp(10, 20));
             else
                 randCosts.push(Random.random_int_clamp(1, 5));
             // TODO compute randCosts values from total points and seeds !!!!

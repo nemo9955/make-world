@@ -150,7 +150,7 @@ export class DrawD3Terrain implements DrawWorkerInstance {
         this.path = d3.geoPath()
             .projection(this.projection)
             .context(this.ctx)
-            .pointRadius(5);
+            .pointRadius(7);
     }
 
 

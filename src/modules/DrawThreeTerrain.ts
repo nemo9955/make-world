@@ -162,7 +162,7 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
             if (this.terrData.tkpl.has(tkpl.id) == false) {
                 var ptsGeometry = new THREE.BufferGeometry();
                 var ptsMaterial = new THREE.PointsMaterial({
-                    size: 40,
+                    size: 30,
                     // sizeAttenuation: false,
                     vertexColors: true,
                 });
