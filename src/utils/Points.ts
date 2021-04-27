@@ -29,13 +29,21 @@ export function cartesian(coordinates: pointGeo): arr3numb {
     var lambda = coordinates[0] * radians,
         phi = coordinates[1] * radians,
         cosphi = Math.cos(phi);
-    return [cosphi * Math.cos(lambda), cosphi * Math.sin(lambda), Math.sin(phi)];
+    return [
+        cosphi * Math.cos(lambda),
+        Math.sin(phi),
+        -cosphi * Math.sin(lambda),
+    ];
 }
 export function cartesianRadius(coordinates: pointGeo, radius: number): arr3numb {
     var lambda = coordinates[0] * radians,
         phi = coordinates[1] * radians,
         cosphi = Math.cos(phi);
-    return [cosphi * Math.cos(lambda) * radius, cosphi * Math.sin(lambda) * radius, Math.sin(phi) * radius];
+    return [
+        cosphi * Math.cos(lambda) * radius,
+        Math.sin(phi) * radius,
+        -cosphi * Math.sin(lambda) * radius,
+    ];
 }
 
 

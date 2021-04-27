@@ -733,4 +733,10 @@ export class DrawThreePlsys implements DrawWorkerInstance {
 
         this.renderer.render(this.scene, this.camera);
     }
+
+
+    public addJgui(workerJgui: JguiMake, workerJguiManager: JguiManager): void {
+    }
+
+
 }

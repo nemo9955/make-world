@@ -65,6 +65,7 @@ export class PlanetSysWorker extends BaseDrawUpdateWorker {
                 this.mapDraws.set(event.data.canvas_id, draw1_);
                 this.spread_objects(draw1_)
                 draw1_.init(event);
+                this.updateJgiu(draw1_)
                 draw1_.updateDeep();
                 break;
             case `${this.name}-canvas-DrawD3Plsys`:
@@ -72,6 +73,7 @@ export class PlanetSysWorker extends BaseDrawUpdateWorker {
                 this.mapDraws.set(event.data.canvas_id, draw2_);
                 this.spread_objects(draw2_)
                 draw2_.init(event);
+                this.updateJgiu(draw2_)
                 break;
             default:
                 console.warn(`Not implemented in ${this.name} : ${event.data.metaCanvas.id} !`); break
@@ -228,6 +230,8 @@ export class PlanetSysWorker extends BaseDrawUpdateWorker {
         // })
 
 
+        for (const draw_ of this.mapDraws.values())
+            draw_.addJgui(workerJgui, this.workerJguiManager);
 
         // console.log("this.workerJguiMain", this.workerJguiMain);
 

@@ -18,6 +18,7 @@ import { OrbitingElement } from "../generate/OrbitingElement";
 import { SpaceGroup } from "../generate/SpaceGroup";
 import { PlanetarySystem } from "../generate/PlanetarySystem";
 import { Color } from "../utils/Color"
+import { JguiMake, JguiManager } from "../gui/JguiMake"
 
 
 /*
@@ -153,6 +154,9 @@ export class DrawD3Plsys implements DrawWorkerInstance {
             this.resize(resizeObj);
             this.drawOnce();
         }
+    }
+
+    public addJgui(workerJgui: JguiMake, workerJguiManager: JguiManager): void {
     }
 
 }
