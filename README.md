@@ -32,8 +32,9 @@ Latest build can be accesed here: https://nemo9955.github.io/make-world/pages/Wo
         🌑 More complex generation with more Orbital Elements
 
     🌍 Planet terrain - under developement
-        🌍 "Instantly" generated using noise
-        🌑 Tectonic plates for more complex shapes
+        ✔️ Store and smoothly draw up to 500k points
+        🌍 Static Tectonic plates for basic implementation
+        🌑 Moving Tectonic plates for more complex shapes
 
     🌓 Interaction between elements
         🌓 Heating of the Planets from the Star(s)

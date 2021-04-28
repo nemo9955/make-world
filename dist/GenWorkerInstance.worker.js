@@ -94916,12 +94916,14 @@ exports.Star = Star;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Terrain = exports.TectonicPlate = void 0;
+const Color_1 = __webpack_require__(/*! ../utils/Color */ "./src/utils/Color.ts");
 const Random = __webpack_require__(/*! ../utils/Random */ "./src/utils/Random.ts");
+const Convert = __webpack_require__(/*! ../utils/Convert */ "./src/utils/Convert.ts");
 const ObjectsHacker_1 = __webpack_require__(/*! ../modules/ObjectsHacker */ "./src/modules/ObjectsHacker.ts");
 const Points = __webpack_require__(/*! ../utils/Points */ "./src/utils/Points.ts");
+const Calc = __webpack_require__(/*! ../utils/Calc */ "./src/utils/Calc.ts");
 const THREE = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 const dju = __webpack_require__(/*! ../utils/dij_utils */ "./src/utils/dij_utils.ts");
-const d3 = __webpack_require__(/*! d3 */ "./node_modules/d3/index.js");
 const Graph_1 = __webpack_require__(/*! ../utils/Graph */ "./src/utils/Graph.ts");
 // node_modules/@types/noisejs/index.d.ts
 /*
@@ -94948,12 +94950,6 @@ seed(val): Seed the noise functions. Only 65536 different seeds are supported. U
 https://github.com/joshforisha/open-simplex-noise-js
 
 */
-// http://jnnnnn.github.io/category-colors-constrained.html // meh ....
-const colorArray = [
-    ...d3.schemeCategory10,
-    ...d3.schemeAccent,
-    ...d3.schemeTableau10,
-];
 class TectonicPlate {
     // public readonly edgeIndex: Uint32Array;
     constructor(id, minAlocSize, noise) {
@@ -94962,16 +94958,17 @@ class TectonicPlate {
         this.noise = noise;
         this.size = 0;
         this.maxSize = Math.ceil(minAlocSize * this.overheadValue);
-        this.colorId = colorArray[this.id];
+        this.colorId = Color_1.colorArray[this.id];
         this.position = new Float32Array(this.maxSize * 3);
         this.color = new Float32Array(this.maxSize * 3);
         this.birth = new Float32Array(this.maxSize);
         this.mask = new Uint16Array(this.maxSize);
     }
-    setFromGeo(tkplPoints) {
+    setFromGeo(tkplPoints, terrainData) {
         var color = new THREE.Color();
-        var sphSize = 500;
-        var maxElev = 50;
+        var sphSize = terrainData.sphereSize;
+        var maxElev = terrainData.altitudeMax;
+        var minElev = terrainData.altitudeMin;
         var cartPts;
         this.latlon = tkplPoints;
         this.size = tkplPoints.length;
@@ -94980,10 +94977,17 @@ class TectonicPlate {
             const ptGeo = tkplPoints[index];
             // TODO improve this by manually multipling position number with 1.0+ for height
             // or just leave it sphere alligned .....
-            cartPts = Points.cartesianRadius(ptGeo, 2);
-            const rawh = Math.abs(this.noise.perlin3(...cartPts));
-            var elev = rawh * maxElev;
-            cartPts = Points.cartesianRadius(ptGeo, sphSize - elev);
+            cartPts = Calc.cartesianRadius(ptGeo, terrainData.noiseSensitivity);
+            var rawNoiseVal, altChange;
+            if (terrainData.noiseApplyAbs) {
+                rawNoiseVal = Math.abs(this.noise.perlin3(...cartPts));
+                altChange = Convert.mapLinear(rawNoiseVal, 0, 1, minElev, maxElev);
+            }
+            else {
+                rawNoiseVal = this.noise.perlin3(...cartPts);
+                altChange = Convert.mapLinear(rawNoiseVal, -1, 1, minElev, maxElev);
+            }
+            cartPts = Calc.cartesianRadius(ptGeo, sphSize + altChange);
             // console.log(" -------------- ptGeo", ptGeo);
             this.position[stepInd + 0] = cartPts[0];
             this.position[stepInd + 1] = cartPts[1];
@@ -95009,27 +95013,45 @@ class TectonicPlate {
             this.color[stepInd + 2] = color.b;
         }
     }
+    /**
+     * dispose
+     */
+    dispose() {
+    }
 }
 exports.TectonicPlate = TectonicPlate;
 class Terrain extends ObjectsHacker_1.Identifiable {
     constructor(worldData) {
         super(worldData);
+        this.tData = {
+            sphereSize: 1000,
+            altitudeMin: -100,
+            altitudeMax: 100,
+            pointsToGen: 1000 * 10,
+            noiseSeed: Math.random(),
+            noiseSensitivity: 2,
+            noiseApplyAbs: false,
+        };
         this.orbitElemId = null;
         this.tkplCurId = 0;
         this.tkplCnt = 0;
         this.tkplates = new Array();
     }
     init() {
-        console.time(`#time Terrain init`);
-        this.noise = Random.makeNoise(Math.random());
+        this.generate();
+    }
+    generate() {
+        console.time(`#time Terrain generate`);
+        this.resetTkpl();
+        this.tData.noiseSeed = Math.random();
+        this.noise = Random.makeNoise(this.tData.noiseSeed);
         // var ptsGeo = Points.makeGeoPtsSquares(0);
-        var ptsGeo = Points.makeGeoPtsFibb(1000 * 10);
-        // var ptsGeo = Points.makeGeoPoissonDiscSample(1000 * 10);
-        // var ptsGeo = Points.makeGeoPtsRandOk(1000 * 50);
-        // var ptsGeo = Points.makeGeoPoissonDiscSample(1000);
-        // var this.position = new Float32Array(ptsGeo.length * 3)
-        // var this.color = new Float32Array(ptsGeo.length * 3)
-        var del = new Graph_1.d3GeoWrapper(ptsGeo);
+        var ptsGeo = Points.makeGeoPtsFibb(this.tData.pointsToGen);
+        // var ptsGeo = Points.makeGeoPoissonDiscSample(this.tData.pointsToGen);
+        // var ptsGeo = Points.makeGeoPtsRandOk(this.tData.pointsToGen);
+        // TODO generate full number of points after basic Tectonic plates are calculated
+        // to avoid running d3GeoWrapper/geoDelaunay on high number of points
+        var del = new Graph_1.d3GeoWrapper(ptsGeo); // verry big nom=nom on resources ...
         var randIndexes = [];
         var randCosts = [];
         var tpSeeds = Points.makeGeoPoissonDiscSample(Random.random_int_clamp(10, 20));
@@ -95076,16 +95098,22 @@ class Terrain extends ObjectsHacker_1.Identifiable {
             var geoPt = ptsGeo[index];
             tmpTkplData[tpIndex].push(geoPt);
         }
-        console.log("tmpTkplData", tmpTkplData);
         for (const iterator of randIndexes) {
             var tkplPoints = tmpTkplData[iterator];
             var tkplPtSize = tmpTkplData[iterator].length;
             var tkplObject = new TectonicPlate(this.newTkplId(), tkplPtSize, this.noise);
-            tkplObject.setFromGeo(tkplPoints);
+            tkplObject.setFromGeo(tkplPoints, this.tData);
             this.addTkpl(tkplObject);
         }
-        console.log("this", this);
-        console.timeEnd(`#time Terrain init`);
+        console.timeEnd(`#time Terrain generate`);
+    }
+    resetTkpl() {
+        this.tkplCurId = 0;
+        this.tkplCnt = 0;
+        while (this.tkplates.length > 0) {
+            var poped = this.tkplates.pop();
+            poped.dispose();
+        }
     }
     addTkpl(tkplObj) {
         this.tkplCnt++;
@@ -95114,6 +95142,7 @@ const Random_1 = __webpack_require__(/*! ../utils/Random */ "./src/utils/Random.
 class JguiMake {
     constructor(tag_) {
         this.tag = null;
+        this.extra = {};
         this.attr = {};
         this.style = {};
         this.html = null;
@@ -95148,6 +95177,8 @@ class JguiMake {
     }
     mkButton(name, type = "primary") {
         // https://getbootstrap.com/docs/5.0/components/buttons/
+        // https://www.w3schools.com/jsref/tryit.asp?filename=tryjsref_element_addeventlistener4
+        // click mouseover mouseout
         this.tag = "button";
         // this.listeners = "click";
         this.attr.class = `btn btn-${type} btn-sm`;
@@ -95191,6 +95222,34 @@ class JguiMake {
         cdiv.appendHtml(cbutton);
         this.appendHtml(cdiv);
         return [cswitch, cbutton];
+    }
+    addDropdown(ddwName, ddwArr) {
+        // https://getbootstrap.com/docs/5.0/components/dropdowns/
+        // click mouseover mouseout
+        var ddwBut = new JguiMake("button").mkButton(ddwName);
+        ddwBut.class += " dropdown-toggle";
+        ddwBut.attr["data-bs-toggle"] = "dropdown";
+        ddwBut.attr["aria-expanded"] = "false";
+        ddwBut.html = ddwName;
+        var ddwUl = new JguiMake("ul");
+        ddwUl.class = "dropdown-menu";
+        ddwUl.attr["aria-labelledby"] = ddwBut.id;
+        var ddwListElems = [];
+        for (let index = 0; index < ddwArr.length; index++) {
+            const element = ddwArr[index];
+            var ddwLi = new JguiMake("li").delId();
+            var dda = new JguiMake("button").mkButton(element);
+            dda.delStyle();
+            dda.attr.class = "dropdown-item";
+            dda.extra.listIndex = index;
+            dda.extra.listValue = element;
+            ddwLi.appendHtml(dda);
+            ddwUl.appendHtml(ddwLi);
+            ddwListElems.push(dda);
+        }
+        this.appendHtml(ddwBut);
+        this.appendHtml(ddwUl);
+        return [ddwBut, ddwListElems];
     }
     // public addCheckButton(chboxName: string, value: boolean): [JguiMake, JguiMake] {
     //     // https://getbootstrap.com/docs/5.0/forms/checks-radios/
@@ -95254,7 +95313,7 @@ class JguiMake {
         this.class = "d-flex flex-row bd-highlight";
         return this;
     }
-    addSlider(slideName, min, max, step) {
+    addSlider(slideName, min, max, step, origVal) {
         // https://getbootstrap.com/docs/5.0/forms/range/
         // <label for= "customRange3" class= "form-label" > Example range < /label>
         // < input type = "range" class="form-range" min = "0" max = "5" step = "0.5" id = "customRange3" >
@@ -95264,7 +95323,7 @@ class JguiMake {
         labelObj.tag = "label";
         labelObj.attr.for = `${rangeObj.id}`;
         labelObj.attr.class = "form-label";
-        labelObj.html = `${slideName}`;
+        labelObj.html = `${slideName} ${origVal}`;
         labelObj.style.margin = "0";
         rangeObj.tag = `input`;
         rangeObj.attr.type = `range`;
@@ -95272,6 +95331,7 @@ class JguiMake {
         rangeObj.attr.min = `${min}`;
         rangeObj.attr.max = `${max}`;
         rangeObj.attr.step = `${step}`;
+        rangeObj.attr.value = `${origVal}`;
         rangeObj.style.margin = "0";
         rangeObj.style["padding-left"] = "0.5rem";
         rangeObj.style["padding-right"] = "0.5rem";
@@ -95323,6 +95383,15 @@ class JguiMake {
     genId() {
         var bid = Random_1.randomAlphabetString(5);
         this.id = `${this.tag}${bid}`;
+        return this;
+    }
+    delId() {
+        delete this.attr.id;
+        return this;
+    }
+    delStyle() {
+        delete this.style;
+        this.style = {};
         return this;
     }
     appendHtml(elem) {
@@ -95690,6 +95759,7 @@ class DrawD3Terrain {
         this.ctx = null;
         // private ctx: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D = null;
         this.terrain = null;
+        this.ptsRadius = 4;
         this.previousScaleFactor = 1;
         this.fastDrawTimeout = 0;
     }
@@ -95698,6 +95768,7 @@ class DrawD3Terrain {
         this.canvasOffscreen = event.data.canvas;
         this.ctx = this.canvasOffscreen.getContext("2d");
         this.fakeDOM.addEventListener("resize", (event_) => { this.resize(event_); });
+        this.initBase();
         this.resize(this.canvasOffscreen); // lazy use canvas since params same as Event ...
     }
     resize(event_) {
@@ -95706,21 +95777,23 @@ class DrawD3Terrain {
         this.canvasOffscreen.height = event_.height;
         this.fakeDOM.clientWidth = event_.width;
         this.fakeDOM.clientHeight = event_.height;
+        this.translation = [this.canvasOffscreen.width / 2, this.canvasOffscreen.height / 2];
+        this.projection.translate(this.translation);
         // this.ctx = this.canvasOffscreen.getContext("2d");
-        this.initBase();
-        this.setTmpFastDraw();
+        // this.initBase();
+        // this.setTmpFastDraw();
         this.drawOnce();
     }
     updateDeep() {
         console.debug(`#HERELINE ${this.type} updateDeep `);
-        this.initBase();
-        this.setTmpFastDraw();
+        // this.initBase();
+        // this.setTmpFastDraw();
         this.drawOnce();
     }
     updateShallow() {
         console.debug(`#HERELINE ${this.type} updateShallow `);
-        this.initBase();
-        this.setTmpFastDraw();
+        // this.initBase();
+        // this.setTmpFastDraw();
         this.drawOnce();
     }
     draw() {
@@ -95734,43 +95807,29 @@ class DrawD3Terrain {
             .rotate(this.projection.rotate());
         this.projection = newPro;
         this.path.projection(this.projection);
+        this.originalScale = this.projection.scale();
+        this.scale = this.originalScale;
+        this.drawOnce();
     }
-    setProjection(prStr) {
-        // this.projection = d3.geoOrthographic()
-        // this.projection = d3.geoMercator()
+    initBase() {
+        console.debug(`#HERELINE ${this.type} initBase `);
+        this.graticule = d3.geoGraticule();
+        this.translation = [this.canvasOffscreen.width / 2, this.canvasOffscreen.height / 2];
         var viewMap = DrawD3Terrain.getGeoViewsMap();
-        this.projection = viewMap.get(prStr)()
+        this.projection = viewMap.get(DrawD3Terrain.defaultGeoViews())()
             .translate(this.translation);
-        // .clipAngle(90);
-        // .scale(this.scale)
         this.originalScale = this.projection.scale();
         this.scale = this.originalScale;
         this.path = d3.geoPath()
             .projection(this.projection)
             .context(this.ctx)
-            .pointRadius(7);
-    }
-    initBase() {
-        console.debug(`#HERELINE ${this.type} initBase `);
-        this.translation = [this.canvasOffscreen.width / 2, this.canvasOffscreen.height / 2];
-        this.graticule = d3.geoGraticule();
-        this.setProjection(DrawD3Terrain.defaultGeoViews());
+            .pointRadius(this.ptsRadius);
         this.grid = this.graticule();
         this.zoom = d3.zoom()
             .scaleExtent([0.2, 7])
             .on("zoom", this.zoomed.bind(this));
         var fakeSelect = d3.select(this.fakeDOM).selection();
         fakeSelect.call(this.zoom);
-        // this.points = {
-        //     type: "MultiPoint",
-        //     // coordinates: Points.makeGeoPtsSquares(0)
-        //     coordinates: Points.makeGeoPtsFibb(1000)
-        //     // coordinates: Points.makeGeoPtsRandOk(1000)
-        // }
-        // this.voronoi = geoVoronoi()(this.points.coordinates);
-        // // console.log("this.voronoi", this.voronoi);
-        // this.polys = this.voronoi.polygons()
-        // console.log("this.polys", this.polys);
     }
     setTmpFastDraw() {
         this.fastDrawTimeout = 2;
@@ -95816,6 +95875,8 @@ class DrawD3Terrain {
         this.ctx.restore();
     }
     zoomed(event) {
+        //     // https://github.com/d3/d3-zoom#zoom_filter
+        //     // https://bl.ocks.org/pkerpedjiev/32b11b37be444082762443c4030d145d
         var dx = event.sourceEvent.movementX;
         var dy = event.sourceEvent.movementY;
         const globe_pan_speed_mod = 4;
@@ -95840,12 +95901,14 @@ class DrawD3Terrain {
         // this.setTmpFastDraw();
         this.drawOnce(); // activate for smoother panning/zooming
     }
-    static defaultGeoViews() { return "geoOrthographic"; }
+    static defaultGeoViews() { return "geoNaturalEarth1"; }
     // public static defaultGeoViews() { return "geoMercator"; }
     static getGeoViewsMap() {
         var ret_ = new Map();
         ret_.set("geoOrthographic", () => d3.geoOrthographic().clipAngle(90).scale(350));
         ret_.set("geoMercator", () => d3.geoMercator().scale(130));
+        ret_.set("geoEquirectangular", () => d3.geoEquirectangular().scale(160));
+        ret_.set("geoNaturalEarth1", () => d3.geoNaturalEarth1().scale(200));
         return ret_;
     }
     // public static guiMainStatic(pane_: Tweakpane, gui: WorldGui) {
@@ -95856,49 +95919,25 @@ class DrawD3Terrain {
     // }
     addJgui(workerJgui, workerJguiManager) {
         // TODO make me a drop down list
-        var mercBut, ortBut;
-        [mercBut, ortBut] = workerJgui.add2Buttons("Mercator", "Ortho");
-        mercBut.addEventListener(workerJguiManager, "click", (event) => {
-            this.updateProjection("geoMercator");
-            this.drawOnce();
-        });
-        ortBut.addEventListener(workerJguiManager, "click", (event) => {
-            this.updateProjection("geoOrthographic");
+        var allProj = [...DrawD3Terrain.getGeoViewsMap().keys()];
+        var [_, prdDropList] = workerJgui.addDropdown("D3 Projection", allProj);
+        for (const prjDdObj of prdDropList) {
+            prjDdObj.addEventListener(workerJguiManager, "click", (event) => {
+                this.updateProjection(event.data.event.extra.listValue);
+            });
+            prjDdObj.addEventListener(workerJguiManager, "mouseover", (event) => {
+                this.updateProjection(event.data.event.extra.listValue);
+            });
+        }
+        workerJgui.addSlider("D3 Points size", 0, 15, 0.1, this.ptsRadius)
+            .addEventListener(workerJguiManager, "input", (event) => {
+            this.ptsRadius = Number.parseFloat(event.data.event.target.value);
+            this.path.pointRadius(this.ptsRadius);
             this.drawOnce();
         });
     }
 }
 exports.DrawD3Terrain = DrawD3Terrain;
-// public initTestt() {
-//     this.canvasOffscreen = {
-//         height: 500,
-//         width: 500,
-//     } as OffscreenCanvas
-//     var canvas = d3.select('body').append('canvas')
-//         .attr('width', this.canvasOffscreen.width)
-//         .attr('height', this.canvasOffscreen.height);
-//     this.ctx = canvas.node().getContext('2d');
-//     this.initBase();
-//     canvas.call(this.zoom);
-//     this.drawPeriodic();
-// }
-// public drawPeriodic() {
-//     this.drawOnce();
-//     setTimeout(() => {
-//         this.drawPeriodic()
-//     }, 500)
-// }
-// public zoomFilter(event: any): boolean {
-//     // Managed at src/modules/EventsManager.ts with
-//     // this.genericConditionalRedirect("wheel", canvas, canvas_id, worker, this.isShiftPressed.bind(this))
-//     // .filter(this.zoomFilter.bind(this))
-//     // ZOOM only works if SHIFT is held down so normal scroll can work
-//     // https://github.com/d3/d3-zoom#zoom_filter
-//     // https://bl.ocks.org/pkerpedjiev/32b11b37be444082762443c4030d145d
-//     if (event.type == "wheel" && event.shiftKey == false)
-//         return false
-//     return true
-// }
 
 
 /***/ }),
@@ -96489,6 +96528,7 @@ const OrbitControls_1 = __webpack_require__(/*! three/examples/jsm/controls/Orbi
 class DrawThreeTerrain {
     constructor() {
         this.fakeDOM = new WorkerDOM_1.WorkerDOM();
+        this.ptsRadius = 40;
         this.terrain = null;
         this.raycaster = new THREE.Raycaster();
         this.distToTarget = 1;
@@ -96500,14 +96540,14 @@ class DrawThreeTerrain {
         // lineMaterial: THREE.LineBasicMaterial; // LineMaterial or THREE.LineBasicMaterial
         // lineObject: THREE.LineSegments; // LineSegments2 or THREE.LineSegments
         this.terrData = {
-            tkpl: new Map(),
+            tpPts: new Map(),
         };
     }
     init(event) {
         this.canvasOffscreen = event.data.canvas;
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(75, this.canvasOffscreen.width / this.canvasOffscreen.height, 0.1, 100000); // DRAWUNIT
-        this.camera.position.x = 1000 * 1.5; // DRAWUNIT
+        this.camera.position.x = 1000 * 2; // DRAWUNIT
         // this.camera.position.y = 1000 * 0.9; // DRAWUNIT
         this.camera.lookAt(0, 0, 0);
         this.renderer = new THREE.WebGLRenderer({
@@ -96572,10 +96612,10 @@ class DrawThreeTerrain {
     }
     syncTerrainData() {
         for (const tkpl of this.terrain.tkplates) {
-            if (this.terrData.tkpl.has(tkpl.id) == false) {
+            if (this.terrData.tpPts.has(tkpl.id) == false) {
                 var ptsGeometry = new THREE.BufferGeometry();
                 var ptsMaterial = new THREE.PointsMaterial({
-                    size: 30,
+                    size: this.ptsRadius,
                     // sizeAttenuation: false,
                     vertexColors: true,
                 });
@@ -96585,53 +96625,26 @@ class DrawThreeTerrain {
                 ptsGeometry.setAttribute('position', ptsPosAttr);
                 ptsGeometry.setAttribute('color', ptsColAttr);
                 ptsGeometry.computeBoundingSphere();
-                var tkplDo = {
-                    id: tkpl.id,
-                    pts: ptsObject,
-                };
-                this.terrData.tkpl.set(tkpl.id, tkplDo);
+                this.terrData.tpPts.set(tkpl.id, ptsObject);
                 this.scene.add(ptsObject);
             }
         }
     }
-    // public initData() {
-    //     console.debug(`#HERELINE DrawThreeTerrain 116 `);
-    //     this.ptsGeometry = new THREE.BufferGeometry();
-    //     this.ptsMaterial = new THREE.PointsMaterial({
-    //         size: 50,
-    //         // sizeAttenuation: false,
-    //         vertexColors: true,
-    //     });
-    //     this.ptsObject = new THREE.Points(this.ptsGeometry, this.ptsMaterial);
-    //     this.lineGeometry = new THREE.BufferGeometry();
-    //     this.lineMaterial = new THREE.LineBasicMaterial({
-    //         color: 0xffffff,
-    //         linewidth: 50,
-    //     });
-    //     this.lineObject = new THREE.LineSegments(this.lineGeometry, this.lineMaterial);
-    //     // this.lineObject.scale.set( 1, 1, 1 );
-    //     this.scene.add(this.ptsObject);
-    //     this.scene.add(this.lineObject);
-    // }
-    // public refreshTerrain() {
-    //     console.debug(`#HERELINE DrawThreeTerrain 130 `);
-    //     const ptsPosAttr = new THREE.Float32BufferAttribute(this.terrain.ptsCart, 3);
-    //     const ptsColAttr = new THREE.Float32BufferAttribute(this.terrain.ptsColor, 3);
-    //     this.ptsGeometry.setAttribute('position', ptsPosAttr);
-    //     this.ptsGeometry.setAttribute('color', ptsColAttr);
-    //     this.ptsGeometry.computeBoundingSphere();
-    //     const linePosAttr = new THREE.Float32BufferAttribute(this.terrain.ptsLines, 3);
-    //     this.lineGeometry.setAttribute('position', linePosAttr);
-    //     // this.lineGeometry.setPositions(this.terrain.ptsLines);
-    //     this.lineGeometry.computeBoundingSphere();
-    //     // console.log("this.terrain.ptsCart", this.terrain.ptsCart);
-    //     // console.log("posAttr", posAttr);
-    //     // console.log("this.terrain.ptsColor", this.terrain.ptsColor);
-    //     // console.log("colAttr", colAttr);
-    // }
+    clearTerrainData() {
+        for (const ptsObj of this.terrData.tpPts.values()) {
+            this.scene.remove(ptsObj);
+            ptsObj.material.dispose();
+            ptsObj.geometry.dispose();
+        }
+        this.terrData.tpPts.clear();
+    }
     updateShallow() {
     }
     updateDeep() {
+        console.time(`#time DrawThreeTerrain updateDeep`);
+        this.clearTerrainData();
+        this.syncTerrainData();
+        console.timeEnd(`#time DrawThreeTerrain updateDeep`);
     }
     draw() {
         // console.log(`#HERELINE DrawThreeTerrain draw `);
@@ -96648,7 +96661,18 @@ class DrawThreeTerrain {
         // }
         this.renderer.render(this.scene, this.camera);
     }
+    updatePtsMaterials() {
+        for (const ptsObj of this.terrData.tpPts.values()) {
+            ptsObj.material.size = this.ptsRadius;
+            ptsObj.material.needsUpdate = true;
+        }
+    }
     addJgui(workerJgui, workerJguiManager) {
+        workerJgui.addSlider("THREE Points size", 0, 100, 0.1, this.ptsRadius)
+            .addEventListener(workerJguiManager, "input", (event) => {
+            this.ptsRadius = Number.parseFloat(event.data.event.target.value);
+            this.updatePtsMaterials();
+        });
     }
 }
 exports.DrawThreeTerrain = DrawThreeTerrain;
@@ -97218,6 +97242,11 @@ class TerrainWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
         chboxDraw.addEventListener(this.workerJguiManager, "change", (event) => {
             this.doDraw = event.data.event.target.checked;
         });
+        this.workerJguiCont.addButton("Re-Genearte").addEventListener(this.workerJguiManager, "click", (event) => {
+            this.terrain.generate();
+            for (const draw_ of this.mapDraws.values())
+                draw_.updateDeep();
+        });
         JguiUtils_1.setMainContainer(this.worker, this.workerJguiMain);
     }
 }
@@ -97564,6 +97593,112 @@ exports.ActionsManager = ActionsManager;
 
 /***/ }),
 
+/***/ "./src/utils/Calc.ts":
+/*!***************************!*\
+  !*** ./src/utils/Calc.ts ***!
+  \***************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.wrapLatLon = exports.wrap90 = exports.wrap180 = exports.wrap360 = exports.cartesianRadius = exports.cartesian = exports.spherical = void 0;
+const pi = Math.PI;
+const halfPi = pi / 2;
+const degrees = 180 / pi;
+const radians = pi / 180;
+const atan2 = Math.atan2;
+const cos = Math.cos;
+const max = Math.max;
+const min = Math.min;
+const sin = Math.sin;
+const sign = Math.sign;
+const sqrt = Math.sqrt;
+function asin(x) {
+    return x > 1 ? halfPi : x < -1 ? -halfPi : Math.asin(x);
+}
+// Converts 3D Cartesian to spherical coordinates (degrees).
+function spherical(cartesian) {
+    return [
+        atan2(cartesian[1], cartesian[0]) * degrees,
+        asin(max(-1, min(1, cartesian[2]))) * degrees
+    ];
+}
+exports.spherical = spherical;
+// Converts spherical coordinates (degrees) to 3D Cartesian.
+function cartesian(coordinates, radius = 1) {
+    var lambda = radius * coordinates[0] * radians, phi = radius * coordinates[1] * radians, cosphi = radius * cos(phi);
+    return [cosphi * cos(lambda), cosphi * sin(lambda), sin(phi)];
+}
+exports.cartesian = cartesian;
+function cartesianRadius(coordinates, radius) {
+    var lambda = coordinates[0] * radians, phi = coordinates[1] * radians, cosphi = Math.cos(phi);
+    return [
+        cosphi * Math.cos(lambda) * radius,
+        Math.sin(phi) * radius,
+        -cosphi * Math.sin(lambda) * radius,
+    ];
+}
+exports.cartesianRadius = cartesianRadius;
+// https://www.movable-type.co.uk/scripts/latlong.html
+/**
+ * Constrain degrees to range 0..360 (e.g. for bearings); -1 => 359, 361 => 1.
+ *
+ * @private
+ * @param {number} degrees
+ * @returns degrees within range 0..360.
+ */
+function wrap360(degrees) {
+    if (0 <= degrees && degrees < 360)
+        return degrees; // avoid rounding due to arithmetic ops if within range
+    return (degrees % 360 + 360) % 360; // sawtooth wave p:360, a:360
+}
+exports.wrap360 = wrap360;
+// https://www.movable-type.co.uk/scripts/latlong.html
+/**
+ * Constrain degrees to range -180..+180 (e.g. for longitude); -181 => 179, 181 => -179.
+ *
+ * @private
+ * @param {number} degrees
+ * @returns degrees within range -180..+180.
+ */
+function wrap180(degrees) {
+    if (-180 < degrees && degrees <= 180)
+        return degrees; // avoid rounding due to arithmetic ops if within range
+    return (degrees + 540) % 360 - 180; // sawtooth wave p:180, a:±180
+}
+exports.wrap180 = wrap180;
+// https://www.movable-type.co.uk/scripts/latlong.html
+/**
+ * Constrain degrees to range -90..+90 (e.g. for latitude); -91 => -89, 91 => 89.
+ *
+ * @private
+ * @param {number} degrees
+ * @returns degrees within range -90..+90.
+ */
+function wrap90(degrees) {
+    if (-90 <= degrees && degrees <= 90)
+        return degrees; // avoid rounding due to arithmetic ops if within range
+    return Math.abs((degrees % 360 + 270) % 360 - 180) - 90; // triangle wave p:360 a:±90 TODO: fix e.g. -315°
+}
+exports.wrap90 = wrap90;
+function wrapLatLon(latlon) {
+    var [latitude, longitude] = latlon;
+    // longitude = wrap90(longitude)
+    // latitude = wrap360(latitude)
+    if (Math.abs(longitude) >= 90) {
+        longitude -= 0.01;
+        latitude += 180;
+    }
+    longitude = wrap90(longitude);
+    latitude = wrap360(latitude);
+    return [latitude, longitude];
+}
+exports.wrapLatLon = wrapLatLon;
+
+
+/***/ }),
+
 /***/ "./src/utils/Color.ts":
 /*!****************************!*\
   !*** ./src/utils/Color.ts ***!
@@ -97573,8 +97708,15 @@ exports.ActionsManager = ActionsManager;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.Color = void 0;
+exports.Color = exports.colorArray = void 0;
 const d3 = __webpack_require__(/*! d3 */ "./node_modules/d3/index.js");
+// http://jnnnnn.github.io/category-colors-constrained.html // meh ....
+// https://observablehq.com/@d3/color-schemes
+exports.colorArray = [
+    ...d3.schemeCategory10,
+    ...d3.schemeAccent,
+    ...d3.schemeTableau10,
+];
 class ColorValues {
     constructor() {
         this.r = 255;
@@ -97641,7 +97783,7 @@ exports.Color = Color;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.NumberRadiantFlux = exports.NumberTemperature = exports.NumberTime = exports.NumberAngle = exports.NumberDensity = exports.NumberBigMass = exports.NumberMass = exports.NumberVolume = exports.NumberLength = exports.NumberConverter = exports.true_anomaly_rev = exports.copyDeep = exports.copyShallow = exports.sphereVolumeBig = exports.sphereVolume = exports.copy = exports.clamp = exports.revToDeg = exports.degToRev = exports.radToRev = exports.revToRad = exports.radToDeg = exports.degToRad = exports.srToAu = exports.auToSr = exports.earthJupMass = exports.jupEarthMass = exports.jupmToKg = exports.kgToJupm = exports.juprToKm = exports.kmToJupr = exports.erToKm = exports.kmToEr = exports.srToKm = exports.kmToSr = exports.auToGm = exports.GmToAu = exports.auToKm = exports.kmToAu = exports.emToKg = exports.kgToEm = exports.smToKg = exports.kgToSm = void 0;
+exports.NumberRadiantFlux = exports.NumberTemperature = exports.NumberTime = exports.NumberAngle = exports.NumberDensity = exports.NumberBigMass = exports.NumberMass = exports.NumberVolume = exports.NumberLength = exports.NumberConverter = exports.true_anomaly_rev = exports.copyDeep = exports.copyShallow = exports.sphereVolumeBig = exports.sphereVolume = exports.copy = exports.clamp = exports.revToDeg = exports.degToRev = exports.mapLinear = exports.radToRev = exports.revToRad = exports.radToDeg = exports.degToRad = exports.srToAu = exports.auToSr = exports.earthJupMass = exports.jupEarthMass = exports.jupmToKg = exports.kgToJupm = exports.juprToKm = exports.kmToJupr = exports.erToKm = exports.kmToEr = exports.srToKm = exports.kmToSr = exports.auToGm = exports.GmToAu = exports.auToKm = exports.kmToAu = exports.emToKg = exports.kgToEm = exports.smToKg = exports.kgToSm = void 0;
 const THREE = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 const Units = __webpack_require__(/*! ../utils/Units */ "./src/utils/Units.ts");
 // import * as Convert from "../utils/Convert"
@@ -97741,6 +97883,10 @@ function radToRev(radians) {
     return THREE.MathUtils.radToDeg(radians) / 360;
 }
 exports.radToRev = radToRev;
+function mapLinear(x, a1, a2, b1, b2) {
+    return THREE.MathUtils.mapLinear(x, a1, a2, b1, b2);
+}
+exports.mapLinear = mapLinear;
 function degToRev(degrees) {
     return degrees / 360;
 }
@@ -98175,47 +98321,8 @@ exports.ObjectPool = ObjectPool;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.makeGeoPtsRandBad2 = exports.makeGeoPtsRandBad1 = exports.makeGeoPoissonDiscSample = exports.makeGeoPtsSquares = exports.getGeoSquareArr = exports.splitSquare = exports.makeGeoPtsRandOk = exports.makeGeoPtsFibb = exports.removeDupPts = exports.sphereDistance = exports.linearDistance = exports.cartesianRadius = exports.cartesian = exports.spherical = void 0;
+exports.makeGeoPtsRandBad2 = exports.makeGeoPtsRandBad1 = exports.makeGeoPoissonDiscSample = exports.makeGeoPtsSquares = exports.getGeoSquareArr = exports.splitSquare = exports.makeGeoPtsRandOk = exports.makeGeoPtsFibb = exports.removeDupPts = void 0;
 const d3 = __webpack_require__(/*! d3 */ "./node_modules/d3/index.js");
-var pi = Math.PI;
-var halfPi = pi / 2;
-var degrees = 180 / pi;
-var radians = pi / 180;
-// Converts 3D Cartesian to spherical coordinates (degrees).
-function spherical(cartesian) {
-    return [
-        Math.atan2(cartesian[1], cartesian[0]) * degrees,
-        Math.asin(Math.max(-1, Math.min(1, cartesian[2]))) * degrees
-    ];
-}
-exports.spherical = spherical;
-// Converts spherical coordinates (degrees) to 3D Cartesian.
-function cartesian(coordinates) {
-    var lambda = coordinates[0] * radians, phi = coordinates[1] * radians, cosphi = Math.cos(phi);
-    return [
-        cosphi * Math.cos(lambda),
-        Math.sin(phi),
-        -cosphi * Math.sin(lambda),
-    ];
-}
-exports.cartesian = cartesian;
-function cartesianRadius(coordinates, radius) {
-    var lambda = coordinates[0] * radians, phi = coordinates[1] * radians, cosphi = Math.cos(phi);
-    return [
-        cosphi * Math.cos(lambda) * radius,
-        Math.sin(phi) * radius,
-        -cosphi * Math.sin(lambda) * radius,
-    ];
-}
-exports.cartesianRadius = cartesianRadius;
-function linearDistance(a, b) {
-    return Math.hypot(a[0] - b[0], a[1] - b[1]);
-}
-exports.linearDistance = linearDistance;
-function sphereDistance(a, b) {
-    return d3.geoDistance(a, b);
-}
-exports.sphereDistance = sphereDistance;
 function removeDupPts(points_) {
     points_.sort((a, b) => a[1] - b[1]);
     points_.sort((a, b) => a[0] - b[0]);

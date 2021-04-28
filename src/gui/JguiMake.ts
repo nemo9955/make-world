@@ -13,6 +13,7 @@ type jguiListen = {
 export class JguiMake {
 
     tag: string = null;
+    extra: any = {};
     attr: any = {};
     style: any = {};
     html: JguiMake[] | string = null;
@@ -59,6 +60,8 @@ export class JguiMake {
 
     public mkButton(name: string, type = "primary"): JguiMake {
         // https://getbootstrap.com/docs/5.0/components/buttons/
+        // https://www.w3schools.com/jsref/tryit.asp?filename=tryjsref_element_addeventlistener4
+        // click mouseover mouseout
         this.tag = "button";
         // this.listeners = "click";
         this.attr.class = `btn btn-${type} btn-sm`;
@@ -117,6 +120,42 @@ export class JguiMake {
         this.appendHtml(cdiv)
 
         return [cswitch, cbutton];
+    }
+
+    public addDropdown(ddwName: string, ddwArr: string[]): [JguiMake, JguiMake[]] {
+        // https://getbootstrap.com/docs/5.0/components/dropdowns/
+        // click mouseover mouseout
+
+        var ddwBut = new JguiMake("button").mkButton(ddwName)
+        ddwBut.class += " dropdown-toggle"
+        ddwBut.attr["data-bs-toggle"] = "dropdown"
+        ddwBut.attr["aria-expanded"] = "false"
+        ddwBut.html = ddwName
+
+        var ddwUl = new JguiMake("ul")
+        ddwUl.class = "dropdown-menu"
+        ddwUl.attr["aria-labelledby"] = ddwBut.id
+
+        var ddwListElems: JguiMake[] = []
+
+        for (let index = 0; index < ddwArr.length; index++) {
+            const element = ddwArr[index];
+            var ddwLi = new JguiMake("li").delId();
+            var dda = new JguiMake("button").mkButton(element);
+            dda.delStyle();
+            dda.attr.class = "dropdown-item"
+            dda.extra.listIndex = index
+            dda.extra.listValue = element
+
+            ddwLi.appendHtml(dda)
+            ddwUl.appendHtml(ddwLi)
+            ddwListElems.push(dda)
+        }
+
+        this.appendHtml(ddwBut)
+        this.appendHtml(ddwUl)
+
+        return [ddwBut, ddwListElems];
     }
 
     // public addCheckButton(chboxName: string, value: boolean): [JguiMake, JguiMake] {
@@ -206,7 +245,7 @@ export class JguiMake {
 
 
 
-    public addSlider(slideName: string, min: number, max: number, step: number): JguiMake {
+    public addSlider(slideName: string, min: number, max: number, step: number, origVal:number): JguiMake {
         // https://getbootstrap.com/docs/5.0/forms/range/
         // <label for= "customRange3" class= "form-label" > Example range < /label>
         // < input type = "range" class="form-range" min = "0" max = "5" step = "0.5" id = "customRange3" >
@@ -218,7 +257,7 @@ export class JguiMake {
         labelObj.tag = "label"
         labelObj.attr.for = `${rangeObj.id}`
         labelObj.attr.class = "form-label"
-        labelObj.html = `${slideName}`
+        labelObj.html = `${slideName} ${origVal}`
         labelObj.style.margin = "0"
 
         rangeObj.tag = `input`
@@ -227,6 +266,7 @@ export class JguiMake {
         rangeObj.attr.min = `${min}`
         rangeObj.attr.max = `${max}`
         rangeObj.attr.step = `${step}`
+        rangeObj.attr.value = `${origVal}`
         rangeObj.style.margin = "0"
         rangeObj.style["padding-left"] = "0.5rem"
         rangeObj.style["padding-right"] = "0.5rem"
@@ -304,6 +344,17 @@ export class JguiMake {
     public genId() {
         var bid = randomAlphabetString(5)
         this.id = `${this.tag}${bid}`
+        return this;
+    }
+
+    public delId() {
+        delete this.attr.id;
+        return this;
+    }
+
+    public delStyle() {
+        delete this.style;
+        this.style = {};
         return this;
     }
 

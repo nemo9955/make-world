@@ -15,9 +15,9 @@ const BASIC_OBJECTS = ["number", "boolean", "string"]
 const THROTTHE_TIME = 50;
 
 const keysToMove = [
-    "defaultValue", "value","checked","autocomplete"
+    "defaultValue", "value", "checked", "autocomplete",
+    "innerHTML", "innerText",
 ]
-
 
 /*
 
