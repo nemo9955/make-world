@@ -155,6 +155,7 @@ export class JsonToGUI {
                     if (worker) {
                         // console.log("RAW event ::: ", event);
                         var basicEvent = EventUtils.getBasicEvent(event);
+                        basicEvent.extra = jguiMake.extra;
                         // console.log("basicEvent", basicEvent);
                         worker.postMessage(<WorkerPacket>{
                             message: MessageType.Event,

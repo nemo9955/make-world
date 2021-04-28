@@ -1,5 +1,5 @@
 
-import { Color } from "../utils/Color"
+import { Color, colorArray } from "../utils/Color"
 import * as Random from "../utils/Random"
 import * as Units from "../utils/Units"
 import * as Convert from "../utils/Convert"
@@ -14,6 +14,7 @@ import { Identifiable } from "../modules/ObjectsHacker";
 
 import { pointGeoArr, arr3numb } from "../utils/Points";
 import * as Points from "../utils/Points"
+import * as Calc from "../utils/Calc"
 
 import * as THREE from "three";
 import * as dju from "../utils/dij_utils";
@@ -51,14 +52,6 @@ https://github.com/joshforisha/open-simplex-noise-js
 
 
 
-// http://jnnnnn.github.io/category-colors-constrained.html // meh ....
-const colorArray = [
-    ...d3.schemeCategory10,
-    ...d3.schemeAccent,
-    ...d3.schemeTableau10,
-]
-
-
 export class TectonicPlate {
     public readonly id: number;
 
@@ -90,10 +83,11 @@ export class TectonicPlate {
         this.mask = new Uint16Array(this.maxSize);
     }
 
-    public setFromGeo(tkplPoints: pointGeoArr) {
+    public setFromGeo(tkplPoints: pointGeoArr, terrainData: TerrainData) {
         var color: THREE.Color = new THREE.Color();
-        var sphSize = 500;
-        var maxElev = 50;
+        var sphSize = terrainData.sphereSize;
+        var maxElev = terrainData.altitudeMax;
+        var minElev = terrainData.altitudeMin;
         var cartPts: arr3numb;
 
         this.latlon = tkplPoints;
@@ -107,10 +101,17 @@ export class TectonicPlate {
             // TODO improve this by manually multipling position number with 1.0+ for height
             // or just leave it sphere alligned .....
 
-            cartPts = Points.cartesianRadius(ptGeo, 2);
-            const rawh = Math.abs(this.noise.perlin3(...cartPts));
-            var elev = rawh * maxElev;
-            cartPts = Points.cartesianRadius(ptGeo, sphSize - elev);
+            cartPts = Calc.cartesianRadius(ptGeo, terrainData.noiseSensitivity);
+            var rawNoiseVal: number, altChange: number;
+            if (terrainData.noiseApplyAbs) {
+                rawNoiseVal = Math.abs(this.noise.perlin3(...cartPts));
+                altChange = Convert.mapLinear(rawNoiseVal, 0, 1, minElev, maxElev)
+            }
+            else {
+                rawNoiseVal = this.noise.perlin3(...cartPts);
+                altChange = Convert.mapLinear(rawNoiseVal, -1, 1, minElev, maxElev)
+            }
+            cartPts = Calc.cartesianRadius(ptGeo, sphSize + altChange);
 
             // console.log(" -------------- ptGeo", ptGeo);
 
@@ -148,11 +149,38 @@ export class TectonicPlate {
     }
 
 
+    /**
+     * dispose
+     */
+    public dispose() {
+
+    }
+
+
 }
 
-
+export type TerrainData = {
+    sphereSize: number,
+    altitudeMin: number,
+    altitudeMax: number,
+    pointsToGen: number,
+    noiseSeed: number,
+    noiseSensitivity: number,
+    noiseApplyAbs: boolean,
+}
 
 export class Terrain extends Identifiable {
+
+    public tData: TerrainData = {
+        sphereSize: 1000, // TODO to be obtained from Planet
+        altitudeMin: -100, // How mutch the altitude will varry
+        altitudeMax: 100, // How mutch the altitude will varry
+        pointsToGen: 1000 * 10,
+        noiseSeed: Math.random(),
+        noiseSensitivity: 2,
+        noiseApplyAbs: false,
+    }
+
 
     public orbitElemId: number = null;
     private noise: Noise;
@@ -169,26 +197,26 @@ export class Terrain extends Identifiable {
 
 
 
-
-
-
     public init() {
-        console.time(`#time Terrain init`);
-        this.noise = Random.makeNoise(Math.random());
+        this.generate();
+    }
+
+    public generate() {
+        console.time(`#time Terrain generate`);
+
+        this.resetTkpl();
+        this.tData.noiseSeed = Math.random();
+        this.noise = Random.makeNoise(this.tData.noiseSeed);
 
         // var ptsGeo = Points.makeGeoPtsSquares(0);
-        var ptsGeo = Points.makeGeoPtsFibb(1000 * 10);
-        // var ptsGeo = Points.makeGeoPoissonDiscSample(1000 * 10);
-        // var ptsGeo = Points.makeGeoPtsRandOk(1000 * 50);
-        // var ptsGeo = Points.makeGeoPoissonDiscSample(1000);
-
-        // var this.position = new Float32Array(ptsGeo.length * 3)
-        // var this.color = new Float32Array(ptsGeo.length * 3)
+        var ptsGeo = Points.makeGeoPtsFibb(this.tData.pointsToGen);
+        // var ptsGeo = Points.makeGeoPoissonDiscSample(this.tData.pointsToGen);
+        // var ptsGeo = Points.makeGeoPtsRandOk(this.tData.pointsToGen);
 
 
-
-        var del = new d3GeoWrapper(ptsGeo)
-
+        // TODO generate full number of points after basic Tectonic plates are calculated
+        // to avoid running d3GeoWrapper/geoDelaunay on high number of points
+        var del = new d3GeoWrapper(ptsGeo) // verry big nom=nom on resources ...
 
 
         var randIndexes = [];
@@ -243,24 +271,27 @@ export class Terrain extends Identifiable {
             var geoPt = ptsGeo[index];
             tmpTkplData[tpIndex].push(geoPt);
         }
-        console.log("tmpTkplData", tmpTkplData);
-
-
 
         for (const iterator of randIndexes) {
             var tkplPoints = tmpTkplData[iterator];
             var tkplPtSize = tmpTkplData[iterator].length;
 
             var tkplObject = new TectonicPlate(this.newTkplId(), tkplPtSize, this.noise)
-            tkplObject.setFromGeo(tkplPoints);
+            tkplObject.setFromGeo(tkplPoints, this.tData);
             this.addTkpl(tkplObject)
         }
 
-        console.log("this", this);
-
-        console.timeEnd(`#time Terrain init`);
+        console.timeEnd(`#time Terrain generate`);
     }
 
+    private resetTkpl() {
+        this.tkplCurId = 0;
+        this.tkplCnt = 0;
+        while (this.tkplates.length > 0) {
+            var poped = this.tkplates.pop();
+            poped.dispose()
+        }
+    }
 
     private addTkpl(tkplObj: TectonicPlate) {
         this.tkplCnt++;

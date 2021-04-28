@@ -60,6 +60,7 @@ export class DrawD3Terrain implements DrawWorkerInstance {
     // private ctx: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D = null;
     public terrain: Terrain = null;
 
+    ptsRadius: number = 4;
 
     originalScale: number;
     scale: number;
@@ -85,6 +86,7 @@ export class DrawD3Terrain implements DrawWorkerInstance {
         this.ctx = this.canvasOffscreen.getContext("2d");
 
         this.fakeDOM.addEventListener("resize", (event_) => { this.resize(event_); })
+        this.initBase();
         this.resize(this.canvasOffscreen); // lazy use canvas since params same as Event ...
     }
 
@@ -95,25 +97,27 @@ export class DrawD3Terrain implements DrawWorkerInstance {
         this.canvasOffscreen.height = event_.height
         this.fakeDOM.clientWidth = event_.width
         this.fakeDOM.clientHeight = event_.height
+        this.translation = [this.canvasOffscreen.width / 2, this.canvasOffscreen.height / 2];
+        this.projection.translate(this.translation)
         // this.ctx = this.canvasOffscreen.getContext("2d");
 
-        this.initBase();
-        this.setTmpFastDraw();
+        // this.initBase();
+        // this.setTmpFastDraw();
         this.drawOnce();
     }
 
 
     public updateDeep() {
         console.debug(`#HERELINE ${this.type} updateDeep `);
-        this.initBase();
-        this.setTmpFastDraw();
+        // this.initBase();
+        // this.setTmpFastDraw();
         this.drawOnce();
     }
 
     public updateShallow() {
         console.debug(`#HERELINE ${this.type} updateShallow `);
-        this.initBase();
-        this.setTmpFastDraw();
+        // this.initBase();
+        // this.setTmpFastDraw();
         this.drawOnce();
     }
 
@@ -132,17 +136,21 @@ export class DrawD3Terrain implements DrawWorkerInstance {
 
         this.projection = newPro;
         this.path.projection(this.projection)
+
+        this.originalScale = this.projection.scale()
+        this.scale = this.originalScale;
+
+        this.drawOnce();
     }
 
-    public setProjection(prStr: string) {
+    public initBase() {
+        console.debug(`#HERELINE ${this.type} initBase `);
+        this.graticule = d3.geoGraticule();
+        this.translation = [this.canvasOffscreen.width / 2, this.canvasOffscreen.height / 2];
 
-        // this.projection = d3.geoOrthographic()
-        // this.projection = d3.geoMercator()
         var viewMap = DrawD3Terrain.getGeoViewsMap();
-        this.projection = viewMap.get(prStr)()
+        this.projection = viewMap.get(DrawD3Terrain.defaultGeoViews())()
             .translate(this.translation)
-        // .clipAngle(90);
-        // .scale(this.scale)
 
         this.originalScale = this.projection.scale()
         this.scale = this.originalScale;
@@ -150,19 +158,7 @@ export class DrawD3Terrain implements DrawWorkerInstance {
         this.path = d3.geoPath()
             .projection(this.projection)
             .context(this.ctx)
-            .pointRadius(7);
-    }
-
-
-    public initBase() {
-        console.debug(`#HERELINE ${this.type} initBase `);
-        this.translation = [this.canvasOffscreen.width / 2, this.canvasOffscreen.height / 2];
-        this.graticule = d3.geoGraticule();
-
-
-
-        this.setProjection(DrawD3Terrain.defaultGeoViews())
-
+            .pointRadius(this.ptsRadius);
 
         this.grid = this.graticule();
 
@@ -172,18 +168,6 @@ export class DrawD3Terrain implements DrawWorkerInstance {
 
         var fakeSelect = d3.select(this.fakeDOM).selection()
         fakeSelect.call(this.zoom);
-
-        // this.points = {
-        //     type: "MultiPoint",
-        //     // coordinates: Points.makeGeoPtsSquares(0)
-        //     coordinates: Points.makeGeoPtsFibb(1000)
-        //     // coordinates: Points.makeGeoPtsRandOk(1000)
-        // }
-
-        // this.voronoi = geoVoronoi()(this.points.coordinates);
-        // // console.log("this.voronoi", this.voronoi);
-        // this.polys = this.voronoi.polygons()
-        // console.log("this.polys", this.polys);
 
     }
 
@@ -245,6 +229,8 @@ export class DrawD3Terrain implements DrawWorkerInstance {
     }
 
     public zoomed(event: d3.D3ZoomEvent<any, any>) {
+        //     // https://github.com/d3/d3-zoom#zoom_filter
+        //     // https://bl.ocks.org/pkerpedjiev/32b11b37be444082762443c4030d145d
         var dx = event.sourceEvent.movementX;
         var dy = event.sourceEvent.movementY;
         const globe_pan_speed_mod = 4;
@@ -273,13 +259,15 @@ export class DrawD3Terrain implements DrawWorkerInstance {
 
 
 
-    public static defaultGeoViews() { return "geoOrthographic"; }
+    public static defaultGeoViews() { return "geoNaturalEarth1"; }
     // public static defaultGeoViews() { return "geoMercator"; }
 
     public static getGeoViewsMap() {
         var ret_ = new Map();
         ret_.set("geoOrthographic", () => d3.geoOrthographic().clipAngle(90).scale(350))
         ret_.set("geoMercator", () => d3.geoMercator().scale(130))
+        ret_.set("geoEquirectangular", () => d3.geoEquirectangular().scale(160))
+        ret_.set("geoNaturalEarth1", () => d3.geoNaturalEarth1().scale(200))
         return ret_
     }
 
@@ -293,50 +281,23 @@ export class DrawD3Terrain implements DrawWorkerInstance {
 
     public addJgui(workerJgui: JguiMake, workerJguiManager: JguiManager): void {
         // TODO make me a drop down list
-        var mercBut: JguiMake, ortBut: JguiMake;
-        [mercBut, ortBut] = workerJgui.add2Buttons("Mercator", "Ortho")
-        mercBut.addEventListener(workerJguiManager, "click", (event: WorkerEvent) => {
-            this.updateProjection("geoMercator");
-            this.drawOnce();
-        })
-        ortBut.addEventListener(workerJguiManager, "click", (event: WorkerEvent) => {
-            this.updateProjection("geoOrthographic");
-            this.drawOnce();
-        })
+
+        var allProj = [...DrawD3Terrain.getGeoViewsMap().keys()];
+        var [_, prdDropList] = workerJgui.addDropdown("D3 Projection", allProj)
+        for (const prjDdObj of prdDropList) {
+            prjDdObj.addEventListener(workerJguiManager, "click", (event: WorkerEvent) => {
+                this.updateProjection(event.data.event.extra.listValue);
+            })
+            prjDdObj.addEventListener(workerJguiManager, "mouseover", (event: WorkerEvent) => {
+                this.updateProjection(event.data.event.extra.listValue);
+            })
+        }
+        workerJgui.addSlider("D3 Points size", 0, 15, 0.1, this.ptsRadius)
+            .addEventListener(workerJguiManager, "input", (event: WorkerEvent) => {
+                this.ptsRadius = Number.parseFloat(event.data.event.target.value);
+                this.path.pointRadius(this.ptsRadius); this.drawOnce();
+            })
 
     }
 
 }
-
-
-    // public initTestt() {
-    //     this.canvasOffscreen = {
-    //         height: 500,
-    //         width: 500,
-    //     } as OffscreenCanvas
-    //     var canvas = d3.select('body').append('canvas')
-    //         .attr('width', this.canvasOffscreen.width)
-    //         .attr('height', this.canvasOffscreen.height);
-    //     this.ctx = canvas.node().getContext('2d');
-    //     this.initBase();
-    //     canvas.call(this.zoom);
-    //     this.drawPeriodic();
-    // }
-    // public drawPeriodic() {
-    //     this.drawOnce();
-    //     setTimeout(() => {
-    //         this.drawPeriodic()
-    //     }, 500)
-    // }
-
-    // public zoomFilter(event: any): boolean {
-    //     // Managed at src/modules/EventsManager.ts with
-    //     // this.genericConditionalRedirect("wheel", canvas, canvas_id, worker, this.isShiftPressed.bind(this))
-    //     // .filter(this.zoomFilter.bind(this))
-    //     // ZOOM only works if SHIFT is held down so normal scroll can work
-    //     // https://github.com/d3/d3-zoom#zoom_filter
-    //     // https://bl.ocks.org/pkerpedjiev/32b11b37be444082762443c4030d145d
-    //     if (event.type == "wheel" && event.shiftKey == false)
-    //         return false
-    //     return true
-    // }

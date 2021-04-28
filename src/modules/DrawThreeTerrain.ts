@@ -31,13 +31,15 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
     config: Config;
     fakeDOM = new WorkerDOM();
 
+
+    ptsRadius: number = 40;
+
     public terrain: Terrain = null;
 
     scene: THREE.Scene;
     camera: THREE.PerspectiveCamera;
     renderer: THREE.WebGLRenderer;
     controls: OrbitControls;
-
 
     hoverSphere: THREE.Mesh;
     raycaster: THREE.Raycaster = new THREE.Raycaster();
@@ -53,7 +55,7 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(75,
             this.canvasOffscreen.width / this.canvasOffscreen.height, 0.1, 100000); // DRAWUNIT
-        this.camera.position.x = 1000 * 1.5; // DRAWUNIT
+        this.camera.position.x = 1000 * 2; // DRAWUNIT
         // this.camera.position.y = 1000 * 0.9; // DRAWUNIT
         this.camera.lookAt(0, 0, 0)
 
@@ -149,20 +151,17 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
 
 
     public terrData = {
-        tkpl: new Map<number, {
-            id: number,
-            pts: THREE.Points
-        }>(),
+        tpPts: new Map<number, THREE.Points<THREE.BufferGeometry, THREE.PointsMaterial>>(),
     };
 
     public syncTerrainData() {
 
         for (const tkpl of this.terrain.tkplates) {
 
-            if (this.terrData.tkpl.has(tkpl.id) == false) {
+            if (this.terrData.tpPts.has(tkpl.id) == false) {
                 var ptsGeometry = new THREE.BufferGeometry();
                 var ptsMaterial = new THREE.PointsMaterial({
-                    size: 30,
+                    size: this.ptsRadius,
                     // sizeAttenuation: false,
                     vertexColors: true,
                 });
@@ -175,11 +174,7 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
                 ptsGeometry.setAttribute('color', ptsColAttr);
                 ptsGeometry.computeBoundingSphere();
 
-                var tkplDo = {
-                    id: tkpl.id,
-                    pts: ptsObject,
-                }
-                this.terrData.tkpl.set(tkpl.id, tkplDo)
+                this.terrData.tpPts.set(tkpl.id, ptsObject)
 
                 this.scene.add(ptsObject);
             }
@@ -189,61 +184,24 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
 
     }
 
-    // public initData() {
-    //     console.debug(`#HERELINE DrawThreeTerrain 116 `);
 
-
-    //     this.ptsGeometry = new THREE.BufferGeometry();
-    //     this.ptsMaterial = new THREE.PointsMaterial({
-    //         size: 50,
-    //         // sizeAttenuation: false,
-    //         vertexColors: true,
-    //     });
-    //     this.ptsObject = new THREE.Points(this.ptsGeometry, this.ptsMaterial);
-
-    //     this.lineGeometry = new THREE.BufferGeometry();
-    //     this.lineMaterial = new THREE.LineBasicMaterial({
-    //         color: 0xffffff,
-    //         linewidth: 50,
-    //     });
-    //     this.lineObject = new THREE.LineSegments(this.lineGeometry, this.lineMaterial);
-    //     // this.lineObject.scale.set( 1, 1, 1 );
-
-
-    //     this.scene.add(this.ptsObject);
-    //     this.scene.add(this.lineObject);
-    // }
-
-
-    // public refreshTerrain() {
-    //     console.debug(`#HERELINE DrawThreeTerrain 130 `);
-
-    //     const ptsPosAttr = new THREE.Float32BufferAttribute(this.terrain.ptsCart, 3);
-    //     const ptsColAttr = new THREE.Float32BufferAttribute(this.terrain.ptsColor, 3);
-
-    //     this.ptsGeometry.setAttribute('position', ptsPosAttr);
-    //     this.ptsGeometry.setAttribute('color', ptsColAttr);
-    //     this.ptsGeometry.computeBoundingSphere();
-
-    //     const linePosAttr = new THREE.Float32BufferAttribute(this.terrain.ptsLines, 3);
-    //     this.lineGeometry.setAttribute('position', linePosAttr);
-    //     // this.lineGeometry.setPositions(this.terrain.ptsLines);
-    //     this.lineGeometry.computeBoundingSphere();
-
-
-    //     // console.log("this.terrain.ptsCart", this.terrain.ptsCart);
-    //     // console.log("posAttr", posAttr);
-    //     // console.log("this.terrain.ptsColor", this.terrain.ptsColor);
-    //     // console.log("colAttr", colAttr);
-
-    // }
-
-
+    public clearTerrainData() {
+        for (const ptsObj of this.terrData.tpPts.values()) {
+            this.scene.remove(ptsObj);
+            ptsObj.material.dispose();
+            ptsObj.geometry.dispose();
+        }
+        this.terrData.tpPts.clear();
+    }
 
     updateShallow(): void {
     }
 
     updateDeep(): void {
+        console.time(`#time DrawThreeTerrain updateDeep`);
+        this.clearTerrainData();
+        this.syncTerrainData();
+        console.timeEnd(`#time DrawThreeTerrain updateDeep`);
     }
 
     draw(): void {
@@ -268,10 +226,64 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
     }
 
 
-    public addJgui(workerJgui: JguiMake, workerJguiManager: JguiManager): void {
+    public updatePtsMaterials() {
+        for (const ptsObj of this.terrData.tpPts.values()) {
+            ptsObj.material.size = this.ptsRadius;
+            ptsObj.material.needsUpdate = true;
+        }
     }
 
 
+    public addJgui(workerJgui: JguiMake, workerJguiManager: JguiManager): void {
+
+        workerJgui.addSlider("THREE Points size", 0, 100, 0.1, this.ptsRadius)
+            .addEventListener(workerJguiManager, "input", (event: WorkerEvent) => {
+                this.ptsRadius = Number.parseFloat(event.data.event.target.value);
+                this.updatePtsMaterials();
+            })
+
+
+    }
+
+
+
+
+    // public initData() {
+    //     console.debug(`#HERELINE DrawThreeTerrain 116 `);
+    //     this.ptsGeometry = new THREE.BufferGeometry();
+    //     this.ptsMaterial = new THREE.PointsMaterial({
+    //         size: 50,
+    //         // sizeAttenuation: false,
+    //         vertexColors: true,
+    //     });
+    //     this.ptsObject = new THREE.Points(this.ptsGeometry, this.ptsMaterial);
+    //     this.lineGeometry = new THREE.BufferGeometry();
+    //     this.lineMaterial = new THREE.LineBasicMaterial({
+    //         color: 0xffffff,
+    //         linewidth: 50,
+    //     });
+    //     this.lineObject = new THREE.LineSegments(this.lineGeometry, this.lineMaterial);
+    //     // this.lineObject.scale.set( 1, 1, 1 );
+    //     this.scene.add(this.ptsObject);
+    //     this.scene.add(this.lineObject);
+    // }
+    // public refreshTerrain() {
+    //     console.debug(`#HERELINE DrawThreeTerrain 130 `);
+    //     const ptsPosAttr = new THREE.Float32BufferAttribute(this.terrain.ptsCart, 3);
+    //     const ptsColAttr = new THREE.Float32BufferAttribute(this.terrain.ptsColor, 3);
+    //     this.ptsGeometry.setAttribute('position', ptsPosAttr);
+    //     this.ptsGeometry.setAttribute('color', ptsColAttr);
+    //     this.ptsGeometry.computeBoundingSphere();
+    //     const linePosAttr = new THREE.Float32BufferAttribute(this.terrain.ptsLines, 3);
+    //     this.lineGeometry.setAttribute('position', linePosAttr);
+    //     // this.lineGeometry.setPositions(this.terrain.ptsLines);
+    //     this.lineGeometry.computeBoundingSphere();
+    //     // console.log("this.terrain.ptsCart", this.terrain.ptsCart);
+    //     // console.log("posAttr", posAttr);
+    //     // console.log("this.terrain.ptsColor", this.terrain.ptsColor);
+    //     // console.log("colAttr", colAttr);
+
+    // }
 
 
 }

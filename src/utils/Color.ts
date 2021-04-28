@@ -2,6 +2,19 @@
 import * as THREE from "three";
 import * as d3 from "d3"
 
+
+
+
+// http://jnnnnn.github.io/category-colors-constrained.html // meh ....
+// https://observablehq.com/@d3/color-schemes
+export const colorArray = [
+    ...d3.schemeCategory10,
+    ...d3.schemeAccent,
+    ...d3.schemeTableau10,
+]
+
+
+
 class ColorValues {
     r: number = 255;
     g: number = 255;

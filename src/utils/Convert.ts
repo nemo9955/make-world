@@ -2,8 +2,6 @@
 import * as THREE from "three";
 
 import * as Units from "../utils/Units"
-import { ActionsManager } from "./Actions";
-
 // import * as Convert from "../utils/Convert"
 
 
@@ -96,6 +94,10 @@ export function revToRad(revolutions: number): number {
 
 export function radToRev(radians: number): number {
     return THREE.MathUtils.radToDeg(radians) / 360
+}
+
+export function mapLinear(x: number, a1: number, a2: number, b1: number, b2: number): number {
+    return THREE.MathUtils.mapLinear(x, a1, a2, b1, b2)
 }
 
 export function degToRev(degrees: number): number {

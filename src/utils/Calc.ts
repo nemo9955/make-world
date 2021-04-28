@@ -1,4 +1,4 @@
-import { pointGeo } from "./Points";
+import { arr3numb, pointGeo } from "./Points";
 
 
 const pi = Math.PI;
@@ -32,6 +32,20 @@ export function cartesian(coordinates, radius = 1) {
         cosphi = radius * cos(phi);
     return [cosphi * cos(lambda), cosphi * sin(lambda), sin(phi)];
 }
+
+
+
+export function cartesianRadius(coordinates: pointGeo, radius: number): arr3numb {
+    var lambda = coordinates[0] * radians,
+        phi = coordinates[1] * radians,
+        cosphi = Math.cos(phi);
+    return [
+        cosphi * Math.cos(lambda) * radius,
+        Math.sin(phi) * radius,
+        -cosphi * Math.sin(lambda) * radius,
+    ];
+}
+
 
 
 

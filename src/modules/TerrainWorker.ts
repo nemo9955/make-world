@@ -173,6 +173,12 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
             this.doDraw = event.data.event.target.checked;
         })
 
+        this.workerJguiCont.addButton("Re-Genearte").addEventListener(this.workerJguiManager, "click", (event: WorkerEvent) => {
+            this.terrain.generate();
+            for (const draw_ of this.mapDraws.values()) draw_.updateDeep();
+        })
+
+
 
         setMainContainer(this.worker, this.workerJguiMain)
     }

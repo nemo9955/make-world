@@ -10,52 +10,6 @@ export type arr3numb = [number, number, number];
 
 
 
-var pi = Math.PI;
-var halfPi = pi / 2;
-var degrees = 180 / pi;
-var radians = pi / 180;
-
-
-// Converts 3D Cartesian to spherical coordinates (degrees).
-export function spherical(cartesian): pointGeo {
-    return [
-        Math.atan2(cartesian[1], cartesian[0]) * degrees,
-        Math.asin(Math.max(-1, Math.min(1, cartesian[2]))) * degrees
-    ];
-}
-
-// Converts spherical coordinates (degrees) to 3D Cartesian.
-export function cartesian(coordinates: pointGeo): arr3numb {
-    var lambda = coordinates[0] * radians,
-        phi = coordinates[1] * radians,
-        cosphi = Math.cos(phi);
-    return [
-        cosphi * Math.cos(lambda),
-        Math.sin(phi),
-        -cosphi * Math.sin(lambda),
-    ];
-}
-export function cartesianRadius(coordinates: pointGeo, radius: number): arr3numb {
-    var lambda = coordinates[0] * radians,
-        phi = coordinates[1] * radians,
-        cosphi = Math.cos(phi);
-    return [
-        cosphi * Math.cos(lambda) * radius,
-        Math.sin(phi) * radius,
-        -cosphi * Math.sin(lambda) * radius,
-    ];
-}
-
-
-export function linearDistance(a: pointGeo, b: pointGeo) {
-    return Math.hypot(a[0] - b[0], a[1] - b[1]);
-}
-
-
-export function sphereDistance(a: pointGeo, b: pointGeo) {
-    return d3.geoDistance(a, b)
-}
-
 
 
 export function removeDupPts(points_: pointGeoArr) {
