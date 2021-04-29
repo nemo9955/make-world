@@ -7,6 +7,11 @@ import { JguiMake } from "../gui/JguiMake";
 import { setMainContainer } from "../gui/JguiUtils";
 import { Terrain } from "../generate/Terrain";
 import { DrawThreeTerrain } from "./DrawThreeTerrain";
+import { Planet } from "../generate/Planet";
+
+
+
+const MAIN_ORDINAL = "2"
 
 export class TerrainWorker extends BaseDrawUpdateWorker {
 
@@ -21,11 +26,13 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
 
     public init(): void {
         Promise.resolve().then(() => {
+            this.makeJgiu();
+        }).then(() => {
             this.worker.postMessage(<WorkerPacket>{
                 message: MessageType.CanvasMake,
                 metaCanvas: {
                     id: `${this.name}-canvas-DrawThreeTerrain`,
-                    order: "100",
+                    order: MAIN_ORDINAL + "10",
                     generalFlags: ["orbit"],
                 }
             });
@@ -33,14 +40,20 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
                 message: MessageType.CanvasMake,
                 metaCanvas: {
                     id: `${this.name}-canvas-DrawD3Terrain`,
-                    order: "200",
+                    order: MAIN_ORDINAL + "20",
                     generalFlags: ["d3"],
                 }
             });
         }).then(() => {
-            this.makeJgiu();
+            /// TODO FIXME TMP until we have a proper "sequence" of generartion steps
+            var DUMMY_PLANET = new Planet(this.world);
+            DUMMY_PLANET.makeEarthLike();
+            this.world.setRwObj(DUMMY_PLANET);
+
+            this.terrain.init(DUMMY_PLANET);
+            this.world.setRwObj(this.terrain);
         }).then(() => {
-            this.terrain.init();
+            return this.refreshDeep(false);
         })
     }
 
@@ -113,8 +126,7 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
 
     private async refreshDeep(doSpecial = true) {
         console.debug("#HERELINE DrawWorker refreshDeep");
-        // await this.world.readDeep();
-        // this.planetarySystem = this.world.planetarySystem;
+        await this.world.writeAllRw();
         for (const draw_ of this.mapDraws.values()) draw_.updateDeep();
         if (doSpecial) {
             // this.updatePlSys();
@@ -144,25 +156,47 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
     }
 
 
+    public updateTerrain() {
+    }
+
 
     private async refreshTick(doSpecial = true) {
-        // console.debug("#HERELINE DrawWorker refreshShallow");
-        // await this.world.readShallow();
+        await this.world.readTime();
         if (doSpecial) {
-            // this.updatePlSys();
+            this.doUpdate && this.updateTerrain();
             if (this.doDraw)
                 for (const draw_ of this.mapDraws.values())
                     draw_.draw();
-            // await this.world.writeShallow();
-            // this.tellMainToUpdate();
+        }
+        // await this.world.writeTime();
+    }
+
+
+    private async genFromExistingPlanet() {
+        var didOnce = false;
+        for await (const planet_ of this.world.iterObjsType(Planet, "readwrite")) {
+            if (didOnce) break;
+            if (planet_ instanceof Planet && planet_.isInHabZone) {
+                // if (planet_.planetType == "Normal" && planet_.terrainId == null) {
+                if (planet_.planetType == "Normal" && didOnce == false) {
+                    console.log("planet_", planet_);
+                    console.log("this.terrain", this.terrain);
+                    this.terrain.init(planet_);
+                    planet_.setTerrain(this.terrain);
+                    this.refreshDeep(false);
+                    didOnce = true;
+                }
+            }
         }
     }
 
 
-
     private makeJgiu() {
 
-        [this.workerJguiMain, this.workerJguiCont] = new JguiMake(null).mkWorkerJgui("terr", "100");
+        const jguiOrdinal = MAIN_ORDINAL + "00";
+
+
+        [this.workerJguiMain, this.workerJguiCont] = new JguiMake(null).mkWorkerJgui("terr", jguiOrdinal);
 
         var chboxUpd: JguiMake, chboxDraw: JguiMake;
         [chboxUpd, chboxDraw] = this.workerJguiCont.add2CheckButtons("Update", this.doUpdate, "Draw", this.doDraw)
@@ -173,10 +207,11 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
             this.doDraw = event.data.event.target.checked;
         })
 
-        this.workerJguiCont.addButton("Re-Genearte").addEventListener(this.workerJguiManager, "click", (event: WorkerEvent) => {
-            this.terrain.generate();
-            for (const draw_ of this.mapDraws.values()) draw_.updateDeep();
-        })
+        this.workerJguiCont.addButton("Re-Genearte")
+            .addTooltip("Regenerating will use an actual Planet, first run uses a dummy instance so we do not wait for PlSys to gen.")
+            .addEventListener(this.workerJguiManager, "click", (event: WorkerEvent) => {
+                this.genFromExistingPlanet();
+            })
 
 
 

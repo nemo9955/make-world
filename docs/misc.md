@@ -22,6 +22,10 @@ Sphere stuff :
     https://www.redblobgames.com/x/1938-square-tiling-of-sphere/ Tiling a sphere with squares
 
 
+    Fibonacci points, Delaunay triangles, Voronoi regions
+    https://github.com/redblobgames/1843-planet-generation
+
+
 Points stuff :
     1 Million Points in Three.js
     https://observablehq.com/@joewdavies/1-million-points-in-three-js
@@ -42,6 +46,10 @@ Points stuff :
 Procedural Tectonic Planets
     https://perso.liris.cnrs.fr/eric.galin/Articles/2019-planets.pdf
     https://www.redblobgames.com/x/1843-planet-generation/
+
+
+    Clustered Convection for Procedural Plate Tectonics
+    https://weigert.vsos.ethz.ch/2020/12/03/clustered-convection-for-simulating-plate-tectonics/
 
 
 

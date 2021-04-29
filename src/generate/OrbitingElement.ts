@@ -26,8 +26,6 @@ export class OrbitingElement extends Identifiable {
 
     public isInHabZone = false;
 
-
-
     constructor(worldData: WorldData) {
         super(worldData);
     }
@@ -117,17 +115,17 @@ export class OrbitingElement extends Identifiable {
     public getSats(): OrbitingElement[] {
         var satObjs: OrbitingElement[] = []
         for (const sid of this.satelites)
-            satObjs.push(this.getWorldData().idObjMap.get(sid))
+            satObjs.push(this.getWorldData().getRwObj(sid))
         return satObjs
     }
 
     public getSatIndex(index: number): OrbitingElement {
         var sid = this.satelites[index];
-        return this.getWorldData().idObjMap.get(sid)
+        return this.getWorldData().getRwObj(sid)
     }
 
     // public getSatId(sid: number): OrbitingElement {
-    //     return this.getWorldData().idObjMap.get(sid)
+    //     return this.getWorldData().getRwObj(sid)
     // }
 
     public addSat(sat_: OrbitingElement) {
@@ -135,7 +133,7 @@ export class OrbitingElement extends Identifiable {
         sat_.depth = this.depth + 1;
         sat_.parentId = this.id;
         this.satelites.push(sat_.id)
-        this.getWorldData().setIdObject(sat_)
+        this.getWorldData().setRwObj(sat_)
     }
 
     // public setOrbiting(sat_: OrbitingElement) {
@@ -143,7 +141,7 @@ export class OrbitingElement extends Identifiable {
     // }
     // public getOrbiting(): OrbitingElement {
     //     if (this.orbitingId)
-    //         return this.getWorldData().idObjMap.get(this.orbitingId)
+    //         return this.getWorldData().getRwObj(this.orbitingId)
     //     return this.getParentSolid();
     // }
 
@@ -177,7 +175,7 @@ export class OrbitingElement extends Identifiable {
     }
 
     public getParent(): OrbitingElement {
-        return this.getWorldData().idObjMap.get(this.parentId)
+        return this.getWorldData().getRwObj(this.parentId)
     }
 
     public getParentOrbit(): Orbit {
@@ -200,7 +198,7 @@ export class OrbitingElement extends Identifiable {
             if (parentOrbit.type == "PlanetarySystem") return null;
             if (parentOrbit.type == "Orbit")
                 return parentOrbit as any;
-            parentOrbit = this.getWorldData().idObjMap.get(parentOrbit.parentId)
+            parentOrbit = this.getWorldData().getRwObj(parentOrbit.parentId)
         }
     }
 
@@ -237,6 +235,8 @@ export class OrbitingElement extends Identifiable {
     }
 
 
-
+    public clone() { return new OrbitingElement(this.getWorldData()).copyLogic(this) }
+    public static clone(worldData: WorldData, data_: any) { return new OrbitingElement(worldData).copyDeep(data_) }
+    static get type() { return `OrbitingElement` }
 
 }

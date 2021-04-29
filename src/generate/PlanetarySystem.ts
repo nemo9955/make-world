@@ -16,9 +16,6 @@ import { WorldData } from "../modules/WorldData";
 
 export class PlanetarySystem extends OrbitingElement {
 
-    // TODO Move in WorldData when more fine read/write can be done
-    public readonly time = new Convert.NumberTime();
-
     public readonly hab_zone = new Convert.NumberLength();
     public readonly hab_zone_in = new Convert.NumberLength();
     public readonly hab_zone_out = new Convert.NumberLength();
@@ -33,7 +30,7 @@ export class PlanetarySystem extends OrbitingElement {
 
     public getStars(): Star[] {
         var starObjs: Star[] = []
-        for (const obj_ of this.getWorldData().idObjMap.values()) {
+        for (const obj_ of this.getWorldData().rwDbObjs.values()) {
             if (obj_.type == "Star")
                 starObjs.push(obj_)
         }
@@ -46,8 +43,8 @@ export class PlanetarySystem extends OrbitingElement {
 
     init() {
         this.id = this.getWorldData().getFreeID(); // gen again after WorldData sets getFreeID
-        this.time.eby = 5; // start at 5 Billion Earth years
-        this.getWorldData().setIdObject(this)
+        this.getWorldData().restartTime();
+        this.getWorldData().setRwObj(this)
     }
 
 
@@ -80,6 +77,8 @@ export class PlanetarySystem extends OrbitingElement {
 
 
 
-
+    public clone() { return new PlanetarySystem(this.getWorldData()).copyLogic(this) }
+    public static clone(worldData: WorldData, data_: any) { return new PlanetarySystem(worldData).copyDeep(data_) }
+    static get type() { return `PlanetarySystem` }
 
 }

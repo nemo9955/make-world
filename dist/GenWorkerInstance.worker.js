@@ -93780,6 +93780,8 @@ class Orbit extends OrbitingElement_1.OrbitingElement {
     }
     free() { return; }
     clone() { return new Orbit(this.getWorldData()).copyLogic(this); }
+    static clone(worldData, data_) { return new Orbit(worldData).copyDeep(data_); }
+    static get type() { return `Orbit`; }
 }
 exports.Orbit = Orbit;
 
@@ -93883,29 +93885,29 @@ class OrbitingElement extends ObjectsHacker_1.Identifiable {
     getSats() {
         var satObjs = [];
         for (const sid of this.satelites)
-            satObjs.push(this.getWorldData().idObjMap.get(sid));
+            satObjs.push(this.getWorldData().getRwObj(sid));
         return satObjs;
     }
     getSatIndex(index) {
         var sid = this.satelites[index];
-        return this.getWorldData().idObjMap.get(sid);
+        return this.getWorldData().getRwObj(sid);
     }
     // public getSatId(sid: number): OrbitingElement {
-    //     return this.getWorldData().idObjMap.get(sid)
+    //     return this.getWorldData().getRwObj(sid)
     // }
     addSat(sat_) {
         sat_.isInHabZone = this.isInHabZone; // not reliable here
         sat_.depth = this.depth + 1;
         sat_.parentId = this.id;
         this.satelites.push(sat_.id);
-        this.getWorldData().setIdObject(sat_);
+        this.getWorldData().setRwObj(sat_);
     }
     // public setOrbiting(sat_: OrbitingElement) {
     //     this.orbitingId = sat_.id;
     // }
     // public getOrbiting(): OrbitingElement {
     //     if (this.orbitingId)
-    //         return this.getWorldData().idObjMap.get(this.orbitingId)
+    //         return this.getWorldData().getRwObj(this.orbitingId)
     //     return this.getParentSolid();
     // }
     getMass() {
@@ -93936,7 +93938,7 @@ class OrbitingElement extends ObjectsHacker_1.Identifiable {
         }
     }
     getParent() {
-        return this.getWorldData().idObjMap.get(this.parentId);
+        return this.getWorldData().getRwObj(this.parentId);
     }
     getParentOrbit() {
         // get parent orbit, excluding self if an Orbit
@@ -93961,7 +93963,7 @@ class OrbitingElement extends ObjectsHacker_1.Identifiable {
                 return null;
             if (parentOrbit.type == "Orbit")
                 return parentOrbit;
-            parentOrbit = this.getWorldData().idObjMap.get(parentOrbit.parentId);
+            parentOrbit = this.getWorldData().getRwObj(parentOrbit.parentId);
         }
     }
     // protected guiPopSelectChildren(slectPane: Tweakpane, gui: WorldGui, generalAct: Tweakpane.FolderApi) {
@@ -93990,6 +93992,9 @@ class OrbitingElement extends ObjectsHacker_1.Identifiable {
         jData.jgui.addLabel(`type : ${this.type}`);
         jData.jgui.addLabel(`depth : ${this.depth}`);
     }
+    clone() { return new OrbitingElement(this.getWorldData()).copyLogic(this); }
+    static clone(worldData, data_) { return new OrbitingElement(worldData).copyDeep(data_); }
+    static get type() { return `OrbitingElement`; }
 }
 exports.OrbitingElement = OrbitingElement;
 
@@ -94037,8 +94042,9 @@ class Planet extends OrbitingElement_1.OrbitingElement {
     getTerrain() {
         if (!this.terrainId)
             return null;
-        return this.getWorldData().idObjMap.get(this.terrainId);
+        return this.getWorldData().getAnyObj(this.terrainId);
     }
+    setTerrain(terr_) { this.terrainId = terr_.id; }
     makeMoon(smajax, smajaxParent, plsys) {
         this.color.set_color("DarkGrey");
         this.planetType = "Moon";
@@ -94196,6 +94202,8 @@ class Planet extends OrbitingElement_1.OrbitingElement {
         super.addToJgui(jData);
     }
     clone() { return new Planet(this.getWorldData()).copyLogic(this); }
+    static clone(worldData, data_) { return new Planet(worldData).copyDeep(data_); }
+    static get type() { return `Planet`; }
 }
 exports.Planet = Planet;
 
@@ -94219,8 +94227,6 @@ const Convert = __webpack_require__(/*! ../utils/Convert */ "./src/utils/Convert
 class PlanetarySystem extends OrbitingElement_1.OrbitingElement {
     constructor(worldData) {
         super(worldData);
-        // TODO Move in WorldData when more fine read/write can be done
-        this.time = new Convert.NumberTime();
         this.hab_zone = new Convert.NumberLength();
         this.hab_zone_in = new Convert.NumberLength();
         this.hab_zone_out = new Convert.NumberLength();
@@ -94231,7 +94237,7 @@ class PlanetarySystem extends OrbitingElement_1.OrbitingElement {
     }
     getStars() {
         var starObjs = [];
-        for (const obj_ of this.getWorldData().idObjMap.values()) {
+        for (const obj_ of this.getWorldData().rwDbObjs.values()) {
             if (obj_.type == "Star")
                 starObjs.push(obj_);
         }
@@ -94242,8 +94248,8 @@ class PlanetarySystem extends OrbitingElement_1.OrbitingElement {
     }
     init() {
         this.id = this.getWorldData().getFreeID(); // gen again after WorldData sets getFreeID
-        this.time.eby = 5; // start at 5 Billion Earth years
-        this.getWorldData().setIdObject(this);
+        this.getWorldData().restartTime();
+        this.getWorldData().setRwObj(this);
     }
     allElemsDepth(satObjs, sat_) {
         if (satObjs.includes(sat_) == false)
@@ -94257,6 +94263,19 @@ class PlanetarySystem extends OrbitingElement_1.OrbitingElement {
         this.allElemsDepth(satObjs, this);
         return satObjs;
     }
+    // public guiSelect(slectPane: Tweakpane, gui: WorldGui) {
+    //     // const plsys_tp = this.mainPane.addFolder({ title: 'Planet System', expanded: false });
+    //     slectPane.addInput(this.hab_zone_in, 'km', { label: "hab_zone_in" });
+    //     slectPane.addInput(this.hab_zone, 'km', { label: "hab_zone" });
+    //     slectPane.addInput(this.hab_zone_out, 'km', { label: "hab_zone_out" });
+    //     slectPane.addInput(this.orbits_limit_in, 'km', { label: "orbits_limit_in" });
+    //     slectPane.addInput(this.frost_line, 'km', { label: "frost_line" });
+    //     slectPane.addInput(this.orbits_limit_out, 'km', { label: "orbits_limit_out" });
+    //     super.guiSelect(slectPane, gui);
+    // }
+    clone() { return new PlanetarySystem(this.getWorldData()).copyLogic(this); }
+    static clone(worldData, data_) { return new PlanetarySystem(worldData).copyDeep(data_); }
+    static get type() { return `PlanetarySystem`; }
 }
 exports.PlanetarySystem = PlanetarySystem;
 
@@ -94310,7 +94329,7 @@ class SpaceFactory {
     //     // plsys.computeAll();
     // }
     genOrbitsUniform(plsys, root) {
-        plsys.time.value = 0;
+        this.getWorldData().restartTime();
         root.clearNonStars();
         // var orb_size = Random.random_int_clamp(3, 5)
         // var orb_size = Random.random_int_clamp(6, 8)
@@ -94413,7 +94432,7 @@ class SpaceFactory {
         group_.addToSpaceGroup(orbit1_);
         group_.addToSpaceGroup(orbit2_);
         root.addSat(group_);
-        plsys.time.value = 0;
+        this.getWorldData().restartTime();
         // TODO check is just adding these values is "good enough" or implement proper
         var stars_lum_ = star1_.luminosity.clone().add(star2_.luminosity.value);
         var stars_mass_ = group_.getMass().clone();
@@ -94447,7 +94466,7 @@ class SpaceFactory {
                 break;
         }
         root.addSat(star_);
-        plsys.time.value = 0;
+        this.getWorldData().restartTime();
         plsys.hab_zone.au = Math.sqrt(star_.luminosity.watt);
         plsys.hab_zone_in.au = plsys.hab_zone.au * 0.95;
         plsys.hab_zone_out.au = plsys.hab_zone.au * 1.37;
@@ -94566,7 +94585,7 @@ class SpaceFactory {
         for (genAttemps = 0; genAttemps < genMaxAttemps; genAttemps++) {
             attempsPercent = genAttemps / genMaxAttemps;
             // not a while(true) loop to prevent blocking the code
-            plsys.time.value = 0;
+            this.getWorldData().restartTime();
             root.clearNonStars();
             var lfg_orbit = this.getLargestFrostGiantOrbit(plsys);
             var last_orbit = lfg_orbit.clone();
@@ -94674,7 +94693,7 @@ class SpaceGroup extends OrbitingElement_1.OrbitingElement {
         var satObjs = [];
         var stillLooking = true;
         for (const sid of this.groupedSatelites)
-            satObjs.push(this.getWorldData().idObjMap.get(sid));
+            satObjs.push(this.getWorldData().getRwObj(sid));
         while (stillLooking) {
             stillLooking = false;
             for (const sat_ of satObjs) {
@@ -94700,6 +94719,8 @@ class SpaceGroup extends OrbitingElement_1.OrbitingElement {
         return this.tmp_mass;
     }
     clone() { return new SpaceGroup(this.getWorldData()).copyLogic(this); }
+    static clone(worldData, data_) { return new SpaceGroup(worldData).copyDeep(data_); }
+    static get type() { return `SpaceGroup`; }
 }
 exports.SpaceGroup = SpaceGroup;
 
@@ -94870,7 +94891,6 @@ class Star extends OrbitingElement_1.OrbitingElement {
             return this.makeClassF();
         return this.makeClassG(); // Like the Sun
     }
-    clone() { return new Star(this.getWorldData()).copyLogic(this); }
     // public guiSelect(slectPane: Tweakpane, gui: WorldGui) {
     //     slectPane.addInput(this.color, 'value', { label: "color" })
     //     slectPane.addInput(this.radius, 'km', { label: "radius km" });
@@ -94900,6 +94920,9 @@ class Star extends OrbitingElement_1.OrbitingElement {
             this.lifetime.eby = event.data.event.target.value;
         });
     }
+    clone() { return new Star(this.getWorldData()).copyLogic(this); }
+    static clone(worldData, data_) { return new Star(worldData).copyDeep(data_); }
+    static get type() { return `Star`; }
 }
 exports.Star = Star;
 
@@ -95037,7 +95060,9 @@ class Terrain extends ObjectsHacker_1.Identifiable {
         this.tkplCnt = 0;
         this.tkplates = new Array();
     }
-    init() {
+    init(planet) {
+        this.orbitElemId = planet.id;
+        this.tData.sphereSize = planet.radius.km;
         this.generate();
     }
     generate() {
@@ -95122,6 +95147,76 @@ class Terrain extends ObjectsHacker_1.Identifiable {
     newTkplId() {
         return this.tkplCurId++;
     }
+    getPlanet() {
+        if (!this.orbitElemId)
+            return null;
+        return this.getWorldData().getRwObj(this.orbitElemId);
+    }
+    // public static initForPlanet(planet_: Planet) {
+    //     console.debug(`#HERELINE Terrain initForPlanet `);
+    //     console.log("planet_", planet_);
+    //     var terrain = new Terrain(planet_.getWorldData());
+    //     terrain.orbitElemId = planet_.id;
+    //     console.log("terrain", terrain);
+    //     terrain.getWorldData().setBigIdObject(terrain)
+    // }
+    // // public clone() { return new Terrain(this.getWorldData()).copyLogic(this) }
+    // public static clone(worldData: WorldData, data_: any) { return new Terrain(worldData).copyDeep(data_) }
+    // for (let index = 0; index < ptsGeo.length; index++) {
+    //     const stepInd = index * 3
+    //     const ptGeo = ptsGeo[index];
+    //     cartPts = Points.cartesianRadius(ptGeo, 2);
+    //     const rawh = Math.abs(this.noise.perlin3(...cartPts));
+    //     var elev = rawh * maxElev;
+    //     cartPts = Points.cartesianRadius(ptGeo, sphSize - elev);
+    //     // console.log(" -------------- ptGeo", ptGeo);
+    //     this.position[stepInd + 0] = cartPts[0]
+    //     this.position[stepInd + 1] = cartPts[1]
+    //     this.position[stepInd + 2] = cartPts[2]
+    //     // this.position[stepInd + 0] = (ptGeo[1]) * 4
+    //     // this.position[stepInd + 1] = elev
+    //     // this.position[stepInd + 2] = (ptGeo[0] - 180) * 4
+    //     // color.setRGB(Math.random(), Math.random(), Math.random());
+    //     // var vx = cartPts[0] / (sphSize + maxElev) + 0.5;
+    //     // var vy = cartPts[1] / (sphSize + maxElev) + 0.5;
+    //     // var vz = cartPts[2] / (sphSize + maxElev) + 0.5;
+    //     // color.setRGB(vx, vy, vz);
+    //     var col = rawh;
+    //     color.setRGB(col, col, col);
+    //     if (randIndexes.includes(index))
+    //         color.setRGB(1, 0, 0);
+    //     // this.color[index] = [color.r, color.g, color.b];
+    //     // this.color.push(color.r, color.g, color.b);
+    //     this.color[stepInd + 0] = color.r
+    //     this.color[stepInd + 1] = color.g
+    //     this.color[stepInd + 2] = color.b
+    // }
+    // ptsLines = new d3GeoWrapper(ptsGeo).getVoroLineSegsCart(this.position);
+    // var graph = new Graph().mkUndirGeo(ptsGeo);
+    // var lsPos = 0;
+    // var ptsLines = new Float32Array(ptsGeo.length * 2 * 3)
+    // for (let index = 0; index < tree.predecessor.length; index++) {
+    //     const element = tree.predecessor[index];
+    //     // for (let index = 0; index < tree.origin.length; index++) {
+    //     //     const element = tree.origin[index];
+    //     if (element == -1) continue;
+    //     ptsLines[lsPos++] = this.position[index * 3 + 0]
+    //     ptsLines[lsPos++] = this.position[index * 3 + 1]
+    //     ptsLines[lsPos++] = this.position[index * 3 + 2]
+    //     ptsLines[lsPos++] = this.position[element * 3 + 0]
+    //     ptsLines[lsPos++] = this.position[element * 3 + 1]
+    //     ptsLines[lsPos++] = this.position[element * 3 + 2]
+    // }
+    // for (let index = 0; index < this.position.length; index++) {
+    //     this.position[index] *= 0.9;
+    // }
+    // console.log("ptsGeo", ptsGeo);
+    // console.log("this.position", this.position);
+    // console.log("ptsLines", ptsLines);
+    // console.log("this.color", this.color);
+    clone() { return new Terrain(this.getWorldData()).copyLogic(this); }
+    static clone(worldData, data_) { return new Terrain(worldData).copyDeep(data_); }
+    static get type() { return `Terrain`; }
 }
 exports.Terrain = Terrain;
 
@@ -95222,6 +95317,18 @@ class JguiMake {
         cdiv.appendHtml(cbutton);
         this.appendHtml(cdiv);
         return [cswitch, cbutton];
+    }
+    addTooltip(ttName) {
+        // https://getbootstrap.com/docs/5.0/components/tooltips/
+        if (this.attr["data-bs-toggle"]) {
+            console.warn(`Cannot set tooltip, data-bs-toggle is already present ${this.attr["data-bs-toggle"]} `, this);
+            return this;
+        }
+        this.attr["data-bs-toggle"] = "tooltip";
+        this.attr["data-bs-animation"] = "false";
+        this.attr["data-bs-placement"] = "right";
+        this.attr.title = ttName;
+        return this;
     }
     addDropdown(ddwName, ddwArr) {
         // https://getbootstrap.com/docs/5.0/components/dropdowns/
@@ -95449,6 +95556,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.setTempContainer = exports.setMainContainer = void 0;
 const Config_1 = __webpack_require__(/*! ../modules/Config */ "./src/modules/Config.ts");
 function setMainContainer(the_worker, workerJgui) {
+    // console.warn("workerJgui", workerJgui);
     the_worker.postMessage({
         message: Config_1.MessageType.RefreshJGUI,
         jgui: workerJgui,
@@ -95490,8 +95598,8 @@ const Convert = __webpack_require__(/*! ../utils/Convert */ "./src/utils/Convert
 class Config {
     constructor() {
         this.follow_pointed_orbit = "auto";
-        this.globalIsReady = false; // global flag for when Tickers can run
-        this.timeUpdSpeed = 0.0004;
+        // globalIsReady: boolean = false; // global flag for when Tickers can run
+        this.timeEarthYearsTick = 0.0004;
         this.genEnsureInHabZone = true;
         this.genEnsureCenteredInHabZone = true;
         this.genEnsureMoonInHabZone = true;
@@ -95573,14 +95681,12 @@ class DataBaseManager {
                 // TODO, make generic container with ID-able objects
                 if (!db.objectStoreNames.contains(DataBaseManager.STANDARD_OBJECTS)) {
                     const store = db.createObjectStore(DataBaseManager.STANDARD_OBJECTS, { keyPath: 'id', autoIncrement: false });
+                    store.createIndex('type', 'type', { unique: false });
                     // store.createIndex('id', 'id');
                     // console.log("createObjectStore ", STANDARD_OBJECTS);
                 }
-                if (!db.objectStoreNames.contains(DataBaseManager.BIG_OBJECTS)) {
-                    const store = db.createObjectStore(DataBaseManager.BIG_OBJECTS, { keyPath: 'id', autoIncrement: false });
-                    // store.createIndex('id', 'id');
-                    store.createIndex('type', 'type', { unique: false });
-                    // console.log("createObjectStore ", BIG_OBJECTS);
+                if (!db.objectStoreNames.contains(DataBaseManager.KEYVAL_OBJECTS)) {
+                    const store = db.createObjectStore(DataBaseManager.KEYVAL_OBJECTS);
                 }
             }
         });
@@ -95589,10 +95695,15 @@ class DataBaseManager {
         console.debug("#HERELINE DataBaseManager " + this.name + " delete ");
         return idb_1.deleteDB(this.tableName);
     }
+    async getKv(key) { return await this.idb.get('keyval', key); }
+    setKv(key, val) { return this.idb.put('keyval', val, key); }
+    delKv(key) { return this.idb.delete('keyval', key); }
+    clearKv() { return this.idb.clear('keyval'); }
+    keysKv() { return this.idb.getAllKeys('keyval'); }
 }
 exports.DataBaseManager = DataBaseManager;
 DataBaseManager.STANDARD_OBJECTS = "STANDARD_OBJECTS";
-DataBaseManager.BIG_OBJECTS = "BIG_OBJECTS";
+DataBaseManager.KEYVAL_OBJECTS = "keyval";
 
 
 /***/ }),
@@ -95624,6 +95735,7 @@ class DrawD3Plsys {
         this.config = null;
         this.fakeDOM = new WorkerDOM_1.WorkerDOM();
         this.ctx = null;
+        this.planetarySystem = null;
     }
     init(event) {
         console.debug(`#HERELINE ${this.type} init `);
@@ -95667,7 +95779,7 @@ class DrawD3Plsys {
         // const nodes = root.descendants();
         // const nodes = root.leaves();
         var nodeSize = 17;
-        const allElems = this.world.planetarySystem.getAllElems();
+        const allElems = this.planetarySystem.getAllElems();
         // nodes.forEach((node, index) => {
         allElems.forEach((node, index) => {
             var _a;
@@ -95862,16 +95974,17 @@ class DrawD3Terrain {
         //     coordinates: Points.makeGeoPtsFibb(1000)
         //     // coordinates: Points.makeGeoPtsRandOk(1000)
         // }
-        for (const tkpl of this.terrain.tkplates) {
-            this.ctx.beginPath();
-            var ptsWrapper = {
-                type: "MultiPoint",
-                coordinates: tkpl.latlon,
-            };
-            this.path(ptsWrapper);
-            this.ctx.fillStyle = tkpl.colorId;
-            this.ctx.fill();
-        }
+        if (this.ptsRadius != 0)
+            for (const tkpl of this.terrain.tkplates) {
+                this.ctx.beginPath();
+                var ptsWrapper = {
+                    type: "MultiPoint",
+                    coordinates: tkpl.latlon,
+                };
+                this.path(ptsWrapper);
+                this.ctx.fillStyle = tkpl.colorId;
+                this.ctx.fill();
+            }
         this.ctx.restore();
     }
     zoomed(event) {
@@ -95988,6 +96101,7 @@ class DrawThreePlsys {
         this.orbElemToGroup = new Map();
         this.lastSelectedId = 0;
         this.selectedThing = null;
+        this.planetarySystem = null;
         this.distToTarget = 0;
         this.canvasSelectionData = { mousex: 0, mousey: 0, hoverId: 0, selectedId: 0 };
         this.workerJguiManager = null;
@@ -96127,7 +96241,7 @@ class DrawThreePlsys {
             this.canvasSelectionData.selectedId = this.canvasSelectionData.hoverId;
             // var selected = mngr.world.idObjMap.get(this.canvasSelectionData.hoverId)
             // mngr.gui.selectOrbElement(selected as OrbitingElement);
-            var selOrbElem = this.world.idObjMap.get(this.canvasSelectionData.selectedId);
+            var selOrbElem = this.world.getAnyObj(this.canvasSelectionData.selectedId);
             if (selOrbElem) {
                 var tempJgui = new JguiMake_1.JguiMake(null).mkContainer();
                 // tempJgui.addButton("genStartingPlanetSystem")
@@ -96161,7 +96275,7 @@ class DrawThreePlsys {
         0 // aRotation
         );
         var pointsResolution = 100;
-        // if (orbitingElement_.semiminor_axis.value > this.world.planetarySystem.frost_line.value)
+        // if (orbitingElement_.semiminor_axis.value > this.planetarySystem.frost_line.value)
         pointsResolution = 200;
         const points = orbEllipseCurve_.getPoints(pointsResolution);
         orbLine_.geometry.setFromPoints(points);
@@ -96361,9 +96475,9 @@ class DrawThreePlsys {
         // console.debug("#HERELINE "+this.type+" 143 ");
         console.time(`#time ${this.type} updateDeep`);
         this.hab_zone.geometry = new THREE.RingGeometry(// DRAWUNIT
-        this.world.planetarySystem.hab_zone_in.Gm, this.world.planetarySystem.hab_zone_out.Gm, 50, 1);
+        this.planetarySystem.hab_zone_in.Gm, this.planetarySystem.hab_zone_out.Gm, 50, 1);
         this.frost_zone.geometry = new THREE.RingGeometry(// DRAWUNIT
-        this.world.planetarySystem.frost_line.Gm, this.world.planetarySystem.orbits_limit_out.Gm, 50, 1);
+        this.planetarySystem.frost_line.Gm, this.planetarySystem.orbits_limit_out.Gm, 50, 1);
         while (this.orb_lines.length > 0)
             this.tjs_pool_lines.free(this.orb_lines.pop());
         while (this.orb_planets.length > 0)
@@ -96375,7 +96489,7 @@ class DrawThreePlsys {
         while (this.orb_objects.length > 0)
             this.orb_objects.pop();
         this.orbElemToGroup.clear();
-        this.popOrbits([this.world.planetarySystem], this.scene, this.scene);
+        this.popOrbits([this.planetarySystem], this.scene, this.scene);
         // this.popOrbits(this.world.planetary_system.getSats(), this.scene, this.scene)
         console.timeEnd((`#time ${this.type} updateDeep`));
     }
@@ -96396,7 +96510,7 @@ class DrawThreePlsys {
             // var orb_len = orbEllipseCurve_.getLength()
             // var orb_len = parentOrbit.perimeter.Gm // DRAWUNIT
             var orb_per = parentOrbit.orbitalPeriod;
-            var time_orb = this.world.planetarySystem.time.ey % orb_per.ey;
+            var time_orb = this.world.time.ey % orb_per.ey;
             var time_orb_proc = time_orb / orb_per.ey;
             time_orb_proc += parentOrbit.mean_longitude.rev;
             var true_theta = Convert.true_anomaly_rev(time_orb_proc, parentOrbit.eccentricity);
@@ -96473,7 +96587,7 @@ class DrawThreePlsys {
         if (this.lastSelectedId != this.canvasSelectionData.selectedId) {
             this.lastSelectedId = this.canvasSelectionData.selectedId;
             // console.log("this.lastSelectedId", this.lastSelectedId);
-            var selOrbElem = this.world.idObjMap.get(this.lastSelectedId);
+            var selOrbElem = this.world.getAnyObj(this.lastSelectedId);
             if (selOrbElem) {
                 var fosusElem = selOrbElem;
                 if (this.config.follow_pointed_orbit === "auto") {
@@ -96528,7 +96642,7 @@ const OrbitControls_1 = __webpack_require__(/*! three/examples/jsm/controls/Orbi
 class DrawThreeTerrain {
     constructor() {
         this.fakeDOM = new WorkerDOM_1.WorkerDOM();
-        this.ptsRadius = 40;
+        this.ptsRadius = 320;
         this.terrain = null;
         this.raycaster = new THREE.Raycaster();
         this.distToTarget = 1;
@@ -96546,10 +96660,8 @@ class DrawThreeTerrain {
     init(event) {
         this.canvasOffscreen = event.data.canvas;
         this.scene = new THREE.Scene();
-        this.camera = new THREE.PerspectiveCamera(75, this.canvasOffscreen.width / this.canvasOffscreen.height, 0.1, 100000); // DRAWUNIT
-        this.camera.position.x = 1000 * 2; // DRAWUNIT
-        // this.camera.position.y = 1000 * 0.9; // DRAWUNIT
-        this.camera.lookAt(0, 0, 0);
+        this.camera = new THREE.PerspectiveCamera(75, this.canvasOffscreen.width / this.canvasOffscreen.height, 0.1, 1000000);
+        this.setCamera();
         this.renderer = new THREE.WebGLRenderer({
             canvas: this.canvasOffscreen,
             antialias: true,
@@ -96640,8 +96752,15 @@ class DrawThreeTerrain {
     }
     updateShallow() {
     }
+    setCamera() {
+        this.camera.position.x = this.terrain.tData.sphereSize * 2.2; // DRAWUNIT
+        this.camera.position.y = 0;
+        this.camera.position.z = 0;
+        this.camera.lookAt(0, 0, 0);
+    }
     updateDeep() {
         console.time(`#time DrawThreeTerrain updateDeep`);
+        this.setCamera();
         this.clearTerrainData();
         this.syncTerrainData();
         console.timeEnd(`#time DrawThreeTerrain updateDeep`);
@@ -96663,12 +96782,13 @@ class DrawThreeTerrain {
     }
     updatePtsMaterials() {
         for (const ptsObj of this.terrData.tpPts.values()) {
+            ptsObj.material.visible = (this.ptsRadius != 0);
             ptsObj.material.size = this.ptsRadius;
             ptsObj.material.needsUpdate = true;
         }
     }
     addJgui(workerJgui, workerJguiManager) {
-        workerJgui.addSlider("THREE Points size", 0, 100, 0.1, this.ptsRadius)
+        workerJgui.addSlider("THREE Points size", 0, 500, 1, this.ptsRadius)
             .addEventListener(workerJguiManager, "input", (event) => {
             this.ptsRadius = Number.parseFloat(event.data.event.target.value);
             this.updatePtsMaterials();
@@ -96777,7 +96897,7 @@ class BaseWorker {
         console.warn(`Not implemented in ${this.name} : ${message_} !`);
     }
     async refreshConfig() {
-        this.ticker.updateState(this.config.globalIsReady);
+        // this.ticker.updateState(this.config.globalIsReady)
     }
     updPause() {
         this.ticker.stop();
@@ -96887,24 +97007,35 @@ exports.PlanetSysWorker = void 0;
 const GenWorkerMetadata_1 = __webpack_require__(/*! ./GenWorkerMetadata */ "./src/modules/GenWorkerMetadata.ts");
 const Config_1 = __webpack_require__(/*! ./Config */ "./src/modules/Config.ts");
 const DrawThreePlsys_1 = __webpack_require__(/*! ./DrawThreePlsys */ "./src/modules/DrawThreePlsys.ts");
+const PlanetarySystem_1 = __webpack_require__(/*! ../generate/PlanetarySystem */ "./src/generate/PlanetarySystem.ts");
 const DrawD3Plsys_1 = __webpack_require__(/*! ./DrawD3Plsys */ "./src/modules/DrawD3Plsys.ts");
 const JguiMake_1 = __webpack_require__(/*! ../gui/JguiMake */ "./src/gui/JguiMake.ts");
 const JguiUtils_1 = __webpack_require__(/*! ../gui/JguiUtils */ "./src/gui/JguiUtils.ts");
+const SpaceFactory_1 = __webpack_require__(/*! ../generate/SpaceFactory */ "./src/generate/SpaceFactory.ts");
 // TODO move generation in this worker instead of in the main thread
 // TODO simplify the refresh deep/shallow mechanisms since most actions will be done in this worker
 // TODO store position and rotation of objects inside themselves after time/orbit update so other workers can do "basic" checks and calculations
+const MAIN_ORDINAL = "5";
 class PlanetSysWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
     constructor(config, worker, workerName, event) {
         super(config, worker, workerName, event);
+        this.planetarySystem = null;
+        this.spaceFactory = null;
         // this.ticker.tick_interval = Units.LOOP_INTERVAL / 10;
+        this.planetarySystem = new PlanetarySystem_1.PlanetarySystem(this.world);
+        this.spaceFactory = new SpaceFactory_1.SpaceFactory(this.world);
+        this.spread_objects(this.planetarySystem);
+        this.spread_objects(this.spaceFactory);
     }
     init() {
         Promise.resolve().then(() => {
+            this.makeJgiu();
+        }).then(() => {
             this.worker.postMessage({
                 message: Config_1.MessageType.CanvasMake,
                 metaCanvas: {
                     id: `${this.name}-canvas-DrawThreePlsys`,
-                    order: "400",
+                    order: MAIN_ORDINAL + "10",
                     generalFlags: ["orbit"],
                 }
             });
@@ -96912,19 +97043,20 @@ class PlanetSysWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
                 message: Config_1.MessageType.CanvasMake,
                 metaCanvas: {
                     id: `${this.name}-canvas-DrawD3Plsys`,
-                    order: "800",
+                    order: MAIN_ORDINAL + "20",
                     generalFlags: [],
                 }
             });
         }).then(() => {
-            return this.world.initPlSys();
+            this.planetarySystem.init();
+            /////////// this.planetary_system.setWorldData(this);
+            /////////// this.setOrbElem(this.planetary_system);
+            this.spaceFactory.genStartingPlanetSystem(this.planetarySystem);
         }).then(() => {
             console.log("this.world", this.world);
             //     return this.world.writeDeep();
         }).then(() => {
-            // return this.refreshDeep(true);
-        }).then(() => {
-            this.makeJgiu();
+            return this.refreshDeep(false);
         });
     }
     CanvasReady(event) {
@@ -96949,6 +97081,13 @@ class PlanetSysWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
                 console.warn(`Not implemented in ${this.name} : ${event.data.metaCanvas.id} !`);
                 break;
         }
+    }
+    spread_objects(object_) {
+        super.spread_objects(object_);
+        if (object_.spaceFactory === null)
+            object_.spaceFactory = this.spaceFactory;
+        if (object_.planetarySystem === null)
+            object_.planetarySystem = this.planetarySystem;
     }
     getMessageExtra(event) {
         // console.debug(`#HERELINE ${this.name} getMessageExtra  ${event.data.message}`, event.data);
@@ -96997,7 +97136,7 @@ class PlanetSysWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
     }
     async refreshDeep(doSpecial = true) {
         // console.debug("#HERELINE DrawWorker refreshDeep");
-        // await this.world.readDeep();
+        await this.world.writeAllRw();
         for (const draw_ of this.mapDraws.values())
             draw_.updateDeep();
         if (doSpecial) {
@@ -97020,6 +97159,7 @@ class PlanetSysWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
     async refreshTick(doSpecial = true) {
         // console.debug("#HERELINE DrawWorker refreshShallow");
         // await this.world.readShallow();
+        await this.world.readTime();
         if (doSpecial) {
             this.doUpdate && this.updatePlSys();
             if (this.doDraw)
@@ -97028,18 +97168,22 @@ class PlanetSysWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
             // await this.world.writeShallow();
             // this.tellMainToUpdate();
         }
+        await this.world.writeTime();
     }
     updatePlSys() {
         // console.debug("#HERELINE UpdateWorld update ", this.world.planetary_system.time.ey);
         // TODO make a separate object for this data,seeds and similar value will need to be stored in the future
-        this.world.planetarySystem.time.ey += this.config.timeUpdSpeed;
+        this.world.time.ey += this.config.timeEarthYearsTick;
         // console.log("this.world.planetary_system.time.ey", this.world.planetary_system.time.ey);
         // this.updateTerrain();
     }
     makeJgiu() {
-        var plsys = this.world.planetarySystem;
+        var plsys = this.planetarySystem;
+        var workerJguiManager = this.workerJguiManager;
         var workerJgui;
-        [this.workerJguiMain, workerJgui] = new JguiMake_1.JguiMake(null).mkWorkerJgui("plsys", "200", false);
+        var startExpanded = true;
+        const jguiOrdinal = MAIN_ORDINAL + "00";
+        [this.workerJguiMain, workerJgui] = new JguiMake_1.JguiMake(null).mkWorkerJgui("plsys", jguiOrdinal, startExpanded);
         var chboxUpd, chboxDraw;
         [chboxUpd, chboxDraw] = workerJgui.add2CheckButtons("Update", this.doUpdate, "Draw", this.doDraw);
         chboxUpd.addEventListener(this.workerJguiManager, "change", (event) => {
@@ -97049,29 +97193,33 @@ class PlanetSysWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
             this.doDraw = event.data.event.target.checked;
         });
         workerJgui.addButton("genStartingPlanetSystem").addEventListener(this.workerJguiManager, "click", (event) => {
-            this.world.spaceFactory.genStartingPlanetSystem(plsys);
+            this.spaceFactory.genStartingPlanetSystem(plsys);
             this.refreshDeep();
         });
         workerJgui.addButton("genStar").addEventListener(this.workerJguiManager, "click", (event) => {
-            this.world.spaceFactory.genStar(plsys, plsys);
+            this.spaceFactory.genStar(plsys, plsys);
             this.refreshDeep();
         });
         workerJgui.addButton("genPTypeStarts").addEventListener(this.workerJguiManager, "click", (event) => {
-            this.world.spaceFactory.genPTypeStarts(plsys, plsys);
+            this.spaceFactory.genPTypeStarts(plsys, plsys);
             this.refreshDeep();
         });
         workerJgui.addButton("genOrbitsSimple").addEventListener(this.workerJguiManager, "click", (event) => {
-            this.world.spaceFactory.genOrbitsSimple(plsys, plsys.root());
+            this.spaceFactory.genOrbitsSimple(plsys, plsys.root());
             this.refreshDeep();
         });
         workerJgui.addButton("genOrbitsSimpleMoons").addEventListener(this.workerJguiManager, "click", (event) => {
-            this.world.spaceFactory.genOrbitsSimpleMoons(plsys, plsys.root());
+            this.spaceFactory.genOrbitsSimpleMoons(plsys, plsys.root());
             this.refreshDeep();
         });
         // workerJgui.addButton("genOrbitsUniform").addEventListener(this.workerJguiManager, "click", (event: WorkerEvent) => {
-        //     this.world.spaceFactory.genOrbitsUniform(plsys, plsys.root())
+        //     this.spaceFactory.genOrbitsUniform(plsys, plsys.root())
         //     this.refreshDeep()
         // })
+        workerJgui.addSlider("Earth years upd", 0, 0.005, 0.00001, this.config.timeEarthYearsTick)
+            .addEventListener(workerJguiManager, "input", (event) => {
+            this.config.timeEarthYearsTick = Number.parseFloat(event.data.event.target.value);
+        });
         for (const draw_ of this.mapDraws.values())
             draw_.addJgui(workerJgui, this.workerJguiManager);
         // console.log("this.workerJguiMain", this.workerJguiMain);
@@ -97100,6 +97248,8 @@ const JguiMake_1 = __webpack_require__(/*! ../gui/JguiMake */ "./src/gui/JguiMak
 const JguiUtils_1 = __webpack_require__(/*! ../gui/JguiUtils */ "./src/gui/JguiUtils.ts");
 const Terrain_1 = __webpack_require__(/*! ../generate/Terrain */ "./src/generate/Terrain.ts");
 const DrawThreeTerrain_1 = __webpack_require__(/*! ./DrawThreeTerrain */ "./src/modules/DrawThreeTerrain.ts");
+const Planet_1 = __webpack_require__(/*! ../generate/Planet */ "./src/generate/Planet.ts");
+const MAIN_ORDINAL = "2";
 class TerrainWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
     constructor(config, worker, workerName, event) {
         super(config, worker, workerName, event);
@@ -97107,11 +97257,13 @@ class TerrainWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
     }
     init() {
         Promise.resolve().then(() => {
+            this.makeJgiu();
+        }).then(() => {
             this.worker.postMessage({
                 message: Config_1.MessageType.CanvasMake,
                 metaCanvas: {
                     id: `${this.name}-canvas-DrawThreeTerrain`,
-                    order: "100",
+                    order: MAIN_ORDINAL + "10",
                     generalFlags: ["orbit"],
                 }
             });
@@ -97119,14 +97271,19 @@ class TerrainWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
                 message: Config_1.MessageType.CanvasMake,
                 metaCanvas: {
                     id: `${this.name}-canvas-DrawD3Terrain`,
-                    order: "200",
+                    order: MAIN_ORDINAL + "20",
                     generalFlags: ["d3"],
                 }
             });
         }).then(() => {
-            this.makeJgiu();
+            /// TODO FIXME TMP until we have a proper "sequence" of generartion steps
+            var DUMMY_PLANET = new Planet_1.Planet(this.world);
+            DUMMY_PLANET.makeEarthLike();
+            this.world.setRwObj(DUMMY_PLANET);
+            this.terrain.init(DUMMY_PLANET);
+            this.world.setRwObj(this.terrain);
         }).then(() => {
-            this.terrain.init();
+            return this.refreshDeep(false);
         });
     }
     CanvasReady(event) {
@@ -97192,8 +97349,7 @@ class TerrainWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
     }
     async refreshDeep(doSpecial = true) {
         console.debug("#HERELINE DrawWorker refreshDeep");
-        // await this.world.readDeep();
-        // this.planetarySystem = this.world.planetarySystem;
+        await this.world.writeAllRw();
         for (const draw_ of this.mapDraws.values())
             draw_.updateDeep();
         if (doSpecial) {
@@ -97220,20 +97376,39 @@ class TerrainWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
         //     draw_.draw();
         this.refreshTick(true);
     }
+    updateTerrain() {
+    }
     async refreshTick(doSpecial = true) {
-        // console.debug("#HERELINE DrawWorker refreshShallow");
-        // await this.world.readShallow();
+        await this.world.readTime();
         if (doSpecial) {
-            // this.updatePlSys();
+            this.doUpdate && this.updateTerrain();
             if (this.doDraw)
                 for (const draw_ of this.mapDraws.values())
                     draw_.draw();
-            // await this.world.writeShallow();
-            // this.tellMainToUpdate();
+        }
+        // await this.world.writeTime();
+    }
+    async genFromExistingPlanet() {
+        var didOnce = false;
+        for await (const planet_ of this.world.iterObjsType(Planet_1.Planet, "readwrite")) {
+            if (didOnce)
+                break;
+            if (planet_ instanceof Planet_1.Planet && planet_.isInHabZone) {
+                // if (planet_.planetType == "Normal" && planet_.terrainId == null) {
+                if (planet_.planetType == "Normal" && didOnce == false) {
+                    console.log("planet_", planet_);
+                    console.log("this.terrain", this.terrain);
+                    this.terrain.init(planet_);
+                    planet_.setTerrain(this.terrain);
+                    this.refreshDeep(false);
+                    didOnce = true;
+                }
+            }
         }
     }
     makeJgiu() {
-        [this.workerJguiMain, this.workerJguiCont] = new JguiMake_1.JguiMake(null).mkWorkerJgui("terr", "100");
+        const jguiOrdinal = MAIN_ORDINAL + "00";
+        [this.workerJguiMain, this.workerJguiCont] = new JguiMake_1.JguiMake(null).mkWorkerJgui("terr", jguiOrdinal);
         var chboxUpd, chboxDraw;
         [chboxUpd, chboxDraw] = this.workerJguiCont.add2CheckButtons("Update", this.doUpdate, "Draw", this.doDraw);
         chboxUpd.addEventListener(this.workerJguiManager, "change", (event) => {
@@ -97242,10 +97417,10 @@ class TerrainWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
         chboxDraw.addEventListener(this.workerJguiManager, "change", (event) => {
             this.doDraw = event.data.event.target.checked;
         });
-        this.workerJguiCont.addButton("Re-Genearte").addEventListener(this.workerJguiManager, "click", (event) => {
-            this.terrain.generate();
-            for (const draw_ of this.mapDraws.values())
-                draw_.updateDeep();
+        this.workerJguiCont.addButton("Re-Genearte")
+            .addTooltip("Regenerating will use an actual Planet, first run uses a dummy instance so we do not wait for PlSys to gen.")
+            .addEventListener(this.workerJguiManager, "click", (event) => {
+            this.genFromExistingPlanet();
         });
         JguiUtils_1.setMainContainer(this.worker, this.workerJguiMain);
     }
@@ -97267,7 +97442,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.WorldData = exports.objects_types_ = void 0;
 const PlanetarySystem_1 = __webpack_require__(/*! ../generate/PlanetarySystem */ "./src/generate/PlanetarySystem.ts");
 const DataBaseManager_1 = __webpack_require__(/*! ./DataBaseManager */ "./src/modules/DataBaseManager.ts");
-const SpaceFactory_1 = __webpack_require__(/*! ../generate/SpaceFactory */ "./src/generate/SpaceFactory.ts");
+const Convert = __webpack_require__(/*! ../utils/Convert */ "./src/utils/Convert.ts");
 const Orbit_1 = __webpack_require__(/*! ../generate/Orbit */ "./src/generate/Orbit.ts");
 const Planet_1 = __webpack_require__(/*! ../generate/Planet */ "./src/generate/Planet.ts");
 const Star_1 = __webpack_require__(/*! ../generate/Star */ "./src/generate/Star.ts");
@@ -97289,8 +97464,13 @@ exports.objects_types_.Terrain = Terrain_1.Terrain;
 class WorldData {
     constructor(targetTable, name, startId, config) {
         this.type = this.constructor.name;
-        this.idObjMap = new Map();
+        this.rwDbObjs = new Map();
+        this.roDbObjs = new Map();
+        this.roDbRaws = new Map();
+        this.cleanupIds = new Array();
         this.config = null;
+        // TODO Move in WorldData when more fine read/write can be done
+        this.time = new Convert.NumberTime();
         this.name = name;
         this.startId = startId;
         this.config = config;
@@ -97299,30 +97479,13 @@ class WorldData {
         WorldData.wdMaxId = this.startId;
         console.debug("this.startId", this.startId);
         this.dbm = new DataBaseManager_1.DataBaseManager(targetTable, name);
-        this.spaceFactory = new SpaceFactory_1.SpaceFactory(this);
-        this.planetarySystem = new PlanetarySystem_1.PlanetarySystem(this);
         // console.log("this.planetary_system.getWorldData()", this.planetary_system.getWorldData());
     }
     async preInit() {
         console.debug(`#HERELINE WorldData preInit ${this.config.WORLD_DATABASE_NAME} `);
         return this.dbm.init(this.config.keepDbAtPageRefresh).then(() => {
             console.debug(`#HERELINE WorldData ${this.name} preInit then`);
-            this.spread_objects();
         });
-    }
-    async initPlSys() {
-        console.debug("#HERELINE WorldData initPlSys");
-        if (this.config.keepDbAtPageRefresh) {
-            // return this.readDeep();
-        }
-        else {
-            this.planetarySystem.init();
-            /////////// this.planetary_system.setWorldData(this);
-            /////////// this.setOrbElem(this.planetary_system);
-            this.spaceFactory.genStartingPlanetSystem(this.planetarySystem);
-            return Promise.resolve();
-        }
-        return Promise.reject();
     }
     // public async initTerrain() {
     //     console.debug("#HERELINE WorldData initTerrain");
@@ -97339,86 +97502,115 @@ class WorldData {
         console.debug("#HERELINE WorldData initWorker");
         return this.dbm.open();
     }
-    spread_objects() {
-        var to_spread = [this.spaceFactory];
-        for (const object_ of to_spread) {
-            if (object_.planetarySystem === null)
-                object_.planetarySystem = this.planetarySystem;
-            if (object_.config === null)
-                object_.config = this.config;
-            if (object_.world === null)
-                object_.world = this;
-        }
-    }
     getFreeID() {
         return WorldData.wdMaxId += this.config.incrementId;
-        // if (!this.sharedData) return Math.ceil(Math.random() * 10000) + 1000;
-        // var id_ = this.sharedData.maxId++;
-        // while (this.idObjMap.has(id_))
-        //     id_ = this.sharedData.maxId++;
-        // return id_;
+    }
+    getAnyObj(id_) {
+        if (this.rwDbObjs.has(id_))
+            return this.rwDbObjs.get(id_);
+        if (this.roDbObjs.has(id_))
+            return this.roDbObjs.get(id_);
+        return null;
+    }
+    getRoObj(id_) {
+        if (this.roDbObjs.has(id_))
+            return this.roDbObjs.get(id_);
+        return null;
+    }
+    getRwObj(id_) {
+        if (this.rwDbObjs.has(id_))
+            return this.rwDbObjs.get(id_);
+        return null;
     }
     free(id_) {
-        this.idObjMap.delete(id_);
+        if (this.rwDbObjs.has(id_))
+            this.rwDbObjs.delete(id_);
+        this.cleanupIds.push(id_);
     }
-    setIdObject(obj_) {
-        this.idObjMap.set(obj_.id, obj_);
+    setRwObj(obj_) {
+        this.rwDbObjs.set(obj_.id, obj_);
     }
-    async readShallow() {
+    async readTime() {
+        this.time.value = await this.getKv("world_time");
+        return this.time;
+    }
+    async writeTime() { return this.setKv("world_time", this.time.value); }
+    restartTime() {
+        this.time.eby = 0;
+        this.writeTime();
+    }
+    async getKv(key) { return this.dbm.getKv(key); }
+    async setKv(key, val) { return this.dbm.setKv(key, val); }
+    async delKv(key) { return this.dbm.delKv(key); }
+    async clearKv() { return this.dbm.clearKv(); }
+    async keysKv() { return this.dbm.keysKv(); }
+    /*
+
+    public async readShallow() {
         // console.debug("#HERELINE WorldData readShallow this.name", this.name);
         // console.time("#time WorldData " + this.name + " readShallow");
+
         // return this.readDeep(); // TODO WA FIXME
-        var data_ps = this.dbm.idb.transaction(DataBaseManager_1.DataBaseManager.STANDARD_OBJECTS, "readonly");
+        var data_ps = this.dbm.idb.transaction(DataBaseManager.STANDARD_OBJECTS, "readonly");
+
         // var keys_from_db = []
-        // var keys_from_wd = [...this.idObjMap.keys()]
-        var all = await data_ps.store.getAll(); /// var 1
+        // var keys_from_wd = [...this.mainDbData.keys()]
+
+        var all = await data_ps.store.getAll() /// var 1
         for (const iterator of all) { /// var 1
             // var cursor = data_ps.store.openCursor(); /// var 2
             // for await (const cursor of data_ps.store) { /// var 2
             //     var iterator = cursor.value; /// var 2
+
             // keys_from_db.push(iterator.id)
             if (iterator.type == "PlanetarySystem") {
-                this.planetarySystem.copyShallow(iterator);
-                this.idObjMap.set(iterator.id, this.planetarySystem);
-            }
-            else {
-                const newLocal = this.idObjMap.get(iterator.id);
+                this.planetarySystem.copyShallow(iterator)
+                this.rwDbObjs.set(iterator.id, this.planetarySystem)
+            } else {
+                const newLocal = this.rwDbObjs.get(iterator.id);
                 if (!newLocal) {
                     console.warn("this", this);
-                    // console.warn("this.idObjMap", this.idObjMap);
+                    // console.warn("this.mainDbData", this.mainDbData);
                     // console.warn("iterator", iterator);
                 }
                 newLocal.copyShallow(iterator);
             }
         }
+
         // keys_from_db.sort()
         // keys_from_wd.sort()
+
         // console.log("keys_from_db", keys_from_db);
         // console.log("keys_from_wd", keys_from_wd);
+
+
         await data_ps.done.finally(() => {
             // console.timeEnd("#time WorldData " + this.name + " readShallow");
-        });
+        })
     }
-    async readDeep() {
+
+    public async readDeep() {
         console.debug(`#HERELINE WorldData readDeep this.name ${this.name}`);
         console.time(`#time WorldData ${this.name} readDeep`);
-        var data_ps = this.dbm.idb.transaction(DataBaseManager_1.DataBaseManager.STANDARD_OBJECTS, "readonly");
-        this.idObjMap.clear();
-        var all = await data_ps.store.getAll(); /// var 1
+
+        var data_ps = this.dbm.idb.transaction(DataBaseManager.STANDARD_OBJECTS, "readonly");
+        this.rwDbObjs.clear()
+
+        var all = await data_ps.store.getAll() /// var 1
         for (const iterator of all) { /// var 1
             // var cursor = data_ps.store.openCursor(); /// var 2
             // for await (const cursor of data_ps.store) { /// var 2
             //     var iterator = cursor.value; /// var 2
+
             if (iterator.type == "PlanetarySystem") {
-                this.planetarySystem.copyDeep(iterator);
-                this.idObjMap.set(iterator.id, this.planetarySystem);
-            }
-            else {
-                var obj_ = new exports.objects_types_[iterator.type](this); // wow
-                this.idObjMap.set(iterator.id, obj_);
-                const newLocal = this.idObjMap.get(iterator.id);
+                this.planetarySystem.copyDeep(iterator)
+                this.rwDbObjs.set(iterator.id, this.planetarySystem)
+            } else {
+                var obj_ = new objects_types_[iterator.type](this) // wow
+                this.rwDbObjs.set(iterator.id, obj_)
+                const newLocal = this.rwDbObjs.get(iterator.id);
                 if (!newLocal) {
-                    console.warn("this.idObjMap", this.idObjMap);
+                    console.warn("this.mainDbData", this.rwDbObjs);
                     console.warn("this", this);
                     console.warn("iterator", iterator);
                 }
@@ -97427,48 +97619,89 @@ class WorldData {
         }
         await data_ps.done.finally(() => {
             console.timeEnd(`#time WorldData ${this.name} readDeep`);
-        });
+        })
     }
-    async writeDeep() {
+
+
+
+
+    public async writeDeep() {
         console.debug(`#HERELINE WorldData writeDeep this.name ${this.name}`);
         console.time(`#time WorldData ${this.name} writeDeep`);
-        var data_ps = this.dbm.idb.transaction(DataBaseManager_1.DataBaseManager.STANDARD_OBJECTS, "readwrite");
+
+        var data_ps = this.dbm.idb.transaction(DataBaseManager.STANDARD_OBJECTS, "readwrite");
+
         await data_ps.store.clear();
-        var promises = [];
-        for (const iterator of this.idObjMap.values()) {
-            promises.push(data_ps.store.put(iterator));
+
+        var promises: Promise<any>[] = []
+        for (const iterator of this.rwDbObjs.values()) {
+            promises.push(data_ps.store.put(iterator))
         }
-        promises.push(data_ps.done);
+
+        promises.push(data_ps.done)
         await Promise.all(promises).finally(() => {
             console.timeEnd(`#time WorldData ${this.name} writeDeep`);
-        });
+        })
     }
-    async writeShallow() {
+
+    public async writeShallow() {
         // console.debug("#HERELINE WorldData writeShallow this.name", this.name);
         // console.time("#time WorldData " + this.name + " writeShallow");
+
+        var data_ps = this.dbm.idb.transaction(DataBaseManager.STANDARD_OBJECTS, "readwrite");
+
+        var promises: Promise<any>[] = []
+        for (const iterator of this.rwDbObjs.values()) {
+            promises.push(data_ps.store.put(iterator))
+        }
+
+        promises.push(data_ps.done)
+        await Promise.all(promises).finally(() => {
+            // console.timeEnd("#time WorldData " + this.name + " writeShallow");
+        })
+    }
+
+    */
+    async delCleared() {
+        console.debug(`#HERELINE WorldData delCleared this.name ${this.name} len ${this.cleanupIds.length} `);
+        // console.time(`#time WorldData ${this.name} delCleared`);
+        var promises = [];
+        while (this.cleanupIds.length > 0) {
+            var iterator = this.cleanupIds.pop();
+            promises.push(this.dbm.idb.delete(DataBaseManager_1.DataBaseManager.STANDARD_OBJECTS, iterator));
+        }
+        return await Promise.all(promises);
+        // .finally(() => {
+        //     console.timeEnd(`#time WorldData ${this.name} delCleared`);
+        // })
+    }
+    async writeAllRw() {
+        console.debug(`#HERELINE WorldData writeAllRw this.name ${this.name}`);
+        console.time(`#time WorldData ${this.name} writeAllRw`);
+        await this.delCleared();
         var data_ps = this.dbm.idb.transaction(DataBaseManager_1.DataBaseManager.STANDARD_OBJECTS, "readwrite");
         var promises = [];
-        for (const iterator of this.idObjMap.values()) {
+        for (const iterator of this.rwDbObjs.values()) {
             promises.push(data_ps.store.put(iterator));
         }
         promises.push(data_ps.done);
         await Promise.all(promises).finally(() => {
-            // console.timeEnd("#time WorldData " + this.name + " writeShallow");
+            console.timeEnd(`#time WorldData ${this.name} writeAllRw`);
         });
     }
     async setBigIdObject(obj_) {
-        var data_ps = this.dbm.idb.transaction(DataBaseManager_1.DataBaseManager.BIG_OBJECTS, "readwrite");
+        var data_ps = this.dbm.idb.transaction(DataBaseManager_1.DataBaseManager.STANDARD_OBJECTS, "readwrite");
         await data_ps.store.put(obj_);
         await data_ps.done;
     }
     async getBigIdObject(id_) {
-        var data_ps = this.dbm.idb.transaction(DataBaseManager_1.DataBaseManager.BIG_OBJECTS, "readwrite");
-        return await data_ps.store.get(id_);
+        var data_ps = this.dbm.idb.transaction(DataBaseManager_1.DataBaseManager.STANDARD_OBJECTS, "readwrite");
+        return data_ps.store.get(id_);
     }
     async *iterateAllBig(mode = "readonly") {
         console.time(`#time WorldData ${this.name} iterateAllBig`);
         console.debug(`#HERELINE WorldData iterateAllBig this.name ${this.name}`);
-        var data_ps = this.dbm.idb.transaction(DataBaseManager_1.DataBaseManager.BIG_OBJECTS, mode);
+        var data_ps = this.dbm.idb.transaction(DataBaseManager_1.DataBaseManager.STANDARD_OBJECTS, mode);
         var cursor = await data_ps.store.openCursor();
         while (cursor) {
             // console.log("cursor.key, cursor.value", cursor.key, cursor.value);
@@ -97481,20 +97714,24 @@ class WorldData {
             console.timeEnd(`#time WorldData ${this.name} iterateAllBig`);
         });
     }
-    async *iterateAllBigType(VTYPE, mode = "readonly") {
-        // console.time(`#time WorldData ${this.name} iterateAllBigType`);
-        console.debug(`#HERELINE WorldData iterateAllBigType this.name ${this.name}`);
-        const data_ps = this.dbm.idb.transaction(DataBaseManager_1.DataBaseManager.BIG_OBJECTS, mode);
-        const index = data_ps.objectStore(DataBaseManager_1.DataBaseManager.BIG_OBJECTS).index('type');
-        var cursor = await index.openCursor(VTYPE.name);
+    async *iterObjsType(VTYPE, mode = "readonly") {
+        // console.time(`#time WorldData ${this.name} iterObjsType`);
+        console.debug(`#HERELINE WorldData iterObjsType this.name ${this.name}`);
+        const data_ps = this.dbm.idb.transaction(DataBaseManager_1.DataBaseManager.STANDARD_OBJECTS, mode);
+        const index = data_ps.objectStore(DataBaseManager_1.DataBaseManager.STANDARD_OBJECTS).index('type');
+        // console.log("VTYPE", VTYPE);
+        var cursor = await index.openCursor(VTYPE.type);
         while (cursor) {
             var iterator = VTYPE.clone(this, cursor.value);
             yield iterator;
-            cursor.update(iterator);
+            if (mode == "readwrite") {
+                // console.log("iterator", iterator);
+                cursor.update(iterator);
+            }
             cursor = await cursor.continue();
         }
-        await data_ps.done.finally(() => {
-            // console.timeEnd(`#time WorldData ${this.name} iterateAllBigType`);
+        return await data_ps.done.finally(() => {
+            // console.timeEnd(`#time WorldData ${this.name} iterObjsType`);
         });
     }
 }

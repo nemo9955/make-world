@@ -7,9 +7,6 @@ import GenericWorkerInstance from "worker-loader!./GenWorkerInstance.ts";
 import * as EventUtils from "../utils/EventUtils";
 
 
-
-
-
 // https://web.archive.org/web/20200227175632/http://workshop.chromeexperiments.com:80/examples/gui/#1--Basic-Usage
 // import * as dat from 'dat.gui';
 
@@ -124,6 +121,8 @@ export class JsonToGUI {
             dat.exit().call(this.exitSelectTags.bind(this))
         }
 
+        this.refreshBootstrap()
+
         this.popJguiListeners(the_worker, workerJgui);
         // console.log("this.listenersJguiMap", this.listenersJguiMap);
     }
@@ -141,6 +140,19 @@ export class JsonToGUI {
 
     private getId(d) {
         return `${d?.tag}-${d?.attr?.id}`
+    }
+
+    private refreshBootstrap() {
+
+        document.querySelectorAll('[data-bs-toggle="tooltip"]')
+            .forEach(function (tooltipTriggerEl) {
+                new (global as any).bootstrap.Tooltip(tooltipTriggerEl)
+            })
+
+        //for stranded tooltips
+        document.querySelectorAll('[class="tooltip show bs-tooltip-end"]')
+            .forEach(function (tooltipTriggerEl) { tooltipTriggerEl.remove(); })
+
     }
 
     private addTag(jguiMake: JguiMake, index: number, groups: any[]) {

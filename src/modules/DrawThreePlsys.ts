@@ -87,6 +87,8 @@ export class DrawThreePlsys implements DrawWorkerInstance {
     lastSelectedId: number = 0;
     selectedThing: THREE.Object3D = null;
 
+    public planetarySystem: PlanetarySystem = null;
+
     constructor() {
         this.raycaster.params.Line.threshold = 10; // DRAWUNIT
 
@@ -258,7 +260,7 @@ export class DrawThreePlsys implements DrawWorkerInstance {
             // var selected = mngr.world.idObjMap.get(this.canvasSelectionData.hoverId)
             // mngr.gui.selectOrbElement(selected as OrbitingElement);
 
-            var selOrbElem = this.world.idObjMap.get(this.canvasSelectionData.selectedId) as OrbitingElement;
+            var selOrbElem = this.world.getAnyObj(this.canvasSelectionData.selectedId) as OrbitingElement;
 
             if (selOrbElem) {
                 var tempJgui = new JguiMake(null).mkContainer()
@@ -306,7 +308,7 @@ export class DrawThreePlsys implements DrawWorkerInstance {
         );
 
         var pointsResolution = 100;
-        // if (orbitingElement_.semiminor_axis.value > this.world.planetarySystem.frost_line.value)
+        // if (orbitingElement_.semiminor_axis.value > this.planetarySystem.frost_line.value)
         pointsResolution = 200;
 
         const points: any[] = orbEllipseCurve_.getPoints(pointsResolution);
@@ -564,13 +566,13 @@ export class DrawThreePlsys implements DrawWorkerInstance {
         console.time(`#time ${this.type} updateDeep`);
 
         this.hab_zone.geometry = new THREE.RingGeometry( // DRAWUNIT
-            this.world.planetarySystem.hab_zone_in.Gm,
-            this.world.planetarySystem.hab_zone_out.Gm,
+            this.planetarySystem.hab_zone_in.Gm,
+            this.planetarySystem.hab_zone_out.Gm,
             50, 1);
 
         this.frost_zone.geometry = new THREE.RingGeometry( // DRAWUNIT
-            this.world.planetarySystem.frost_line.Gm,
-            this.world.planetarySystem.orbits_limit_out.Gm,
+            this.planetarySystem.frost_line.Gm,
+            this.planetarySystem.orbits_limit_out.Gm,
             50, 1);
 
 
@@ -588,7 +590,7 @@ export class DrawThreePlsys implements DrawWorkerInstance {
 
         this.orbElemToGroup.clear()
 
-        this.popOrbits([this.world.planetarySystem], this.scene, this.scene)
+        this.popOrbits([this.planetarySystem], this.scene, this.scene)
         // this.popOrbits(this.world.planetary_system.getSats(), this.scene, this.scene)
 
         console.timeEnd((`#time ${this.type} updateDeep`));
@@ -618,7 +620,7 @@ export class DrawThreePlsys implements DrawWorkerInstance {
             // var orb_len = orbEllipseCurve_.getLength()
             // var orb_len = parentOrbit.perimeter.Gm // DRAWUNIT
             var orb_per = parentOrbit.orbitalPeriod
-            var time_orb = this.world.planetarySystem.time.ey % orb_per.ey
+            var time_orb = this.world.time.ey % orb_per.ey
             var time_orb_proc = time_orb / orb_per.ey
             time_orb_proc += parentOrbit.mean_longitude.rev
             var true_theta = Convert.true_anomaly_rev(time_orb_proc, parentOrbit.eccentricity)
@@ -709,7 +711,7 @@ export class DrawThreePlsys implements DrawWorkerInstance {
         if (this.lastSelectedId != this.canvasSelectionData.selectedId) {
             this.lastSelectedId = this.canvasSelectionData.selectedId;
             // console.log("this.lastSelectedId", this.lastSelectedId);
-            var selOrbElem = this.world.idObjMap.get(this.lastSelectedId) as OrbitingElement
+            var selOrbElem = this.world.getAnyObj(this.lastSelectedId) as OrbitingElement
             if (selOrbElem) {
                 var fosusElem = selOrbElem;
                 if (this.config.follow_pointed_orbit === "auto") {

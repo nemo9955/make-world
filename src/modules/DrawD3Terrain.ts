@@ -213,17 +213,17 @@ export class DrawD3Terrain implements DrawWorkerInstance {
         //     // coordinates: Points.makeGeoPtsRandOk(1000)
         // }
 
-
-        for (const tkpl of this.terrain.tkplates) {
-            this.ctx.beginPath();
-            var ptsWrapper = {
-                type: "MultiPoint",
-                coordinates: tkpl.latlon,
+        if (this.ptsRadius != 0)
+            for (const tkpl of this.terrain.tkplates) {
+                this.ctx.beginPath();
+                var ptsWrapper = {
+                    type: "MultiPoint",
+                    coordinates: tkpl.latlon,
+                }
+                this.path(ptsWrapper);
+                this.ctx.fillStyle = tkpl.colorId
+                this.ctx.fill();
             }
-            this.path(ptsWrapper);
-            this.ctx.fillStyle = tkpl.colorId
-            this.ctx.fill();
-        }
 
         this.ctx.restore();
     }

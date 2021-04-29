@@ -9,6 +9,7 @@ export type jguiData = {
 
 
 export function setMainContainer(the_worker: Worker, workerJgui: JguiMake) {
+    // console.warn("workerJgui", workerJgui);
     the_worker.postMessage(<WorkerPacket>{
         message: MessageType.RefreshJGUI,
         jgui: workerJgui,

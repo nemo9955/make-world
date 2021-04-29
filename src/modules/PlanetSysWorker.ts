@@ -10,6 +10,7 @@ import { WorkerDOM } from "../utils/WorkerDOM";
 import { DrawD3Plsys } from "./DrawD3Plsys";
 import { JguiMake } from "../gui/JguiMake";
 import { setMainContainer } from "../gui/JguiUtils";
+import { SpaceFactory } from "../generate/SpaceFactory";
 
 
 // TODO move generation in this worker instead of in the main thread
@@ -17,22 +18,34 @@ import { setMainContainer } from "../gui/JguiUtils";
 // TODO store position and rotation of objects inside themselves after time/orbit update so other workers can do "basic" checks and calculations
 
 
+const MAIN_ORDINAL = "5"
+
 export class PlanetSysWorker extends BaseDrawUpdateWorker {
+
+
+    public planetarySystem: PlanetarySystem = null;
+    public readonly spaceFactory: SpaceFactory = null;
 
 
 
     constructor(config: Config, worker: Worker, workerName: string, event: WorkerEvent) {
         super(config, worker, workerName, event);
         // this.ticker.tick_interval = Units.LOOP_INTERVAL / 10;
+        this.planetarySystem = new PlanetarySystem(this.world);
+        this.spaceFactory = new SpaceFactory(this.world);
+        this.spread_objects(this.planetarySystem)
+        this.spread_objects(this.spaceFactory)
     }
 
     public init(): void {
         Promise.resolve().then(() => {
+            this.makeJgiu();
+        }).then(() => {
             this.worker.postMessage(<WorkerPacket>{
                 message: MessageType.CanvasMake,
                 metaCanvas: {
                     id: `${this.name}-canvas-DrawThreePlsys`,
-                    order: "400",
+                    order: MAIN_ORDINAL + "10",
                     generalFlags: ["orbit"],
                 }
             });
@@ -40,19 +53,22 @@ export class PlanetSysWorker extends BaseDrawUpdateWorker {
                 message: MessageType.CanvasMake,
                 metaCanvas: {
                     id: `${this.name}-canvas-DrawD3Plsys`,
-                    order: "800",
+                    order: MAIN_ORDINAL + "20",
                     generalFlags: [],
                 }
             });
         }).then(() => {
-            return this.world.initPlSys();
+
+            this.planetarySystem.init();
+            /////////// this.planetary_system.setWorldData(this);
+            /////////// this.setOrbElem(this.planetary_system);
+            this.spaceFactory.genStartingPlanetSystem(this.planetarySystem);
+
         }).then(() => {
             console.log("this.world", this.world);
             //     return this.world.writeDeep();
         }).then(() => {
-            // return this.refreshDeep(true);
-        }).then(() => {
-            this.makeJgiu();
+            return this.refreshDeep(false);
         })
     }
 
@@ -80,6 +96,11 @@ export class PlanetSysWorker extends BaseDrawUpdateWorker {
         }
     }
 
+    public spread_objects(object_: any) {
+        super.spread_objects(object_);
+        if (object_.spaceFactory === null) object_.spaceFactory = this.spaceFactory;
+        if (object_.planetarySystem === null) object_.planetarySystem = this.planetarySystem;
+    }
 
     public getMessageExtra(event: WorkerEvent) {
         // console.debug(`#HERELINE ${this.name} getMessageExtra  ${event.data.message}`, event.data);
@@ -136,7 +157,7 @@ export class PlanetSysWorker extends BaseDrawUpdateWorker {
 
     private async refreshDeep(doSpecial = true) {
         // console.debug("#HERELINE DrawWorker refreshDeep");
-        // await this.world.readDeep();
+        await this.world.writeAllRw();
         for (const draw_ of this.mapDraws.values()) draw_.updateDeep();
         if (doSpecial) {
             // this.updatePlSys();
@@ -157,6 +178,7 @@ export class PlanetSysWorker extends BaseDrawUpdateWorker {
     private async refreshTick(doSpecial = true) {
         // console.debug("#HERELINE DrawWorker refreshShallow");
         // await this.world.readShallow();
+        await this.world.readTime();
         if (doSpecial) {
 
             this.doUpdate && this.updatePlSys();
@@ -167,6 +189,7 @@ export class PlanetSysWorker extends BaseDrawUpdateWorker {
             // await this.world.writeShallow();
             // this.tellMainToUpdate();
         }
+        await this.world.writeTime();
     }
 
 
@@ -174,7 +197,7 @@ export class PlanetSysWorker extends BaseDrawUpdateWorker {
     public updatePlSys() {
         // console.debug("#HERELINE UpdateWorld update ", this.world.planetary_system.time.ey);
         // TODO make a separate object for this data,seeds and similar value will need to be stored in the future
-        this.world.planetarySystem.time.ey += this.config.timeUpdSpeed;
+        this.world.time.ey += this.config.timeEarthYearsTick;
         // console.log("this.world.planetary_system.time.ey", this.world.planetary_system.time.ey);
 
         // this.updateTerrain();
@@ -183,10 +206,13 @@ export class PlanetSysWorker extends BaseDrawUpdateWorker {
 
 
     private makeJgiu() {
-        var plsys = this.world.planetarySystem
+        var plsys = this.planetarySystem;
+        var workerJguiManager = this.workerJguiManager;
         var workerJgui: JguiMake;
+        var startExpanded = true;
+        const jguiOrdinal = MAIN_ORDINAL + "00";
 
-        [this.workerJguiMain, workerJgui] = new JguiMake(null).mkWorkerJgui("plsys", "200", false);
+        [this.workerJguiMain, workerJgui] = new JguiMake(null).mkWorkerJgui("plsys", jguiOrdinal, startExpanded);
 
 
         var chboxUpd: JguiMake, chboxDraw: JguiMake;
@@ -200,34 +226,41 @@ export class PlanetSysWorker extends BaseDrawUpdateWorker {
 
 
         workerJgui.addButton("genStartingPlanetSystem").addEventListener(this.workerJguiManager, "click", (event: WorkerEvent) => {
-            this.world.spaceFactory.genStartingPlanetSystem(plsys)
+            this.spaceFactory.genStartingPlanetSystem(plsys)
             this.refreshDeep()
         })
 
         workerJgui.addButton("genStar").addEventListener(this.workerJguiManager, "click", (event: WorkerEvent) => {
-            this.world.spaceFactory.genStar(plsys, plsys)
+            this.spaceFactory.genStar(plsys, plsys)
             this.refreshDeep()
         })
 
         workerJgui.addButton("genPTypeStarts").addEventListener(this.workerJguiManager, "click", (event: WorkerEvent) => {
-            this.world.spaceFactory.genPTypeStarts(plsys, plsys)
+            this.spaceFactory.genPTypeStarts(plsys, plsys)
             this.refreshDeep()
         })
 
         workerJgui.addButton("genOrbitsSimple").addEventListener(this.workerJguiManager, "click", (event: WorkerEvent) => {
-            this.world.spaceFactory.genOrbitsSimple(plsys, plsys.root())
+            this.spaceFactory.genOrbitsSimple(plsys, plsys.root())
             this.refreshDeep()
         })
 
         workerJgui.addButton("genOrbitsSimpleMoons").addEventListener(this.workerJguiManager, "click", (event: WorkerEvent) => {
-            this.world.spaceFactory.genOrbitsSimpleMoons(plsys, plsys.root())
+            this.spaceFactory.genOrbitsSimpleMoons(plsys, plsys.root())
             this.refreshDeep()
         })
 
         // workerJgui.addButton("genOrbitsUniform").addEventListener(this.workerJguiManager, "click", (event: WorkerEvent) => {
-        //     this.world.spaceFactory.genOrbitsUniform(plsys, plsys.root())
+        //     this.spaceFactory.genOrbitsUniform(plsys, plsys.root())
         //     this.refreshDeep()
         // })
+
+
+
+        workerJgui.addSlider("Earth years upd", 0, 0.005, 0.00001, this.config.timeEarthYearsTick)
+            .addEventListener(workerJguiManager, "input", (event: WorkerEvent) => {
+                this.config.timeEarthYearsTick = Number.parseFloat(event.data.event.target.value);
+            })
 
 
         for (const draw_ of this.mapDraws.values())

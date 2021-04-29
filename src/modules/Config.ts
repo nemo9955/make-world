@@ -17,8 +17,8 @@ export class Config {
 
     follow_pointed_orbit: "none" | "imediate" | "auto" = "auto";
 
-    globalIsReady: boolean = false; // global flag for when Tickers can run
-    timeUpdSpeed = 0.0004;
+    // globalIsReady: boolean = false; // global flag for when Tickers can run
+    timeEarthYearsTick = 0.0004;
 
     genEnsureInHabZone = true;
     genEnsureCenteredInHabZone = true;
