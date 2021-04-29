@@ -18,7 +18,7 @@ export class DataBaseManager {
     public idb: IDBPDatabase<unknown>;
 
     public static STANDARD_OBJECTS = "STANDARD_OBJECTS";
-    public static BIG_OBJECTS = "BIG_OBJECTS";
+    public static KEYVAL_OBJECTS = "keyval";
     public tableName: string = null;
 
     constructor(targetTable: string, name: string) {
@@ -49,14 +49,12 @@ export class DataBaseManager {
                 // TODO, make generic container with ID-able objects
                 if (!db.objectStoreNames.contains(DataBaseManager.STANDARD_OBJECTS)) {
                     const store = db.createObjectStore(DataBaseManager.STANDARD_OBJECTS, { keyPath: 'id', autoIncrement: false });
+                    store.createIndex('type', 'type', { unique: false });
                     // store.createIndex('id', 'id');
                     // console.log("createObjectStore ", STANDARD_OBJECTS);
                 }
-                if (!db.objectStoreNames.contains(DataBaseManager.BIG_OBJECTS)) {
-                    const store = db.createObjectStore(DataBaseManager.BIG_OBJECTS, { keyPath: 'id', autoIncrement: false });
-                    // store.createIndex('id', 'id');
-                    store.createIndex('type', 'type', { unique: false });
-                    // console.log("createObjectStore ", BIG_OBJECTS);
+                if (!db.objectStoreNames.contains(DataBaseManager.KEYVAL_OBJECTS)) {
+                    const store = db.createObjectStore(DataBaseManager.KEYVAL_OBJECTS);
                 }
             }
         });
@@ -67,6 +65,12 @@ export class DataBaseManager {
         return deleteDB(this.tableName)
     }
 
+
+    public async getKv(key: any) { return await this.idb.get('keyval', key); }
+    public setKv(key: any, val: any) { return this.idb.put('keyval', val, key); }
+    public delKv(key: any) { return this.idb.delete('keyval', key); }
+    public clearKv() { return this.idb.clear('keyval'); }
+    public keysKv() { return this.idb.getAllKeys('keyval'); }
 
 }
 

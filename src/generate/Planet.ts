@@ -54,8 +54,9 @@ export class Planet extends OrbitingElement {
 
     public getTerrain(): Terrain {
         if (!this.terrainId) return null;
-        return this.getWorldData().idObjMap.get(this.terrainId)
+        return this.getWorldData().getAnyObj(this.terrainId)
     }
+    public setTerrain(terr_: Terrain) { this.terrainId = terr_.id; }
 
     public makeMoon(smajax: Convert.NumberLength, smajaxParent: Convert.NumberLength, plsys: PlanetarySystem) {
         this.color.set_color("DarkGrey")
@@ -264,8 +265,9 @@ export class Planet extends OrbitingElement {
     }
 
 
-
     public clone() { return new Planet(this.getWorldData()).copyLogic(this) }
+    public static clone(worldData: WorldData, data_: any) { return new Planet(worldData).copyDeep(data_) }
+    static get type() { return `Planet` }
 
 }
 

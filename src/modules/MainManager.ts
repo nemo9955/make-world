@@ -27,7 +27,7 @@ export class MainManager {
     world: WorldData;
     config: Config;
 
-    ticker: Ticker;
+    // ticker: Ticker;
 
     viewableThings: HTMLElement[] = [];
 
@@ -38,7 +38,7 @@ export class MainManager {
 
         // TODO Actions will need to tell everyone of cases when a readDeep will be need
         // Usual var updates will be ok readShallow, structure changes need readDeep
-        this.ticker = new Ticker(false, this.loopCheck.bind(this), Units.LOOP_INTERVAL, Units.LOOP_INTERVAL * 1.9)
+        // this.ticker = new Ticker(false, this.loopCheck.bind(this), Units.LOOP_INTERVAL, Units.LOOP_INTERVAL * 1.9)
     }
 
     public async init() {
@@ -49,16 +49,8 @@ export class MainManager {
         Promise.resolve().then(() => {
             return this.world.preInit();
         }).then(() => {
-            // return this.world.initPlSys();
-        }).then(() => {
-            // return this.world.initTerrain();
-        }).then(() => {
-        }).then(() => {
-            return this.writeDeep();
-        }).then(() => {
             this.initGenericWorker(PlanetSysWorker, 11)
             this.initGenericWorker(TerrainWorker, 12)
-            // this.refreshConfig()
         })
 
     }
@@ -74,7 +66,7 @@ export class MainManager {
 
 
     public async refreshConfig() {
-        this.ticker.updateState(this.config.globalIsReady)
+        // this.ticker.updateState(this.config.globalIsReady)
 
         for (const worker_ of this.workers) {
             // waitBlocking(50); // TODO TMP !!!!!!!!!!!!!!
@@ -103,76 +95,78 @@ export class MainManager {
         // }
     }
 
-    public playAll(refreshType: MessageType) {
-        console.debug(`#HERELINE MainManager playAll `);
-        this.config.globalIsReady = true;
-        // this.gui.selectOrbElement(null);
-        this.ticker.updateState(this.config.globalIsReady)
-        for (const worker_ of this.workers) {
-            // waitBlocking(50); // TODO TMP !!!!!!!!!!!!!!
-            // this.workersData.get(worker_).state = WorkerState.Running;
-            console.debug("MainManager playAll postMessage ", worker_.name);
-            worker_.postMessage(<WorkerPacket>{
-                message: refreshType,
-                config: this.config
-            });
-        }
-    }
+    // public playAll(refreshType: MessageType) {
+    //     console.debug(`#HERELINE MainManager playAll `);
+    //     this.config.globalIsReady = true;
+    //     // this.gui.selectOrbElement(null);
+    //     this.ticker.updateState(this.config.globalIsReady)
+    //     for (const worker_ of this.workers) {
+    //         // waitBlocking(50); // TODO TMP !!!!!!!!!!!!!!
+    //         // this.workersData.get(worker_).state = WorkerState.Running;
+    //         console.debug("MainManager playAll postMessage ", worker_.name);
+    //         worker_.postMessage(<WorkerPacket>{
+    //             message: refreshType,
+    //             config: this.config
+    //         });
+    //     }
+    // }
 
 
-    public loopCheck() {
-        // if ((this.lastHover?.id === undefined && this.sharedData.hoverId !== null)
-        //     || this.lastHover?.id != this.sharedData.hoverId) {
+    // public loopCheck() {
+    //     // if ((this.lastHover?.id === undefined && this.sharedData.hoverId !== null)
+    //     //     || this.lastHover?.id != this.sharedData.hoverId) {
 
-        //     this.lastHover = this.world.idObjMap.get(this.sharedData.hoverId)
-        //     // console.log("this.lastHover?.id", this.lastHover?.id);
-        //     // console.log("this.sharedData.hoverId", this.sharedData.hoverId);
+    //     //     this.lastHover = this.world.idObjMap.get(this.sharedData.hoverId)
+    //     //     // console.log("this.lastHover?.id", this.lastHover?.id);
+    //     //     // console.log("this.sharedData.hoverId", this.sharedData.hoverId);
 
-        // }
-    }
-
-    public async readDeep() {
-        await this.world.readDeep();
-    }
-
-    public async readShallow() {
-        await this.world.readShallow();
-    }
-
-    public async writeDeep() {
-        console.time("#time MainManager writeDeep");
-
-        await this.world.writeDeep();
-
-        // if (this.workers.every(work_ => this.workersData.get(work_).state >= WorkerState.Ready))
-        this.playAll(MessageType.RefreshDBDeep);
-        // for (const worker_ of this.workers) {
-        //     // waitBlocking(50); // TODO TMP !!!!!!!!!!!!!!
-        //     console.log("MainManager writeDeep postMessage ", worker_.name);
-        //     worker_.postMessage(<WorkerPacket>{
-        //         message: MessageType.RefreshDBDeep,
-        //         config: this.config
-        //     });
-        // }
-        console.timeEnd("#time MainManager writeDeep");
-    }
-
-    public async writeShallow() {
-        console.time("#time MainManager writeShallow");
-
-        await this.world.writeShallow();
-
-        for (const worker_ of this.workers) {
-            // waitBlocking(50); // TODO TMP !!!!!!!!!!!!!!
-            console.log("MainManager writeShallow postMessage ", worker_.name);
-            worker_.postMessage(<WorkerPacket>{
-                message: MessageType.RefreshDBShallow,
-                config: this.config
-            });
+    //     // }
+    // }
+    /*
+        public async readDeep() {
+            await this.world.readDeep();
         }
 
-        console.timeEnd("#time MainManager writeShallow");
-    }
+        public async readShallow() {
+            await this.world.readShallow();
+        }
+
+        public async writeDeep() {
+            console.time("#time MainManager writeDeep");
+
+            await this.world.writeDeep();
+
+            // if (this.workers.every(work_ => this.workersData.get(work_).state >= WorkerState.Ready))
+            this.playAll(MessageType.RefreshDBDeep);
+            // for (const worker_ of this.workers) {
+            //     // waitBlocking(50); // TODO TMP !!!!!!!!!!!!!!
+            //     console.log("MainManager writeDeep postMessage ", worker_.name);
+            //     worker_.postMessage(<WorkerPacket>{
+            //         message: MessageType.RefreshDBDeep,
+            //         config: this.config
+            //     });
+            // }
+            console.timeEnd("#time MainManager writeDeep");
+        }
+
+        public async writeShallow() {
+            console.time("#time MainManager writeShallow");
+
+            await this.world.writeShallow();
+
+            for (const worker_ of this.workers) {
+                // waitBlocking(50); // TODO TMP !!!!!!!!!!!!!!
+                console.log("MainManager writeShallow postMessage ", worker_.name);
+                worker_.postMessage(<WorkerPacket>{
+                    message: MessageType.RefreshDBShallow,
+                    config: this.config
+                });
+            }
+
+            console.timeEnd("#time MainManager writeShallow");
+        }
+    */
+
 
     public initGenericWorker(workerClass: typeof BaseWorker, startId: number) {
         var genWorker = new GenericWorkerInstance();
@@ -192,14 +186,6 @@ export class MainManager {
     }
 
     private readyWorker(the_worker: GenericWorkerInstance) {
-        // var workerData_ = this.workersData.get(the_worker)
-        // workerData_.state = WorkerState.Ready
-
-        // console.log("this.workersData", this.workersData);
-        // if (this.workers.every(work_ => this.workersData.get(work_).state >= WorkerState.Ready)) {
-        // this.playAll(MessageType.RefreshDBDeep);
-        // }
-
         the_worker.postMessage(<WorkerPacket>{
             message: MessageType.Play,
             config: this.config
@@ -214,10 +200,10 @@ export class MainManager {
                 this.readyWorker(the_worker); break;
             case MessageType.RefreshConfig:
                 this.refreshConfig(); break;
-            case MessageType.RefreshDBShallow:
-                this.readShallow(); break;
-            case MessageType.RefreshDBDeep:
-                this.readDeep(); break;
+            // case MessageType.RefreshDBShallow:
+            //     this.readShallow(); break;
+            // case MessageType.RefreshDBDeep:
+            //     this.readDeep(); break;
             case MessageType.RefreshJGUI:
                 this.jgui.refreshJgui(the_worker, event); break;
             case MessageType.CanvasMake:

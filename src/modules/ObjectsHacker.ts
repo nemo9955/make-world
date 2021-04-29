@@ -8,7 +8,6 @@ import { WorldData } from "./WorldData";
 
 export interface ClonableConstructor<Klass> {
     // garo master race
-    // new(worldData: WorldData, data_: any): Klass
     clone(worldData: WorldData, data_: any): Klass
 }
 

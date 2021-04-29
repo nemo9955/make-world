@@ -41,6 +41,7 @@ export class DrawD3Plsys implements DrawWorkerInstance {
 
     private ctx: OffscreenCanvasRenderingContext2D = null;
 
+    public planetarySystem: PlanetarySystem = null;
 
     constructor() {
     }
@@ -101,7 +102,7 @@ export class DrawD3Plsys implements DrawWorkerInstance {
 
         var nodeSize = 17;
 
-        const allElems = this.world.planetarySystem.getAllElems()
+        const allElems = this.planetarySystem.getAllElems()
         // nodes.forEach((node, index) => {
         allElems.forEach((node, index) => {
             // context.save(); // For clipping the text

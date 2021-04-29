@@ -207,9 +207,6 @@ export class Star extends OrbitingElement {
     }
 
 
-    public clone() { return new Star(this.getWorldData()).copyLogic(this) }
-
-
     // public guiSelect(slectPane: Tweakpane, gui: WorldGui) {
     //     slectPane.addInput(this.color, 'value', { label: "color" })
     //     slectPane.addInput(this.radius, 'km', { label: "radius km" });
@@ -246,7 +243,9 @@ export class Star extends OrbitingElement {
 
     }
 
-
+    public clone() { return new Star(this.getWorldData()).copyLogic(this) }
+    public static clone(worldData: WorldData, data_: any) { return new Star(worldData).copyDeep(data_) }
+    static get type() { return `Star` }
 
 
 }

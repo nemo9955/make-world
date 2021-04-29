@@ -41,7 +41,7 @@ export class SpaceGroup extends OrbitingElement {
         var stillLooking = true;
 
         for (const sid of this.groupedSatelites)
-            satObjs.push(this.getWorldData().idObjMap.get(sid))
+            satObjs.push(this.getWorldData().getRwObj(sid))
 
         while (stillLooking) {
             stillLooking = false;
@@ -68,6 +68,8 @@ export class SpaceGroup extends OrbitingElement {
     }
 
     public clone() { return new SpaceGroup(this.getWorldData()).copyLogic(this) }
+    public static clone(worldData: WorldData, data_: any) { return new SpaceGroup(worldData).copyDeep(data_) }
+    static get type() { return `SpaceGroup` }
 
     // protected guiPopSelectChildren(slectPane: Tweakpane, gui: WorldGui, generalAct: Tweakpane.FolderApi) {
     //     this.getSats().forEach((sat_, index) => {

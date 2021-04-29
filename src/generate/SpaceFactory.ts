@@ -59,7 +59,7 @@ export class SpaceFactory {
 
 
     public genOrbitsUniform(plsys: PlanetarySystem, root: OrbitingElement) {
-        plsys.time.value = 0
+        this.getWorldData().restartTime();
 
         root.clearNonStars();
 
@@ -198,7 +198,7 @@ export class SpaceFactory {
         group_.addToSpaceGroup(orbit2_)
         root.addSat(group_)
 
-        plsys.time.value = 0
+        this.getWorldData().restartTime();
 
         // TODO check is just adding these values is "good enough" or implement proper
         var stars_lum_ = star1_.luminosity.clone().add(star2_.luminosity.value)
@@ -234,7 +234,7 @@ export class SpaceFactory {
         }
 
         root.addSat(star_)
-        plsys.time.value = 0
+        this.getWorldData().restartTime();
 
         plsys.hab_zone.au = Math.sqrt(star_.luminosity.watt);
         plsys.hab_zone_in.au = plsys.hab_zone.au * 0.95;
@@ -383,7 +383,7 @@ export class SpaceFactory {
             attempsPercent = genAttemps / genMaxAttemps
             // not a while(true) loop to prevent blocking the code
 
-            plsys.time.value = 0
+            this.getWorldData().restartTime();
             root.clearNonStars();
             var lfg_orbit = this.getLargestFrostGiantOrbit(plsys);
 

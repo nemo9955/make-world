@@ -252,6 +252,8 @@ export class Orbit extends OrbitingElement {
 
     public free() { return; }
     public clone() { return new Orbit(this.getWorldData()).copyLogic(this) }
+    public static clone(worldData: WorldData, data_: any) { return new Orbit(worldData).copyDeep(data_) }
+    static get type() { return `Orbit` }
 
 
     // public guiSelect(slectPane: Tweakpane, gui: WorldGui) {

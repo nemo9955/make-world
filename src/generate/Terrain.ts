@@ -197,7 +197,9 @@ export class Terrain extends Identifiable {
 
 
 
-    public init() {
+    public init(planet: Planet) {
+        this.orbitElemId = planet.id;
+        this.tData.sphereSize = planet.radius.km
         this.generate();
     }
 
@@ -304,10 +306,10 @@ export class Terrain extends Identifiable {
     }
 
 
-    // public getOrbitingElement(): OrbitingElement {
-    //     if (!this.orbitElemId) return null;
-    //     return this.getWorldData().idObjMap.get(this.orbitElemId)
-    // }
+    public getPlanet(): Planet {
+        if (!this.orbitElemId) return null;
+        return this.getWorldData().getRwObj(this.orbitElemId)
+    }
 
     // public static initForPlanet(planet_: Planet) {
     //     console.debug(`#HERELINE Terrain initForPlanet `);
@@ -400,5 +402,9 @@ export class Terrain extends Identifiable {
     // console.log("this.position", this.position);
     // console.log("ptsLines", ptsLines);
     // console.log("this.color", this.color);
+
+    public clone() { return new Terrain(this.getWorldData()).copyLogic(this) }
+    public static clone(worldData: WorldData, data_: any) { return new Terrain(worldData).copyDeep(data_) }
+    static get type() { return `Terrain` }
 
 }

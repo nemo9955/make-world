@@ -39,14 +39,15 @@ export class WorldData {
     public readonly name: string;
     public readonly type = this.constructor.name;
 
-    public planetarySystem: PlanetarySystem;
 
-    public idObjMap = new Map<number, any>();
+    public rwDbObjs = new Map<number, any>();
+    public roDbObjs = new Map<number, any>();
+    public roDbRaws = new Map<number, any>();
+    private cleanupIds = new Array<number>();
 
     public config: Config = null;
     public dbm: DataBaseManager;
 
-    public readonly spaceFactory: SpaceFactory;
     public readonly startId: number;
 
     constructor(targetTable: string, name: string, startId: number, config: Config) {
@@ -60,9 +61,7 @@ export class WorldData {
         console.debug("this.startId", this.startId);
 
         this.dbm = new DataBaseManager(targetTable, name);
-        this.spaceFactory = new SpaceFactory(this);
 
-        this.planetarySystem = new PlanetarySystem(this);
         // console.log("this.planetary_system.getWorldData()", this.planetary_system.getWorldData());
     }
 
@@ -70,22 +69,7 @@ export class WorldData {
         console.debug(`#HERELINE WorldData preInit ${this.config.WORLD_DATABASE_NAME} `);
         return this.dbm.init(this.config.keepDbAtPageRefresh).then(() => {
             console.debug(`#HERELINE WorldData ${this.name} preInit then`);
-            this.spread_objects();
         })
-    }
-
-    public async initPlSys() {
-        console.debug("#HERELINE WorldData initPlSys");
-        if (this.config.keepDbAtPageRefresh) {
-            // return this.readDeep();
-        } else {
-            this.planetarySystem.init();
-            /////////// this.planetary_system.setWorldData(this);
-            /////////// this.setOrbElem(this.planetary_system);
-            this.spaceFactory.genStartingPlanetSystem(this.planetarySystem);
-            return Promise.resolve();
-        }
-        return Promise.reject();
     }
 
     // public async initTerrain() {
@@ -105,35 +89,61 @@ export class WorldData {
         return this.dbm.open()
     }
 
-    public spread_objects() {
-        var to_spread: any[] = [this.spaceFactory]
-        for (const object_ of to_spread) {
-            if (object_.planetarySystem === null) object_.planetarySystem = this.planetarySystem;
-            if (object_.config === null) object_.config = this.config;
-            if (object_.world === null) object_.world = this;
-        }
-    }
-
-
-
     public static wdMaxId: number = -999999;
     public getFreeID() {
         return WorldData.wdMaxId += this.config.incrementId;
-        // if (!this.sharedData) return Math.ceil(Math.random() * 10000) + 1000;
-        // var id_ = this.sharedData.maxId++;
-        // while (this.idObjMap.has(id_))
-        //     id_ = this.sharedData.maxId++;
-        // return id_;
+    }
+
+    public getAnyObj(id_: number) {
+        if (this.rwDbObjs.has(id_))
+            return this.rwDbObjs.get(id_)
+        if (this.roDbObjs.has(id_))
+            return this.roDbObjs.get(id_)
+        return null;
+    }
+    public getRoObj(id_: number) {
+        if (this.roDbObjs.has(id_))
+            return this.roDbObjs.get(id_)
+        return null;
+    }
+    public getRwObj(id_: number) {
+        if (this.rwDbObjs.has(id_))
+            return this.rwDbObjs.get(id_)
+        return null;
     }
 
     public free(id_: number) {
-        this.idObjMap.delete(id_)
+        if (this.rwDbObjs.has(id_))
+            this.rwDbObjs.delete(id_)
+        this.cleanupIds.push(id_)
     }
 
-    public setIdObject(obj_: Identifiable) {
-        this.idObjMap.set(obj_.id, obj_)
+    public setRwObj(obj_: Identifiable) {
+        this.rwDbObjs.set(obj_.id, obj_)
     }
 
+
+    // TODO Move in WorldData when more fine read/write can be done
+    public readonly time = new Convert.NumberTime();
+
+    public async readTime() {
+        this.time.value = await this.getKv("world_time") as number;
+        return this.time;
+    }
+    public async writeTime() { return this.setKv("world_time", this.time.value) }
+
+    restartTime() {
+        this.time.eby = 0;
+        this.writeTime();
+    }
+
+    public async getKv(key: any) { return this.dbm.getKv(key); }
+    public async setKv(key: any, val: any) { return this.dbm.setKv(key, val); }
+    public async delKv(key: any) { return this.dbm.delKv(key); }
+    public async clearKv() { return this.dbm.clearKv(); }
+    public async keysKv() { return this.dbm.keysKv(); }
+
+    /*
 
     public async readShallow() {
         // console.debug("#HERELINE WorldData readShallow this.name", this.name);
@@ -143,7 +153,7 @@ export class WorldData {
         var data_ps = this.dbm.idb.transaction(DataBaseManager.STANDARD_OBJECTS, "readonly");
 
         // var keys_from_db = []
-        // var keys_from_wd = [...this.idObjMap.keys()]
+        // var keys_from_wd = [...this.mainDbData.keys()]
 
         var all = await data_ps.store.getAll() /// var 1
         for (const iterator of all) { /// var 1
@@ -154,12 +164,12 @@ export class WorldData {
             // keys_from_db.push(iterator.id)
             if (iterator.type == "PlanetarySystem") {
                 this.planetarySystem.copyShallow(iterator)
-                this.idObjMap.set(iterator.id, this.planetarySystem)
+                this.rwDbObjs.set(iterator.id, this.planetarySystem)
             } else {
-                const newLocal = this.idObjMap.get(iterator.id);
+                const newLocal = this.rwDbObjs.get(iterator.id);
                 if (!newLocal) {
                     console.warn("this", this);
-                    // console.warn("this.idObjMap", this.idObjMap);
+                    // console.warn("this.mainDbData", this.mainDbData);
                     // console.warn("iterator", iterator);
                 }
                 newLocal.copyShallow(iterator);
@@ -183,7 +193,7 @@ export class WorldData {
         console.time(`#time WorldData ${this.name} readDeep`);
 
         var data_ps = this.dbm.idb.transaction(DataBaseManager.STANDARD_OBJECTS, "readonly");
-        this.idObjMap.clear()
+        this.rwDbObjs.clear()
 
         var all = await data_ps.store.getAll() /// var 1
         for (const iterator of all) { /// var 1
@@ -193,13 +203,13 @@ export class WorldData {
 
             if (iterator.type == "PlanetarySystem") {
                 this.planetarySystem.copyDeep(iterator)
-                this.idObjMap.set(iterator.id, this.planetarySystem)
+                this.rwDbObjs.set(iterator.id, this.planetarySystem)
             } else {
                 var obj_ = new objects_types_[iterator.type](this) // wow
-                this.idObjMap.set(iterator.id, obj_)
-                const newLocal = this.idObjMap.get(iterator.id);
+                this.rwDbObjs.set(iterator.id, obj_)
+                const newLocal = this.rwDbObjs.get(iterator.id);
                 if (!newLocal) {
-                    console.warn("this.idObjMap", this.idObjMap);
+                    console.warn("this.mainDbData", this.rwDbObjs);
                     console.warn("this", this);
                     console.warn("iterator", iterator);
                 }
@@ -223,7 +233,7 @@ export class WorldData {
         await data_ps.store.clear();
 
         var promises: Promise<any>[] = []
-        for (const iterator of this.idObjMap.values()) {
+        for (const iterator of this.rwDbObjs.values()) {
             promises.push(data_ps.store.put(iterator))
         }
 
@@ -240,7 +250,7 @@ export class WorldData {
         var data_ps = this.dbm.idb.transaction(DataBaseManager.STANDARD_OBJECTS, "readwrite");
 
         var promises: Promise<any>[] = []
-        for (const iterator of this.idObjMap.values()) {
+        for (const iterator of this.rwDbObjs.values()) {
             promises.push(data_ps.store.put(iterator))
         }
 
@@ -250,20 +260,54 @@ export class WorldData {
         })
     }
 
+    */
 
 
+    public async delCleared() {
+        console.debug(`#HERELINE WorldData delCleared this.name ${this.name} len ${this.cleanupIds.length} `);
+        // console.time(`#time WorldData ${this.name} delCleared`);
 
+        var promises: Promise<any>[] = []
+        while (this.cleanupIds.length > 0) {
+            var iterator = this.cleanupIds.pop()
+            promises.push(this.dbm.idb.delete(DataBaseManager.STANDARD_OBJECTS, iterator))
+        }
+
+        return await Promise.all(promises)
+        // .finally(() => {
+        //     console.timeEnd(`#time WorldData ${this.name} delCleared`);
+        // })
+    }
+
+    public async writeAllRw() {
+        console.debug(`#HERELINE WorldData writeAllRw this.name ${this.name}`);
+        console.time(`#time WorldData ${this.name} writeAllRw`);
+
+        await this.delCleared();
+
+        var data_ps = this.dbm.idb.transaction(DataBaseManager.STANDARD_OBJECTS, "readwrite");
+
+        var promises: Promise<any>[] = []
+        for (const iterator of this.rwDbObjs.values()) {
+            promises.push(data_ps.store.put(iterator))
+        }
+
+        promises.push(data_ps.done)
+        await Promise.all(promises).finally(() => {
+            console.timeEnd(`#time WorldData ${this.name} writeAllRw`);
+        })
+    }
 
 
     public async setBigIdObject(obj_: Identifiable) {
-        var data_ps = this.dbm.idb.transaction(DataBaseManager.BIG_OBJECTS, "readwrite");
+        var data_ps = this.dbm.idb.transaction(DataBaseManager.STANDARD_OBJECTS, "readwrite");
         await data_ps.store.put(obj_);
         await data_ps.done;
     }
 
-    public async getBigIdObject(id_: number): Promise<Identifiable> {
-        var data_ps = this.dbm.idb.transaction(DataBaseManager.BIG_OBJECTS, "readwrite");
-        return await data_ps.store.get(id_);
+    public async getBigIdObject(id_: number) {
+        var data_ps = this.dbm.idb.transaction(DataBaseManager.STANDARD_OBJECTS, "readwrite");
+        return data_ps.store.get(id_);
     }
 
 
@@ -271,7 +315,7 @@ export class WorldData {
         console.time(`#time WorldData ${this.name} iterateAllBig`);
         console.debug(`#HERELINE WorldData iterateAllBig this.name ${this.name}`);
 
-        var data_ps = this.dbm.idb.transaction(DataBaseManager.BIG_OBJECTS, mode);
+        var data_ps = this.dbm.idb.transaction(DataBaseManager.STANDARD_OBJECTS, mode);
 
         var cursor = await data_ps.store.openCursor();
         while (cursor) {
@@ -290,25 +334,28 @@ export class WorldData {
 
 
 
-    public async *iterateAllBigType<Klass>(VTYPE: ClonableConstructor<Klass>, mode: IDBTransactionMode = "readonly")
-        : AsyncGenerator<Klass, void, unknown> {
-        // console.time(`#time WorldData ${this.name} iterateAllBigType`);
-        console.debug(`#HERELINE WorldData iterateAllBigType this.name ${this.name}`);
+    public async *iterObjsType<Klass>(VTYPE: ClonableConstructor<Klass>, mode: IDBTransactionMode = "readonly")
+        : AsyncGenerator<Klass, void, Klass> {
+        // console.time(`#time WorldData ${this.name} iterObjsType`);
+        console.debug(`#HERELINE WorldData iterObjsType this.name ${this.name}`);
 
-        const data_ps = this.dbm.idb.transaction(DataBaseManager.BIG_OBJECTS, mode)
-        const index = data_ps.objectStore(DataBaseManager.BIG_OBJECTS).index('type');
+        const data_ps = this.dbm.idb.transaction(DataBaseManager.STANDARD_OBJECTS, mode)
+        const index = data_ps.objectStore(DataBaseManager.STANDARD_OBJECTS).index('type');
 
-        var cursor = await index.openCursor((VTYPE as any).name)
+        // console.log("VTYPE", VTYPE);
+        var cursor = await index.openCursor((VTYPE as any).type)
         while (cursor) {
             var iterator = VTYPE.clone(this, cursor.value);
 
             yield iterator;
-            cursor.update(iterator);
+            if (mode == "readwrite") {
+                // console.log("iterator", iterator);
+                cursor.update(iterator);
+            }
             cursor = await cursor.continue();
-
         }
-        await data_ps.done.finally(() => {
-            // console.timeEnd(`#time WorldData ${this.name} iterateAllBigType`);
+        return await data_ps.done.finally(() => {
+            // console.timeEnd(`#time WorldData ${this.name} iterObjsType`);
         })
     }
 
@@ -323,8 +370,8 @@ export class WorldData {
     //     // }
     //     console.time(`#time WorldData ${this.name} iterateAllBigType2`);
     //     console.debug(`#HERELINE WorldData iterateAllBigType2 this.name ${this.name}`);
-    //     const data_ps = this.dbm.idb.transaction(DataBaseManager.BIG_OBJECTS, mode)
-    //     const index = data_ps.objectStore(DataBaseManager.BIG_OBJECTS).index('type');
+    //     const data_ps = this.dbm.idb.transaction(DataBaseManager.STANDARD_OBJECTS, mode)
+    //     const index = data_ps.objectStore(DataBaseManager.STANDARD_OBJECTS).index('type');
     //     var cursor = await index.openCursor(VTYPE.name)
     //     while (cursor) {
     //         var iterator = VTYPE.clone(this, cursor.value);

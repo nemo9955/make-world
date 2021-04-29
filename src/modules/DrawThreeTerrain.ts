@@ -32,7 +32,7 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
     fakeDOM = new WorkerDOM();
 
 
-    ptsRadius: number = 40;
+    ptsRadius: number = 320;
 
     public terrain: Terrain = null;
 
@@ -54,10 +54,8 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
 
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(75,
-            this.canvasOffscreen.width / this.canvasOffscreen.height, 0.1, 100000); // DRAWUNIT
-        this.camera.position.x = 1000 * 2; // DRAWUNIT
-        // this.camera.position.y = 1000 * 0.9; // DRAWUNIT
-        this.camera.lookAt(0, 0, 0)
+            this.canvasOffscreen.width / this.canvasOffscreen.height, 0.1, 1000000);
+        this.setCamera();
 
 
         this.renderer = new THREE.WebGLRenderer({
@@ -197,8 +195,16 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
     updateShallow(): void {
     }
 
+    setCamera(): void {
+        this.camera.position.x = this.terrain.tData.sphereSize * 2.2; // DRAWUNIT
+        this.camera.position.y = 0;
+        this.camera.position.z = 0;
+        this.camera.lookAt(0, 0, 0)
+    }
+
     updateDeep(): void {
         console.time(`#time DrawThreeTerrain updateDeep`);
+        this.setCamera();
         this.clearTerrainData();
         this.syncTerrainData();
         console.timeEnd(`#time DrawThreeTerrain updateDeep`);
@@ -228,6 +234,7 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
 
     public updatePtsMaterials() {
         for (const ptsObj of this.terrData.tpPts.values()) {
+            ptsObj.material.visible = (this.ptsRadius != 0)
             ptsObj.material.size = this.ptsRadius;
             ptsObj.material.needsUpdate = true;
         }
@@ -236,7 +243,7 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
 
     public addJgui(workerJgui: JguiMake, workerJguiManager: JguiManager): void {
 
-        workerJgui.addSlider("THREE Points size", 0, 100, 0.1, this.ptsRadius)
+        workerJgui.addSlider("THREE Points size", 0, 500, 1, this.ptsRadius)
             .addEventListener(workerJguiManager, "input", (event: WorkerEvent) => {
                 this.ptsRadius = Number.parseFloat(event.data.event.target.value);
                 this.updatePtsMaterials();

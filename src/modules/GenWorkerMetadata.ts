@@ -74,7 +74,7 @@ export abstract class BaseWorker {
 
 
     public async refreshConfig() {
-        this.ticker.updateState(this.config.globalIsReady)
+        // this.ticker.updateState(this.config.globalIsReady)
     }
 
 

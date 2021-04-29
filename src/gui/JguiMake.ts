@@ -122,6 +122,26 @@ export class JguiMake {
         return [cswitch, cbutton];
     }
 
+
+    public addTooltip(ttName: string): JguiMake {
+        // https://getbootstrap.com/docs/5.0/components/tooltips/
+
+        if (this.attr["data-bs-toggle"]) {
+            console.warn(`Cannot set tooltip, data-bs-toggle is already present ${this.attr["data-bs-toggle"]} `, this)
+            return this;
+        }
+
+        this.attr["data-bs-toggle"] = "tooltip"
+        this.attr["data-bs-animation"] = "false"
+        this.attr["data-bs-placement"] = "right"
+        this.attr.title = ttName
+        return this;
+    }
+
+
+
+
+
     public addDropdown(ddwName: string, ddwArr: string[]): [JguiMake, JguiMake[]] {
         // https://getbootstrap.com/docs/5.0/components/dropdowns/
         // click mouseover mouseout
@@ -245,7 +265,7 @@ export class JguiMake {
 
 
 
-    public addSlider(slideName: string, min: number, max: number, step: number, origVal:number): JguiMake {
+    public addSlider(slideName: string, min: number, max: number, step: number, origVal: number): JguiMake {
         // https://getbootstrap.com/docs/5.0/forms/range/
         // <label for= "customRange3" class= "form-label" > Example range < /label>
         // < input type = "range" class="form-range" min = "0" max = "5" step = "0.5" id = "customRange3" >
