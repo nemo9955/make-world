@@ -272,16 +272,16 @@ export class SpaceFactory {
 
             var moons_total = 0
             if (orbit_.semimajor_axis.au < 2)
-                moons_total = Random.random_int_clamp(1, 2);
+                moons_total = Random.randClampInt(1, 2);
             else if (orbit_.semimajor_axis.au < 10)
-                moons_total = Random.random_int_clamp(2, 3);
+                moons_total = Random.randClampInt(2, 3);
             else
-                moons_total = Random.random_int_clamp(3, 4);
+                moons_total = Random.randClampInt(3, 4);
 
             if (forceMinMoon) {
-                moons_total = Random.random_int_clamp(1, 2);
+                moons_total = Random.randClampInt(1, 2);
                 if (orbObject_.type === "SpaceGroup")
-                    moons_total = Random.random_int_clamp(0, 1);
+                    moons_total = Random.randClampInt(0, 1);
             }
 
             // console.log("moons_total", moons_total);
@@ -316,7 +316,7 @@ export class SpaceFactory {
 
 
     public getLargestFrostGiantOrbit(plsys: PlanetarySystem) {
-        var rnd_length = Random.random_float_clamp(1, 1.2);
+        var rnd_length = Random.randClampFloat(1, 1.2);
 
         var instance = plsys.frost_line.clone();
         instance.au += rnd_length;
@@ -393,7 +393,7 @@ export class SpaceFactory {
                 var tmp_orbit = last_orbit.clone();
 
                 for (let index = 0; index < 10; index++) {
-                    tmp_orbit.au = last_orbit.au / Random.random_float_clamp(1.4, 2)
+                    tmp_orbit.au = last_orbit.au / Random.randClampFloat(1.4, 2)
 
                     if (Math.abs(tmp_orbit.au - last_orbit.au) < 0.15)
                         continue
@@ -424,7 +424,7 @@ export class SpaceFactory {
                 var tmp_orbit = last_orbit.clone();
 
                 for (let index = 0; index < 10; index++) {
-                    tmp_orbit.au = last_orbit.au * Random.random_float_clamp(1.4, 2)
+                    tmp_orbit.au = last_orbit.au * Random.randClampFloat(1.4, 2)
 
                     if (Math.abs(tmp_orbit.au - last_orbit.au) < 0.15)
                         continue

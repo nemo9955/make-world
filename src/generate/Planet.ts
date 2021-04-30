@@ -64,8 +64,8 @@ export class Planet extends OrbitingElement {
         this.isMoon = true;
 
         // TODO make Major moons and Minor moons and maybe ensure moon is smaller than planet
-        this.mass.em = Random.random_float_clamp(0.01, 0.02);
-        this.radius.er = Random.random_float_clamp(0.1, 0.3);
+        this.mass.em = Random.randClampFloat(0.01, 0.02);
+        this.radius.er = Random.randClampFloat(0.1, 0.3);
         // this.surfaceGravity = Random.random_float_clamp(0.68,1.5);
 
 
@@ -78,8 +78,8 @@ export class Planet extends OrbitingElement {
         this.planetType = "Normal";
 
         // ver 1 : https://youtu.be/RxbIoIM_Uck?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=64
-        this.mass.em = Random.random_float_clamp(0.4, 2.35);
-        this.radius.er = Random.random_float_clamp(0.78, 1.25);
+        this.mass.em = Random.randClampFloat(0.4, 2.35);
+        this.radius.er = Random.randClampFloat(0.78, 1.25);
         // this.surfaceGravity = Random.random_float_clamp(0.68,1.5);
 
         // ver 2 : https://youtu.be/RxbIoIM_Uck?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=81
@@ -103,9 +103,9 @@ export class Planet extends OrbitingElement {
         this.planetType = "Dwarf";
 
         // https://youtu.be/XEIsZjQ_OdU?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=67
-        this.mass.em = Random.random_float_clamp(0.0001, 0.1);
+        this.mass.em = Random.randClampFloat(0.0001, 0.1);
 
-        this.radius.er = Random.random_float_clamp(0.03, 0.5); // CHECK what is the max
+        this.radius.er = Random.randClampFloat(0.03, 0.5); // CHECK what is the max
 
         // this.surfaceGravity = this.mass.em / (this.radius.er * this.radius.er) // calculated
         this.density.setMassRadius(this.mass, this.radius);
@@ -117,10 +117,10 @@ export class Planet extends OrbitingElement {
 
         // https://youtu.be/80oQBGD7g34?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=22
         // 13 Jupiter Mass == 13 * 317.8 Earth Mass
-        this.mass.jupm = Random.random_float_clamp(2, 13);
+        this.mass.jupm = Random.randClampFloat(2, 13);
 
         // https://youtu.be/80oQBGD7g34?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=35
-        this.radius.jupr = Random.random_float_clamp(0.9, 1.1); // Add SOME wiggle
+        this.radius.jupr = Random.randClampFloat(0.9, 1.1); // Add SOME wiggle
 
         // this.surfaceGravity = this.mass.em / (this.radius.er * this.radius.er) // calculated
         this.density.setMassRadius(this.mass, this.radius);
@@ -132,10 +132,10 @@ export class Planet extends OrbitingElement {
 
         // https://youtu.be/80oQBGD7g34?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=22
         // https://youtu.be/80oQBGD7g34?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=98
-        this.mass.em = Random.random_float_clamp(10, Convert.jupEarthMass(2));
+        this.mass.em = Random.randClampFloat(10, Convert.jupEarthMass(2));
 
         // https://youtu.be/80oQBGD7g34?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=35
-        this.radius.jupr = Random.random_float_clamp(1, 3); // CHECK what is the max
+        this.radius.jupr = Random.randClampFloat(1, 3); // CHECK what is the max
 
         // this.surfaceGravity = this.mass.em / (this.radius.er * this.radius.er) // calculated
         this.density.setMassRadius(this.mass, this.radius);
@@ -146,9 +146,9 @@ export class Planet extends OrbitingElement {
         this.planetType = "GassDwarf";
 
         // https://youtu.be/80oQBGD7g34?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=179
-        this.mass.em = Random.random_float_clamp(1, 20);
+        this.mass.em = Random.randClampFloat(1, 20);
 
-        this.radius.er = Random.random_float_clamp(2, 5); // CHECK what is the max
+        this.radius.er = Random.randClampFloat(2, 5); // CHECK what is the max
 
         // this.surfaceGravity = this.mass.em / (this.radius.er * this.radius.er) // calculated
         this.density.setMassRadius(this.mass, this.radius);
@@ -256,8 +256,8 @@ export class Planet extends OrbitingElement {
 
 
     public addToJgui(jData: jguiData) {
-        jData.jgui.addColor("Color", this.color.getRgb().formatHex())
-            .addEventListener(jData.jguiMng, "input", (event: WorkerEvent) => {
+        jData.jGui.addColor("Color", this.color.getRgb().formatHex())
+            .addEventListener(jData.jMng, "input", (event: WorkerEvent) => {
                 this.color.set_color(event.data.event.target.value)
             })
 

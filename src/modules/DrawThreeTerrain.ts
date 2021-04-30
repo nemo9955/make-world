@@ -21,6 +21,7 @@ import * as THREE from "three"; // node_modules/three/build/three.js
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 import { Terrain } from "../generate/Terrain";
 import { JguiMake, JguiManager } from "../gui/JguiMake";
+import { jguiData } from "../gui/JguiUtils";
 
 
 
@@ -150,6 +151,7 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
 
     public terrData = {
         tpPts: new Map<number, THREE.Points<THREE.BufferGeometry, THREE.PointsMaterial>>(),
+        tpLines1: new Map<number, THREE.LineSegments<THREE.BufferGeometry, THREE.LineBasicMaterial>>(),
     };
 
     public syncTerrainData() {
@@ -177,6 +179,24 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
                 this.scene.add(ptsObject);
             }
 
+            if (this.terrData.tpLines1.has(tkpl.id) == false) {
+                var line1Geometry = new THREE.BufferGeometry();
+                var line1Material = new THREE.LineBasicMaterial({
+                    color: 0xffffff,
+                    linewidth: 50, // not working :(
+                    // vertexColors: true,
+                });
+                var line1Object = new THREE.LineSegments(line1Geometry, line1Material);
+                const line1PosAttr = new THREE.Float32BufferAttribute(tkpl.lines1, 3);
+
+                line1Geometry.setAttribute('position', line1PosAttr);
+                line1Geometry.computeBoundingSphere();
+
+                this.terrData.tpLines1.set(tkpl.id, line1Object)
+
+                this.scene.add(line1Object);
+            }
+
         }
 
 
@@ -190,6 +210,13 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
             ptsObj.geometry.dispose();
         }
         this.terrData.tpPts.clear();
+
+        for (const line1Obj of this.terrData.tpLines1.values()) {
+            this.scene.remove(line1Obj);
+            line1Obj.material.dispose();
+            line1Obj.geometry.dispose();
+        }
+        this.terrData.tpLines1.clear();
     }
 
     updateShallow(): void {
@@ -241,10 +268,10 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
     }
 
 
-    public addJgui(workerJgui: JguiMake, workerJguiManager: JguiManager): void {
+    public addJgui(jData: jguiData): void {
 
-        workerJgui.addSlider("THREE Points size", 0, 500, 1, this.ptsRadius)
-            .addEventListener(workerJguiManager, "input", (event: WorkerEvent) => {
+        jData.jGui.addSlider("THREE Points size", 0, 500, 1, this.ptsRadius)
+            .addEventListener(jData.jMng, "input", (event: WorkerEvent) => {
                 this.ptsRadius = Number.parseFloat(event.data.event.target.value);
                 this.updatePtsMaterials();
             })

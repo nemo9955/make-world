@@ -29,6 +29,7 @@ import { Terrain } from "../generate/Terrain"
 
 
 import { JguiMake, JguiManager } from "../gui/JguiMake"
+import { jguiData } from "../gui/JguiUtils"
 
 
 /*
@@ -279,21 +280,21 @@ export class DrawD3Terrain implements DrawWorkerInstance {
     //     // .on('change', () => { gui.refreshConfig(); });
     // }
 
-    public addJgui(workerJgui: JguiMake, workerJguiManager: JguiManager): void {
+    public addJgui(jData: jguiData): void {
         // TODO make me a drop down list
 
         var allProj = [...DrawD3Terrain.getGeoViewsMap().keys()];
-        var [_, prdDropList] = workerJgui.addDropdown("D3 Projection", allProj)
+        var [_, prdDropList] = jData.jGui.addDropdown("D3 Projection", allProj)
         for (const prjDdObj of prdDropList) {
-            prjDdObj.addEventListener(workerJguiManager, "click", (event: WorkerEvent) => {
+            prjDdObj.addEventListener(jData.jMng, "click", (event: WorkerEvent) => {
                 this.updateProjection(event.data.event.extra.listValue);
             })
-            prjDdObj.addEventListener(workerJguiManager, "mouseover", (event: WorkerEvent) => {
+            prjDdObj.addEventListener(jData.jMng, "mouseover", (event: WorkerEvent) => {
                 this.updateProjection(event.data.event.extra.listValue);
             })
         }
-        workerJgui.addSlider("D3 Points size", 0, 15, 0.1, this.ptsRadius)
-            .addEventListener(workerJguiManager, "input", (event: WorkerEvent) => {
+        jData.jGui.addSlider("D3 Points size", 0, 15, 0.1, this.ptsRadius)
+            .addEventListener(jData.jMng, "input", (event: WorkerEvent) => {
                 this.ptsRadius = Number.parseFloat(event.data.event.target.value);
                 this.path.pointRadius(this.ptsRadius); this.drawOnce();
             })

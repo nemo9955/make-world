@@ -4,6 +4,8 @@
 
 import * as d3 from "d3"
 import { geoDelaunay, geoVoronoi, geoContour } from "d3-geo-voronoi"
+// import * as d3gv from "d3-geo-voronoi"
+import * as d3gv from "../../node_modules/d3-geo-voronoi/dist/d3-geo-voronoi.js"
 // node_modules/d3-geo-voronoi/dist/d3-geo-voronoi.js
 import { pointGeoArr, pointGeo } from "./Points"
 import * as Points from "../utils/Points"
@@ -31,6 +33,51 @@ export class Graph {
         var delGeo = geoDelaunay(ptsGeo);
         console.log("delGeo", delGeo);
     }
+
+}
+
+
+class d3GeoLiteWrapper {
+/*
+// import * as d3gv from "d3-geo-voronoi"
+import * as d3gv from "../../node_modules/d3-geo-voronoi/dist/d3-geo-voronoi.js"
+// node_modules/d3-geo-voronoi/dist/d3-geo-voronoi.js
+
+    this could lead to some improved times if RAW functions wold be exported
+    as not all of the computed values are needed
+
+exports.geo_delaunay_from = geo_delaunay_from;
+exports.geo_triangles = geo_triangles;
+exports.geo_edges = geo_edges;
+exports.geo_neighbors = geo_neighbors;
+exports.geo_find = geo_find;
+
+*/
+
+
+    delaunay: any;
+    edges: [number, number][];
+    neighbors: number[][];
+    triangles: [number, number, number][];
+
+
+    constructor(public points: pointGeoArr) {
+
+        console.log("!!!!!!!!!!! d3gv", d3gv);
+
+        this.delaunay = d3gv.geo_delaunay_from(points)
+        this.triangles = d3gv.geo_triangles(this.delaunay)
+        this.edges = d3gv.geo_edges(this.triangles, points)
+        this.neighbors = d3gv.geo_neighbors(this.triangles, points.length)
+        this.find = d3gv.geo_find(this.neighbors, points)
+
+    }
+
+
+    find(x: number, y: number, next = 0) {
+        return this.find(x, y, next) as number;
+    }
+
 
 }
 

@@ -4,7 +4,7 @@ import * as Units from "../utils/Units"
 import { Config, MessageType, WorkerEvent, WorkerPacket } from "./Config";
 import { DrawD3Terrain } from "./DrawD3Terrain";
 import { JguiMake } from "../gui/JguiMake";
-import { setMainContainer } from "../gui/JguiUtils";
+import { jguiData, setMainContainer } from "../gui/JguiUtils";
 import { Terrain } from "../generate/Terrain";
 import { DrawThreeTerrain } from "./DrawThreeTerrain";
 import { Planet } from "../generate/Planet";
@@ -32,7 +32,7 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
                 message: MessageType.CanvasMake,
                 metaCanvas: {
                     id: `${this.name}-canvas-DrawThreeTerrain`,
-                    order: MAIN_ORDINAL + "10",
+                    order: MAIN_ORDINAL + "30",
                     generalFlags: ["orbit"],
                 }
             });
@@ -157,6 +157,7 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
 
 
     public updateTerrain() {
+        // console.log("this.world.time.value", this.world.time.value);
     }
 
 
@@ -192,26 +193,54 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
 
 
     private makeJgiu() {
-
         const jguiOrdinal = MAIN_ORDINAL + "00";
+        var startExpanded = !true;
 
+        [this.workerJguiMain, this.workerJguiCont] = new JguiMake(null).mkWorkerJgui("terr", jguiOrdinal, startExpanded);
 
-        [this.workerJguiMain, this.workerJguiCont] = new JguiMake(null).mkWorkerJgui("terr", jguiOrdinal);
+        var jData: jguiData = {
+            jGui: this.workerJguiCont,
+            jMng: this.workerJguiManager,
+        };
+
 
         var chboxUpd: JguiMake, chboxDraw: JguiMake;
-        [chboxUpd, chboxDraw] = this.workerJguiCont.add2CheckButtons("Update", this.doUpdate, "Draw", this.doDraw)
-        chboxUpd.addEventListener(this.workerJguiManager, "change", (event: WorkerEvent) => {
+        [chboxUpd, chboxDraw] = jData.jGui.add2CheckButtons("Update", this.doUpdate, "Draw", this.doDraw)
+        chboxUpd.addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
             this.doUpdate = event.data.event.target.checked;
         })
-        chboxDraw.addEventListener(this.workerJguiManager, "change", (event: WorkerEvent) => {
+        chboxDraw.addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
             this.doDraw = event.data.event.target.checked;
         })
 
-        this.workerJguiCont.addButton("Re-Genearte")
+
+        jData.jGui.addButton("Re-Genearte")
             .addTooltip("Regenerating will use an actual Planet, first run uses a dummy instance so we do not wait for PlSys to gen.")
-            .addEventListener(this.workerJguiManager, "click", (event: WorkerEvent) => {
+            .addEventListener(jData.jMng, "click", (event: WorkerEvent) => {
                 this.genFromExistingPlanet();
             })
+
+
+
+
+        jData.jGui.addNumber("altitudeMinProc ", this.terrain.tData.altitudeMinProc, 0.1).addEventListener(jData.jMng, "input", (event: WorkerEvent) => {
+            this.terrain.tData.altitudeMinProc = event.data.event.target.value; this.genFromExistingPlanet();
+        })
+        jData.jGui.addNumber("altitudeMaxProc ", this.terrain.tData.altitudeMaxProc, 0.1).addEventListener(jData.jMng, "input", (event: WorkerEvent) => {
+            this.terrain.tData.altitudeMaxProc = event.data.event.target.value; this.genFromExistingPlanet();
+        })
+        jData.jGui.addNumber("pointsToGen ", this.terrain.tData.pointsToGen, 1000).addEventListener(jData.jMng, "input", (event: WorkerEvent) => {
+            this.terrain.tData.pointsToGen = event.data.event.target.value; this.genFromExistingPlanet();
+        })
+        jData.jGui.addNumber("noiseSensitivity ", this.terrain.tData.noiseSensitivity, 0.1).addEventListener(jData.jMng, "input", (event: WorkerEvent) => {
+            this.terrain.tData.noiseSensitivity = event.data.event.target.value; this.genFromExistingPlanet();
+        })
+        jData.jGui.addCheckButton("noiseApplyAbs ", this.terrain.tData.noiseApplyAbs)[0].addEventListener(jData.jMng, "input", (event: WorkerEvent) => {
+            this.terrain.tData.noiseApplyAbs = event.data.event.target.value; this.genFromExistingPlanet();
+        })
+        jData.jGui.addNumber("noiseSeed ", this.terrain.tData.noiseSeed, 0.00001).addEventListener(jData.jMng, "input", (event: WorkerEvent) => {
+            this.terrain.tData.noiseSeed = event.data.event.target.value; this.genFromExistingPlanet();
+        })
 
 
 

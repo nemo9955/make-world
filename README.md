@@ -32,7 +32,7 @@ Latest build can be accesed here: https://nemo9955.github.io/make-world/pages/Wo
         🌑 More complex generation with more Orbital Elements
 
     🌍 Planet terrain - under developement
-        ✔️ Store and smoothly draw up to 500k points
+        ✔️ Store and smoothly draw up to 50k points (target is 500k)
         🌍 Static Tectonic plates for basic implementation
         🌑 Moving Tectonic plates for more complex shapes
 
