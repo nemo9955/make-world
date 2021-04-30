@@ -229,9 +229,9 @@ export class OrbitingElement extends Identifiable {
     // }
 
     public addToJgui(jData: jguiData) {
-        jData.jgui.addLabel(`id : ${this.id}`);
-        jData.jgui.addLabel(`type : ${this.type}`);
-        jData.jgui.addLabel(`depth : ${this.depth}`);
+        jData.jGui.addLabel(`id : ${this.id}`);
+        jData.jGui.addLabel(`type : ${this.type}`);
+        jData.jGui.addLabel(`depth : ${this.depth}`);
     }
 
 

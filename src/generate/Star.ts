@@ -65,7 +65,7 @@ export class Star extends OrbitingElement {
     public makeClassO(mass?: number) {
         this.sclass = "O";
         this.color.set_color("#92B5FF")
-        this.mass.sm = (mass ? mass : Random.random_float_clamp(16, 100));
+        this.mass.sm = (mass ? mass : Random.randClampFloat(16, 100));
         this.setFromMass(this.mass.sm);
         return this;
     }
@@ -73,7 +73,7 @@ export class Star extends OrbitingElement {
     public makeClassB(mass?: number) {
         this.sclass = "B";
         this.color.set_color("#A2C0FF")
-        this.mass.sm = (mass ? mass : Random.random_float_clamp(2.1, 16));
+        this.mass.sm = (mass ? mass : Random.randClampFloat(2.1, 16));
         this.setFromMass(this.mass.sm);
         return this;
     }
@@ -81,7 +81,7 @@ export class Star extends OrbitingElement {
     public makeClassA(mass?: number) {
         this.sclass = "A";
         this.color.set_color("#D5E0FF")
-        this.mass.sm = (mass ? mass : Random.random_float_clamp(1.4, 2.1));
+        this.mass.sm = (mass ? mass : Random.randClampFloat(1.4, 2.1));
         this.setFromMass(this.mass.sm);
         return this;
     }
@@ -89,7 +89,7 @@ export class Star extends OrbitingElement {
     public makeClassF(mass?: number) {
         this.sclass = "F";
         this.color.set_color("#F9F5FF")
-        this.mass.sm = (mass ? mass : Random.random_float_clamp(1.04, 1.4));
+        this.mass.sm = (mass ? mass : Random.randClampFloat(1.04, 1.4));
         this.setFromMass(this.mass.sm);
         return this;
     }
@@ -97,7 +97,7 @@ export class Star extends OrbitingElement {
     public makeClassG(mass?: number) {
         this.sclass = "G";
         this.color.set_color("#FFEDE3")
-        this.mass.sm = (mass ? mass : Random.random_float_clamp(0.8, 1.04));
+        this.mass.sm = (mass ? mass : Random.randClampFloat(0.8, 1.04));
         this.setFromMass(this.mass.sm);
         return this;
     }
@@ -105,7 +105,7 @@ export class Star extends OrbitingElement {
     public makeClassK(mass?: number) {
         this.sclass = "K";
         this.color.set_color("#FFDAB5")
-        this.mass.sm = (mass ? mass : Random.random_float_clamp(0.45, 0.8));
+        this.mass.sm = (mass ? mass : Random.randClampFloat(0.45, 0.8));
         this.setFromMass(this.mass.sm);
         return this;
     }
@@ -113,7 +113,7 @@ export class Star extends OrbitingElement {
     public makeClassHabK(mass?: number) {
         this.sclass = "K";
         this.color.set_color("#FFDAB5")
-        this.mass.sm = (mass ? mass : Random.random_float_clamp(0.6, 0.8));
+        this.mass.sm = (mass ? mass : Random.randClampFloat(0.6, 0.8));
         this.setFromMass(this.mass.sm);
         return this;
     }
@@ -121,7 +121,7 @@ export class Star extends OrbitingElement {
     public makeClassM(mass?: number) {
         this.sclass = "M";
         this.color.set_color("#FFB56C")
-        this.mass.sm = (mass ? mass : Random.random_float_clamp(0.08, 0.45));
+        this.mass.sm = (mass ? mass : Random.randClampFloat(0.08, 0.45));
         this.setFromMass(this.mass.sm);
         return this;
     }
@@ -224,20 +224,20 @@ export class Star extends OrbitingElement {
     public addToJgui(jData: jguiData) {
         super.addToJgui(jData);
 
-        jData.jgui.addColor("Color", this.color.getRgb().formatHex())
-            .addEventListener(jData.jguiMng, "input", (event: WorkerEvent) => {
+        jData.jGui.addColor("Color", this.color.getRgb().formatHex())
+            .addEventListener(jData.jMng, "input", (event: WorkerEvent) => {
                 this.color.set_color(event.data.event.target.value)
             })
-        jData.jgui.addNumber("radius.km", this.radius.km)
-            .addEventListener(jData.jguiMng, "input", (event: WorkerEvent) => {
+        jData.jGui.addNumber("radius.km", this.radius.km)
+            .addEventListener(jData.jMng, "input", (event: WorkerEvent) => {
                 this.radius.km = event.data.event.target.value;
             })
-        jData.jgui.addNumber("mass.Yg", this.mass.Yg)
-            .addEventListener(jData.jguiMng, "input", (event: WorkerEvent) => {
+        jData.jGui.addNumber("mass.Yg", this.mass.Yg)
+            .addEventListener(jData.jMng, "input", (event: WorkerEvent) => {
                 this.mass.Yg = event.data.event.target.value;
             })
-        jData.jgui.addNumber("lifetime.eby", this.lifetime.eby)
-            .addEventListener(jData.jguiMng, "input", (event: WorkerEvent) => {
+        jData.jGui.addNumber("lifetime.eby", this.lifetime.eby)
+            .addEventListener(jData.jMng, "input", (event: WorkerEvent) => {
                 this.lifetime.eby = event.data.event.target.value;
             })
 

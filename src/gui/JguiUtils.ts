@@ -3,8 +3,8 @@ import { JguiMake, JguiManager } from "./JguiMake";
 
 
 export type jguiData = {
-    jgui: JguiMake,
-    jguiMng: JguiManager,
+    jGui: JguiMake,
+    jMng: JguiManager,
 }
 
 

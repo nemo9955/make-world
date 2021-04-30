@@ -12,7 +12,7 @@ import { Planet } from "./Planet";
 import { Identifiable } from "../modules/ObjectsHacker";
 
 
-import { pointGeoArr, arr3numb } from "../utils/Points";
+import { pointGeoArr, pointGeo, arr3numb } from "../utils/Points";
 import * as Points from "../utils/Points"
 import * as Calc from "../utils/Calc"
 
@@ -66,6 +66,10 @@ export class TectonicPlate {
     public readonly birth: Float32Array;
     public readonly mask: Uint16Array;
 
+    public readonly lines1: Float32Array;
+
+    public seedPoint: number = 0;
+
     public noise: Noise;
     // public readonly edgeIndex: Uint32Array;
 
@@ -77,6 +81,7 @@ export class TectonicPlate {
         this.maxSize = Math.ceil(minAlocSize * this.overheadValue);
         this.colorId = colorArray[this.id];
 
+        this.lines1 = new Float32Array(this.maxSize * 3 * 2);
         this.position = new Float32Array(this.maxSize * 3);
         this.color = new Float32Array(this.maxSize * 3);
         this.birth = new Float32Array(this.maxSize);
@@ -86,8 +91,8 @@ export class TectonicPlate {
     public setFromGeo(tkplPoints: pointGeoArr, terrainData: TerrainData) {
         var color: THREE.Color = new THREE.Color();
         var sphSize = terrainData.sphereSize;
-        var maxElev = terrainData.altitudeMax;
-        var minElev = terrainData.altitudeMin;
+        var maxElev = terrainData.altitudeMaxProc * sphSize;
+        var minElev = terrainData.altitudeMinProc * sphSize;
         var cartPts: arr3numb;
 
         this.latlon = tkplPoints;
@@ -149,6 +154,49 @@ export class TectonicPlate {
     }
 
 
+    public setStupedEdges(terrainData: TerrainData) {
+
+        var lsPos = 0;
+
+        for (let index = 0; index < this.position.length - 3; index += 3) {
+
+            this.lines1[lsPos++] = this.position[index + 0] * 1.05
+            this.lines1[lsPos++] = this.position[index + 1] * 1.05
+            this.lines1[lsPos++] = this.position[index + 2] * 1.05
+            this.lines1[lsPos++] = this.position[index + 0 + 3] * 1.05
+            this.lines1[lsPos++] = this.position[index + 1 + 3] * 1.05
+            this.lines1[lsPos++] = this.position[index + 2 + 3] * 1.05
+
+        }
+
+    }
+
+    public setEdges(tkplPrede: number[], terrainData: TerrainData) {
+
+
+
+        var lsPos = 0;
+        for (let index = 0; index < tkplPrede.length; index++) {
+            const predInd = tkplPrede[index];
+            if (isNaN(predInd)) {
+                this.seedPoint = index;
+                this.color[index * 3 + 0] = 1
+                this.color[index * 3 + 1] = 1
+                this.color[index * 3 + 2] = 1
+                continue;
+            }
+
+            this.lines1[lsPos++] = this.position[index * 3 + 0] * 1.05
+            this.lines1[lsPos++] = this.position[index * 3 + 1] * 1.05
+            this.lines1[lsPos++] = this.position[index * 3 + 2] * 1.05
+            this.lines1[lsPos++] = this.position[predInd * 3 + 0] * 1.05
+            this.lines1[lsPos++] = this.position[predInd * 3 + 1] * 1.05
+            this.lines1[lsPos++] = this.position[predInd * 3 + 2] * 1.05
+        }
+
+
+    }
+
     /**
      * dispose
      */
@@ -161,8 +209,8 @@ export class TectonicPlate {
 
 export type TerrainData = {
     sphereSize: number,
-    altitudeMin: number,
-    altitudeMax: number,
+    altitudeMinProc: number,
+    altitudeMaxProc: number,
     pointsToGen: number,
     noiseSeed: number,
     noiseSensitivity: number,
@@ -172,13 +220,13 @@ export type TerrainData = {
 export class Terrain extends Identifiable {
 
     public tData: TerrainData = {
-        sphereSize: 1000, // TODO to be obtained from Planet
-        altitudeMin: -100, // How mutch the altitude will varry
-        altitudeMax: 100, // How mutch the altitude will varry
+        sphereSize: 1000,
+        altitudeMinProc: -0.1, // How mutch the altitude will varry proportional to sphereSize
+        altitudeMaxProc: +0.1, // How mutch the altitude will varry proportional to sphereSize
         pointsToGen: 1000 * 10,
-        noiseSeed: Math.random(),
         noiseSensitivity: 2,
         noiseApplyAbs: false,
+        noiseSeed: Math.random(),
     }
 
 
@@ -199,7 +247,8 @@ export class Terrain extends Identifiable {
 
     public init(planet: Planet) {
         this.orbitElemId = planet.id;
-        this.tData.sphereSize = planet.radius.km
+        this.tData.sphereSize = planet.radius.km;
+        // this.tData.noiseSeed = Math.random();
         this.generate();
     }
 
@@ -207,52 +256,89 @@ export class Terrain extends Identifiable {
         console.time(`#time Terrain generate`);
 
         this.resetTkpl();
-        this.tData.noiseSeed = Math.random();
         this.noise = Random.makeNoise(this.tData.noiseSeed);
 
         // var ptsGeo = Points.makeGeoPtsSquares(0);
         var ptsGeo = Points.makeGeoPtsFibb(this.tData.pointsToGen);
         // var ptsGeo = Points.makeGeoPoissonDiscSample(this.tData.pointsToGen);
         // var ptsGeo = Points.makeGeoPtsRandOk(this.tData.pointsToGen);
-
+        // console.log("ptsGeo", ptsGeo);
 
         // TODO generate full number of points after basic Tectonic plates are calculated
         // to avoid running d3GeoWrapper/geoDelaunay on high number of points
-        var del = new d3GeoWrapper(ptsGeo) // verry big nom=nom on resources ...
-
+        var delaw = new d3GeoWrapper(ptsGeo) // verry big nom=nom on resources ...
+        // var delaw = new d3GeoLiteWrapper(ptsGeo) // verry big nom=nom on resources ...
+        console.log("delaw", delaw);
 
         var randIndexes = [];
-        var randCosts = [];
-        var tpSeeds = Points.makeGeoPoissonDiscSample(Random.random_int_clamp(10, 20));
+        var seedPtToIndex = {}, cnter = 0;
+        var randCostsMap = {};
+
+        // var tpSeeds = Points.makeGeoPoissonDiscSample(Random.randClampInt(25, 30));
+        var tpSeeds = Points.makeGeoPtsFibb(Random.randClampInt(25, 30));
+        console.log("tpSeeds", tpSeeds);
+
+        var totalPoints = ptsGeo.length;
+        var totalPlates = tpSeeds.length;
+
+        console.log("totalPoints", totalPoints);
+        console.log("totalPlates", totalPlates);
+
+        var costAvgPlateTiny = Math.ceil(totalPoints / totalPlates / 100 * 6.0)
+        var costAvgPlateSmall = Math.ceil(totalPoints / totalPlates / 100 * 4.0)
+        var costAvgPlateLarge = Math.ceil(totalPoints / totalPlates / 100 * 3.0)
+
+        console.log("costAvgPlateTiny", costAvgPlateTiny);
+        console.log("costAvgPlateSmall", costAvgPlateSmall);
+        console.log("costAvgPlateLarge", costAvgPlateLarge);
+
+
         for (const pt of tpSeeds) {
-            // cartPts = Points.cartesianRadius(ptGeo, 2);
-            var index = del.find(pt[0], pt[1]);
+            var index = delaw.find(pt[0], pt[1]);
             randIndexes.push(index);
-            // randCosts.push(Random.random_int_clamp(1, 50));
-            // TODO compute randCosts values from total points and seeds !!!!
-            if (randIndexes.length % 2 == 0)
-                // randCosts.push(Random.random_int_clamp(5, 10));
-                randCosts.push(Random.random_int_clamp(10, 20));
+            seedPtToIndex[index] = cnter++;
+
+            if (Random.randPercent() < 20)
+                randCostsMap[index] = costAvgPlateTiny;
+            else if (Random.randPercent() < 50)
+                randCostsMap[index] = costAvgPlateSmall;
             else
-                randCosts.push(Random.random_int_clamp(1, 5));
+                randCostsMap[index] = costAvgPlateLarge;
+
+            // if (randIndexes.length % 4 == 0)
+            //     randCostsMap[index] = costAvgPlateTiny;
+            // else if (randIndexes.length % 2 == 0)
+            //     randCostsMap[index] = costAvgPlateSmall;
+            // else
+            //     randCostsMap[index] = costAvgPlateLarge;
+
+            console.log("randCostsMap[index]", randIndexes.length - 1, randCostsMap[index]);
+            // randCostsMap[index] = Random.wiggleInt(costAvgPlateLarge, costAvgPlateLarge / 15);
+            // if (randIndexes.length % 2 == 0)
+            //     randCostsMap[index] = Random.random_int_clamp(10, 20);
+            // else
+            //     randCostsMap[index] = Random.random_int_clamp(1, 5);
+            // randCostsMap[index] = Random.random_int_clamp(1, 10);
+            // randCostsMap[index] = 1;
             // TODO compute randCosts values from total points and seeds !!!!
         }
 
         // var randIndexes = Random.randIndexes(Random.random_int_clamp(5, 10), ptsGeo.length);
-        console.log("randIndexes", randIndexes);
-        console.log("randCosts", randCosts);
+        // console.log("randIndexes", randIndexes);
+        // console.log("seedPtToIndex", seedPtToIndex);
+        // console.log("randCostsMap", randCostsMap);
 
-        var dblEdges = [...del.edges]
-        for (const edg of del.edges) dblEdges.push([edg[1], edg[0]])
+        var dblEdges = [...delaw.edges]
+        for (const edg of delaw.edges) dblEdges.push([edg[1], edg[0]])
         for (let index = 0; index < dblEdges.length; index++) {
-            var rind0 = randIndexes.indexOf(dblEdges[index][0]);
-            var rind1 = randIndexes.indexOf(dblEdges[index][1]);
-            if (rind0 >= 0) dblEdges[index].push(randCosts[rind0])
-            else if (rind1 >= 0) dblEdges[index].push(randCosts[rind1])
-            // if (rind0 >= 0 || rind1 >= 0) {
-            //     console.log("rind0,rind1", rind0, rind1, dblEdges[index]);
-            // }
+            var rind0 = randCostsMap[dblEdges[index][0]];
+            var rind1 = randCostsMap[dblEdges[index][1]];
+            if (isFinite(rind0)) dblEdges[index].push(rind0)
+            else if (isFinite(rind1)) dblEdges[index].push(rind1)
         }
+
+
+        // console.log("dblEdges", dblEdges);
 
 
 
@@ -263,25 +349,62 @@ export class Terrain extends Identifiable {
         console.log("tree", tree);
 
 
-        var tmpTkplData = {}
-        for (const iterator of randIndexes)
-            tmpTkplData[iterator] = []
+        // var ptToTkpl = new Uint16Array(ptsGeo.length);
+        var ptToIndex = new Uint16Array(ptsGeo.length);
+
+
+
+        var tkplMapPoints = {}
+        var tkplMapPredecesor = {}
+        for (const iterator of randIndexes) {
+            tkplMapPoints[iterator] = []
+            tkplMapPredecesor[iterator] = []
+        }
 
 
         for (let index = 0; index < tree.origin.length; index++) {
             const tpIndex = tree.origin[index];
             var geoPt = ptsGeo[index];
-            tmpTkplData[tpIndex].push(geoPt);
+            tkplMapPoints[tpIndex].push(geoPt);
+            tkplMapPredecesor[tpIndex].push(0);
+            // console.log("tpIndex, index", tpIndex, index);
+            // ptToTkpl[index] = seedPtToIndex[tpIndex];
+            ptToIndex[index] = tkplMapPoints[tpIndex].length - 1;
         }
 
+        for (let index = 0; index < tree.predecessor.length; index++) {
+            const tpIndex = tree.origin[index];
+            var predInd = tree.predecessor[index]
+            var thisPtIndex = ptToIndex[index]
+            var predPtIndex = ptToIndex[predInd]
+            tkplMapPredecesor[tpIndex][thisPtIndex] = predPtIndex;
+        }
+
+        // console.log("tkplMapPredecesor", tkplMapPredecesor);
+        // console.log("tmpTkplData", tkplMapPoints);
+        // console.log("ptToTkpl", ptToTkpl);
+        // console.log("ptToIndex", ptToIndex);
+
         for (const iterator of randIndexes) {
-            var tkplPoints = tmpTkplData[iterator];
-            var tkplPtSize = tmpTkplData[iterator].length;
+            var tkplPoints = tkplMapPoints[iterator];
+            var tkplPtSize = tkplMapPoints[iterator].length;
+
+            // console.log("tkplPoints", tkplPoints);
 
             var tkplObject = new TectonicPlate(this.newTkplId(), tkplPtSize, this.noise)
             tkplObject.setFromGeo(tkplPoints, this.tData);
+            tkplObject.setEdges(tkplMapPredecesor[iterator], this.tData);
+            // tkplObject.setStupedEdges(this.tData);
             this.addTkpl(tkplObject)
         }
+
+
+
+
+
+
+
+
 
         console.timeEnd(`#time Terrain generate`);
     }

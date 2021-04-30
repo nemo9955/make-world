@@ -9,7 +9,7 @@ import { TerrainWorker } from "./TerrainWorker";
 import { PlanetSysWorker } from "./PlanetSysWorker";
 import { WorkerDOM } from "../utils/WorkerDOM";
 import { JguiMake, JguiManager } from "../gui/JguiMake";
-import { setMainContainer } from "../gui/JguiUtils";
+import { jguiData, setMainContainer } from "../gui/JguiUtils";
 
 
 export abstract class BaseWorker {
@@ -99,7 +99,7 @@ export interface DrawWorkerInstance {
     updateShallow(): void;
     updateDeep(): void;
     draw(): void;
-    addJgui(workerJgui: JguiMake, workerJguiManager: JguiManager): void;
+    addJgui(jData: jguiData): void;
 }
 
 
@@ -132,7 +132,12 @@ export abstract class BaseDrawUpdateWorker extends BaseWorker {
 
 
     protected updateJgiu(draw_: DrawWorkerInstance) {
-        draw_.addJgui(this.workerJguiCont, this.workerJguiManager);
+        var jData: jguiData = {
+            jGui: this.workerJguiCont,
+            jMng: this.workerJguiManager,
+        }
+
+        draw_.addJgui(jData);
         setMainContainer(this.worker, this.workerJguiMain)
     }
 

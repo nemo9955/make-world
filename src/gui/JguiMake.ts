@@ -32,7 +32,7 @@ export class JguiMake {
     public get type(): string { return this.attr.type; }
     public set type(value: string) { this.attr.type = value; }
 
-    public mkWorkerJgui(id: string, order: string, expanded = true): [JguiMake, JguiMake] {
+    public mkWorkerJgui(id: string, order: string, expanded: boolean): [JguiMake, JguiMake] {
         this.tag = "div";
         this.id = id;
         this.class = "d-grid gap-1 bg-light border shadow-sm rounded ";
@@ -309,13 +309,14 @@ export class JguiMake {
 
 
 
-    public addNumber(numName: string, numValue: number): JguiMake {
-        // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/color
+    public addNumber(numName: string, numValue: number, numStep = 1): JguiMake {
+        // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/number
         var rowObj = new JguiMake(null).mkRow()
         var numObj = new JguiMake("input")
 
         numObj.attr.type = "number"
         numObj.attr.value = numValue
+        numObj.attr.step = numStep
         numObj.style.width = "100%"
 
         rowObj.addLabel(numName)

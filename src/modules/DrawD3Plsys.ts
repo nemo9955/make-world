@@ -19,6 +19,7 @@ import { SpaceGroup } from "../generate/SpaceGroup";
 import { PlanetarySystem } from "../generate/PlanetarySystem";
 import { Color } from "../utils/Color"
 import { JguiMake, JguiManager } from "../gui/JguiMake"
+import { jguiData } from "../gui/JguiUtils"
 
 
 /*
@@ -157,7 +158,7 @@ export class DrawD3Plsys implements DrawWorkerInstance {
         }
     }
 
-    public addJgui(workerJgui: JguiMake, workerJguiManager: JguiManager): void {
+    public addJgui(jData: jguiData): void {
     }
 
 }

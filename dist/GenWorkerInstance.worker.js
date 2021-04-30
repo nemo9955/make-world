@@ -8883,6 +8883,721 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
+/***/ "./node_modules/d3-geo-voronoi/dist/d3-geo-voronoi.js":
+/*!************************************************************!*\
+  !*** ./node_modules/d3-geo-voronoi/dist/d3-geo-voronoi.js ***!
+  \************************************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+// https://github.com/Fil/d3-geo-voronoi Version 1.6.0. Copyright 2019 Philippe Rivière.
+(function (global, factory) {
+	 true ? factory(exports, __webpack_require__(/*! d3-delaunay */ "./node_modules/d3-delaunay/src/index.js"), __webpack_require__(/*! d3-geo */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/index.js"), __webpack_require__(/*! d3-array */ "./node_modules/d3-array/src/index.js"), __webpack_require__(/*! d3-tricontour */ "./node_modules/d3-tricontour/src/index.js")) :
+	0;
+}(this, (function (exports,d3Delaunay,d3Geo,d3Array,d3Tricontour) { 'use strict';
+
+var pi = Math.PI;
+var halfPi = pi / 2;
+
+
+
+var degrees = 180 / pi;
+var radians = pi / 180;
+
+
+
+var atan2 = Math.atan2;
+var cos = Math.cos;
+
+
+
+
+var max = Math.max;
+var min = Math.min;
+
+var sin = Math.sin;
+var sign =
+  Math.sign ||
+  function(x) {
+    return x > 0 ? 1 : x < 0 ? -1 : 0;
+  };
+var sqrt = Math.sqrt;
+
+
+
+
+function asin(x) {
+  return x > 1 ? halfPi : x < -1 ? -halfPi : Math.asin(x);
+}
+
+function cartesianDot(a, b) {
+  return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+}
+
+function cartesianCross(a, b) {
+  return [
+    a[1] * b[2] - a[2] * b[1],
+    a[2] * b[0] - a[0] * b[2],
+    a[0] * b[1] - a[1] * b[0]
+  ];
+}
+
+// TODO return a
+
+
+function cartesianAdd(a, b) {
+  return [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+}
+
+
+
+// TODO return d
+
+
+function cartesianNormalize(d) {
+  var l = sqrt(d[0] * d[0] + d[1] * d[1] + d[2] * d[2]);
+  return [d[0] / l, d[1] / l, d[2] / l];
+}
+
+//
+// (c) 2019 Philippe Riviere
+//
+// https://github.com/Fil/
+//
+// This software is distributed under the terms of the MIT License
+
+// Converts 3D Cartesian to spherical coordinates (degrees).
+function spherical(cartesian) {
+  return [
+    atan2(cartesian[1], cartesian[0]) * degrees,
+    asin(max(-1, min(1, cartesian[2]))) * degrees
+  ];
+}
+
+// Converts spherical coordinates (degrees) to 3D Cartesian.
+function cartesian(coordinates) {
+  var lambda = coordinates[0] * radians,
+    phi = coordinates[1] * radians,
+    cosphi = cos(phi);
+  return [cosphi * cos(lambda), cosphi * sin(lambda), sin(phi)];
+}
+
+// Spherical excess of a triangle (in spherical coordinates)
+function excess(triangle) {
+  triangle = triangle.map(p => cartesian(p));
+  return cartesianDot(triangle[0], cartesianCross(triangle[2], triangle[1]));
+}
+
+function geoDelaunay(points) {
+  const delaunay = geo_delaunay_from(points),
+    triangles = geo_triangles(delaunay),
+    edges = geo_edges(triangles, points),
+    neighbors = geo_neighbors(triangles, points.length),
+    find = geo_find(neighbors, points),
+    // Voronoi ; could take a center function as an argument
+    circumcenters = geo_circumcenters(triangles, points),
+    { polygons, centers } = geo_polygons(circumcenters, triangles, points),
+    mesh = geo_mesh(polygons),
+    hull = geo_hull(triangles, points),
+    // Urquhart ; returns a function that takes a distance array as argument.
+    urquhart = geo_urquhart(edges, triangles);
+  return {
+    delaunay,
+    edges,
+    triangles,
+    centers,
+    neighbors,
+    polygons,
+    mesh,
+    hull,
+    urquhart,
+    find
+  };
+}
+
+function geo_find(neighbors, points) {
+  function distance2(a,b) {
+    let x = a[0] - b[0],
+        y = a[1] - b[1],
+        z = a[2] - b[2];
+    return x * x + y * y + z * z;
+  }
+
+  return function find(x, y, next) {
+    if (next === undefined) next = 0;
+    let cell,
+      dist,
+      found = next;
+    const xyz = cartesian([x, y]);
+    do {
+      cell = next;
+      next = null;
+      dist = distance2(xyz, cartesian(points[cell]));
+      neighbors[cell].forEach(i => {
+        let ndist = distance2(xyz, cartesian(points[i]));
+        if (ndist < dist) {
+          dist = ndist;
+          next = i;
+          found = i;
+          return;
+        }
+      });
+    } while (next !== null);
+
+    return found;
+  };
+}
+
+function geo_delaunay_from(points) {
+  if (points.length < 2) return {};
+
+  // find a valid point to send to infinity
+  let pivot = 0;
+  while (isNaN(points[pivot][0]+points[pivot][1]) && pivot++ < points.length) {}
+
+  const r = d3Geo.geoRotation(points[pivot]),
+    projection = d3Geo.geoStereographic()
+      .translate([0, 0])
+      .scale(1)
+      .rotate(r.invert([180, 0]));
+  points = points.map(projection);
+
+  const zeros = [];
+  let max2 = 1;
+  for (let i = 0, n = points.length; i < n; i++) {
+    let m = points[i][0] ** 2 + points[i][1] ** 2;
+    if (!isFinite(m) || m > 1e32) zeros.push(i);
+    else if (m > max2) max2 = m;
+  }
+
+  const FAR = 1e6 * sqrt(max2);
+
+  zeros.forEach(i => (points[i] = [FAR, 0]));
+
+  // Add infinite horizon points
+  points.push([0,FAR]);
+  points.push([-FAR,0]);
+  points.push([0,-FAR]);
+
+  const delaunay = d3Delaunay.Delaunay.from(points);
+
+  delaunay.projection = projection;
+
+  // clean up the triangulation
+  const {triangles, halfedges, inedges} = delaunay;
+  const degenerate = [];
+  for (let i = 0, l = halfedges.length; i < l; i++) {
+    if (halfedges[i] < 0) {
+      const j = i % 3 == 2 ? i - 2 : i + 1;
+      const k = i % 3 == 0 ? i + 2 : i - 1;
+      const a = halfedges[j];
+      const b = halfedges[k];
+      halfedges[a] = b;
+      halfedges[b] = a;
+      halfedges[j] = halfedges[k] = -1;
+      triangles[i] = triangles[j] = triangles[k] = pivot;
+      inedges[triangles[a]] = a % 3 == 0 ? a + 2 : a - 1;
+      inedges[triangles[b]] = b % 3 == 0 ? b + 2 : b - 1;
+      degenerate.push(Math.min(i,j,k));
+      i += 2 - i % 3;
+    } else if (triangles[i] > points.length - 3 - 1) {
+      triangles[i] = pivot;
+    }
+  }
+  
+  // there should always be 4 degenerate triangles
+  // console.warn(degenerate);
+  return delaunay;
+}
+
+function geo_edges(triangles, points) {
+  const _index = {};
+  if (points.length === 2) return [[0, 1]];
+  triangles.forEach(tri => {
+    if (tri[0] === tri[1]) return;
+    if (excess(tri.map(i => points[i])) < 0) return;
+    for (let i = 0, j; i < 3; i++) {
+      j = (i + 1) % 3;
+      _index[d3Array.extent([tri[i], tri[j]]).join("-")] = true;
+    }
+  });
+  return Object.keys(_index).map(d => d.split("-").map(Number));
+}
+
+function geo_triangles(delaunay) {
+  const {triangles} = delaunay;
+  if (!triangles) return [];
+
+  const geo_triangles = [];
+  for (let i = 0, n = triangles.length / 3; i < n; i++) {
+    const a = triangles[3 * i],
+      b = triangles[3 * i + 1],
+      c = triangles[3 * i + 2];
+    if (a !== b && b !== c) {
+      geo_triangles.push([a, c, b]);
+    }
+  }
+  return geo_triangles;
+}
+
+function geo_circumcenters(triangles, points) {
+  // if (!use_centroids) {
+  return triangles.map(tri => {
+    const c = tri.map(i => points[i]).map(cartesian),
+      V = cartesianAdd(
+        cartesianAdd(cartesianCross(c[1], c[0]), cartesianCross(c[2], c[1])),
+        cartesianCross(c[0], c[2])
+      );
+    return spherical(cartesianNormalize(V));
+  });
+  /*} else {
+    return triangles.map(tri => {
+      return d3.geoCentroid({
+        type: "MultiPoint",
+        coordinates: tri.map(i => points[i])
+      });
+    });
+  }*/
+}
+
+function geo_neighbors(triangles, npoints) {
+  const neighbors = [];
+  triangles.forEach((tri, i) => {
+    for (let j = 0; j < 3; j++) {
+      const a = tri[j],
+        b = tri[(j + 1) % 3];
+      neighbors[a] = neighbors[a] || [];
+      neighbors[a].push(b);
+    }
+  });
+
+  // degenerate cases
+  if (triangles.length === 0) {
+    if (npoints === 2) (neighbors[0] = [1]), (neighbors[1] = [0]);
+    else if (npoints === 1) neighbors[0] = [];
+  }
+
+  return neighbors;
+}
+
+function geo_polygons(circumcenters, triangles, points) {
+  const polygons = [];
+
+  const centers = circumcenters.slice();
+
+  // supplementary centers for degenerate cases like n = 1,2,3
+  if (triangles.length === 0) {
+    if (points.length < 2) return { polygons, centers };
+    if (points.length === 2) {
+      // two hemispheres
+      const a = cartesian(points[0]),
+        b = cartesian(points[1]),
+        m = cartesianNormalize(cartesianAdd(a, b)),
+        d = cartesianNormalize(cartesianCross(a, b)),
+        c = cartesianCross(m, d);
+      const poly = [
+        m,
+        cartesianCross(m, c),
+        cartesianCross(cartesianCross(m, c), c),
+        cartesianCross(cartesianCross(cartesianCross(m, c), c), c)
+      ]
+        .map(spherical)
+        .map(supplement);
+      return (
+        polygons.push(poly),
+        polygons.push(poly.slice().reverse()),
+        { polygons, centers }
+      );
+    }
+  }
+
+  triangles.forEach((tri, t) => {
+    for (let j = 0; j < 3; j++) {
+      const a = tri[j],
+        b = tri[(j + 1) % 3],
+        c = tri[(j + 2) % 3];
+      polygons[a] = polygons[a] || [];
+      polygons[a].push([b, c, t, [a, b, c]]);
+    }
+  });
+
+  // reorder each polygon
+  const reordered = polygons.map(poly => {
+    const p = [poly[0][2]]; // t
+    let k = poly[0][1]; // k = c
+    for (let i = 1; i < poly.length; i++) {
+      // look for b = k
+      for (let j = 0; j < poly.length; j++) {
+        if (poly[j][0] == k) {
+          k = poly[j][1];
+          p.push(poly[j][2]);
+          break;
+        }
+      }
+    }
+
+    if (p.length > 2) {
+      return p;
+    } else if (p.length == 2) {
+      const R0 = o_midpoint(
+          points[poly[0][3][0]],
+          points[poly[0][3][1]],
+          centers[p[0]]
+        ),
+        R1 = o_midpoint(
+          points[poly[0][3][2]],
+          points[poly[0][3][0]],
+          centers[p[0]]
+        );
+      const i0 = supplement(R0),
+        i1 = supplement(R1);
+      return [p[0], i1, p[1], i0];
+    }
+  });
+
+  function supplement(point) {
+    let f = -1;
+    centers.slice(triangles.length, Infinity).forEach((p, i) => {
+      if (p[0] === point[0] && p[1] === point[1]) f = i + triangles.length;
+    });
+    if (f < 0) (f = centers.length), centers.push(point);
+    return f;
+  }
+
+  return { polygons: reordered, centers };
+}
+
+function o_midpoint(a, b, c) {
+  a = cartesian(a);
+  b = cartesian(b);
+  c = cartesian(c);
+  const s = sign(cartesianDot(cartesianCross(b, a), c));
+  return spherical(cartesianNormalize(cartesianAdd(a, b)).map(d => s * d));
+}
+
+function geo_mesh(polygons) {
+  const mesh = [];
+  polygons.forEach(poly => {
+    if (!poly) return;
+    let p = poly[poly.length - 1];
+    for (let q of poly) {
+      if (q > p) mesh.push([p, q]);
+      p = q;
+    }
+  });
+  return mesh;
+}
+
+function geo_urquhart(edges, triangles) {
+  return function(distances) {
+    const _lengths = {},
+      _urquhart = {};
+    edges.forEach((edge, i) => {
+      const u = edge.join("-");
+      _lengths[u] = distances[i];
+      _urquhart[u] = true;
+    });
+
+    triangles.forEach(tri => {
+      let l = 0,
+        remove = -1;
+      for (var j = 0; j < 3; j++) {
+        let u = d3Array.extent([tri[j], tri[(j + 1) % 3]]).join("-");
+        if (_lengths[u] > l) {
+          l = _lengths[u];
+          remove = u;
+        }
+      }
+      _urquhart[remove] = false;
+    });
+
+    return edges.map(edge => _urquhart[edge.join("-")]);
+  };
+}
+
+function geo_hull(triangles, points) {
+  const _hull = {},
+    hull = [];
+  triangles.map(tri => {
+    if (excess(tri.map(i => points[i > points.length ? 0 : i])) < 0) return;
+    for (let i = 0; i < 3; i++) {
+      let e = [tri[i], tri[(i + 1) % 3]],
+        code = `${e[1]}-${e[0]}`;
+      if (_hull[code]) delete _hull[code];
+      else _hull[e.join("-")] = true;
+    }
+  });
+
+  const _index = {};
+  let start;
+  Object.keys(_hull).forEach(e => {
+    e = e.split("-").map(Number);
+    _index[e[0]] = e[1];
+    start = e[0];
+  });
+
+  if (start === undefined) return hull;
+
+  let next = start;
+  do {
+    hull.push(next);
+    let n = _index[next];
+    _index[next] = -1;
+    next = n;
+  } while (next > -1 && next !== start);
+
+  return hull;
+}
+
+//
+// (c) 2018 Philippe Riviere
+//
+// https://github.com/Fil/
+//
+// This software is distributed under the terms of the MIT License
+
+function geoVoronoi(data) {
+  const v = function(data) {
+    v.delaunay = null;
+    v._data = data;
+
+    if (typeof v._data === "object" && v._data.type === "FeatureCollection") {
+      v._data = v._data.features;
+    }
+    if (typeof v._data === "object") {
+      const temp = v._data
+        .map(d => [v._vx(d), v._vy(d), d])
+        .filter(d => isFinite(d[0] + d[1]));
+      v.points = temp.map(d => [d[0], d[1]]);
+      v.valid = temp.map(d => d[2]);
+      v.delaunay = geoDelaunay(v.points);
+    }
+    return v;
+  };
+
+  v._vx = function(d) {
+    if (typeof d == "object" && "type" in d) {
+      return d3Geo.geoCentroid(d)[0];
+    }
+    if (0 in d) return d[0];
+  };
+  v._vy = function(d) {
+    if (typeof d == "object" && "type" in d) {
+      return d3Geo.geoCentroid(d)[1];
+    }
+    if (1 in d) return d[1];
+  };
+
+  v.x = function(f) {
+    if (!f) return v._vx;
+    v._vx = f;
+    return v;
+  };
+  v.y = function(f) {
+    if (!f) return v._vy;
+    v._vy = f;
+    return v;
+  };
+
+  v.polygons = function(data) {
+    if (data !== undefined) {
+      v(data);
+    }
+
+    if (!v.delaunay) return false;
+    const coll = {
+      type: "FeatureCollection",
+      features: []
+    };
+    if (v.valid.length === 0) return coll;
+    v.delaunay.polygons.forEach((poly, i) =>
+      coll.features.push({
+        type: "Feature",
+        geometry: !poly
+          ? null
+          : {
+              type: "Polygon",
+              coordinates: [[...poly, poly[0]].map(i => v.delaunay.centers[i])]
+            },
+        properties: {
+          site: v.valid[i],
+          sitecoordinates: v.points[i],
+          neighbours: v.delaunay.neighbors[i] // not part of the public API
+        }
+      })
+    );
+    if (v.valid.length === 1)
+      coll.features.push({
+        type: "Feature",
+        geometry: { type: "Sphere" },
+        properties: {
+          site: v.valid[0],
+          sitecoordinates: v.points[0],
+          neighbours: []
+        }
+      });
+    return coll;
+  };
+
+  v.triangles = function(data) {
+    if (data !== undefined) {
+      v(data);
+    }
+    if (!v.delaunay) return false;
+
+    return {
+      type: "FeatureCollection",
+      features: v.delaunay.triangles
+        .map((tri, index) => {
+          tri = tri.map(i => v.points[i]);
+          tri.center = v.delaunay.centers[index];
+          return tri;
+        })
+        .filter(tri => excess(tri) > 0)
+        .map(tri => ({
+          type: "Feature",
+          properties: {
+            circumcenter: tri.center
+          },
+          geometry: {
+            type: "Polygon",
+            coordinates: [[...tri, tri[0]]]
+          }
+        }))
+    };
+  };
+
+  v.links = function(data) {
+    if (data !== undefined) {
+      v(data);
+    }
+    if (!v.delaunay) return false;
+    const _distances = v.delaunay.edges.map(e =>
+        d3Geo.geoDistance(v.points[e[0]], v.points[e[1]])
+      ),
+      _urquart = v.delaunay.urquhart(_distances);
+    return {
+      type: "FeatureCollection",
+      features: v.delaunay.edges.map((e, i) => ({
+        type: "Feature",
+        properties: {
+          source: v.valid[e[0]],
+          target: v.valid[e[1]],
+          length: _distances[i],
+          urquhart: !!_urquart[i]
+        },
+        geometry: {
+          type: "LineString",
+          coordinates: [v.points[e[0]], v.points[e[1]]]
+        }
+      }))
+    };
+  };
+
+  v.mesh = function(data) {
+    if (data !== undefined) {
+      v(data);
+    }
+    if (!v.delaunay) return false;
+    return {
+      type: "MultiLineString",
+      coordinates: v.delaunay.edges.map(e => [v.points[e[0]], v.points[e[1]]])
+    };
+  };
+
+  v.cellMesh = function(data) {
+    if (data !== undefined) {
+      v(data);
+    }
+    if (!v.delaunay) return false;
+    const { centers, polygons } = v.delaunay;
+    const coordinates = [];
+    for (const p of polygons) {
+      if (!p) continue;
+      for (
+        let n = p.length, p0 = p[n - 1], p1 = p[0], i = 0;
+        i < n;
+        p0 = p1, p1 = p[++i]
+      ) {
+        if (p1 > p0) {
+          coordinates.push([centers[p0], centers[p1]]);
+        }
+      }
+    }
+    return {
+      type: "MultiLineString",
+      coordinates
+    };
+  };
+
+  v._found = undefined;
+  v.find = function(x, y, radius) {
+    v._found = v.delaunay.find(x, y, v._found);
+    if (!radius || d3Geo.geoDistance([x, y], v.points[v._found]) < radius)
+      return v._found;
+  };
+
+  v.hull = function(data) {
+    if (data !== undefined) {
+      v(data);
+    }
+    const hull = v.delaunay.hull,
+      points = v.points;
+    return hull.length === 0
+      ? null
+      : {
+          type: "Polygon",
+          coordinates: [[...hull.map(i => points[i]), points[hull[0]]]]
+        };
+  };
+
+  return data ? v(data) : v;
+}
+
+//
+// (c) 2019 Philippe Riviere
+//
+// https://github.com/Fil/
+//
+// This software is distributed under the terms of the MIT License
+
+function geoContour() {
+  let v;
+  const contour = d3Tricontour.tricontour()
+    .triangulate((data, x, y) => {
+      v = geoDelaunay(data.map(d => [x(d), y(d)]));
+      return v.delaunay;
+    })
+    .pointInterpolate((i, j, a) => {
+      const { points, projection } = v.delaunay;
+      const A = projection.invert([points[2 * i], points[2 * i + 1]]),
+         B = projection.invert([points[2 * j], points[2 * j + 1]]);
+      return d3Geo.geoInterpolate(A, B)(a);
+    })
+    .ringsort(rings => {
+      // tricky thing: in isobands this function is called twice,
+      // we want to reverse the polygons’s winding order only in tricontour()
+      // not in isoband()
+      if (rings.length && !rings[0].reversed) {
+        rings.forEach(ring => ring.reverse());
+        rings[0].reversed = true;
+      }
+      return [rings];
+    });
+
+  return contour;
+}
+
+exports.geoDelaunay = geoDelaunay;
+exports.geoVoronoi = geoVoronoi;
+exports.geoContour = geoContour;
+
+Object.defineProperty(exports, '__esModule', { value: true });
+
+})));
+
+
+/***/ }),
+
 /***/ "./node_modules/d3-geo-voronoi/index.js":
 /*!**********************************************!*\
   !*** ./node_modules/d3-geo-voronoi/index.js ***!
@@ -10117,6 +10832,300 @@ function add(adder, a, b) {
 
 /***/ }),
 
+/***/ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/area.js":
+/*!*********************************************************************!*\
+  !*** ./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/area.js ***!
+  \*********************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "areaRingSum": () => (/* binding */ areaRingSum),
+/* harmony export */   "areaStream": () => (/* binding */ areaStream),
+/* harmony export */   "default": () => (/* export default binding */ __WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _adder_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./adder.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/adder.js");
+/* harmony import */ var _math_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./math.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/math.js");
+/* harmony import */ var _noop_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./noop.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/noop.js");
+/* harmony import */ var _stream_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./stream.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/stream.js");
+
+
+
+
+
+var areaRingSum = (0,_adder_js__WEBPACK_IMPORTED_MODULE_0__.default)();
+
+var areaSum = (0,_adder_js__WEBPACK_IMPORTED_MODULE_0__.default)(),
+    lambda00,
+    phi00,
+    lambda0,
+    cosPhi0,
+    sinPhi0;
+
+var areaStream = {
+  point: _noop_js__WEBPACK_IMPORTED_MODULE_1__.default,
+  lineStart: _noop_js__WEBPACK_IMPORTED_MODULE_1__.default,
+  lineEnd: _noop_js__WEBPACK_IMPORTED_MODULE_1__.default,
+  polygonStart: function() {
+    areaRingSum.reset();
+    areaStream.lineStart = areaRingStart;
+    areaStream.lineEnd = areaRingEnd;
+  },
+  polygonEnd: function() {
+    var areaRing = +areaRingSum;
+    areaSum.add(areaRing < 0 ? _math_js__WEBPACK_IMPORTED_MODULE_2__.tau + areaRing : areaRing);
+    this.lineStart = this.lineEnd = this.point = _noop_js__WEBPACK_IMPORTED_MODULE_1__.default;
+  },
+  sphere: function() {
+    areaSum.add(_math_js__WEBPACK_IMPORTED_MODULE_2__.tau);
+  }
+};
+
+function areaRingStart() {
+  areaStream.point = areaPointFirst;
+}
+
+function areaRingEnd() {
+  areaPoint(lambda00, phi00);
+}
+
+function areaPointFirst(lambda, phi) {
+  areaStream.point = areaPoint;
+  lambda00 = lambda, phi00 = phi;
+  lambda *= _math_js__WEBPACK_IMPORTED_MODULE_2__.radians, phi *= _math_js__WEBPACK_IMPORTED_MODULE_2__.radians;
+  lambda0 = lambda, cosPhi0 = (0,_math_js__WEBPACK_IMPORTED_MODULE_2__.cos)(phi = phi / 2 + _math_js__WEBPACK_IMPORTED_MODULE_2__.quarterPi), sinPhi0 = (0,_math_js__WEBPACK_IMPORTED_MODULE_2__.sin)(phi);
+}
+
+function areaPoint(lambda, phi) {
+  lambda *= _math_js__WEBPACK_IMPORTED_MODULE_2__.radians, phi *= _math_js__WEBPACK_IMPORTED_MODULE_2__.radians;
+  phi = phi / 2 + _math_js__WEBPACK_IMPORTED_MODULE_2__.quarterPi; // half the angular distance from south pole
+
+  // Spherical excess E for a spherical triangle with vertices: south pole,
+  // previous point, current point.  Uses a formula derived from Cagnoli’s
+  // theorem.  See Todhunter, Spherical Trig. (1871), Sec. 103, Eq. (2).
+  var dLambda = lambda - lambda0,
+      sdLambda = dLambda >= 0 ? 1 : -1,
+      adLambda = sdLambda * dLambda,
+      cosPhi = (0,_math_js__WEBPACK_IMPORTED_MODULE_2__.cos)(phi),
+      sinPhi = (0,_math_js__WEBPACK_IMPORTED_MODULE_2__.sin)(phi),
+      k = sinPhi0 * sinPhi,
+      u = cosPhi0 * cosPhi + k * (0,_math_js__WEBPACK_IMPORTED_MODULE_2__.cos)(adLambda),
+      v = k * sdLambda * (0,_math_js__WEBPACK_IMPORTED_MODULE_2__.sin)(adLambda);
+  areaRingSum.add((0,_math_js__WEBPACK_IMPORTED_MODULE_2__.atan2)(v, u));
+
+  // Advance the previous points.
+  lambda0 = lambda, cosPhi0 = cosPhi, sinPhi0 = sinPhi;
+}
+
+/* harmony default export */ function __WEBPACK_DEFAULT_EXPORT__(object) {
+  areaSum.reset();
+  (0,_stream_js__WEBPACK_IMPORTED_MODULE_3__.default)(object, areaStream);
+  return areaSum * 2;
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/bounds.js":
+/*!***********************************************************************!*\
+  !*** ./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/bounds.js ***!
+  \***********************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* export default binding */ __WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _adder_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./adder.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/adder.js");
+/* harmony import */ var _area_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./area.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/area.js");
+/* harmony import */ var _cartesian_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./cartesian.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/cartesian.js");
+/* harmony import */ var _math_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./math.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/math.js");
+/* harmony import */ var _stream_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./stream.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/stream.js");
+
+
+
+
+
+
+var lambda0, phi0, lambda1, phi1, // bounds
+    lambda2, // previous lambda-coordinate
+    lambda00, phi00, // first point
+    p0, // previous 3D point
+    deltaSum = (0,_adder_js__WEBPACK_IMPORTED_MODULE_0__.default)(),
+    ranges,
+    range;
+
+var boundsStream = {
+  point: boundsPoint,
+  lineStart: boundsLineStart,
+  lineEnd: boundsLineEnd,
+  polygonStart: function() {
+    boundsStream.point = boundsRingPoint;
+    boundsStream.lineStart = boundsRingStart;
+    boundsStream.lineEnd = boundsRingEnd;
+    deltaSum.reset();
+    _area_js__WEBPACK_IMPORTED_MODULE_1__.areaStream.polygonStart();
+  },
+  polygonEnd: function() {
+    _area_js__WEBPACK_IMPORTED_MODULE_1__.areaStream.polygonEnd();
+    boundsStream.point = boundsPoint;
+    boundsStream.lineStart = boundsLineStart;
+    boundsStream.lineEnd = boundsLineEnd;
+    if (_area_js__WEBPACK_IMPORTED_MODULE_1__.areaRingSum < 0) lambda0 = -(lambda1 = 180), phi0 = -(phi1 = 90);
+    else if (deltaSum > _math_js__WEBPACK_IMPORTED_MODULE_2__.epsilon) phi1 = 90;
+    else if (deltaSum < -_math_js__WEBPACK_IMPORTED_MODULE_2__.epsilon) phi0 = -90;
+    range[0] = lambda0, range[1] = lambda1;
+  },
+  sphere: function() {
+    lambda0 = -(lambda1 = 180), phi0 = -(phi1 = 90);
+  }
+};
+
+function boundsPoint(lambda, phi) {
+  ranges.push(range = [lambda0 = lambda, lambda1 = lambda]);
+  if (phi < phi0) phi0 = phi;
+  if (phi > phi1) phi1 = phi;
+}
+
+function linePoint(lambda, phi) {
+  var p = (0,_cartesian_js__WEBPACK_IMPORTED_MODULE_3__.cartesian)([lambda * _math_js__WEBPACK_IMPORTED_MODULE_2__.radians, phi * _math_js__WEBPACK_IMPORTED_MODULE_2__.radians]);
+  if (p0) {
+    var normal = (0,_cartesian_js__WEBPACK_IMPORTED_MODULE_3__.cartesianCross)(p0, p),
+        equatorial = [normal[1], -normal[0], 0],
+        inflection = (0,_cartesian_js__WEBPACK_IMPORTED_MODULE_3__.cartesianCross)(equatorial, normal);
+    (0,_cartesian_js__WEBPACK_IMPORTED_MODULE_3__.cartesianNormalizeInPlace)(inflection);
+    inflection = (0,_cartesian_js__WEBPACK_IMPORTED_MODULE_3__.spherical)(inflection);
+    var delta = lambda - lambda2,
+        sign = delta > 0 ? 1 : -1,
+        lambdai = inflection[0] * _math_js__WEBPACK_IMPORTED_MODULE_2__.degrees * sign,
+        phii,
+        antimeridian = (0,_math_js__WEBPACK_IMPORTED_MODULE_2__.abs)(delta) > 180;
+    if (antimeridian ^ (sign * lambda2 < lambdai && lambdai < sign * lambda)) {
+      phii = inflection[1] * _math_js__WEBPACK_IMPORTED_MODULE_2__.degrees;
+      if (phii > phi1) phi1 = phii;
+    } else if (lambdai = (lambdai + 360) % 360 - 180, antimeridian ^ (sign * lambda2 < lambdai && lambdai < sign * lambda)) {
+      phii = -inflection[1] * _math_js__WEBPACK_IMPORTED_MODULE_2__.degrees;
+      if (phii < phi0) phi0 = phii;
+    } else {
+      if (phi < phi0) phi0 = phi;
+      if (phi > phi1) phi1 = phi;
+    }
+    if (antimeridian) {
+      if (lambda < lambda2) {
+        if (angle(lambda0, lambda) > angle(lambda0, lambda1)) lambda1 = lambda;
+      } else {
+        if (angle(lambda, lambda1) > angle(lambda0, lambda1)) lambda0 = lambda;
+      }
+    } else {
+      if (lambda1 >= lambda0) {
+        if (lambda < lambda0) lambda0 = lambda;
+        if (lambda > lambda1) lambda1 = lambda;
+      } else {
+        if (lambda > lambda2) {
+          if (angle(lambda0, lambda) > angle(lambda0, lambda1)) lambda1 = lambda;
+        } else {
+          if (angle(lambda, lambda1) > angle(lambda0, lambda1)) lambda0 = lambda;
+        }
+      }
+    }
+  } else {
+    ranges.push(range = [lambda0 = lambda, lambda1 = lambda]);
+  }
+  if (phi < phi0) phi0 = phi;
+  if (phi > phi1) phi1 = phi;
+  p0 = p, lambda2 = lambda;
+}
+
+function boundsLineStart() {
+  boundsStream.point = linePoint;
+}
+
+function boundsLineEnd() {
+  range[0] = lambda0, range[1] = lambda1;
+  boundsStream.point = boundsPoint;
+  p0 = null;
+}
+
+function boundsRingPoint(lambda, phi) {
+  if (p0) {
+    var delta = lambda - lambda2;
+    deltaSum.add((0,_math_js__WEBPACK_IMPORTED_MODULE_2__.abs)(delta) > 180 ? delta + (delta > 0 ? 360 : -360) : delta);
+  } else {
+    lambda00 = lambda, phi00 = phi;
+  }
+  _area_js__WEBPACK_IMPORTED_MODULE_1__.areaStream.point(lambda, phi);
+  linePoint(lambda, phi);
+}
+
+function boundsRingStart() {
+  _area_js__WEBPACK_IMPORTED_MODULE_1__.areaStream.lineStart();
+}
+
+function boundsRingEnd() {
+  boundsRingPoint(lambda00, phi00);
+  _area_js__WEBPACK_IMPORTED_MODULE_1__.areaStream.lineEnd();
+  if ((0,_math_js__WEBPACK_IMPORTED_MODULE_2__.abs)(deltaSum) > _math_js__WEBPACK_IMPORTED_MODULE_2__.epsilon) lambda0 = -(lambda1 = 180);
+  range[0] = lambda0, range[1] = lambda1;
+  p0 = null;
+}
+
+// Finds the left-right distance between two longitudes.
+// This is almost the same as (lambda1 - lambda0 + 360°) % 360°, except that we want
+// the distance between ±180° to be 360°.
+function angle(lambda0, lambda1) {
+  return (lambda1 -= lambda0) < 0 ? lambda1 + 360 : lambda1;
+}
+
+function rangeCompare(a, b) {
+  return a[0] - b[0];
+}
+
+function rangeContains(range, x) {
+  return range[0] <= range[1] ? range[0] <= x && x <= range[1] : x < range[0] || range[1] < x;
+}
+
+/* harmony default export */ function __WEBPACK_DEFAULT_EXPORT__(feature) {
+  var i, n, a, b, merged, deltaMax, delta;
+
+  phi1 = lambda1 = -(lambda0 = phi0 = Infinity);
+  ranges = [];
+  (0,_stream_js__WEBPACK_IMPORTED_MODULE_4__.default)(feature, boundsStream);
+
+  // First, sort ranges by their minimum longitudes.
+  if (n = ranges.length) {
+    ranges.sort(rangeCompare);
+
+    // Then, merge any ranges that overlap.
+    for (i = 1, a = ranges[0], merged = [a]; i < n; ++i) {
+      b = ranges[i];
+      if (rangeContains(a, b[0]) || rangeContains(a, b[1])) {
+        if (angle(a[0], b[1]) > angle(a[0], a[1])) a[1] = b[1];
+        if (angle(b[0], a[1]) > angle(a[0], a[1])) a[0] = b[0];
+      } else {
+        merged.push(a = b);
+      }
+    }
+
+    // Finally, find the largest gap between the merged ranges.
+    // The final bounding box will be the inverse of this gap.
+    for (deltaMax = -Infinity, n = merged.length - 1, i = 0, a = merged[n]; i <= n; a = b, ++i) {
+      b = merged[i];
+      if ((delta = angle(a[1], b[0])) > deltaMax) deltaMax = delta, lambda0 = b[0], lambda1 = a[1];
+    }
+  }
+
+  ranges = range = null;
+
+  return lambda0 === Infinity || phi0 === Infinity
+      ? [[NaN, NaN], [NaN, NaN]]
+      : [[lambda0, phi0], [lambda1, phi1]];
+}
+
+
+/***/ }),
+
 /***/ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/cartesian.js":
 /*!**************************************************************************!*\
   !*** ./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/cartesian.js ***!
@@ -10768,6 +11777,42 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
+/***/ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/clip/extent.js":
+/*!****************************************************************************!*\
+  !*** ./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/clip/extent.js ***!
+  \****************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* export default binding */ __WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _rectangle_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./rectangle.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/clip/rectangle.js");
+
+
+/* harmony default export */ function __WEBPACK_DEFAULT_EXPORT__() {
+  var x0 = 0,
+      y0 = 0,
+      x1 = 960,
+      y1 = 500,
+      cache,
+      cacheStream,
+      clip;
+
+  return clip = {
+    stream: function(stream) {
+      return cache && cacheStream === stream ? cache : cache = (0,_rectangle_js__WEBPACK_IMPORTED_MODULE_0__.default)(x0, y0, x1, y1)(cacheStream = stream);
+    },
+    extent: function(_) {
+      return arguments.length ? (x0 = +_[0][0], y0 = +_[0][1], x1 = +_[1][0], y1 = +_[1][1], cache = cacheStream = null, clip) : [[x0, y0], [x1, y1]];
+    }
+  };
+}
+
+
+/***/ }),
+
 /***/ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/clip/index.js":
 /*!***************************************************************************!*\
   !*** ./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/clip/index.js ***!
@@ -11348,6 +12393,121 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ }),
 
+/***/ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/contains.js":
+/*!*************************************************************************!*\
+  !*** ./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/contains.js ***!
+  \*************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* export default binding */ __WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _polygonContains_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./polygonContains.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/polygonContains.js");
+/* harmony import */ var _distance_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./distance.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/distance.js");
+/* harmony import */ var _math_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./math.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/math.js");
+
+
+
+
+var containsObjectType = {
+  Feature: function(object, point) {
+    return containsGeometry(object.geometry, point);
+  },
+  FeatureCollection: function(object, point) {
+    var features = object.features, i = -1, n = features.length;
+    while (++i < n) if (containsGeometry(features[i].geometry, point)) return true;
+    return false;
+  }
+};
+
+var containsGeometryType = {
+  Sphere: function() {
+    return true;
+  },
+  Point: function(object, point) {
+    return containsPoint(object.coordinates, point);
+  },
+  MultiPoint: function(object, point) {
+    var coordinates = object.coordinates, i = -1, n = coordinates.length;
+    while (++i < n) if (containsPoint(coordinates[i], point)) return true;
+    return false;
+  },
+  LineString: function(object, point) {
+    return containsLine(object.coordinates, point);
+  },
+  MultiLineString: function(object, point) {
+    var coordinates = object.coordinates, i = -1, n = coordinates.length;
+    while (++i < n) if (containsLine(coordinates[i], point)) return true;
+    return false;
+  },
+  Polygon: function(object, point) {
+    return containsPolygon(object.coordinates, point);
+  },
+  MultiPolygon: function(object, point) {
+    var coordinates = object.coordinates, i = -1, n = coordinates.length;
+    while (++i < n) if (containsPolygon(coordinates[i], point)) return true;
+    return false;
+  },
+  GeometryCollection: function(object, point) {
+    var geometries = object.geometries, i = -1, n = geometries.length;
+    while (++i < n) if (containsGeometry(geometries[i], point)) return true;
+    return false;
+  }
+};
+
+function containsGeometry(geometry, point) {
+  return geometry && containsGeometryType.hasOwnProperty(geometry.type)
+      ? containsGeometryType[geometry.type](geometry, point)
+      : false;
+}
+
+function containsPoint(coordinates, point) {
+  return (0,_distance_js__WEBPACK_IMPORTED_MODULE_0__.default)(coordinates, point) === 0;
+}
+
+function containsLine(coordinates, point) {
+  var ao, bo, ab;
+  for (var i = 0, n = coordinates.length; i < n; i++) {
+    bo = (0,_distance_js__WEBPACK_IMPORTED_MODULE_0__.default)(coordinates[i], point);
+    if (bo === 0) return true;
+    if (i > 0) {
+      ab = (0,_distance_js__WEBPACK_IMPORTED_MODULE_0__.default)(coordinates[i], coordinates[i - 1]);
+      if (
+        ab > 0 &&
+        ao <= ab &&
+        bo <= ab &&
+        (ao + bo - ab) * (1 - Math.pow((ao - bo) / ab, 2)) < _math_js__WEBPACK_IMPORTED_MODULE_1__.epsilon2 * ab
+      )
+        return true;
+    }
+    ao = bo;
+  }
+  return false;
+}
+
+function containsPolygon(coordinates, point) {
+  return !!(0,_polygonContains_js__WEBPACK_IMPORTED_MODULE_2__.default)(coordinates.map(ringRadians), pointRadians(point));
+}
+
+function ringRadians(ring) {
+  return ring = ring.map(pointRadians), ring.pop(), ring;
+}
+
+function pointRadians(point) {
+  return [point[0] * _math_js__WEBPACK_IMPORTED_MODULE_1__.radians, point[1] * _math_js__WEBPACK_IMPORTED_MODULE_1__.radians];
+}
+
+/* harmony default export */ function __WEBPACK_DEFAULT_EXPORT__(object, point) {
+  return (object && containsObjectType.hasOwnProperty(object.type)
+      ? containsObjectType[object.type]
+      : containsGeometry)(object, point);
+}
+
+
+/***/ }),
+
 /***/ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/distance.js":
 /*!*************************************************************************!*\
   !*** ./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/distance.js ***!
@@ -11374,6 +12534,129 @@ var coordinates = [null, null],
 
 /***/ }),
 
+/***/ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/graticule.js":
+/*!**************************************************************************!*\
+  !*** ./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/graticule.js ***!
+  \**************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ graticule),
+/* harmony export */   "graticule10": () => (/* binding */ graticule10)
+/* harmony export */ });
+/* harmony import */ var d3_array__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! d3-array */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/node_modules/d3-array/src/index.js");
+/* harmony import */ var _math_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./math.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/math.js");
+
+
+
+function graticuleX(y0, y1, dy) {
+  var y = (0,d3_array__WEBPACK_IMPORTED_MODULE_0__.range)(y0, y1 - _math_js__WEBPACK_IMPORTED_MODULE_1__.epsilon, dy).concat(y1);
+  return function(x) { return y.map(function(y) { return [x, y]; }); };
+}
+
+function graticuleY(x0, x1, dx) {
+  var x = (0,d3_array__WEBPACK_IMPORTED_MODULE_0__.range)(x0, x1 - _math_js__WEBPACK_IMPORTED_MODULE_1__.epsilon, dx).concat(x1);
+  return function(y) { return x.map(function(x) { return [x, y]; }); };
+}
+
+function graticule() {
+  var x1, x0, X1, X0,
+      y1, y0, Y1, Y0,
+      dx = 10, dy = dx, DX = 90, DY = 360,
+      x, y, X, Y,
+      precision = 2.5;
+
+  function graticule() {
+    return {type: "MultiLineString", coordinates: lines()};
+  }
+
+  function lines() {
+    return (0,d3_array__WEBPACK_IMPORTED_MODULE_0__.range)((0,_math_js__WEBPACK_IMPORTED_MODULE_1__.ceil)(X0 / DX) * DX, X1, DX).map(X)
+        .concat((0,d3_array__WEBPACK_IMPORTED_MODULE_0__.range)((0,_math_js__WEBPACK_IMPORTED_MODULE_1__.ceil)(Y0 / DY) * DY, Y1, DY).map(Y))
+        .concat((0,d3_array__WEBPACK_IMPORTED_MODULE_0__.range)((0,_math_js__WEBPACK_IMPORTED_MODULE_1__.ceil)(x0 / dx) * dx, x1, dx).filter(function(x) { return (0,_math_js__WEBPACK_IMPORTED_MODULE_1__.abs)(x % DX) > _math_js__WEBPACK_IMPORTED_MODULE_1__.epsilon; }).map(x))
+        .concat((0,d3_array__WEBPACK_IMPORTED_MODULE_0__.range)((0,_math_js__WEBPACK_IMPORTED_MODULE_1__.ceil)(y0 / dy) * dy, y1, dy).filter(function(y) { return (0,_math_js__WEBPACK_IMPORTED_MODULE_1__.abs)(y % DY) > _math_js__WEBPACK_IMPORTED_MODULE_1__.epsilon; }).map(y));
+  }
+
+  graticule.lines = function() {
+    return lines().map(function(coordinates) { return {type: "LineString", coordinates: coordinates}; });
+  };
+
+  graticule.outline = function() {
+    return {
+      type: "Polygon",
+      coordinates: [
+        X(X0).concat(
+        Y(Y1).slice(1),
+        X(X1).reverse().slice(1),
+        Y(Y0).reverse().slice(1))
+      ]
+    };
+  };
+
+  graticule.extent = function(_) {
+    if (!arguments.length) return graticule.extentMinor();
+    return graticule.extentMajor(_).extentMinor(_);
+  };
+
+  graticule.extentMajor = function(_) {
+    if (!arguments.length) return [[X0, Y0], [X1, Y1]];
+    X0 = +_[0][0], X1 = +_[1][0];
+    Y0 = +_[0][1], Y1 = +_[1][1];
+    if (X0 > X1) _ = X0, X0 = X1, X1 = _;
+    if (Y0 > Y1) _ = Y0, Y0 = Y1, Y1 = _;
+    return graticule.precision(precision);
+  };
+
+  graticule.extentMinor = function(_) {
+    if (!arguments.length) return [[x0, y0], [x1, y1]];
+    x0 = +_[0][0], x1 = +_[1][0];
+    y0 = +_[0][1], y1 = +_[1][1];
+    if (x0 > x1) _ = x0, x0 = x1, x1 = _;
+    if (y0 > y1) _ = y0, y0 = y1, y1 = _;
+    return graticule.precision(precision);
+  };
+
+  graticule.step = function(_) {
+    if (!arguments.length) return graticule.stepMinor();
+    return graticule.stepMajor(_).stepMinor(_);
+  };
+
+  graticule.stepMajor = function(_) {
+    if (!arguments.length) return [DX, DY];
+    DX = +_[0], DY = +_[1];
+    return graticule;
+  };
+
+  graticule.stepMinor = function(_) {
+    if (!arguments.length) return [dx, dy];
+    dx = +_[0], dy = +_[1];
+    return graticule;
+  };
+
+  graticule.precision = function(_) {
+    if (!arguments.length) return precision;
+    precision = +_;
+    x = graticuleX(y0, y1, 90);
+    y = graticuleY(x0, x1, precision);
+    X = graticuleX(Y0, Y1, 90);
+    Y = graticuleY(X0, X1, precision);
+    return graticule;
+  };
+
+  return graticule
+      .extentMajor([[-180, -90 + _math_js__WEBPACK_IMPORTED_MODULE_1__.epsilon], [180, 90 - _math_js__WEBPACK_IMPORTED_MODULE_1__.epsilon]])
+      .extentMinor([[-180, -80 - _math_js__WEBPACK_IMPORTED_MODULE_1__.epsilon], [180, 80 + _math_js__WEBPACK_IMPORTED_MODULE_1__.epsilon]]);
+}
+
+function graticule10() {
+  return graticule()();
+}
+
+
+/***/ }),
+
 /***/ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/identity.js":
 /*!*************************************************************************!*\
   !*** ./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/identity.js ***!
@@ -11388,6 +12671,137 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony default export */ function __WEBPACK_DEFAULT_EXPORT__(x) {
   return x;
 }
+
+
+/***/ }),
+
+/***/ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/index.js":
+/*!**********************************************************************!*\
+  !*** ./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/index.js ***!
+  \**********************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "geoArea": () => (/* reexport safe */ _area_js__WEBPACK_IMPORTED_MODULE_0__.default),
+/* harmony export */   "geoBounds": () => (/* reexport safe */ _bounds_js__WEBPACK_IMPORTED_MODULE_1__.default),
+/* harmony export */   "geoCentroid": () => (/* reexport safe */ _centroid_js__WEBPACK_IMPORTED_MODULE_2__.default),
+/* harmony export */   "geoCircle": () => (/* reexport safe */ _circle_js__WEBPACK_IMPORTED_MODULE_3__.default),
+/* harmony export */   "geoClipAntimeridian": () => (/* reexport safe */ _clip_antimeridian_js__WEBPACK_IMPORTED_MODULE_4__.default),
+/* harmony export */   "geoClipCircle": () => (/* reexport safe */ _clip_circle_js__WEBPACK_IMPORTED_MODULE_5__.default),
+/* harmony export */   "geoClipExtent": () => (/* reexport safe */ _clip_extent_js__WEBPACK_IMPORTED_MODULE_6__.default),
+/* harmony export */   "geoClipRectangle": () => (/* reexport safe */ _clip_rectangle_js__WEBPACK_IMPORTED_MODULE_7__.default),
+/* harmony export */   "geoContains": () => (/* reexport safe */ _contains_js__WEBPACK_IMPORTED_MODULE_8__.default),
+/* harmony export */   "geoDistance": () => (/* reexport safe */ _distance_js__WEBPACK_IMPORTED_MODULE_9__.default),
+/* harmony export */   "geoGraticule": () => (/* reexport safe */ _graticule_js__WEBPACK_IMPORTED_MODULE_10__.default),
+/* harmony export */   "geoGraticule10": () => (/* reexport safe */ _graticule_js__WEBPACK_IMPORTED_MODULE_10__.graticule10),
+/* harmony export */   "geoInterpolate": () => (/* reexport safe */ _interpolate_js__WEBPACK_IMPORTED_MODULE_11__.default),
+/* harmony export */   "geoLength": () => (/* reexport safe */ _length_js__WEBPACK_IMPORTED_MODULE_12__.default),
+/* harmony export */   "geoPath": () => (/* reexport safe */ _path_index_js__WEBPACK_IMPORTED_MODULE_13__.default),
+/* harmony export */   "geoAlbers": () => (/* reexport safe */ _projection_albers_js__WEBPACK_IMPORTED_MODULE_14__.default),
+/* harmony export */   "geoAlbersUsa": () => (/* reexport safe */ _projection_albersUsa_js__WEBPACK_IMPORTED_MODULE_15__.default),
+/* harmony export */   "geoAzimuthalEqualArea": () => (/* reexport safe */ _projection_azimuthalEqualArea_js__WEBPACK_IMPORTED_MODULE_16__.default),
+/* harmony export */   "geoAzimuthalEqualAreaRaw": () => (/* reexport safe */ _projection_azimuthalEqualArea_js__WEBPACK_IMPORTED_MODULE_16__.azimuthalEqualAreaRaw),
+/* harmony export */   "geoAzimuthalEquidistant": () => (/* reexport safe */ _projection_azimuthalEquidistant_js__WEBPACK_IMPORTED_MODULE_17__.default),
+/* harmony export */   "geoAzimuthalEquidistantRaw": () => (/* reexport safe */ _projection_azimuthalEquidistant_js__WEBPACK_IMPORTED_MODULE_17__.azimuthalEquidistantRaw),
+/* harmony export */   "geoConicConformal": () => (/* reexport safe */ _projection_conicConformal_js__WEBPACK_IMPORTED_MODULE_18__.default),
+/* harmony export */   "geoConicConformalRaw": () => (/* reexport safe */ _projection_conicConformal_js__WEBPACK_IMPORTED_MODULE_18__.conicConformalRaw),
+/* harmony export */   "geoConicEqualArea": () => (/* reexport safe */ _projection_conicEqualArea_js__WEBPACK_IMPORTED_MODULE_19__.default),
+/* harmony export */   "geoConicEqualAreaRaw": () => (/* reexport safe */ _projection_conicEqualArea_js__WEBPACK_IMPORTED_MODULE_19__.conicEqualAreaRaw),
+/* harmony export */   "geoConicEquidistant": () => (/* reexport safe */ _projection_conicEquidistant_js__WEBPACK_IMPORTED_MODULE_20__.default),
+/* harmony export */   "geoConicEquidistantRaw": () => (/* reexport safe */ _projection_conicEquidistant_js__WEBPACK_IMPORTED_MODULE_20__.conicEquidistantRaw),
+/* harmony export */   "geoEqualEarth": () => (/* reexport safe */ _projection_equalEarth_js__WEBPACK_IMPORTED_MODULE_21__.default),
+/* harmony export */   "geoEqualEarthRaw": () => (/* reexport safe */ _projection_equalEarth_js__WEBPACK_IMPORTED_MODULE_21__.equalEarthRaw),
+/* harmony export */   "geoEquirectangular": () => (/* reexport safe */ _projection_equirectangular_js__WEBPACK_IMPORTED_MODULE_22__.default),
+/* harmony export */   "geoEquirectangularRaw": () => (/* reexport safe */ _projection_equirectangular_js__WEBPACK_IMPORTED_MODULE_22__.equirectangularRaw),
+/* harmony export */   "geoGnomonic": () => (/* reexport safe */ _projection_gnomonic_js__WEBPACK_IMPORTED_MODULE_23__.default),
+/* harmony export */   "geoGnomonicRaw": () => (/* reexport safe */ _projection_gnomonic_js__WEBPACK_IMPORTED_MODULE_23__.gnomonicRaw),
+/* harmony export */   "geoIdentity": () => (/* reexport safe */ _projection_identity_js__WEBPACK_IMPORTED_MODULE_24__.default),
+/* harmony export */   "geoProjection": () => (/* reexport safe */ _projection_index_js__WEBPACK_IMPORTED_MODULE_25__.default),
+/* harmony export */   "geoProjectionMutator": () => (/* reexport safe */ _projection_index_js__WEBPACK_IMPORTED_MODULE_25__.projectionMutator),
+/* harmony export */   "geoMercator": () => (/* reexport safe */ _projection_mercator_js__WEBPACK_IMPORTED_MODULE_26__.default),
+/* harmony export */   "geoMercatorRaw": () => (/* reexport safe */ _projection_mercator_js__WEBPACK_IMPORTED_MODULE_26__.mercatorRaw),
+/* harmony export */   "geoNaturalEarth1": () => (/* reexport safe */ _projection_naturalEarth1_js__WEBPACK_IMPORTED_MODULE_27__.default),
+/* harmony export */   "geoNaturalEarth1Raw": () => (/* reexport safe */ _projection_naturalEarth1_js__WEBPACK_IMPORTED_MODULE_27__.naturalEarth1Raw),
+/* harmony export */   "geoOrthographic": () => (/* reexport safe */ _projection_orthographic_js__WEBPACK_IMPORTED_MODULE_28__.default),
+/* harmony export */   "geoOrthographicRaw": () => (/* reexport safe */ _projection_orthographic_js__WEBPACK_IMPORTED_MODULE_28__.orthographicRaw),
+/* harmony export */   "geoStereographic": () => (/* reexport safe */ _projection_stereographic_js__WEBPACK_IMPORTED_MODULE_29__.default),
+/* harmony export */   "geoStereographicRaw": () => (/* reexport safe */ _projection_stereographic_js__WEBPACK_IMPORTED_MODULE_29__.stereographicRaw),
+/* harmony export */   "geoTransverseMercator": () => (/* reexport safe */ _projection_transverseMercator_js__WEBPACK_IMPORTED_MODULE_30__.default),
+/* harmony export */   "geoTransverseMercatorRaw": () => (/* reexport safe */ _projection_transverseMercator_js__WEBPACK_IMPORTED_MODULE_30__.transverseMercatorRaw),
+/* harmony export */   "geoRotation": () => (/* reexport safe */ _rotation_js__WEBPACK_IMPORTED_MODULE_31__.default),
+/* harmony export */   "geoStream": () => (/* reexport safe */ _stream_js__WEBPACK_IMPORTED_MODULE_32__.default),
+/* harmony export */   "geoTransform": () => (/* reexport safe */ _transform_js__WEBPACK_IMPORTED_MODULE_33__.default)
+/* harmony export */ });
+/* harmony import */ var _area_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./area.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/area.js");
+/* harmony import */ var _bounds_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./bounds.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/bounds.js");
+/* harmony import */ var _centroid_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./centroid.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/centroid.js");
+/* harmony import */ var _circle_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./circle.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/circle.js");
+/* harmony import */ var _clip_antimeridian_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./clip/antimeridian.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/clip/antimeridian.js");
+/* harmony import */ var _clip_circle_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./clip/circle.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/clip/circle.js");
+/* harmony import */ var _clip_extent_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./clip/extent.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/clip/extent.js");
+/* harmony import */ var _clip_rectangle_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./clip/rectangle.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/clip/rectangle.js");
+/* harmony import */ var _contains_js__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./contains.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/contains.js");
+/* harmony import */ var _distance_js__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./distance.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/distance.js");
+/* harmony import */ var _graticule_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./graticule.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/graticule.js");
+/* harmony import */ var _interpolate_js__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./interpolate.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/interpolate.js");
+/* harmony import */ var _length_js__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./length.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/length.js");
+/* harmony import */ var _path_index_js__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ./path/index.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/path/index.js");
+/* harmony import */ var _projection_albers_js__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(/*! ./projection/albers.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/albers.js");
+/* harmony import */ var _projection_albersUsa_js__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(/*! ./projection/albersUsa.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/albersUsa.js");
+/* harmony import */ var _projection_azimuthalEqualArea_js__WEBPACK_IMPORTED_MODULE_16__ = __webpack_require__(/*! ./projection/azimuthalEqualArea.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/azimuthalEqualArea.js");
+/* harmony import */ var _projection_azimuthalEquidistant_js__WEBPACK_IMPORTED_MODULE_17__ = __webpack_require__(/*! ./projection/azimuthalEquidistant.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/azimuthalEquidistant.js");
+/* harmony import */ var _projection_conicConformal_js__WEBPACK_IMPORTED_MODULE_18__ = __webpack_require__(/*! ./projection/conicConformal.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/conicConformal.js");
+/* harmony import */ var _projection_conicEqualArea_js__WEBPACK_IMPORTED_MODULE_19__ = __webpack_require__(/*! ./projection/conicEqualArea.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/conicEqualArea.js");
+/* harmony import */ var _projection_conicEquidistant_js__WEBPACK_IMPORTED_MODULE_20__ = __webpack_require__(/*! ./projection/conicEquidistant.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/conicEquidistant.js");
+/* harmony import */ var _projection_equalEarth_js__WEBPACK_IMPORTED_MODULE_21__ = __webpack_require__(/*! ./projection/equalEarth.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/equalEarth.js");
+/* harmony import */ var _projection_equirectangular_js__WEBPACK_IMPORTED_MODULE_22__ = __webpack_require__(/*! ./projection/equirectangular.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/equirectangular.js");
+/* harmony import */ var _projection_gnomonic_js__WEBPACK_IMPORTED_MODULE_23__ = __webpack_require__(/*! ./projection/gnomonic.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/gnomonic.js");
+/* harmony import */ var _projection_identity_js__WEBPACK_IMPORTED_MODULE_24__ = __webpack_require__(/*! ./projection/identity.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/identity.js");
+/* harmony import */ var _projection_index_js__WEBPACK_IMPORTED_MODULE_25__ = __webpack_require__(/*! ./projection/index.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/index.js");
+/* harmony import */ var _projection_mercator_js__WEBPACK_IMPORTED_MODULE_26__ = __webpack_require__(/*! ./projection/mercator.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/mercator.js");
+/* harmony import */ var _projection_naturalEarth1_js__WEBPACK_IMPORTED_MODULE_27__ = __webpack_require__(/*! ./projection/naturalEarth1.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/naturalEarth1.js");
+/* harmony import */ var _projection_orthographic_js__WEBPACK_IMPORTED_MODULE_28__ = __webpack_require__(/*! ./projection/orthographic.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/orthographic.js");
+/* harmony import */ var _projection_stereographic_js__WEBPACK_IMPORTED_MODULE_29__ = __webpack_require__(/*! ./projection/stereographic.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/stereographic.js");
+/* harmony import */ var _projection_transverseMercator_js__WEBPACK_IMPORTED_MODULE_30__ = __webpack_require__(/*! ./projection/transverseMercator.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/transverseMercator.js");
+/* harmony import */ var _rotation_js__WEBPACK_IMPORTED_MODULE_31__ = __webpack_require__(/*! ./rotation.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/rotation.js");
+/* harmony import */ var _stream_js__WEBPACK_IMPORTED_MODULE_32__ = __webpack_require__(/*! ./stream.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/stream.js");
+/* harmony import */ var _transform_js__WEBPACK_IMPORTED_MODULE_33__ = __webpack_require__(/*! ./transform.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/transform.js");
+
+
+
+
+
+
+ // DEPRECATED! Use d3.geoIdentity().clipExtent(…).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 /***/ }),
@@ -11605,6 +13019,74 @@ function noop() {}
 
 /***/ }),
 
+/***/ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/path/area.js":
+/*!**************************************************************************!*\
+  !*** ./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/path/area.js ***!
+  \**************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _adder_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../adder.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/adder.js");
+/* harmony import */ var _math_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../math.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/math.js");
+/* harmony import */ var _noop_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../noop.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/noop.js");
+
+
+
+
+var areaSum = (0,_adder_js__WEBPACK_IMPORTED_MODULE_0__.default)(),
+    areaRingSum = (0,_adder_js__WEBPACK_IMPORTED_MODULE_0__.default)(),
+    x00,
+    y00,
+    x0,
+    y0;
+
+var areaStream = {
+  point: _noop_js__WEBPACK_IMPORTED_MODULE_1__.default,
+  lineStart: _noop_js__WEBPACK_IMPORTED_MODULE_1__.default,
+  lineEnd: _noop_js__WEBPACK_IMPORTED_MODULE_1__.default,
+  polygonStart: function() {
+    areaStream.lineStart = areaRingStart;
+    areaStream.lineEnd = areaRingEnd;
+  },
+  polygonEnd: function() {
+    areaStream.lineStart = areaStream.lineEnd = areaStream.point = _noop_js__WEBPACK_IMPORTED_MODULE_1__.default;
+    areaSum.add((0,_math_js__WEBPACK_IMPORTED_MODULE_2__.abs)(areaRingSum));
+    areaRingSum.reset();
+  },
+  result: function() {
+    var area = areaSum / 2;
+    areaSum.reset();
+    return area;
+  }
+};
+
+function areaRingStart() {
+  areaStream.point = areaPointFirst;
+}
+
+function areaPointFirst(x, y) {
+  areaStream.point = areaPoint;
+  x00 = x0 = x, y00 = y0 = y;
+}
+
+function areaPoint(x, y) {
+  areaRingSum.add(y0 * x - x0 * y);
+  x0 = x, y0 = y;
+}
+
+function areaRingEnd() {
+  areaPoint(x00, y00);
+}
+
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (areaStream);
+
+
+/***/ }),
+
 /***/ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/path/bounds.js":
 /*!****************************************************************************!*\
   !*** ./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/path/bounds.js ***!
@@ -11645,6 +13127,405 @@ function boundsPoint(x, y) {
 }
 
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (boundsStream);
+
+
+/***/ }),
+
+/***/ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/path/centroid.js":
+/*!******************************************************************************!*\
+  !*** ./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/path/centroid.js ***!
+  \******************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _math_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../math.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/math.js");
+
+
+// TODO Enforce positive area for exterior, negative area for interior?
+
+var X0 = 0,
+    Y0 = 0,
+    Z0 = 0,
+    X1 = 0,
+    Y1 = 0,
+    Z1 = 0,
+    X2 = 0,
+    Y2 = 0,
+    Z2 = 0,
+    x00,
+    y00,
+    x0,
+    y0;
+
+var centroidStream = {
+  point: centroidPoint,
+  lineStart: centroidLineStart,
+  lineEnd: centroidLineEnd,
+  polygonStart: function() {
+    centroidStream.lineStart = centroidRingStart;
+    centroidStream.lineEnd = centroidRingEnd;
+  },
+  polygonEnd: function() {
+    centroidStream.point = centroidPoint;
+    centroidStream.lineStart = centroidLineStart;
+    centroidStream.lineEnd = centroidLineEnd;
+  },
+  result: function() {
+    var centroid = Z2 ? [X2 / Z2, Y2 / Z2]
+        : Z1 ? [X1 / Z1, Y1 / Z1]
+        : Z0 ? [X0 / Z0, Y0 / Z0]
+        : [NaN, NaN];
+    X0 = Y0 = Z0 =
+    X1 = Y1 = Z1 =
+    X2 = Y2 = Z2 = 0;
+    return centroid;
+  }
+};
+
+function centroidPoint(x, y) {
+  X0 += x;
+  Y0 += y;
+  ++Z0;
+}
+
+function centroidLineStart() {
+  centroidStream.point = centroidPointFirstLine;
+}
+
+function centroidPointFirstLine(x, y) {
+  centroidStream.point = centroidPointLine;
+  centroidPoint(x0 = x, y0 = y);
+}
+
+function centroidPointLine(x, y) {
+  var dx = x - x0, dy = y - y0, z = (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.sqrt)(dx * dx + dy * dy);
+  X1 += z * (x0 + x) / 2;
+  Y1 += z * (y0 + y) / 2;
+  Z1 += z;
+  centroidPoint(x0 = x, y0 = y);
+}
+
+function centroidLineEnd() {
+  centroidStream.point = centroidPoint;
+}
+
+function centroidRingStart() {
+  centroidStream.point = centroidPointFirstRing;
+}
+
+function centroidRingEnd() {
+  centroidPointRing(x00, y00);
+}
+
+function centroidPointFirstRing(x, y) {
+  centroidStream.point = centroidPointRing;
+  centroidPoint(x00 = x0 = x, y00 = y0 = y);
+}
+
+function centroidPointRing(x, y) {
+  var dx = x - x0,
+      dy = y - y0,
+      z = (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.sqrt)(dx * dx + dy * dy);
+
+  X1 += z * (x0 + x) / 2;
+  Y1 += z * (y0 + y) / 2;
+  Z1 += z;
+
+  z = y0 * x - x0 * y;
+  X2 += z * (x0 + x);
+  Y2 += z * (y0 + y);
+  Z2 += z * 3;
+  centroidPoint(x0 = x, y0 = y);
+}
+
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (centroidStream);
+
+
+/***/ }),
+
+/***/ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/path/context.js":
+/*!*****************************************************************************!*\
+  !*** ./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/path/context.js ***!
+  \*****************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ PathContext)
+/* harmony export */ });
+/* harmony import */ var _math_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../math.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/math.js");
+/* harmony import */ var _noop_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../noop.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/noop.js");
+
+
+
+function PathContext(context) {
+  this._context = context;
+}
+
+PathContext.prototype = {
+  _radius: 4.5,
+  pointRadius: function(_) {
+    return this._radius = _, this;
+  },
+  polygonStart: function() {
+    this._line = 0;
+  },
+  polygonEnd: function() {
+    this._line = NaN;
+  },
+  lineStart: function() {
+    this._point = 0;
+  },
+  lineEnd: function() {
+    if (this._line === 0) this._context.closePath();
+    this._point = NaN;
+  },
+  point: function(x, y) {
+    switch (this._point) {
+      case 0: {
+        this._context.moveTo(x, y);
+        this._point = 1;
+        break;
+      }
+      case 1: {
+        this._context.lineTo(x, y);
+        break;
+      }
+      default: {
+        this._context.moveTo(x + this._radius, y);
+        this._context.arc(x, y, this._radius, 0, _math_js__WEBPACK_IMPORTED_MODULE_0__.tau);
+        break;
+      }
+    }
+  },
+  result: _noop_js__WEBPACK_IMPORTED_MODULE_1__.default
+};
+
+
+/***/ }),
+
+/***/ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/path/index.js":
+/*!***************************************************************************!*\
+  !*** ./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/path/index.js ***!
+  \***************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* export default binding */ __WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _identity_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../identity.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/identity.js");
+/* harmony import */ var _stream_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../stream.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/stream.js");
+/* harmony import */ var _area_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./area.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/path/area.js");
+/* harmony import */ var _bounds_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./bounds.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/path/bounds.js");
+/* harmony import */ var _centroid_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./centroid.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/path/centroid.js");
+/* harmony import */ var _context_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./context.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/path/context.js");
+/* harmony import */ var _measure_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./measure.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/path/measure.js");
+/* harmony import */ var _string_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./string.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/path/string.js");
+
+
+
+
+
+
+
+
+
+/* harmony default export */ function __WEBPACK_DEFAULT_EXPORT__(projection, context) {
+  var pointRadius = 4.5,
+      projectionStream,
+      contextStream;
+
+  function path(object) {
+    if (object) {
+      if (typeof pointRadius === "function") contextStream.pointRadius(+pointRadius.apply(this, arguments));
+      (0,_stream_js__WEBPACK_IMPORTED_MODULE_0__.default)(object, projectionStream(contextStream));
+    }
+    return contextStream.result();
+  }
+
+  path.area = function(object) {
+    (0,_stream_js__WEBPACK_IMPORTED_MODULE_0__.default)(object, projectionStream(_area_js__WEBPACK_IMPORTED_MODULE_1__.default));
+    return _area_js__WEBPACK_IMPORTED_MODULE_1__.default.result();
+  };
+
+  path.measure = function(object) {
+    (0,_stream_js__WEBPACK_IMPORTED_MODULE_0__.default)(object, projectionStream(_measure_js__WEBPACK_IMPORTED_MODULE_2__.default));
+    return _measure_js__WEBPACK_IMPORTED_MODULE_2__.default.result();
+  };
+
+  path.bounds = function(object) {
+    (0,_stream_js__WEBPACK_IMPORTED_MODULE_0__.default)(object, projectionStream(_bounds_js__WEBPACK_IMPORTED_MODULE_3__.default));
+    return _bounds_js__WEBPACK_IMPORTED_MODULE_3__.default.result();
+  };
+
+  path.centroid = function(object) {
+    (0,_stream_js__WEBPACK_IMPORTED_MODULE_0__.default)(object, projectionStream(_centroid_js__WEBPACK_IMPORTED_MODULE_4__.default));
+    return _centroid_js__WEBPACK_IMPORTED_MODULE_4__.default.result();
+  };
+
+  path.projection = function(_) {
+    return arguments.length ? (projectionStream = _ == null ? (projection = null, _identity_js__WEBPACK_IMPORTED_MODULE_5__.default) : (projection = _).stream, path) : projection;
+  };
+
+  path.context = function(_) {
+    if (!arguments.length) return context;
+    contextStream = _ == null ? (context = null, new _string_js__WEBPACK_IMPORTED_MODULE_6__.default) : new _context_js__WEBPACK_IMPORTED_MODULE_7__.default(context = _);
+    if (typeof pointRadius !== "function") contextStream.pointRadius(pointRadius);
+    return path;
+  };
+
+  path.pointRadius = function(_) {
+    if (!arguments.length) return pointRadius;
+    pointRadius = typeof _ === "function" ? _ : (contextStream.pointRadius(+_), +_);
+    return path;
+  };
+
+  return path.projection(projection).context(context);
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/path/measure.js":
+/*!*****************************************************************************!*\
+  !*** ./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/path/measure.js ***!
+  \*****************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _adder_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../adder.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/adder.js");
+/* harmony import */ var _math_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../math.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/math.js");
+/* harmony import */ var _noop_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../noop.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/noop.js");
+
+
+
+
+var lengthSum = (0,_adder_js__WEBPACK_IMPORTED_MODULE_0__.default)(),
+    lengthRing,
+    x00,
+    y00,
+    x0,
+    y0;
+
+var lengthStream = {
+  point: _noop_js__WEBPACK_IMPORTED_MODULE_1__.default,
+  lineStart: function() {
+    lengthStream.point = lengthPointFirst;
+  },
+  lineEnd: function() {
+    if (lengthRing) lengthPoint(x00, y00);
+    lengthStream.point = _noop_js__WEBPACK_IMPORTED_MODULE_1__.default;
+  },
+  polygonStart: function() {
+    lengthRing = true;
+  },
+  polygonEnd: function() {
+    lengthRing = null;
+  },
+  result: function() {
+    var length = +lengthSum;
+    lengthSum.reset();
+    return length;
+  }
+};
+
+function lengthPointFirst(x, y) {
+  lengthStream.point = lengthPoint;
+  x00 = x0 = x, y00 = y0 = y;
+}
+
+function lengthPoint(x, y) {
+  x0 -= x, y0 -= y;
+  lengthSum.add((0,_math_js__WEBPACK_IMPORTED_MODULE_2__.sqrt)(x0 * x0 + y0 * y0));
+  x0 = x, y0 = y;
+}
+
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (lengthStream);
+
+
+/***/ }),
+
+/***/ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/path/string.js":
+/*!****************************************************************************!*\
+  !*** ./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/path/string.js ***!
+  \****************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ PathString)
+/* harmony export */ });
+function PathString() {
+  this._string = [];
+}
+
+PathString.prototype = {
+  _radius: 4.5,
+  _circle: circle(4.5),
+  pointRadius: function(_) {
+    if ((_ = +_) !== this._radius) this._radius = _, this._circle = null;
+    return this;
+  },
+  polygonStart: function() {
+    this._line = 0;
+  },
+  polygonEnd: function() {
+    this._line = NaN;
+  },
+  lineStart: function() {
+    this._point = 0;
+  },
+  lineEnd: function() {
+    if (this._line === 0) this._string.push("Z");
+    this._point = NaN;
+  },
+  point: function(x, y) {
+    switch (this._point) {
+      case 0: {
+        this._string.push("M", x, ",", y);
+        this._point = 1;
+        break;
+      }
+      case 1: {
+        this._string.push("L", x, ",", y);
+        break;
+      }
+      default: {
+        if (this._circle == null) this._circle = circle(this._radius);
+        this._string.push("M", x, ",", y, this._circle);
+        break;
+      }
+    }
+  },
+  result: function() {
+    if (this._string.length) {
+      var result = this._string.join("");
+      this._string = [];
+      return result;
+    } else {
+      return null;
+    }
+  }
+};
+
+function circle(radius) {
+  return "m0," + radius
+      + "a" + radius + "," + radius + " 0 1,1 0," + -2 * radius
+      + "a" + radius + "," + radius + " 0 1,1 0," + 2 * radius
+      + "z";
+}
 
 
 /***/ }),
@@ -11767,6 +13648,162 @@ function longitude(point) {
 
 /***/ }),
 
+/***/ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/albers.js":
+/*!**********************************************************************************!*\
+  !*** ./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/albers.js ***!
+  \**********************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* export default binding */ __WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _conicEqualArea_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./conicEqualArea.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/conicEqualArea.js");
+
+
+/* harmony default export */ function __WEBPACK_DEFAULT_EXPORT__() {
+  return (0,_conicEqualArea_js__WEBPACK_IMPORTED_MODULE_0__.default)()
+      .parallels([29.5, 45.5])
+      .scale(1070)
+      .translate([480, 250])
+      .rotate([96, 0])
+      .center([-0.6, 38.7]);
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/albersUsa.js":
+/*!*************************************************************************************!*\
+  !*** ./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/albersUsa.js ***!
+  \*************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* export default binding */ __WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _math_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../math.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/math.js");
+/* harmony import */ var _albers_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./albers.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/albers.js");
+/* harmony import */ var _conicEqualArea_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./conicEqualArea.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/conicEqualArea.js");
+/* harmony import */ var _fit_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./fit.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/fit.js");
+
+
+
+
+
+// The projections must have mutually exclusive clip regions on the sphere,
+// as this will avoid emitting interleaving lines and polygons.
+function multiplex(streams) {
+  var n = streams.length;
+  return {
+    point: function(x, y) { var i = -1; while (++i < n) streams[i].point(x, y); },
+    sphere: function() { var i = -1; while (++i < n) streams[i].sphere(); },
+    lineStart: function() { var i = -1; while (++i < n) streams[i].lineStart(); },
+    lineEnd: function() { var i = -1; while (++i < n) streams[i].lineEnd(); },
+    polygonStart: function() { var i = -1; while (++i < n) streams[i].polygonStart(); },
+    polygonEnd: function() { var i = -1; while (++i < n) streams[i].polygonEnd(); }
+  };
+}
+
+// A composite projection for the United States, configured by default for
+// 960×500. The projection also works quite well at 960×600 if you change the
+// scale to 1285 and adjust the translate accordingly. The set of standard
+// parallels for each region comes from USGS, which is published here:
+// http://egsc.usgs.gov/isb/pubs/MapProjections/projections.html#albers
+/* harmony default export */ function __WEBPACK_DEFAULT_EXPORT__() {
+  var cache,
+      cacheStream,
+      lower48 = (0,_albers_js__WEBPACK_IMPORTED_MODULE_0__.default)(), lower48Point,
+      alaska = (0,_conicEqualArea_js__WEBPACK_IMPORTED_MODULE_1__.default)().rotate([154, 0]).center([-2, 58.5]).parallels([55, 65]), alaskaPoint, // EPSG:3338
+      hawaii = (0,_conicEqualArea_js__WEBPACK_IMPORTED_MODULE_1__.default)().rotate([157, 0]).center([-3, 19.9]).parallels([8, 18]), hawaiiPoint, // ESRI:102007
+      point, pointStream = {point: function(x, y) { point = [x, y]; }};
+
+  function albersUsa(coordinates) {
+    var x = coordinates[0], y = coordinates[1];
+    return point = null,
+        (lower48Point.point(x, y), point)
+        || (alaskaPoint.point(x, y), point)
+        || (hawaiiPoint.point(x, y), point);
+  }
+
+  albersUsa.invert = function(coordinates) {
+    var k = lower48.scale(),
+        t = lower48.translate(),
+        x = (coordinates[0] - t[0]) / k,
+        y = (coordinates[1] - t[1]) / k;
+    return (y >= 0.120 && y < 0.234 && x >= -0.425 && x < -0.214 ? alaska
+        : y >= 0.166 && y < 0.234 && x >= -0.214 && x < -0.115 ? hawaii
+        : lower48).invert(coordinates);
+  };
+
+  albersUsa.stream = function(stream) {
+    return cache && cacheStream === stream ? cache : cache = multiplex([lower48.stream(cacheStream = stream), alaska.stream(stream), hawaii.stream(stream)]);
+  };
+
+  albersUsa.precision = function(_) {
+    if (!arguments.length) return lower48.precision();
+    lower48.precision(_), alaska.precision(_), hawaii.precision(_);
+    return reset();
+  };
+
+  albersUsa.scale = function(_) {
+    if (!arguments.length) return lower48.scale();
+    lower48.scale(_), alaska.scale(_ * 0.35), hawaii.scale(_);
+    return albersUsa.translate(lower48.translate());
+  };
+
+  albersUsa.translate = function(_) {
+    if (!arguments.length) return lower48.translate();
+    var k = lower48.scale(), x = +_[0], y = +_[1];
+
+    lower48Point = lower48
+        .translate(_)
+        .clipExtent([[x - 0.455 * k, y - 0.238 * k], [x + 0.455 * k, y + 0.238 * k]])
+        .stream(pointStream);
+
+    alaskaPoint = alaska
+        .translate([x - 0.307 * k, y + 0.201 * k])
+        .clipExtent([[x - 0.425 * k + _math_js__WEBPACK_IMPORTED_MODULE_2__.epsilon, y + 0.120 * k + _math_js__WEBPACK_IMPORTED_MODULE_2__.epsilon], [x - 0.214 * k - _math_js__WEBPACK_IMPORTED_MODULE_2__.epsilon, y + 0.234 * k - _math_js__WEBPACK_IMPORTED_MODULE_2__.epsilon]])
+        .stream(pointStream);
+
+    hawaiiPoint = hawaii
+        .translate([x - 0.205 * k, y + 0.212 * k])
+        .clipExtent([[x - 0.214 * k + _math_js__WEBPACK_IMPORTED_MODULE_2__.epsilon, y + 0.166 * k + _math_js__WEBPACK_IMPORTED_MODULE_2__.epsilon], [x - 0.115 * k - _math_js__WEBPACK_IMPORTED_MODULE_2__.epsilon, y + 0.234 * k - _math_js__WEBPACK_IMPORTED_MODULE_2__.epsilon]])
+        .stream(pointStream);
+
+    return reset();
+  };
+
+  albersUsa.fitExtent = function(extent, object) {
+    return (0,_fit_js__WEBPACK_IMPORTED_MODULE_3__.fitExtent)(albersUsa, extent, object);
+  };
+
+  albersUsa.fitSize = function(size, object) {
+    return (0,_fit_js__WEBPACK_IMPORTED_MODULE_3__.fitSize)(albersUsa, size, object);
+  };
+
+  albersUsa.fitWidth = function(width, object) {
+    return (0,_fit_js__WEBPACK_IMPORTED_MODULE_3__.fitWidth)(albersUsa, width, object);
+  };
+
+  albersUsa.fitHeight = function(height, object) {
+    return (0,_fit_js__WEBPACK_IMPORTED_MODULE_3__.fitHeight)(albersUsa, height, object);
+  };
+
+  function reset() {
+    cache = cacheStream = null;
+    return albersUsa;
+  }
+
+  return albersUsa.scale(1070);
+}
+
+
+/***/ }),
+
 /***/ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/azimuthal.js":
 /*!*************************************************************************************!*\
   !*** ./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/azimuthal.js ***!
@@ -11805,6 +13842,384 @@ function azimuthalInvert(angle) {
       (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.asin)(z && y * sc / z)
     ];
   }
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/azimuthalEqualArea.js":
+/*!**********************************************************************************************!*\
+  !*** ./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/azimuthalEqualArea.js ***!
+  \**********************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "azimuthalEqualAreaRaw": () => (/* binding */ azimuthalEqualAreaRaw),
+/* harmony export */   "default": () => (/* export default binding */ __WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _math_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../math.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/math.js");
+/* harmony import */ var _azimuthal_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./azimuthal.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/azimuthal.js");
+/* harmony import */ var _index_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./index.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/index.js");
+
+
+
+
+var azimuthalEqualAreaRaw = (0,_azimuthal_js__WEBPACK_IMPORTED_MODULE_0__.azimuthalRaw)(function(cxcy) {
+  return (0,_math_js__WEBPACK_IMPORTED_MODULE_1__.sqrt)(2 / (1 + cxcy));
+});
+
+azimuthalEqualAreaRaw.invert = (0,_azimuthal_js__WEBPACK_IMPORTED_MODULE_0__.azimuthalInvert)(function(z) {
+  return 2 * (0,_math_js__WEBPACK_IMPORTED_MODULE_1__.asin)(z / 2);
+});
+
+/* harmony default export */ function __WEBPACK_DEFAULT_EXPORT__() {
+  return (0,_index_js__WEBPACK_IMPORTED_MODULE_2__.default)(azimuthalEqualAreaRaw)
+      .scale(124.75)
+      .clipAngle(180 - 1e-3);
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/azimuthalEquidistant.js":
+/*!************************************************************************************************!*\
+  !*** ./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/azimuthalEquidistant.js ***!
+  \************************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "azimuthalEquidistantRaw": () => (/* binding */ azimuthalEquidistantRaw),
+/* harmony export */   "default": () => (/* export default binding */ __WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _math_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../math.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/math.js");
+/* harmony import */ var _azimuthal_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./azimuthal.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/azimuthal.js");
+/* harmony import */ var _index_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./index.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/index.js");
+
+
+
+
+var azimuthalEquidistantRaw = (0,_azimuthal_js__WEBPACK_IMPORTED_MODULE_0__.azimuthalRaw)(function(c) {
+  return (c = (0,_math_js__WEBPACK_IMPORTED_MODULE_1__.acos)(c)) && c / (0,_math_js__WEBPACK_IMPORTED_MODULE_1__.sin)(c);
+});
+
+azimuthalEquidistantRaw.invert = (0,_azimuthal_js__WEBPACK_IMPORTED_MODULE_0__.azimuthalInvert)(function(z) {
+  return z;
+});
+
+/* harmony default export */ function __WEBPACK_DEFAULT_EXPORT__() {
+  return (0,_index_js__WEBPACK_IMPORTED_MODULE_2__.default)(azimuthalEquidistantRaw)
+      .scale(79.4188)
+      .clipAngle(180 - 1e-3);
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/conic.js":
+/*!*********************************************************************************!*\
+  !*** ./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/conic.js ***!
+  \*********************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "conicProjection": () => (/* binding */ conicProjection)
+/* harmony export */ });
+/* harmony import */ var _math_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../math.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/math.js");
+/* harmony import */ var _index_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./index.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/index.js");
+
+
+
+function conicProjection(projectAt) {
+  var phi0 = 0,
+      phi1 = _math_js__WEBPACK_IMPORTED_MODULE_0__.pi / 3,
+      m = (0,_index_js__WEBPACK_IMPORTED_MODULE_1__.projectionMutator)(projectAt),
+      p = m(phi0, phi1);
+
+  p.parallels = function(_) {
+    return arguments.length ? m(phi0 = _[0] * _math_js__WEBPACK_IMPORTED_MODULE_0__.radians, phi1 = _[1] * _math_js__WEBPACK_IMPORTED_MODULE_0__.radians) : [phi0 * _math_js__WEBPACK_IMPORTED_MODULE_0__.degrees, phi1 * _math_js__WEBPACK_IMPORTED_MODULE_0__.degrees];
+  };
+
+  return p;
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/conicConformal.js":
+/*!******************************************************************************************!*\
+  !*** ./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/conicConformal.js ***!
+  \******************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "conicConformalRaw": () => (/* binding */ conicConformalRaw),
+/* harmony export */   "default": () => (/* export default binding */ __WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _math_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../math.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/math.js");
+/* harmony import */ var _conic_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./conic.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/conic.js");
+/* harmony import */ var _mercator_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./mercator.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/mercator.js");
+
+
+
+
+function tany(y) {
+  return (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.tan)((_math_js__WEBPACK_IMPORTED_MODULE_0__.halfPi + y) / 2);
+}
+
+function conicConformalRaw(y0, y1) {
+  var cy0 = (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.cos)(y0),
+      n = y0 === y1 ? (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.sin)(y0) : (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.log)(cy0 / (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.cos)(y1)) / (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.log)(tany(y1) / tany(y0)),
+      f = cy0 * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.pow)(tany(y0), n) / n;
+
+  if (!n) return _mercator_js__WEBPACK_IMPORTED_MODULE_1__.mercatorRaw;
+
+  function project(x, y) {
+    if (f > 0) { if (y < -_math_js__WEBPACK_IMPORTED_MODULE_0__.halfPi + _math_js__WEBPACK_IMPORTED_MODULE_0__.epsilon) y = -_math_js__WEBPACK_IMPORTED_MODULE_0__.halfPi + _math_js__WEBPACK_IMPORTED_MODULE_0__.epsilon; }
+    else { if (y > _math_js__WEBPACK_IMPORTED_MODULE_0__.halfPi - _math_js__WEBPACK_IMPORTED_MODULE_0__.epsilon) y = _math_js__WEBPACK_IMPORTED_MODULE_0__.halfPi - _math_js__WEBPACK_IMPORTED_MODULE_0__.epsilon; }
+    var r = f / (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.pow)(tany(y), n);
+    return [r * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.sin)(n * x), f - r * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.cos)(n * x)];
+  }
+
+  project.invert = function(x, y) {
+    var fy = f - y, r = (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.sign)(n) * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.sqrt)(x * x + fy * fy),
+      l = (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.atan2)(x, (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.abs)(fy)) * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.sign)(fy);
+    if (fy * n < 0)
+      l -= _math_js__WEBPACK_IMPORTED_MODULE_0__.pi * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.sign)(x) * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.sign)(fy);
+    return [l / n, 2 * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.atan)((0,_math_js__WEBPACK_IMPORTED_MODULE_0__.pow)(f / r, 1 / n)) - _math_js__WEBPACK_IMPORTED_MODULE_0__.halfPi];
+  };
+
+  return project;
+}
+
+/* harmony default export */ function __WEBPACK_DEFAULT_EXPORT__() {
+  return (0,_conic_js__WEBPACK_IMPORTED_MODULE_2__.conicProjection)(conicConformalRaw)
+      .scale(109.5)
+      .parallels([30, 30]);
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/conicEqualArea.js":
+/*!******************************************************************************************!*\
+  !*** ./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/conicEqualArea.js ***!
+  \******************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "conicEqualAreaRaw": () => (/* binding */ conicEqualAreaRaw),
+/* harmony export */   "default": () => (/* export default binding */ __WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _math_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../math.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/math.js");
+/* harmony import */ var _conic_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./conic.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/conic.js");
+/* harmony import */ var _cylindricalEqualArea_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./cylindricalEqualArea.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/cylindricalEqualArea.js");
+
+
+
+
+function conicEqualAreaRaw(y0, y1) {
+  var sy0 = (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.sin)(y0), n = (sy0 + (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.sin)(y1)) / 2;
+
+  // Are the parallels symmetrical around the Equator?
+  if ((0,_math_js__WEBPACK_IMPORTED_MODULE_0__.abs)(n) < _math_js__WEBPACK_IMPORTED_MODULE_0__.epsilon) return (0,_cylindricalEqualArea_js__WEBPACK_IMPORTED_MODULE_1__.cylindricalEqualAreaRaw)(y0);
+
+  var c = 1 + sy0 * (2 * n - sy0), r0 = (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.sqrt)(c) / n;
+
+  function project(x, y) {
+    var r = (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.sqrt)(c - 2 * n * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.sin)(y)) / n;
+    return [r * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.sin)(x *= n), r0 - r * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.cos)(x)];
+  }
+
+  project.invert = function(x, y) {
+    var r0y = r0 - y,
+        l = (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.atan2)(x, (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.abs)(r0y)) * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.sign)(r0y);
+    if (r0y * n < 0)
+      l -= _math_js__WEBPACK_IMPORTED_MODULE_0__.pi * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.sign)(x) * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.sign)(r0y);
+    return [l / n, (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.asin)((c - (x * x + r0y * r0y) * n * n) / (2 * n))];
+  };
+
+  return project;
+}
+
+/* harmony default export */ function __WEBPACK_DEFAULT_EXPORT__() {
+  return (0,_conic_js__WEBPACK_IMPORTED_MODULE_2__.conicProjection)(conicEqualAreaRaw)
+      .scale(155.424)
+      .center([0, 33.6442]);
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/conicEquidistant.js":
+/*!********************************************************************************************!*\
+  !*** ./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/conicEquidistant.js ***!
+  \********************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "conicEquidistantRaw": () => (/* binding */ conicEquidistantRaw),
+/* harmony export */   "default": () => (/* export default binding */ __WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _math_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../math.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/math.js");
+/* harmony import */ var _conic_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./conic.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/conic.js");
+/* harmony import */ var _equirectangular_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./equirectangular.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/equirectangular.js");
+
+
+
+
+function conicEquidistantRaw(y0, y1) {
+  var cy0 = (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.cos)(y0),
+      n = y0 === y1 ? (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.sin)(y0) : (cy0 - (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.cos)(y1)) / (y1 - y0),
+      g = cy0 / n + y0;
+
+  if ((0,_math_js__WEBPACK_IMPORTED_MODULE_0__.abs)(n) < _math_js__WEBPACK_IMPORTED_MODULE_0__.epsilon) return _equirectangular_js__WEBPACK_IMPORTED_MODULE_1__.equirectangularRaw;
+
+  function project(x, y) {
+    var gy = g - y, nx = n * x;
+    return [gy * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.sin)(nx), g - gy * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.cos)(nx)];
+  }
+
+  project.invert = function(x, y) {
+    var gy = g - y,
+        l = (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.atan2)(x, (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.abs)(gy)) * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.sign)(gy);
+    if (gy * n < 0)
+      l -= _math_js__WEBPACK_IMPORTED_MODULE_0__.pi * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.sign)(x) * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.sign)(gy);
+    return [l / n, g - (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.sign)(n) * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.sqrt)(x * x + gy * gy)];
+  };
+
+  return project;
+}
+
+/* harmony default export */ function __WEBPACK_DEFAULT_EXPORT__() {
+  return (0,_conic_js__WEBPACK_IMPORTED_MODULE_2__.conicProjection)(conicEquidistantRaw)
+      .scale(131.154)
+      .center([0, 13.9389]);
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/cylindricalEqualArea.js":
+/*!************************************************************************************************!*\
+  !*** ./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/cylindricalEqualArea.js ***!
+  \************************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "cylindricalEqualAreaRaw": () => (/* binding */ cylindricalEqualAreaRaw)
+/* harmony export */ });
+/* harmony import */ var _math_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../math.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/math.js");
+
+
+function cylindricalEqualAreaRaw(phi0) {
+  var cosPhi0 = (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.cos)(phi0);
+
+  function forward(lambda, phi) {
+    return [lambda * cosPhi0, (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.sin)(phi) / cosPhi0];
+  }
+
+  forward.invert = function(x, y) {
+    return [x / cosPhi0, (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.asin)(y * cosPhi0)];
+  };
+
+  return forward;
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/equalEarth.js":
+/*!**************************************************************************************!*\
+  !*** ./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/equalEarth.js ***!
+  \**************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "equalEarthRaw": () => (/* binding */ equalEarthRaw),
+/* harmony export */   "default": () => (/* export default binding */ __WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _index_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./index.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/index.js");
+/* harmony import */ var _math_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../math.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/math.js");
+
+
+
+var A1 = 1.340264,
+    A2 = -0.081106,
+    A3 = 0.000893,
+    A4 = 0.003796,
+    M = (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.sqrt)(3) / 2,
+    iterations = 12;
+
+function equalEarthRaw(lambda, phi) {
+  var l = (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.asin)(M * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.sin)(phi)), l2 = l * l, l6 = l2 * l2 * l2;
+  return [
+    lambda * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.cos)(l) / (M * (A1 + 3 * A2 * l2 + l6 * (7 * A3 + 9 * A4 * l2))),
+    l * (A1 + A2 * l2 + l6 * (A3 + A4 * l2))
+  ];
+}
+
+equalEarthRaw.invert = function(x, y) {
+  var l = y, l2 = l * l, l6 = l2 * l2 * l2;
+  for (var i = 0, delta, fy, fpy; i < iterations; ++i) {
+    fy = l * (A1 + A2 * l2 + l6 * (A3 + A4 * l2)) - y;
+    fpy = A1 + 3 * A2 * l2 + l6 * (7 * A3 + 9 * A4 * l2);
+    l -= delta = fy / fpy, l2 = l * l, l6 = l2 * l2 * l2;
+    if ((0,_math_js__WEBPACK_IMPORTED_MODULE_0__.abs)(delta) < _math_js__WEBPACK_IMPORTED_MODULE_0__.epsilon2) break;
+  }
+  return [
+    M * x * (A1 + 3 * A2 * l2 + l6 * (7 * A3 + 9 * A4 * l2)) / (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.cos)(l),
+    (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.asin)((0,_math_js__WEBPACK_IMPORTED_MODULE_0__.sin)(l) / M)
+  ];
+};
+
+/* harmony default export */ function __WEBPACK_DEFAULT_EXPORT__() {
+  return (0,_index_js__WEBPACK_IMPORTED_MODULE_1__.default)(equalEarthRaw)
+      .scale(177.158);
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/equirectangular.js":
+/*!*******************************************************************************************!*\
+  !*** ./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/equirectangular.js ***!
+  \*******************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "equirectangularRaw": () => (/* binding */ equirectangularRaw),
+/* harmony export */   "default": () => (/* export default binding */ __WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _index_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./index.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/index.js");
+
+
+function equirectangularRaw(lambda, phi) {
+  return [lambda, phi];
+}
+
+equirectangularRaw.invert = equirectangularRaw;
+
+/* harmony default export */ function __WEBPACK_DEFAULT_EXPORT__() {
+  return (0,_index_js__WEBPACK_IMPORTED_MODULE_0__.default)(equirectangularRaw)
+      .scale(152.63);
 }
 
 
@@ -11872,6 +14287,146 @@ function fitHeight(projection, height, object) {
         y = (h - k * (b[1][1] + b[0][1])) / 2;
     projection.scale(150 * k).translate([x, y]);
   }, object);
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/gnomonic.js":
+/*!************************************************************************************!*\
+  !*** ./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/gnomonic.js ***!
+  \************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "gnomonicRaw": () => (/* binding */ gnomonicRaw),
+/* harmony export */   "default": () => (/* export default binding */ __WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _math_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../math.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/math.js");
+/* harmony import */ var _azimuthal_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./azimuthal.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/azimuthal.js");
+/* harmony import */ var _index_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./index.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/index.js");
+
+
+
+
+function gnomonicRaw(x, y) {
+  var cy = (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.cos)(y), k = (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.cos)(x) * cy;
+  return [cy * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.sin)(x) / k, (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.sin)(y) / k];
+}
+
+gnomonicRaw.invert = (0,_azimuthal_js__WEBPACK_IMPORTED_MODULE_1__.azimuthalInvert)(_math_js__WEBPACK_IMPORTED_MODULE_0__.atan);
+
+/* harmony default export */ function __WEBPACK_DEFAULT_EXPORT__() {
+  return (0,_index_js__WEBPACK_IMPORTED_MODULE_2__.default)(gnomonicRaw)
+      .scale(144.049)
+      .clipAngle(60);
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/identity.js":
+/*!************************************************************************************!*\
+  !*** ./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/identity.js ***!
+  \************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* export default binding */ __WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _clip_rectangle_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../clip/rectangle.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/clip/rectangle.js");
+/* harmony import */ var _identity_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../identity.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/identity.js");
+/* harmony import */ var _transform_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../transform.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/transform.js");
+/* harmony import */ var _fit_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./fit.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/fit.js");
+/* harmony import */ var _math_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../math.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/math.js");
+
+
+
+
+
+
+/* harmony default export */ function __WEBPACK_DEFAULT_EXPORT__() {
+  var k = 1, tx = 0, ty = 0, sx = 1, sy = 1, // scale, translate and reflect
+      alpha = 0, ca, sa, // angle
+      x0 = null, y0, x1, y1, // clip extent
+      kx = 1, ky = 1,
+      transform = (0,_transform_js__WEBPACK_IMPORTED_MODULE_0__.transformer)({
+        point: function(x, y) {
+          var p = projection([x, y])
+          this.stream.point(p[0], p[1]);
+        }
+      }),
+      postclip = _identity_js__WEBPACK_IMPORTED_MODULE_1__.default,
+      cache,
+      cacheStream;
+
+  function reset() {
+    kx = k * sx;
+    ky = k * sy;
+    cache = cacheStream = null;
+    return projection;
+  }
+
+  function projection (p) {
+    var x = p[0] * kx, y = p[1] * ky;
+    if (alpha) {
+      var t = y * ca - x * sa;
+      x = x * ca + y * sa;
+      y = t;
+    }    
+    return [x + tx, y + ty];
+  }
+  projection.invert = function(p) {
+    var x = p[0] - tx, y = p[1] - ty;
+    if (alpha) {
+      var t = y * ca + x * sa;
+      x = x * ca - y * sa;
+      y = t;
+    }
+    return [x / kx, y / ky];
+  };
+  projection.stream = function(stream) {
+    return cache && cacheStream === stream ? cache : cache = transform(postclip(cacheStream = stream));
+  };
+  projection.postclip = function(_) {
+    return arguments.length ? (postclip = _, x0 = y0 = x1 = y1 = null, reset()) : postclip;
+  };
+  projection.clipExtent = function(_) {
+    return arguments.length ? (postclip = _ == null ? (x0 = y0 = x1 = y1 = null, _identity_js__WEBPACK_IMPORTED_MODULE_1__.default) : (0,_clip_rectangle_js__WEBPACK_IMPORTED_MODULE_2__.default)(x0 = +_[0][0], y0 = +_[0][1], x1 = +_[1][0], y1 = +_[1][1]), reset()) : x0 == null ? null : [[x0, y0], [x1, y1]];
+  };
+  projection.scale = function(_) {
+    return arguments.length ? (k = +_, reset()) : k;
+  };
+  projection.translate = function(_) {
+    return arguments.length ? (tx = +_[0], ty = +_[1], reset()) : [tx, ty];
+  }
+  projection.angle = function(_) {
+    return arguments.length ? (alpha = _ % 360 * _math_js__WEBPACK_IMPORTED_MODULE_3__.radians, sa = (0,_math_js__WEBPACK_IMPORTED_MODULE_3__.sin)(alpha), ca = (0,_math_js__WEBPACK_IMPORTED_MODULE_3__.cos)(alpha), reset()) : alpha * _math_js__WEBPACK_IMPORTED_MODULE_3__.degrees;
+  };
+  projection.reflectX = function(_) {
+    return arguments.length ? (sx = _ ? -1 : 1, reset()) : sx < 0;
+  };
+  projection.reflectY = function(_) {
+    return arguments.length ? (sy = _ ? -1 : 1, reset()) : sy < 0;
+  };
+  projection.fitExtent = function(extent, object) {
+    return (0,_fit_js__WEBPACK_IMPORTED_MODULE_4__.fitExtent)(projection, extent, object);
+  };
+  projection.fitSize = function(size, object) {
+    return (0,_fit_js__WEBPACK_IMPORTED_MODULE_4__.fitSize)(projection, size, object);
+  };
+  projection.fitWidth = function(width, object) {
+    return (0,_fit_js__WEBPACK_IMPORTED_MODULE_4__.fitWidth)(projection, width, object);
+  };
+  projection.fitHeight = function(height, object) {
+    return (0,_fit_js__WEBPACK_IMPORTED_MODULE_4__.fitHeight)(projection, height, object);
+  };
+
+  return projection;
 }
 
 
@@ -12079,6 +14634,158 @@ function projectionMutator(projectAt) {
 
 /***/ }),
 
+/***/ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/mercator.js":
+/*!************************************************************************************!*\
+  !*** ./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/mercator.js ***!
+  \************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "mercatorRaw": () => (/* binding */ mercatorRaw),
+/* harmony export */   "default": () => (/* export default binding */ __WEBPACK_DEFAULT_EXPORT__),
+/* harmony export */   "mercatorProjection": () => (/* binding */ mercatorProjection)
+/* harmony export */ });
+/* harmony import */ var _math_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../math.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/math.js");
+/* harmony import */ var _rotation_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../rotation.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/rotation.js");
+/* harmony import */ var _index_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./index.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/index.js");
+
+
+
+
+function mercatorRaw(lambda, phi) {
+  return [lambda, (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.log)((0,_math_js__WEBPACK_IMPORTED_MODULE_0__.tan)((_math_js__WEBPACK_IMPORTED_MODULE_0__.halfPi + phi) / 2))];
+}
+
+mercatorRaw.invert = function(x, y) {
+  return [x, 2 * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.atan)((0,_math_js__WEBPACK_IMPORTED_MODULE_0__.exp)(y)) - _math_js__WEBPACK_IMPORTED_MODULE_0__.halfPi];
+};
+
+/* harmony default export */ function __WEBPACK_DEFAULT_EXPORT__() {
+  return mercatorProjection(mercatorRaw)
+      .scale(961 / _math_js__WEBPACK_IMPORTED_MODULE_0__.tau);
+}
+
+function mercatorProjection(project) {
+  var m = (0,_index_js__WEBPACK_IMPORTED_MODULE_1__.default)(project),
+      center = m.center,
+      scale = m.scale,
+      translate = m.translate,
+      clipExtent = m.clipExtent,
+      x0 = null, y0, x1, y1; // clip extent
+
+  m.scale = function(_) {
+    return arguments.length ? (scale(_), reclip()) : scale();
+  };
+
+  m.translate = function(_) {
+    return arguments.length ? (translate(_), reclip()) : translate();
+  };
+
+  m.center = function(_) {
+    return arguments.length ? (center(_), reclip()) : center();
+  };
+
+  m.clipExtent = function(_) {
+    return arguments.length ? ((_ == null ? x0 = y0 = x1 = y1 = null : (x0 = +_[0][0], y0 = +_[0][1], x1 = +_[1][0], y1 = +_[1][1])), reclip()) : x0 == null ? null : [[x0, y0], [x1, y1]];
+  };
+
+  function reclip() {
+    var k = _math_js__WEBPACK_IMPORTED_MODULE_0__.pi * scale(),
+        t = m((0,_rotation_js__WEBPACK_IMPORTED_MODULE_2__.default)(m.rotate()).invert([0, 0]));
+    return clipExtent(x0 == null
+        ? [[t[0] - k, t[1] - k], [t[0] + k, t[1] + k]] : project === mercatorRaw
+        ? [[Math.max(t[0] - k, x0), y0], [Math.min(t[0] + k, x1), y1]]
+        : [[x0, Math.max(t[1] - k, y0)], [x1, Math.min(t[1] + k, y1)]]);
+  }
+
+  return reclip();
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/naturalEarth1.js":
+/*!*****************************************************************************************!*\
+  !*** ./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/naturalEarth1.js ***!
+  \*****************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "naturalEarth1Raw": () => (/* binding */ naturalEarth1Raw),
+/* harmony export */   "default": () => (/* export default binding */ __WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _index_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./index.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/index.js");
+/* harmony import */ var _math_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../math.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/math.js");
+
+
+
+function naturalEarth1Raw(lambda, phi) {
+  var phi2 = phi * phi, phi4 = phi2 * phi2;
+  return [
+    lambda * (0.8707 - 0.131979 * phi2 + phi4 * (-0.013791 + phi4 * (0.003971 * phi2 - 0.001529 * phi4))),
+    phi * (1.007226 + phi2 * (0.015085 + phi4 * (-0.044475 + 0.028874 * phi2 - 0.005916 * phi4)))
+  ];
+}
+
+naturalEarth1Raw.invert = function(x, y) {
+  var phi = y, i = 25, delta;
+  do {
+    var phi2 = phi * phi, phi4 = phi2 * phi2;
+    phi -= delta = (phi * (1.007226 + phi2 * (0.015085 + phi4 * (-0.044475 + 0.028874 * phi2 - 0.005916 * phi4))) - y) /
+        (1.007226 + phi2 * (0.015085 * 3 + phi4 * (-0.044475 * 7 + 0.028874 * 9 * phi2 - 0.005916 * 11 * phi4)));
+  } while ((0,_math_js__WEBPACK_IMPORTED_MODULE_0__.abs)(delta) > _math_js__WEBPACK_IMPORTED_MODULE_0__.epsilon && --i > 0);
+  return [
+    x / (0.8707 + (phi2 = phi * phi) * (-0.131979 + phi2 * (-0.013791 + phi2 * phi2 * phi2 * (0.003971 - 0.001529 * phi2)))),
+    phi
+  ];
+};
+
+/* harmony default export */ function __WEBPACK_DEFAULT_EXPORT__() {
+  return (0,_index_js__WEBPACK_IMPORTED_MODULE_1__.default)(naturalEarth1Raw)
+      .scale(175.295);
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/orthographic.js":
+/*!****************************************************************************************!*\
+  !*** ./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/orthographic.js ***!
+  \****************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "orthographicRaw": () => (/* binding */ orthographicRaw),
+/* harmony export */   "default": () => (/* export default binding */ __WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _math_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../math.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/math.js");
+/* harmony import */ var _azimuthal_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./azimuthal.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/azimuthal.js");
+/* harmony import */ var _index_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./index.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/index.js");
+
+
+
+
+function orthographicRaw(x, y) {
+  return [(0,_math_js__WEBPACK_IMPORTED_MODULE_0__.cos)(y) * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.sin)(x), (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.sin)(y)];
+}
+
+orthographicRaw.invert = (0,_azimuthal_js__WEBPACK_IMPORTED_MODULE_1__.azimuthalInvert)(_math_js__WEBPACK_IMPORTED_MODULE_0__.asin);
+
+/* harmony default export */ function __WEBPACK_DEFAULT_EXPORT__() {
+  return (0,_index_js__WEBPACK_IMPORTED_MODULE_2__.default)(orthographicRaw)
+      .scale(249.5)
+      .clipAngle(90 + _math_js__WEBPACK_IMPORTED_MODULE_0__.epsilon);
+}
+
+
+/***/ }),
+
 /***/ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/resample.js":
 /*!************************************************************************************!*\
   !*** ./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/resample.js ***!
@@ -12231,6 +14938,51 @@ stereographicRaw.invert = (0,_azimuthal_js__WEBPACK_IMPORTED_MODULE_1__.azimutha
   return (0,_index_js__WEBPACK_IMPORTED_MODULE_2__.default)(stereographicRaw)
       .scale(250)
       .clipAngle(142);
+}
+
+
+/***/ }),
+
+/***/ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/transverseMercator.js":
+/*!**********************************************************************************************!*\
+  !*** ./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/transverseMercator.js ***!
+  \**********************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "transverseMercatorRaw": () => (/* binding */ transverseMercatorRaw),
+/* harmony export */   "default": () => (/* export default binding */ __WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _math_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../math.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/math.js");
+/* harmony import */ var _mercator_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./mercator.js */ "./node_modules/d3-geo-voronoi/node_modules/d3-geo/src/projection/mercator.js");
+
+
+
+function transverseMercatorRaw(lambda, phi) {
+  return [(0,_math_js__WEBPACK_IMPORTED_MODULE_0__.log)((0,_math_js__WEBPACK_IMPORTED_MODULE_0__.tan)((_math_js__WEBPACK_IMPORTED_MODULE_0__.halfPi + phi) / 2)), -lambda];
+}
+
+transverseMercatorRaw.invert = function(x, y) {
+  return [-y, 2 * (0,_math_js__WEBPACK_IMPORTED_MODULE_0__.atan)((0,_math_js__WEBPACK_IMPORTED_MODULE_0__.exp)(x)) - _math_js__WEBPACK_IMPORTED_MODULE_0__.halfPi];
+};
+
+/* harmony default export */ function __WEBPACK_DEFAULT_EXPORT__() {
+  var m = (0,_mercator_js__WEBPACK_IMPORTED_MODULE_1__.mercatorProjection)(transverseMercatorRaw),
+      center = m.center,
+      rotate = m.rotate;
+
+  m.center = function(_) {
+    return arguments.length ? center([-_[1], _[0]]) : (_ = center(), [_[1], -_[0]]);
+  };
+
+  m.rotate = function(_) {
+    return arguments.length ? rotate([_[0], _[1], _.length > 2 ? _[2] + 90 : 90]) : (_ = rotate(), [_[0], _[1], _[2] - 90]);
+  };
+
+  return rotate([0, 0, 90])
+      .scale(159.155);
 }
 
 
@@ -93689,41 +96441,41 @@ class Orbit extends OrbitingElement_1.OrbitingElement {
         return this;
     }
     randomSane() {
-        this.set_major_ecc(Random.random_float_clamp(0.5, 30), Random.random_float_clamp(0.01, 0.2));
-        this.argument_of_perihelion.deg = Random.random_float_clamp(0, 360);
-        this.longitude_ascending_node.deg = Random.random_float_clamp(0, 360);
-        this.inclination.deg = Random.random_float_clamp(0, 5);
+        this.set_major_ecc(Random.randClampFloat(0.5, 30), Random.randClampFloat(0.01, 0.2));
+        this.argument_of_perihelion.deg = Random.randClampFloat(0, 360);
+        this.longitude_ascending_node.deg = Random.randClampFloat(0, 360);
+        this.inclination.deg = Random.randClampFloat(0, 5);
         // this.inclination.deg = 5
         // this.eccentricity = 0.001
         this.updateMajEcc();
         return this;
     }
     randomForMainOrbit(smajax, plsys) {
-        var ecc_ = Random.random_float_clamp(0.01, 0.2);
-        this.inclination.deg = Random.random_float_clamp(0, 5);
+        var ecc_ = Random.randClampFloat(0.01, 0.2);
+        this.inclination.deg = Random.randClampFloat(0, 5);
         if (plsys.hab_zone_in.value <= smajax.value)
             if (smajax.value <= plsys.hab_zone_out.value)
-                ecc_ = Random.random_float_clamp(0.01, 0.02);
+                ecc_ = Random.randClampFloat(0.01, 0.02);
         if (smajax.value >= plsys.frost_line.value) {
-            ecc_ = Random.random_float_clamp(0.1, 0.2);
-            this.inclination.deg = Random.random_float_clamp(5, 10);
+            ecc_ = Random.randClampFloat(0.1, 0.2);
+            this.inclination.deg = Random.randClampFloat(5, 10);
         }
         if (smajax.value >= plsys.orbits_limit_out.value * 0.7) {
-            ecc_ = Random.random_float_clamp(0.3, 0.4);
-            this.inclination.deg = Random.random_float_clamp(5, 20);
+            ecc_ = Random.randClampFloat(0.3, 0.4);
+            this.inclination.deg = Random.randClampFloat(5, 20);
         }
         this.set_major_ecc(smajax, ecc_);
-        this.argument_of_perihelion.deg = Random.random_float_clamp(0, 360);
-        this.longitude_ascending_node.deg = Random.random_float_clamp(0, 360);
+        this.argument_of_perihelion.deg = Random.randClampFloat(0, 360);
+        this.longitude_ascending_node.deg = Random.randClampFloat(0, 360);
         this.updateMajEcc();
         return this;
     }
     randomForClusters(clusterSize, smajax, plsys) {
-        this.argument_of_perihelion.deg = Random.random_float_clamp(0, 360);
-        this.longitude_ascending_node.deg = Random.random_float_clamp(0, 360);
-        this.inclination.deg = Random.random_float_clamp(5, 6);
-        var ecc_ = Random.random_float_clamp(0.01, 0.05);
-        var orbitSize = smajax.clone().div(Random.random_float_clamp(60, 70)).mul(clusterSize);
+        this.argument_of_perihelion.deg = Random.randClampFloat(0, 360);
+        this.longitude_ascending_node.deg = Random.randClampFloat(0, 360);
+        this.inclination.deg = Random.randClampFloat(5, 6);
+        var ecc_ = Random.randClampFloat(0.01, 0.05);
+        var orbitSize = smajax.clone().div(Random.randClampFloat(60, 70)).mul(clusterSize);
         this.set_major_ecc(orbitSize, ecc_);
         this.updateMajEcc();
         return this;
@@ -93988,9 +96740,9 @@ class OrbitingElement extends ObjectsHacker_1.Identifiable {
     //     this.guiPopSelectChildren(slectPane, gui, generalAct)
     // }
     addToJgui(jData) {
-        jData.jgui.addLabel(`id : ${this.id}`);
-        jData.jgui.addLabel(`type : ${this.type}`);
-        jData.jgui.addLabel(`depth : ${this.depth}`);
+        jData.jGui.addLabel(`id : ${this.id}`);
+        jData.jGui.addLabel(`type : ${this.type}`);
+        jData.jGui.addLabel(`depth : ${this.depth}`);
     }
     clone() { return new OrbitingElement(this.getWorldData()).copyLogic(this); }
     static clone(worldData, data_) { return new OrbitingElement(worldData).copyDeep(data_); }
@@ -94050,8 +96802,8 @@ class Planet extends OrbitingElement_1.OrbitingElement {
         this.planetType = "Moon";
         this.isMoon = true;
         // TODO make Major moons and Minor moons and maybe ensure moon is smaller than planet
-        this.mass.em = Random.random_float_clamp(0.01, 0.02);
-        this.radius.er = Random.random_float_clamp(0.1, 0.3);
+        this.mass.em = Random.randClampFloat(0.01, 0.02);
+        this.radius.er = Random.randClampFloat(0.1, 0.3);
         // this.surfaceGravity = Random.random_float_clamp(0.68,1.5);
         // this.surfaceGravity = this.mass.em / (this.radius.er * this.radius.er) // calculated
         this.density.setMassRadius(this.mass, this.radius);
@@ -94060,8 +96812,8 @@ class Planet extends OrbitingElement_1.OrbitingElement {
         this.color.set_color("blue");
         this.planetType = "Normal";
         // ver 1 : https://youtu.be/RxbIoIM_Uck?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=64
-        this.mass.em = Random.random_float_clamp(0.4, 2.35);
-        this.radius.er = Random.random_float_clamp(0.78, 1.25);
+        this.mass.em = Random.randClampFloat(0.4, 2.35);
+        this.radius.er = Random.randClampFloat(0.78, 1.25);
         // this.surfaceGravity = Random.random_float_clamp(0.68,1.5);
         // ver 2 : https://youtu.be/RxbIoIM_Uck?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=81
         // this.mass.em = Random.random_float_clamp(0.1, 3.5);
@@ -94079,8 +96831,8 @@ class Planet extends OrbitingElement_1.OrbitingElement {
         this.color.set_color("MistyRose");
         this.planetType = "Dwarf";
         // https://youtu.be/XEIsZjQ_OdU?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=67
-        this.mass.em = Random.random_float_clamp(0.0001, 0.1);
-        this.radius.er = Random.random_float_clamp(0.03, 0.5); // CHECK what is the max
+        this.mass.em = Random.randClampFloat(0.0001, 0.1);
+        this.radius.er = Random.randClampFloat(0.03, 0.5); // CHECK what is the max
         // this.surfaceGravity = this.mass.em / (this.radius.er * this.radius.er) // calculated
         this.density.setMassRadius(this.mass, this.radius);
     }
@@ -94089,9 +96841,9 @@ class Planet extends OrbitingElement_1.OrbitingElement {
         this.planetType = "GassGiant";
         // https://youtu.be/80oQBGD7g34?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=22
         // 13 Jupiter Mass == 13 * 317.8 Earth Mass
-        this.mass.jupm = Random.random_float_clamp(2, 13);
+        this.mass.jupm = Random.randClampFloat(2, 13);
         // https://youtu.be/80oQBGD7g34?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=35
-        this.radius.jupr = Random.random_float_clamp(0.9, 1.1); // Add SOME wiggle
+        this.radius.jupr = Random.randClampFloat(0.9, 1.1); // Add SOME wiggle
         // this.surfaceGravity = this.mass.em / (this.radius.er * this.radius.er) // calculated
         this.density.setMassRadius(this.mass, this.radius);
     }
@@ -94100,9 +96852,9 @@ class Planet extends OrbitingElement_1.OrbitingElement {
         this.planetType = "PuffyGiantPlanet";
         // https://youtu.be/80oQBGD7g34?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=22
         // https://youtu.be/80oQBGD7g34?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=98
-        this.mass.em = Random.random_float_clamp(10, Convert.jupEarthMass(2));
+        this.mass.em = Random.randClampFloat(10, Convert.jupEarthMass(2));
         // https://youtu.be/80oQBGD7g34?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=35
-        this.radius.jupr = Random.random_float_clamp(1, 3); // CHECK what is the max
+        this.radius.jupr = Random.randClampFloat(1, 3); // CHECK what is the max
         // this.surfaceGravity = this.mass.em / (this.radius.er * this.radius.er) // calculated
         this.density.setMassRadius(this.mass, this.radius);
     }
@@ -94110,8 +96862,8 @@ class Planet extends OrbitingElement_1.OrbitingElement {
         this.color.set_color("Crimson");
         this.planetType = "GassDwarf";
         // https://youtu.be/80oQBGD7g34?list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&t=179
-        this.mass.em = Random.random_float_clamp(1, 20);
-        this.radius.er = Random.random_float_clamp(2, 5); // CHECK what is the max
+        this.mass.em = Random.randClampFloat(1, 20);
+        this.radius.er = Random.randClampFloat(2, 5); // CHECK what is the max
         // this.surfaceGravity = this.mass.em / (this.radius.er * this.radius.er) // calculated
         this.density.setMassRadius(this.mass, this.radius);
     }
@@ -94195,8 +96947,8 @@ class Planet extends OrbitingElement_1.OrbitingElement {
     //     super.guiSelect(slectPane, gui);
     // }
     addToJgui(jData) {
-        jData.jgui.addColor("Color", this.color.getRgb().formatHex())
-            .addEventListener(jData.jguiMng, "input", (event) => {
+        jData.jGui.addColor("Color", this.color.getRgb().formatHex())
+            .addEventListener(jData.jMng, "input", (event) => {
             this.color.set_color(event.data.event.target.value);
         });
         super.addToJgui(jData);
@@ -94495,15 +97247,15 @@ class SpaceFactory {
                 continue; // only some to have moons
             var moons_total = 0;
             if (orbit_.semimajor_axis.au < 2)
-                moons_total = Random.random_int_clamp(1, 2);
+                moons_total = Random.randClampInt(1, 2);
             else if (orbit_.semimajor_axis.au < 10)
-                moons_total = Random.random_int_clamp(2, 3);
+                moons_total = Random.randClampInt(2, 3);
             else
-                moons_total = Random.random_int_clamp(3, 4);
+                moons_total = Random.randClampInt(3, 4);
             if (forceMinMoon) {
-                moons_total = Random.random_int_clamp(1, 2);
+                moons_total = Random.randClampInt(1, 2);
                 if (orbObject_.type === "SpaceGroup")
-                    moons_total = Random.random_int_clamp(0, 1);
+                    moons_total = Random.randClampInt(0, 1);
             }
             // console.log("moons_total", moons_total);
             // TODO calculate proper min and max orbits of a planet
@@ -94527,7 +97279,7 @@ class SpaceFactory {
         root.computeAll();
     }
     getLargestFrostGiantOrbit(plsys) {
-        var rnd_length = Random.random_float_clamp(1, 1.2);
+        var rnd_length = Random.randClampFloat(1, 1.2);
         var instance = plsys.frost_line.clone();
         instance.au += rnd_length;
         return instance;
@@ -94593,7 +97345,7 @@ class SpaceFactory {
                 var is_valid = false;
                 var tmp_orbit = last_orbit.clone();
                 for (let index = 0; index < 10; index++) {
-                    tmp_orbit.au = last_orbit.au / Random.random_float_clamp(1.4, 2);
+                    tmp_orbit.au = last_orbit.au / Random.randClampFloat(1.4, 2);
                     if (Math.abs(tmp_orbit.au - last_orbit.au) < 0.15)
                         continue;
                     if (tmp_orbit.au < plsys.orbits_limit_in.au)
@@ -94618,7 +97370,7 @@ class SpaceFactory {
                 var is_valid = false;
                 var tmp_orbit = last_orbit.clone();
                 for (let index = 0; index < 10; index++) {
-                    tmp_orbit.au = last_orbit.au * Random.random_float_clamp(1.4, 2);
+                    tmp_orbit.au = last_orbit.au * Random.randClampFloat(1.4, 2);
                     if (Math.abs(tmp_orbit.au - last_orbit.au) < 0.15)
                         continue;
                     if (tmp_orbit.au > plsys.orbits_limit_out.au)
@@ -94778,56 +97530,56 @@ class Star extends OrbitingElement_1.OrbitingElement {
     makeClassO(mass) {
         this.sclass = "O";
         this.color.set_color("#92B5FF");
-        this.mass.sm = (mass ? mass : Random.random_float_clamp(16, 100));
+        this.mass.sm = (mass ? mass : Random.randClampFloat(16, 100));
         this.setFromMass(this.mass.sm);
         return this;
     }
     makeClassB(mass) {
         this.sclass = "B";
         this.color.set_color("#A2C0FF");
-        this.mass.sm = (mass ? mass : Random.random_float_clamp(2.1, 16));
+        this.mass.sm = (mass ? mass : Random.randClampFloat(2.1, 16));
         this.setFromMass(this.mass.sm);
         return this;
     }
     makeClassA(mass) {
         this.sclass = "A";
         this.color.set_color("#D5E0FF");
-        this.mass.sm = (mass ? mass : Random.random_float_clamp(1.4, 2.1));
+        this.mass.sm = (mass ? mass : Random.randClampFloat(1.4, 2.1));
         this.setFromMass(this.mass.sm);
         return this;
     }
     makeClassF(mass) {
         this.sclass = "F";
         this.color.set_color("#F9F5FF");
-        this.mass.sm = (mass ? mass : Random.random_float_clamp(1.04, 1.4));
+        this.mass.sm = (mass ? mass : Random.randClampFloat(1.04, 1.4));
         this.setFromMass(this.mass.sm);
         return this;
     }
     makeClassG(mass) {
         this.sclass = "G";
         this.color.set_color("#FFEDE3");
-        this.mass.sm = (mass ? mass : Random.random_float_clamp(0.8, 1.04));
+        this.mass.sm = (mass ? mass : Random.randClampFloat(0.8, 1.04));
         this.setFromMass(this.mass.sm);
         return this;
     }
     makeClassK(mass) {
         this.sclass = "K";
         this.color.set_color("#FFDAB5");
-        this.mass.sm = (mass ? mass : Random.random_float_clamp(0.45, 0.8));
+        this.mass.sm = (mass ? mass : Random.randClampFloat(0.45, 0.8));
         this.setFromMass(this.mass.sm);
         return this;
     }
     makeClassHabK(mass) {
         this.sclass = "K";
         this.color.set_color("#FFDAB5");
-        this.mass.sm = (mass ? mass : Random.random_float_clamp(0.6, 0.8));
+        this.mass.sm = (mass ? mass : Random.randClampFloat(0.6, 0.8));
         this.setFromMass(this.mass.sm);
         return this;
     }
     makeClassM(mass) {
         this.sclass = "M";
         this.color.set_color("#FFB56C");
-        this.mass.sm = (mass ? mass : Random.random_float_clamp(0.08, 0.45));
+        this.mass.sm = (mass ? mass : Random.randClampFloat(0.08, 0.45));
         this.setFromMass(this.mass.sm);
         return this;
     }
@@ -94903,20 +97655,20 @@ class Star extends OrbitingElement_1.OrbitingElement {
     // }
     addToJgui(jData) {
         super.addToJgui(jData);
-        jData.jgui.addColor("Color", this.color.getRgb().formatHex())
-            .addEventListener(jData.jguiMng, "input", (event) => {
+        jData.jGui.addColor("Color", this.color.getRgb().formatHex())
+            .addEventListener(jData.jMng, "input", (event) => {
             this.color.set_color(event.data.event.target.value);
         });
-        jData.jgui.addNumber("radius.km", this.radius.km)
-            .addEventListener(jData.jguiMng, "input", (event) => {
+        jData.jGui.addNumber("radius.km", this.radius.km)
+            .addEventListener(jData.jMng, "input", (event) => {
             this.radius.km = event.data.event.target.value;
         });
-        jData.jgui.addNumber("mass.Yg", this.mass.Yg)
-            .addEventListener(jData.jguiMng, "input", (event) => {
+        jData.jGui.addNumber("mass.Yg", this.mass.Yg)
+            .addEventListener(jData.jMng, "input", (event) => {
             this.mass.Yg = event.data.event.target.value;
         });
-        jData.jgui.addNumber("lifetime.eby", this.lifetime.eby)
-            .addEventListener(jData.jguiMng, "input", (event) => {
+        jData.jGui.addNumber("lifetime.eby", this.lifetime.eby)
+            .addEventListener(jData.jMng, "input", (event) => {
             this.lifetime.eby = event.data.event.target.value;
         });
     }
@@ -94977,11 +97729,13 @@ class TectonicPlate {
     // public readonly edgeIndex: Uint32Array;
     constructor(id, minAlocSize, noise) {
         this.overheadValue = 1.1; // make arrays slightly bigger to allow for wiggle
+        this.seedPoint = 0;
         this.id = id;
         this.noise = noise;
         this.size = 0;
         this.maxSize = Math.ceil(minAlocSize * this.overheadValue);
         this.colorId = Color_1.colorArray[this.id];
+        this.lines1 = new Float32Array(this.maxSize * 3 * 2);
         this.position = new Float32Array(this.maxSize * 3);
         this.color = new Float32Array(this.maxSize * 3);
         this.birth = new Float32Array(this.maxSize);
@@ -94990,8 +97744,8 @@ class TectonicPlate {
     setFromGeo(tkplPoints, terrainData) {
         var color = new THREE.Color();
         var sphSize = terrainData.sphereSize;
-        var maxElev = terrainData.altitudeMax;
-        var minElev = terrainData.altitudeMin;
+        var maxElev = terrainData.altitudeMaxProc * sphSize;
+        var minElev = terrainData.altitudeMinProc * sphSize;
         var cartPts;
         this.latlon = tkplPoints;
         this.size = tkplPoints.length;
@@ -95036,6 +97790,36 @@ class TectonicPlate {
             this.color[stepInd + 2] = color.b;
         }
     }
+    setStupedEdges(terrainData) {
+        var lsPos = 0;
+        for (let index = 0; index < this.position.length - 3; index += 3) {
+            this.lines1[lsPos++] = this.position[index + 0] * 1.05;
+            this.lines1[lsPos++] = this.position[index + 1] * 1.05;
+            this.lines1[lsPos++] = this.position[index + 2] * 1.05;
+            this.lines1[lsPos++] = this.position[index + 0 + 3] * 1.05;
+            this.lines1[lsPos++] = this.position[index + 1 + 3] * 1.05;
+            this.lines1[lsPos++] = this.position[index + 2 + 3] * 1.05;
+        }
+    }
+    setEdges(tkplPrede, terrainData) {
+        var lsPos = 0;
+        for (let index = 0; index < tkplPrede.length; index++) {
+            const predInd = tkplPrede[index];
+            if (isNaN(predInd)) {
+                this.seedPoint = index;
+                this.color[index * 3 + 0] = 1;
+                this.color[index * 3 + 1] = 1;
+                this.color[index * 3 + 2] = 1;
+                continue;
+            }
+            this.lines1[lsPos++] = this.position[index * 3 + 0] * 1.05;
+            this.lines1[lsPos++] = this.position[index * 3 + 1] * 1.05;
+            this.lines1[lsPos++] = this.position[index * 3 + 2] * 1.05;
+            this.lines1[lsPos++] = this.position[predInd * 3 + 0] * 1.05;
+            this.lines1[lsPos++] = this.position[predInd * 3 + 1] * 1.05;
+            this.lines1[lsPos++] = this.position[predInd * 3 + 2] * 1.05;
+        }
+    }
     /**
      * dispose
      */
@@ -95048,12 +97832,12 @@ class Terrain extends ObjectsHacker_1.Identifiable {
         super(worldData);
         this.tData = {
             sphereSize: 1000,
-            altitudeMin: -100,
-            altitudeMax: 100,
+            altitudeMinProc: -0.1,
+            altitudeMaxProc: +0.1,
             pointsToGen: 1000 * 10,
-            noiseSeed: Math.random(),
             noiseSensitivity: 2,
             noiseApplyAbs: false,
+            noiseSeed: Math.random(),
         };
         this.orbitElemId = null;
         this.tkplCurId = 0;
@@ -95063,71 +97847,122 @@ class Terrain extends ObjectsHacker_1.Identifiable {
     init(planet) {
         this.orbitElemId = planet.id;
         this.tData.sphereSize = planet.radius.km;
+        // this.tData.noiseSeed = Math.random();
         this.generate();
     }
     generate() {
         console.time(`#time Terrain generate`);
         this.resetTkpl();
-        this.tData.noiseSeed = Math.random();
         this.noise = Random.makeNoise(this.tData.noiseSeed);
         // var ptsGeo = Points.makeGeoPtsSquares(0);
         var ptsGeo = Points.makeGeoPtsFibb(this.tData.pointsToGen);
         // var ptsGeo = Points.makeGeoPoissonDiscSample(this.tData.pointsToGen);
         // var ptsGeo = Points.makeGeoPtsRandOk(this.tData.pointsToGen);
+        // console.log("ptsGeo", ptsGeo);
         // TODO generate full number of points after basic Tectonic plates are calculated
         // to avoid running d3GeoWrapper/geoDelaunay on high number of points
-        var del = new Graph_1.d3GeoWrapper(ptsGeo); // verry big nom=nom on resources ...
+        var delaw = new Graph_1.d3GeoWrapper(ptsGeo); // verry big nom=nom on resources ...
+        // var delaw = new d3GeoLiteWrapper(ptsGeo) // verry big nom=nom on resources ...
+        console.log("delaw", delaw);
         var randIndexes = [];
-        var randCosts = [];
-        var tpSeeds = Points.makeGeoPoissonDiscSample(Random.random_int_clamp(10, 20));
+        var seedPtToIndex = {}, cnter = 0;
+        var randCostsMap = {};
+        // var tpSeeds = Points.makeGeoPoissonDiscSample(Random.randClampInt(25, 30));
+        var tpSeeds = Points.makeGeoPtsFibb(Random.randClampInt(25, 30));
+        console.log("tpSeeds", tpSeeds);
+        var totalPoints = ptsGeo.length;
+        var totalPlates = tpSeeds.length;
+        console.log("totalPoints", totalPoints);
+        console.log("totalPlates", totalPlates);
+        var costAvgPlateTiny = Math.ceil(totalPoints / totalPlates / 100 * 6.0);
+        var costAvgPlateSmall = Math.ceil(totalPoints / totalPlates / 100 * 4.0);
+        var costAvgPlateLarge = Math.ceil(totalPoints / totalPlates / 100 * 3.0);
+        console.log("costAvgPlateTiny", costAvgPlateTiny);
+        console.log("costAvgPlateSmall", costAvgPlateSmall);
+        console.log("costAvgPlateLarge", costAvgPlateLarge);
         for (const pt of tpSeeds) {
-            // cartPts = Points.cartesianRadius(ptGeo, 2);
-            var index = del.find(pt[0], pt[1]);
+            var index = delaw.find(pt[0], pt[1]);
             randIndexes.push(index);
-            // randCosts.push(Random.random_int_clamp(1, 50));
-            // TODO compute randCosts values from total points and seeds !!!!
-            if (randIndexes.length % 2 == 0)
-                // randCosts.push(Random.random_int_clamp(5, 10));
-                randCosts.push(Random.random_int_clamp(10, 20));
+            seedPtToIndex[index] = cnter++;
+            if (Random.randPercent() < 20)
+                randCostsMap[index] = costAvgPlateTiny;
+            else if (Random.randPercent() < 50)
+                randCostsMap[index] = costAvgPlateSmall;
             else
-                randCosts.push(Random.random_int_clamp(1, 5));
+                randCostsMap[index] = costAvgPlateLarge;
+            // if (randIndexes.length % 4 == 0)
+            //     randCostsMap[index] = costAvgPlateTiny;
+            // else if (randIndexes.length % 2 == 0)
+            //     randCostsMap[index] = costAvgPlateSmall;
+            // else
+            //     randCostsMap[index] = costAvgPlateLarge;
+            console.log("randCostsMap[index]", randIndexes.length - 1, randCostsMap[index]);
+            // randCostsMap[index] = Random.wiggleInt(costAvgPlateLarge, costAvgPlateLarge / 15);
+            // if (randIndexes.length % 2 == 0)
+            //     randCostsMap[index] = Random.random_int_clamp(10, 20);
+            // else
+            //     randCostsMap[index] = Random.random_int_clamp(1, 5);
+            // randCostsMap[index] = Random.random_int_clamp(1, 10);
+            // randCostsMap[index] = 1;
             // TODO compute randCosts values from total points and seeds !!!!
         }
         // var randIndexes = Random.randIndexes(Random.random_int_clamp(5, 10), ptsGeo.length);
-        console.log("randIndexes", randIndexes);
-        console.log("randCosts", randCosts);
-        var dblEdges = [...del.edges];
-        for (const edg of del.edges)
+        // console.log("randIndexes", randIndexes);
+        // console.log("seedPtToIndex", seedPtToIndex);
+        // console.log("randCostsMap", randCostsMap);
+        var dblEdges = [...delaw.edges];
+        for (const edg of delaw.edges)
             dblEdges.push([edg[1], edg[0]]);
         for (let index = 0; index < dblEdges.length; index++) {
-            var rind0 = randIndexes.indexOf(dblEdges[index][0]);
-            var rind1 = randIndexes.indexOf(dblEdges[index][1]);
-            if (rind0 >= 0)
-                dblEdges[index].push(randCosts[rind0]);
-            else if (rind1 >= 0)
-                dblEdges[index].push(randCosts[rind1]);
-            // if (rind0 >= 0 || rind1 >= 0) {
-            //     console.log("rind0,rind1", rind0, rind1, dblEdges[index]);
-            // }
+            var rind0 = randCostsMap[dblEdges[index][0]];
+            var rind1 = randCostsMap[dblEdges[index][1]];
+            if (isFinite(rind0))
+                dblEdges[index].push(rind0);
+            else if (isFinite(rind1))
+                dblEdges[index].push(rind1);
         }
+        // console.log("dblEdges", dblEdges);
         var tree = dju.shortestTreeCustom({
             graph: dblEdges,
             origins: randIndexes,
         });
         console.log("tree", tree);
-        var tmpTkplData = {};
-        for (const iterator of randIndexes)
-            tmpTkplData[iterator] = [];
+        // var ptToTkpl = new Uint16Array(ptsGeo.length);
+        var ptToIndex = new Uint16Array(ptsGeo.length);
+        var tkplMapPoints = {};
+        var tkplMapPredecesor = {};
+        for (const iterator of randIndexes) {
+            tkplMapPoints[iterator] = [];
+            tkplMapPredecesor[iterator] = [];
+        }
         for (let index = 0; index < tree.origin.length; index++) {
             const tpIndex = tree.origin[index];
             var geoPt = ptsGeo[index];
-            tmpTkplData[tpIndex].push(geoPt);
+            tkplMapPoints[tpIndex].push(geoPt);
+            tkplMapPredecesor[tpIndex].push(0);
+            // console.log("tpIndex, index", tpIndex, index);
+            // ptToTkpl[index] = seedPtToIndex[tpIndex];
+            ptToIndex[index] = tkplMapPoints[tpIndex].length - 1;
         }
+        for (let index = 0; index < tree.predecessor.length; index++) {
+            const tpIndex = tree.origin[index];
+            var predInd = tree.predecessor[index];
+            var thisPtIndex = ptToIndex[index];
+            var predPtIndex = ptToIndex[predInd];
+            tkplMapPredecesor[tpIndex][thisPtIndex] = predPtIndex;
+        }
+        // console.log("tkplMapPredecesor", tkplMapPredecesor);
+        // console.log("tmpTkplData", tkplMapPoints);
+        // console.log("ptToTkpl", ptToTkpl);
+        // console.log("ptToIndex", ptToIndex);
         for (const iterator of randIndexes) {
-            var tkplPoints = tmpTkplData[iterator];
-            var tkplPtSize = tmpTkplData[iterator].length;
+            var tkplPoints = tkplMapPoints[iterator];
+            var tkplPtSize = tkplMapPoints[iterator].length;
+            // console.log("tkplPoints", tkplPoints);
             var tkplObject = new TectonicPlate(this.newTkplId(), tkplPtSize, this.noise);
             tkplObject.setFromGeo(tkplPoints, this.tData);
+            tkplObject.setEdges(tkplMapPredecesor[iterator], this.tData);
+            // tkplObject.setStupedEdges(this.tData);
             this.addTkpl(tkplObject);
         }
         console.timeEnd(`#time Terrain generate`);
@@ -95251,7 +98086,7 @@ class JguiMake {
     set class(value) { this.attr.class = value; }
     get type() { return this.attr.type; }
     set type(value) { this.attr.type = value; }
-    mkWorkerJgui(id, order, expanded = true) {
+    mkWorkerJgui(id, order, expanded) {
         this.tag = "div";
         this.id = id;
         this.class = "d-grid gap-1 bg-light border shadow-sm rounded ";
@@ -95453,12 +98288,13 @@ class JguiMake {
         // this.appendHtml(rowObj)
         return rangeObj;
     }
-    addNumber(numName, numValue) {
-        // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/color
+    addNumber(numName, numValue, numStep = 1) {
+        // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/number
         var rowObj = new JguiMake(null).mkRow();
         var numObj = new JguiMake("input");
         numObj.attr.type = "number";
         numObj.attr.value = numValue;
+        numObj.attr.step = numStep;
         numObj.style.width = "100%";
         rowObj.addLabel(numName);
         rowObj.appendHtml(numObj);
@@ -95824,7 +98660,7 @@ class DrawD3Plsys {
             this.drawOnce();
         }
     }
-    addJgui(workerJgui, workerJguiManager) {
+    addJgui(jData) {
     }
 }
 exports.DrawD3Plsys = DrawD3Plsys;
@@ -96030,20 +98866,20 @@ class DrawD3Terrain {
     //     pane_.addInput(gui.manager.config, 'terrain_geo_view', { options: map_ })
     //     // .on('change', () => { gui.refreshConfig(); });
     // }
-    addJgui(workerJgui, workerJguiManager) {
+    addJgui(jData) {
         // TODO make me a drop down list
         var allProj = [...DrawD3Terrain.getGeoViewsMap().keys()];
-        var [_, prdDropList] = workerJgui.addDropdown("D3 Projection", allProj);
+        var [_, prdDropList] = jData.jGui.addDropdown("D3 Projection", allProj);
         for (const prjDdObj of prdDropList) {
-            prjDdObj.addEventListener(workerJguiManager, "click", (event) => {
+            prjDdObj.addEventListener(jData.jMng, "click", (event) => {
                 this.updateProjection(event.data.event.extra.listValue);
             });
-            prjDdObj.addEventListener(workerJguiManager, "mouseover", (event) => {
+            prjDdObj.addEventListener(jData.jMng, "mouseover", (event) => {
                 this.updateProjection(event.data.event.extra.listValue);
             });
         }
-        workerJgui.addSlider("D3 Points size", 0, 15, 0.1, this.ptsRadius)
-            .addEventListener(workerJguiManager, "input", (event) => {
+        jData.jGui.addSlider("D3 Points size", 0, 15, 0.1, this.ptsRadius)
+            .addEventListener(jData.jMng, "input", (event) => {
             this.ptsRadius = Number.parseFloat(event.data.event.target.value);
             this.path.pointRadius(this.ptsRadius);
             this.drawOnce();
@@ -96249,8 +99085,8 @@ class DrawThreePlsys {
                 //         console.log(`!!!!!!!!!!!!!!!!!!`);
                 //     })
                 var jData = {
-                    jgui: tempJgui,
-                    jguiMng: this.workerJguiManager,
+                    jGui: tempJgui,
+                    jMng: this.workerJguiManager,
                 };
                 selOrbElem.addToJgui(jData);
                 JguiUtils_1.setTempContainer(this.worker, tempJgui);
@@ -96612,7 +99448,7 @@ class DrawThreePlsys {
         }
         this.renderer.render(this.scene, this.camera);
     }
-    addJgui(workerJgui, workerJguiManager) {
+    addJgui(jData) {
     }
 }
 exports.DrawThreePlsys = DrawThreePlsys;
@@ -96655,6 +99491,7 @@ class DrawThreeTerrain {
         // lineObject: THREE.LineSegments; // LineSegments2 or THREE.LineSegments
         this.terrData = {
             tpPts: new Map(),
+            tpLines1: new Map(),
         };
     }
     init(event) {
@@ -96740,6 +99577,20 @@ class DrawThreeTerrain {
                 this.terrData.tpPts.set(tkpl.id, ptsObject);
                 this.scene.add(ptsObject);
             }
+            if (this.terrData.tpLines1.has(tkpl.id) == false) {
+                var line1Geometry = new THREE.BufferGeometry();
+                var line1Material = new THREE.LineBasicMaterial({
+                    color: 0xffffff,
+                    linewidth: 50, // not working :(
+                    // vertexColors: true,
+                });
+                var line1Object = new THREE.LineSegments(line1Geometry, line1Material);
+                const line1PosAttr = new THREE.Float32BufferAttribute(tkpl.lines1, 3);
+                line1Geometry.setAttribute('position', line1PosAttr);
+                line1Geometry.computeBoundingSphere();
+                this.terrData.tpLines1.set(tkpl.id, line1Object);
+                this.scene.add(line1Object);
+            }
         }
     }
     clearTerrainData() {
@@ -96749,6 +99600,12 @@ class DrawThreeTerrain {
             ptsObj.geometry.dispose();
         }
         this.terrData.tpPts.clear();
+        for (const line1Obj of this.terrData.tpLines1.values()) {
+            this.scene.remove(line1Obj);
+            line1Obj.material.dispose();
+            line1Obj.geometry.dispose();
+        }
+        this.terrData.tpLines1.clear();
     }
     updateShallow() {
     }
@@ -96787,9 +99644,9 @@ class DrawThreeTerrain {
             ptsObj.material.needsUpdate = true;
         }
     }
-    addJgui(workerJgui, workerJguiManager) {
-        workerJgui.addSlider("THREE Points size", 0, 500, 1, this.ptsRadius)
-            .addEventListener(workerJguiManager, "input", (event) => {
+    addJgui(jData) {
+        jData.jGui.addSlider("THREE Points size", 0, 500, 1, this.ptsRadius)
+            .addEventListener(jData.jMng, "input", (event) => {
             this.ptsRadius = Number.parseFloat(event.data.event.target.value);
             this.updatePtsMaterials();
         });
@@ -96931,7 +99788,11 @@ class BaseDrawUpdateWorker extends BaseWorker {
         }
     }
     updateJgiu(draw_) {
-        draw_.addJgui(this.workerJguiCont, this.workerJguiManager);
+        var jData = {
+            jGui: this.workerJguiCont,
+            jMng: this.workerJguiManager,
+        };
+        draw_.addJgui(jData);
         JguiUtils_1.setMainContainer(this.worker, this.workerJguiMain);
     }
     spread_objects(object_) {
@@ -97181,7 +100042,7 @@ class PlanetSysWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
         var plsys = this.planetarySystem;
         var workerJguiManager = this.workerJguiManager;
         var workerJgui;
-        var startExpanded = true;
+        var startExpanded = false;
         const jguiOrdinal = MAIN_ORDINAL + "00";
         [this.workerJguiMain, workerJgui] = new JguiMake_1.JguiMake(null).mkWorkerJgui("plsys", jguiOrdinal, startExpanded);
         var chboxUpd, chboxDraw;
@@ -97220,9 +100081,6 @@ class PlanetSysWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
             .addEventListener(workerJguiManager, "input", (event) => {
             this.config.timeEarthYearsTick = Number.parseFloat(event.data.event.target.value);
         });
-        for (const draw_ of this.mapDraws.values())
-            draw_.addJgui(workerJgui, this.workerJguiManager);
-        // console.log("this.workerJguiMain", this.workerJguiMain);
         JguiUtils_1.setMainContainer(this.worker, this.workerJguiMain);
     }
 }
@@ -97263,7 +100121,7 @@ class TerrainWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
                 message: Config_1.MessageType.CanvasMake,
                 metaCanvas: {
                     id: `${this.name}-canvas-DrawThreeTerrain`,
-                    order: MAIN_ORDINAL + "10",
+                    order: MAIN_ORDINAL + "30",
                     generalFlags: ["orbit"],
                 }
             });
@@ -97377,6 +100235,7 @@ class TerrainWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
         this.refreshTick(true);
     }
     updateTerrain() {
+        // console.log("this.world.time.value", this.world.time.value);
     }
     async refreshTick(doSpecial = true) {
         await this.world.readTime();
@@ -97408,18 +100267,47 @@ class TerrainWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
     }
     makeJgiu() {
         const jguiOrdinal = MAIN_ORDINAL + "00";
-        [this.workerJguiMain, this.workerJguiCont] = new JguiMake_1.JguiMake(null).mkWorkerJgui("terr", jguiOrdinal);
+        var startExpanded = !true;
+        [this.workerJguiMain, this.workerJguiCont] = new JguiMake_1.JguiMake(null).mkWorkerJgui("terr", jguiOrdinal, startExpanded);
+        var jData = {
+            jGui: this.workerJguiCont,
+            jMng: this.workerJguiManager,
+        };
         var chboxUpd, chboxDraw;
-        [chboxUpd, chboxDraw] = this.workerJguiCont.add2CheckButtons("Update", this.doUpdate, "Draw", this.doDraw);
-        chboxUpd.addEventListener(this.workerJguiManager, "change", (event) => {
+        [chboxUpd, chboxDraw] = jData.jGui.add2CheckButtons("Update", this.doUpdate, "Draw", this.doDraw);
+        chboxUpd.addEventListener(jData.jMng, "change", (event) => {
             this.doUpdate = event.data.event.target.checked;
         });
-        chboxDraw.addEventListener(this.workerJguiManager, "change", (event) => {
+        chboxDraw.addEventListener(jData.jMng, "change", (event) => {
             this.doDraw = event.data.event.target.checked;
         });
-        this.workerJguiCont.addButton("Re-Genearte")
+        jData.jGui.addButton("Re-Genearte")
             .addTooltip("Regenerating will use an actual Planet, first run uses a dummy instance so we do not wait for PlSys to gen.")
-            .addEventListener(this.workerJguiManager, "click", (event) => {
+            .addEventListener(jData.jMng, "click", (event) => {
+            this.genFromExistingPlanet();
+        });
+        jData.jGui.addNumber("altitudeMinProc ", this.terrain.tData.altitudeMinProc, 0.1).addEventListener(jData.jMng, "input", (event) => {
+            this.terrain.tData.altitudeMinProc = event.data.event.target.value;
+            this.genFromExistingPlanet();
+        });
+        jData.jGui.addNumber("altitudeMaxProc ", this.terrain.tData.altitudeMaxProc, 0.1).addEventListener(jData.jMng, "input", (event) => {
+            this.terrain.tData.altitudeMaxProc = event.data.event.target.value;
+            this.genFromExistingPlanet();
+        });
+        jData.jGui.addNumber("pointsToGen ", this.terrain.tData.pointsToGen, 1000).addEventListener(jData.jMng, "input", (event) => {
+            this.terrain.tData.pointsToGen = event.data.event.target.value;
+            this.genFromExistingPlanet();
+        });
+        jData.jGui.addNumber("noiseSensitivity ", this.terrain.tData.noiseSensitivity, 0.1).addEventListener(jData.jMng, "input", (event) => {
+            this.terrain.tData.noiseSensitivity = event.data.event.target.value;
+            this.genFromExistingPlanet();
+        });
+        jData.jGui.addCheckButton("noiseApplyAbs ", this.terrain.tData.noiseApplyAbs)[0].addEventListener(jData.jMng, "input", (event) => {
+            this.terrain.tData.noiseApplyAbs = event.data.event.target.value;
+            this.genFromExistingPlanet();
+        });
+        jData.jGui.addNumber("noiseSeed ", this.terrain.tData.noiseSeed, 0.00001).addEventListener(jData.jMng, "input", (event) => {
+            this.terrain.tData.noiseSeed = event.data.event.target.value;
             this.genFromExistingPlanet();
         });
         JguiUtils_1.setMainContainer(this.worker, this.workerJguiMain);
@@ -98407,6 +101295,8 @@ exports.NumberRadiantFlux = NumberRadiantFlux;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.d3GeoWrapper = exports.Graph = void 0;
 const d3_geo_voronoi_1 = __webpack_require__(/*! d3-geo-voronoi */ "./node_modules/d3-geo-voronoi/index.js");
+// import * as d3gv from "d3-geo-voronoi"
+const d3gv = __webpack_require__(/*! ../../node_modules/d3-geo-voronoi/dist/d3-geo-voronoi.js */ "./node_modules/d3-geo-voronoi/dist/d3-geo-voronoi.js");
 // http://www.rosettacode.org/wiki/Floyd-Warshall_algorithm#JavaScript
 // http://www.rosettacode.org/wiki/Dijkstra%27s_algorithm#JavaScript
 // https://github.com/Fil/d3-geo-voronoi
@@ -98420,6 +101310,20 @@ class Graph {
     }
 }
 exports.Graph = Graph;
+class d3GeoLiteWrapper {
+    constructor(points) {
+        this.points = points;
+        console.log("!!!!!!!!!!! d3gv", d3gv);
+        this.delaunay = d3gv.geo_delaunay_from(points);
+        this.triangles = d3gv.geo_triangles(this.delaunay);
+        this.edges = d3gv.geo_edges(this.triangles, points);
+        this.neighbors = d3gv.geo_neighbors(this.triangles, points.length);
+        this.find = d3gv.geo_find(this.neighbors, points);
+    }
+    find(x, y, next = 0) {
+        return this.find(x, y, next);
+    }
+}
 class d3GeoWrapper {
     constructor(ptsGeo) {
         this.ptsGeo = ptsGeo;
@@ -98775,39 +101679,43 @@ exports.makeGeoPtsRandBad2 = makeGeoPtsRandBad2;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.makeNoise = exports.randomPartOfArray = exports.randomAlphabetString = exports.pickChanceOverlaping = exports.customComparator = exports.pickAllOverlaping = exports.randIndexes = exports.wiggle_down = exports.wiggle_up = exports.wiggle = exports.random_int_clamp = exports.random_float_clamp = exports.randPercent = void 0;
+exports.makeNoise = exports.randomPartOfArray = exports.randomAlphabetString = exports.pickChanceOverlaping = exports.customComparator = exports.pickAllOverlaping = exports.randIndexes = exports.wiggle_down = exports.wiggle_up = exports.wiggleInt = exports.wiggleFloat = exports.randClampInt = exports.randClampFloat = exports.randPercent = void 0;
 function randPercent() {
     return Math.random() * 100;
 }
 exports.randPercent = randPercent;
-function random_float_clamp(min, max) {
+function randClampFloat(min, max) {
     if (min >= max)
         throw new Error("min must be less than max");
     return min + (Math.random() * (max - min));
 }
-exports.random_float_clamp = random_float_clamp;
-function random_int_clamp(min, max) {
+exports.randClampFloat = randClampFloat;
+function randClampInt(min, max) {
     if (min >= max)
         throw new Error("min must be less than max");
-    return Math.round(random_float_clamp(min, max));
+    return Math.round(randClampFloat(min, max));
 }
-exports.random_int_clamp = random_int_clamp;
-function wiggle(number, amplitude) {
-    return number + ((random_float_clamp(0, amplitude * 2) - amplitude) * number);
+exports.randClampInt = randClampInt;
+function wiggleFloat(number, amplitude) {
+    return number + ((randClampFloat(0, amplitude * 2) - amplitude) * number);
 }
-exports.wiggle = wiggle;
+exports.wiggleFloat = wiggleFloat;
+function wiggleInt(number, amplitude) {
+    return Math.round(number + ((randClampFloat(0, amplitude * 2) - amplitude) * number));
+}
+exports.wiggleInt = wiggleInt;
 function wiggle_up(number, amplitude) {
-    return number + (random_float_clamp(0, amplitude) * Math.abs(number));
+    return number + (randClampFloat(0, amplitude) * Math.abs(number));
 }
 exports.wiggle_up = wiggle_up;
 function wiggle_down(number, amplitude) {
-    return number - (random_float_clamp(0, amplitude) * Math.abs(number));
+    return number - (randClampFloat(0, amplitude) * Math.abs(number));
 }
 exports.wiggle_down = wiggle_down;
 function randIndexes(cntIndex, maxIndex) {
     var arr = [];
     for (let index = 0; index < cntIndex; index++)
-        arr.push(random_int_clamp(0, maxIndex - 1));
+        arr.push(randClampInt(0, maxIndex - 1));
     return arr;
 }
 exports.randIndexes = randIndexes;
@@ -99752,7 +102660,7 @@ exports.draw_connections = draw_connections;
 /******/ 		};
 /******/ 	
 /******/ 		// Execute the module function
-/******/ 		__webpack_modules__[moduleId](module, module.exports, __webpack_require__);
+/******/ 		__webpack_modules__[moduleId].call(module.exports, module, module.exports, __webpack_require__);
 /******/ 	
 /******/ 		// Return the exports of the module
 /******/ 		return module.exports;

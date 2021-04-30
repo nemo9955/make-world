@@ -271,8 +271,8 @@ export class DrawThreePlsys implements DrawWorkerInstance {
                 //     })
 
                 var jData: jguiData = {
-                    jgui: tempJgui,
-                    jguiMng: this.workerJguiManager,
+                    jGui: tempJgui,
+                    jMng: this.workerJguiManager,
                 }
 
                 selOrbElem.addToJgui(jData)
@@ -737,7 +737,7 @@ export class DrawThreePlsys implements DrawWorkerInstance {
     }
 
 
-    public addJgui(workerJgui: JguiMake, workerJguiManager: JguiManager): void {
+    public addJgui(jData: jguiData): void {
     }
 
 

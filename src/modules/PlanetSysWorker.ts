@@ -9,7 +9,7 @@ import { WorldData } from "./WorldData";
 import { WorkerDOM } from "../utils/WorkerDOM";
 import { DrawD3Plsys } from "./DrawD3Plsys";
 import { JguiMake } from "../gui/JguiMake";
-import { setMainContainer } from "../gui/JguiUtils";
+import { jguiData, setMainContainer } from "../gui/JguiUtils";
 import { SpaceFactory } from "../generate/SpaceFactory";
 
 
@@ -209,7 +209,7 @@ export class PlanetSysWorker extends BaseDrawUpdateWorker {
         var plsys = this.planetarySystem;
         var workerJguiManager = this.workerJguiManager;
         var workerJgui: JguiMake;
-        var startExpanded = true;
+        var startExpanded = false;
         const jguiOrdinal = MAIN_ORDINAL + "00";
 
         [this.workerJguiMain, workerJgui] = new JguiMake(null).mkWorkerJgui("plsys", jguiOrdinal, startExpanded);
@@ -263,13 +263,7 @@ export class PlanetSysWorker extends BaseDrawUpdateWorker {
             })
 
 
-        for (const draw_ of this.mapDraws.values())
-            draw_.addJgui(workerJgui, this.workerJguiManager);
-
-        // console.log("this.workerJguiMain", this.workerJguiMain);
-
         setMainContainer(this.worker, this.workerJguiMain)
-
     }
 
 
