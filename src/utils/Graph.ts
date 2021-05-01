@@ -4,13 +4,16 @@
 
 import * as d3 from "d3"
 import { geoDelaunay, geoVoronoi, geoContour } from "d3-geo-voronoi"
-// import * as d3gv from "d3-geo-voronoi"
-import * as d3gv from "../../node_modules/d3-geo-voronoi/dist/d3-geo-voronoi.js"
 // node_modules/d3-geo-voronoi/dist/d3-geo-voronoi.js
 import { pointGeoArr, pointGeo } from "./Points"
 import * as Points from "../utils/Points"
+import * as dju from "../utils/dij_utils";
 
 
+
+
+// import { geoVoronoi } from "../../node_modules/d3-geo-voronoi/src/voronoi.js";
+// import { geoContour } from "../../node_modules/d3-geo-voronoi/src/contour.js";
 
 
 // http://www.rosettacode.org/wiki/Floyd-Warshall_algorithm#JavaScript
@@ -21,138 +24,111 @@ import * as Points from "../utils/Points"
 
 
 
-export class Graph {
-
-
-
-    constructor() {
-    }
-
-    mkUndirGeo(ptsGeo: pointGeoArr) {
-        console.log("ptsGeo", ptsGeo);
-        var delGeo = geoDelaunay(ptsGeo);
-        console.log("delGeo", delGeo);
-    }
-
-}
-
-
-class d3GeoLiteWrapper {
-/*
-// import * as d3gv from "d3-geo-voronoi"
-import * as d3gv from "../../node_modules/d3-geo-voronoi/dist/d3-geo-voronoi.js"
-// node_modules/d3-geo-voronoi/dist/d3-geo-voronoi.js
-
-    this could lead to some improved times if RAW functions wold be exported
-    as not all of the computed values are needed
-
-exports.geo_delaunay_from = geo_delaunay_from;
-exports.geo_triangles = geo_triangles;
-exports.geo_edges = geo_edges;
-exports.geo_neighbors = geo_neighbors;
-exports.geo_find = geo_find;
-
-*/
-
-
-    delaunay: any;
-    edges: [number, number][];
-    neighbors: number[][];
-    triangles: [number, number, number][];
-
-
-    constructor(public points: pointGeoArr) {
-
-        console.log("!!!!!!!!!!! d3gv", d3gv);
-
-        this.delaunay = d3gv.geo_delaunay_from(points)
-        this.triangles = d3gv.geo_triangles(this.delaunay)
-        this.edges = d3gv.geo_edges(this.triangles, points)
-        this.neighbors = d3gv.geo_neighbors(this.triangles, points.length)
-        this.find = d3gv.geo_find(this.neighbors, points)
-
-    }
-
-
-    find(x: number, y: number, next = 0) {
-        return this.find(x, y, next) as number;
-    }
-
-
-}
-
-
 export class d3GeoWrapper {
     rawDel: any;
-
-    // centers: (9996) [Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), …]
-    // delaunay: Delaunay {_delaunator: Delaunator, inedges: Int32Array(5003), _hullIndex: Int32Array(5003), points: Float64Array(10006), halfedges: Int32Array(30000), …}
-    // edges: (14994) [Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), …]
-    // find: ƒ find(x, y, next)
-    // hull: []
-    // mesh: (14994) [Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), Array(2), …]
-    // neighbors: (5000) [Array(5), Array(5), Array(6), Array(7), Array(7), Array(7), Array(6), Array(5), Array(5), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(7), Array(7), Array(7), Array(6), Array(6), Array(6), Array(6), Array(6), Array(5), Array(5), Array(5), Array(5), Array(5), Array(5), Array(5), Array(5), Array(6), Array(6), Array(6), Array(7), Array(7), Array(7), Array(7), Array(7), Array(7), Array(7), Array(7), Array(7), Array(7), Array(7), Array(7), Array(7), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(5), Array(5), Array(5), Array(5), Array(5), Array(5), Array(5), Array(5), Array(5), Array(5), Array(5), Array(5), Array(5), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), …]
-    // polygons: (5000) [Array(5), Array(5), Array(6), Array(7), Array(7), Array(7), Array(6), Array(5), Array(5), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(7), Array(7), Array(7), Array(6), Array(6), Array(6), Array(6), Array(6), Array(5), Array(5), Array(5), Array(5), Array(5), Array(5), Array(5), Array(5), Array(6), Array(6), Array(6), Array(7), Array(7), Array(7), Array(7), Array(7), Array(7), Array(7), Array(7), Array(7), Array(7), Array(7), Array(7), Array(7), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(5), Array(5), Array(5), Array(5), Array(5), Array(5), Array(5), Array(5), Array(5), Array(5), Array(5), Array(5), Array(5), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), Array(6), …]
-    // triangles: (9996) [Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), Array(3), …]
-    // urquhart: ƒ (distances)
-    // __proto__: Object
 
     public get centers(): [number, number][] { return this.rawDel.centers }
     public get edges(): [number, number][] { return this.rawDel.edges }
     public get neighbors(): number[][] { return this.rawDel.neighbors }
     public get polygons(): number[][] { return this.rawDel.polygons }
     public get triangles(): [number, number, number][] { return this.rawDel.triangles }
+    public get hull(): number[] { return this.rawDel.hull }
+    public get mesh(): [number, number][] { return this.rawDel.mesh }
 
-    constructor(public ptsGeo: pointGeoArr) {
+    public rawPts: pointGeoArr;
+
+    constructor(ptsGeo: pointGeoArr) {
+        this.rawPts = ptsGeo;
         this.rawDel = geoDelaunay(ptsGeo);
-        console.log("this.delGeo", this.rawDel);
+        // console.log("this.delGeo", this.rawDel);
     }
+
 
     find(x: number, y: number, next = 0) {
         return this.rawDel.find(x, y, next) as number;
     }
 
 
-    getVoroLineSegsCart(pts: Float32Array): Float32Array {
-        // var cen: pointGeoArr = this.delGeo.centers;
-        // var edg: pointGeoArr = this.delGeo.mesh;
-        var cen: pointGeoArr = this.ptsGeo;
-        var edg: pointGeoArr = this.rawDel.edges;
-
-        var arrSize = edg.length * 2 * 3;
-        var lineSegs = new Float32Array(arrSize);
-        var lsPos = 0;
-
-        for (let index = 0; index < edg.length; index++) {
-            const c1: number = edg[index][0];
-            const c2: number = edg[index][1];
-
-
-            // console.log("c1,c2", c1, c2);
-
-            // const p1 = Points.cartesianRadius(cen[c1], radius)
-            // const p2 = Points.cartesianRadius(cen[c2], radius)
-
-            // console.log("cen[c1],cen[c2]", cen[c1], cen[c2]);
-            // console.log("p1,p2", p1, p2);
-
-            lineSegs[lsPos++] = pts[c1 * 3 + 0];
-            lineSegs[lsPos++] = pts[c1 * 3 + 1];
-            lineSegs[lsPos++] = pts[c1 * 3 + 2];
-            lineSegs[lsPos++] = pts[c2 * 3 + 0];
-            lineSegs[lsPos++] = pts[c2 * 3 + 1];
-            lineSegs[lsPos++] = pts[c2 * 3 + 2];
-            // lineSegs[lsPos++] = p1[0];
-            // lineSegs[lsPos++] = p1[1];
-            // lineSegs[lsPos++] = p1[2];
-            // lineSegs[lsPos++] = p2[0];
-            // lineSegs[lsPos++] = p2[1];
-            // lineSegs[lsPos++] = p2[2];
-        }
-
-        // console.log("lineSegs", lineSegs);
-        return lineSegs;
+    getTree(seedsIndex: number[]) {
+        return dju.shortestTreeCustom({
+            graph: this.edges,
+            origins: seedsIndex,
+            directed: false,
+        })
     }
 
 
+
 }
+
+
+
+
+// rellys on scripts/edit_3rd_libs.sh to exporte all the base functions of the lib
+import * as cGeo from "../../node_modules/d3-geo-voronoi/dist/d3-geo-voronoi.js";
+
+export class d3GeoLiteWrapper {
+    delaunay: any;
+    edges: [number, number][];
+    neighbors: number[][];
+    triangles: [number, number, number][];
+
+    gfind: any;
+
+    constructor(public points: pointGeoArr, level = 2) {
+        this.delaunay = cGeo.geo_delaunay_from(points);
+        this.triangles = cGeo.geo_triangles(this.delaunay);
+
+        if (level >= 1)
+            this.edges = cGeo.geo_edges(this.triangles, points);
+
+        if (level >= 2) {
+            this.neighbors = cGeo.geo_neighbors(this.triangles, points.length);
+            this.gfind = cGeo.geo_find(this.neighbors, points);
+        }
+    }
+
+    public find(x: number, y: number, next = 0) {
+        return this.gfind(x, y, next) as number;
+    }
+}
+
+import concave from "@turf/concave"
+import * as turf from "@turf/helpers"
+import { Position, FeatureCollection, Point, Feature, Polygon } from "@turf/helpers"
+
+// https://github.com/joaofig/uk-accidents/blob/master/geomath/hulls.py
+
+export function geoConcaveHull(geoPts: pointGeoArr) {
+    var ptArr: Feature<Point>[] = []
+    for (const iterator of geoPts) {
+        ptArr.push(turf.point(iterator))
+    }
+    var feat = turf.featureCollection(ptArr)
+
+
+    var ret = concave(feat)
+    // var ret = concave(feat, { units: 'kilometers', maxEdge: 1000000})
+
+    // return ret.geometry.coordinates[0] ;
+
+    var indexes = []
+
+
+    console.log("ret.geometry.coordinates[0]", ret.geometry.coordinates[0]);
+    console.log("geoPts", geoPts);
+
+    for (const i1 of ret.geometry.coordinates[0] as any) {
+        for (let ind = 0; ind < geoPts.length; ind++) {
+            const i2 = geoPts[ind];
+            if (i1[0] == i2[0] && i1[1] == i2[1]) {
+                indexes.push(ind);
+                break;
+            }
+        }
+    }
+
+    return indexes;
+}
+
+

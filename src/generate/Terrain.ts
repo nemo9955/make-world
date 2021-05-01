@@ -18,11 +18,14 @@ import * as Calc from "../utils/Calc"
 
 import * as THREE from "three";
 import * as dju from "../utils/dij_utils";
+import { geoDelaunay, geoVoronoi, geoContour } from "d3-geo-voronoi"
 
 import * as d3 from "d3"
-import { d3GeoWrapper, Graph } from "../utils/Graph";
+import { d3GeoWrapper, d3GeoLiteWrapper, geoConcaveHull } from "../utils/Graph";
 // node_modules/@types/noisejs/index.d.ts
 
+import Delaunator2D from "../utils/delaunator_2d"
+import Delaunator3D from "../utils/delaunator_3d"
 
 
 /*
@@ -66,7 +69,8 @@ export class TectonicPlate {
     public readonly birth: Float32Array;
     public readonly mask: Uint16Array;
 
-    public readonly lines1: Float32Array;
+    public lines1: Float32Array;
+    public linesHull: Float32Array;
 
     public seedPoint: number = 0;
 
@@ -81,7 +85,6 @@ export class TectonicPlate {
         this.maxSize = Math.ceil(minAlocSize * this.overheadValue);
         this.colorId = colorArray[this.id];
 
-        this.lines1 = new Float32Array(this.maxSize * 3 * 2);
         this.position = new Float32Array(this.maxSize * 3);
         this.color = new Float32Array(this.maxSize * 3);
         this.birth = new Float32Array(this.maxSize);
@@ -98,8 +101,10 @@ export class TectonicPlate {
         this.latlon = tkplPoints;
         this.size = tkplPoints.length;
 
-        for (let index = 0; index < tkplPoints.length; index++) {
-            const stepInd = index * 3
+        color.set(this.colorId);
+
+        for (let index = 0; index < this.size; index++) {
+            const stepInd = index * 3;
             const ptGeo = tkplPoints[index];
 
 
@@ -125,7 +130,7 @@ export class TectonicPlate {
             this.position[stepInd + 2] = cartPts[2]
 
             // this.position[stepInd + 0] = (ptGeo[1]) * 4
-            // this.position[stepInd + 1] = elev
+            // this.position[stepInd + 1] = rawNoiseVal
             // this.position[stepInd + 2] = (ptGeo[0] - 180) * 4
 
             // color.setRGB(Math.random(), Math.random(), Math.random());
@@ -136,7 +141,6 @@ export class TectonicPlate {
             // color.setRGB(vx, vy, vz);
             // var col = rawh;
             // color.setRGB(col, col, col);
-            color.set(this.colorId);
 
             // if (randIndexes.includes(index))
             //     color.setRGB(1, 0, 0);
@@ -155,36 +159,26 @@ export class TectonicPlate {
 
 
     public setStupedEdges(terrainData: TerrainData) {
-
+        this.lines1 = new Float32Array(this.maxSize * 3 * 2);
         var lsPos = 0;
-
-        for (let index = 0; index < this.position.length - 3; index += 3) {
-
-            this.lines1[lsPos++] = this.position[index + 0] * 1.05
-            this.lines1[lsPos++] = this.position[index + 1] * 1.05
-            this.lines1[lsPos++] = this.position[index + 2] * 1.05
-            this.lines1[lsPos++] = this.position[index + 0 + 3] * 1.05
-            this.lines1[lsPos++] = this.position[index + 1 + 3] * 1.05
-            this.lines1[lsPos++] = this.position[index + 2 + 3] * 1.05
+        for (let index = 0; index < this.size - 1; index++) {
+            this.lines1[lsPos++] = this.position[index * 3 + 0] * 1.05
+            this.lines1[lsPos++] = this.position[index * 3 + 1] * 1.05
+            this.lines1[lsPos++] = this.position[index * 3 + 2] * 1.05
+            this.lines1[lsPos++] = this.position[index * 3 + 0 + 3] * 1.05
+            this.lines1[lsPos++] = this.position[index * 3 + 1 + 3] * 1.05
+            this.lines1[lsPos++] = this.position[index * 3 + 2 + 3] * 1.05
 
         }
 
     }
 
     public setEdges(tkplPrede: number[], terrainData: TerrainData) {
-
-
-
         var lsPos = 0;
+        this.lines1 = new Float32Array(this.maxSize * 3 * 2);
         for (let index = 0; index < tkplPrede.length; index++) {
             const predInd = tkplPrede[index];
-            if (isNaN(predInd)) {
-                this.seedPoint = index;
-                this.color[index * 3 + 0] = 1
-                this.color[index * 3 + 1] = 1
-                this.color[index * 3 + 2] = 1
-                continue;
-            }
+            if (isNaN(predInd)) { this.setSeedIndex(index); continue; }
 
             this.lines1[lsPos++] = this.position[index * 3 + 0] * 1.05
             this.lines1[lsPos++] = this.position[index * 3 + 1] * 1.05
@@ -193,9 +187,172 @@ export class TectonicPlate {
             this.lines1[lsPos++] = this.position[predInd * 3 + 1] * 1.05
             this.lines1[lsPos++] = this.position[predInd * 3 + 2] * 1.05
         }
+    }
 
+    public setEdges2(tkplEdInd: number[], terrainData: TerrainData) {
+        // console.log("tkplEdInd", tkplEdInd);
+        var lsPos = 0;
+        this.lines1 = new Float32Array(tkplEdInd.length * 3 * 2);
+        for (let index = 0; index < tkplEdInd.length; index++) {
+            const ed1 = tkplEdInd[index];
+            const ed2 = tkplEdInd[(index + 1) % tkplEdInd.length];
+            // console.log("ed1,ed2", ed1, ed2);
+
+            this.lines1[lsPos++] = this.position[ed1 * 3 + 0] * 1.05
+            this.lines1[lsPos++] = this.position[ed1 * 3 + 1] * 1.05
+            this.lines1[lsPos++] = this.position[ed1 * 3 + 2] * 1.05
+            this.lines1[lsPos++] = this.position[ed2 * 3 + 0] * 1.05
+            this.lines1[lsPos++] = this.position[ed2 * 3 + 1] * 1.05
+            this.lines1[lsPos++] = this.position[ed2 * 3 + 2] * 1.05
+        }
+        // console.log("this.lines1", this.lines1);
+    }
+
+
+    public setSeedIndex(seedIndex: number) {
+        this.seedPoint = seedIndex;
+        this.color[seedIndex * 3 + 0] = 1;
+        this.color[seedIndex * 3 + 1] = 1;
+        this.color[seedIndex * 3 + 2] = 1;
+    }
+
+
+
+
+    public computeHull(terrainData: TerrainData) {
+        this.computeHullTriangles2(terrainData);
+    }
+
+
+    public computeHullGeoHull(terrainData: TerrainData) {
+
+
+        var delaw = new d3GeoWrapper(this.latlon)
+        console.log("delaw", delaw);
+        const hulen = delaw.hull.length;
+        this.linesHull = new Float32Array(hulen * 3 * 2);
+
+        var lsPos = 0;
+        for (let index = 0; index < hulen; index++) {
+            const geoIndex = delaw.hull[index];
+            const geoIndexNext = delaw.hull[(index + 1) % hulen];
+
+            this.linesHull[lsPos++] = this.position[geoIndex * 3 + 0] * 1.05
+            this.linesHull[lsPos++] = this.position[geoIndex * 3 + 1] * 1.05
+            this.linesHull[lsPos++] = this.position[geoIndex * 3 + 2] * 1.05
+            this.linesHull[lsPos++] = this.position[geoIndexNext * 3 + 0] * 1.05
+            this.linesHull[lsPos++] = this.position[geoIndexNext * 3 + 1] * 1.05
+            this.linesHull[lsPos++] = this.position[geoIndexNext * 3 + 2] * 1.05
+        }
 
     }
+
+
+    public computeHullTurf(terrainData: TerrainData) {
+
+        var inds = geoConcaveHull(this.latlon);
+        console.log("inds", inds);
+
+        this.linesHull = new Float32Array((inds.length + 1) * 3 * 2);
+        var lsPos = 0;
+        for (let index = 0; index < inds.length; index++) {
+            const geoIndex = inds[index];
+            const geoIndexNext = inds[(index + 1) % inds.length];
+            this.linesHull[lsPos++] = this.position[geoIndex * 3 + 0] * 1.05
+            this.linesHull[lsPos++] = this.position[geoIndex * 3 + 1] * 1.05
+            this.linesHull[lsPos++] = this.position[geoIndex * 3 + 2] * 1.05
+            this.linesHull[lsPos++] = this.position[geoIndexNext * 3 + 0] * 1.05
+            this.linesHull[lsPos++] = this.position[geoIndexNext * 3 + 1] * 1.05
+            this.linesHull[lsPos++] = this.position[geoIndexNext * 3 + 2] * 1.05
+
+        }
+
+    }
+
+
+
+    public computeHullTriangles1(terrainData: TerrainData) {
+        var delaw = new d3GeoLiteWrapper(this.latlon, 0)
+        console.log("delaw", delaw);
+
+        var count = new Int16Array(this.size);
+        for (const iterator of delaw.triangles) {
+            count[iterator[0]]++;
+            count[iterator[1]]++;
+            count[iterator[2]]++;
+        }
+        console.log("count", count);
+
+        var valid = [];
+        for (let index = 0; index < count.length; index++)
+            if (count[index] <= 6) valid.push(index)
+
+        console.log("valid", valid);
+
+
+        this.linesHull = new Float32Array(valid.length * 3 * 2);
+        var lsPos = 0;
+        for (let index = 0; index < valid.length; index++) {
+            const geoIndex = valid[index];
+            const geoIndexNext = valid[(index + 1) % valid.length];
+            this.linesHull[lsPos++] = this.position[geoIndex * 3 + 0] * 1.08
+            this.linesHull[lsPos++] = this.position[geoIndex * 3 + 1] * 1.08
+            this.linesHull[lsPos++] = this.position[geoIndex * 3 + 2] * 1.08
+            this.linesHull[lsPos++] = this.position[geoIndexNext * 3 + 0] * 1.08
+            this.linesHull[lsPos++] = this.position[geoIndexNext * 3 + 1] * 1.08
+            this.linesHull[lsPos++] = this.position[geoIndexNext * 3 + 2] * 1.08
+
+        }
+    }
+
+
+    public computeHullTriangles2(terrainData: TerrainData) {
+        var delaw = new d3GeoLiteWrapper(this.latlon, 0)
+        var tris = delaw.triangles
+
+        this.linesHull = new Float32Array(tris.length * 3 * 2);
+        var lsPos = 0;
+        for (let index = 0; index < tris.length; index++) {
+            const geoInd1 = tris[index][0];
+            const geoInd2 = tris[index][1];
+            const geoInd3 = tris[index][2];
+            this.linesHull[lsPos++] = this.position[geoInd1 * 3 + 0] * 1.08
+            this.linesHull[lsPos++] = this.position[geoInd1 * 3 + 1] * 1.08
+            this.linesHull[lsPos++] = this.position[geoInd1 * 3 + 2] * 1.08
+            this.linesHull[lsPos++] = this.position[geoInd2 * 3 + 0] * 1.08
+            this.linesHull[lsPos++] = this.position[geoInd2 * 3 + 1] * 1.08
+            this.linesHull[lsPos++] = this.position[geoInd2 * 3 + 2] * 1.08
+
+        }
+    }
+
+
+
+    public computeHullContour(terrainData: TerrainData) {
+        var llCont = [...this.latlon]
+        for (const iterator of llCont)
+            iterator.push(1)
+        for (const iterator of this.latlon) {
+            llCont.push(Calc.wrapLatLon([iterator[0] + 180, iterator[1]]).push(0) as any)
+        }
+        // iterator.push(1)
+
+        // console.log("llCont", llCont);
+
+        var contObj = geoContour();
+        // contObj.value((obj_, ind_) => { return 1; })
+        // console.log("contObj", contObj);
+
+
+        // d3.geoContour
+
+        // var cont = contObj.thresholds([0, 0.5, 0., 1, 2])
+        var cont = contObj.contour(llCont, 1)
+        // cont = [...cont]
+        console.log("cont", cont);
+
+    }
+
 
     /**
      * dispose
@@ -223,7 +380,7 @@ export class Terrain extends Identifiable {
         sphereSize: 1000,
         altitudeMinProc: -0.1, // How mutch the altitude will varry proportional to sphereSize
         altitudeMaxProc: +0.1, // How mutch the altitude will varry proportional to sphereSize
-        pointsToGen: 1000 * 10,
+        pointsToGen: 1000 * 1,
         noiseSensitivity: 2,
         noiseApplyAbs: false,
         noiseSeed: Math.random(),
@@ -250,6 +407,13 @@ export class Terrain extends Identifiable {
         this.tData.sphereSize = planet.radius.km;
         // this.tData.noiseSeed = Math.random();
         this.generate();
+        // this.experiment();
+    }
+
+    public experiment() {
+        var ptsGeo = Points.makeGeoPtsFibb(this.tData.pointsToGen);
+        // var ptsGeo = Points.makeGeoPoissonDiscSample(this.tData.pointsToGen);
+        // var ptsGeo = Points.makeGeoPtsRandOk(this.tData.pointsToGen);
     }
 
     public generate() {
@@ -266,8 +430,8 @@ export class Terrain extends Identifiable {
 
         // TODO generate full number of points after basic Tectonic plates are calculated
         // to avoid running d3GeoWrapper/geoDelaunay on high number of points
-        var delaw = new d3GeoWrapper(ptsGeo) // verry big nom=nom on resources ...
-        // var delaw = new d3GeoLiteWrapper(ptsGeo) // verry big nom=nom on resources ...
+        // var delawBig = new d3GeoWrapper(ptsGeo) // verry big nom=nom on resources ...
+        var delaw = new d3GeoLiteWrapper(ptsGeo) // verry big nom=nom on resources ...
         console.log("delaw", delaw);
 
         var randIndexes = [];
@@ -276,7 +440,7 @@ export class Terrain extends Identifiable {
 
         // var tpSeeds = Points.makeGeoPoissonDiscSample(Random.randClampInt(25, 30));
         var tpSeeds = Points.makeGeoPtsFibb(Random.randClampInt(25, 30));
-        console.log("tpSeeds", tpSeeds);
+        // console.log("tpSeeds", tpSeeds);
 
         var totalPoints = ptsGeo.length;
         var totalPlates = tpSeeds.length;
@@ -312,7 +476,7 @@ export class Terrain extends Identifiable {
             // else
             //     randCostsMap[index] = costAvgPlateLarge;
 
-            console.log("randCostsMap[index]", randIndexes.length - 1, randCostsMap[index]);
+            // console.log("randCostsMap[index]", randIndexes.length - 1, randCostsMap[index]);
             // randCostsMap[index] = Random.wiggleInt(costAvgPlateLarge, costAvgPlateLarge / 15);
             // if (randIndexes.length % 2 == 0)
             //     randCostsMap[index] = Random.random_int_clamp(10, 20);
@@ -328,8 +492,7 @@ export class Terrain extends Identifiable {
         // console.log("seedPtToIndex", seedPtToIndex);
         // console.log("randCostsMap", randCostsMap);
 
-        var dblEdges = [...delaw.edges]
-        for (const edg of delaw.edges) dblEdges.push([edg[1], edg[0]])
+        var dblEdges = delaw.edges
         for (let index = 0; index < dblEdges.length; index++) {
             var rind0 = randCostsMap[dblEdges[index][0]];
             var rind1 = randCostsMap[dblEdges[index][1]];
@@ -338,27 +501,24 @@ export class Terrain extends Identifiable {
         }
 
 
-        // console.log("dblEdges", dblEdges);
-
-
-
         var tree = dju.shortestTreeCustom({
             graph: dblEdges,
             origins: randIndexes,
+            directed: false,
         })
         console.log("tree", tree);
 
 
-        // var ptToTkpl = new Uint16Array(ptsGeo.length);
-        var ptToIndex = new Uint16Array(ptsGeo.length);
-
-
-
-        var tkplMapPoints = {}
-        var tkplMapPredecesor = {}
+        var globToLocal = new Int16Array(totalPoints);
+        var isGlobEdge = new Int8Array(totalPoints);
+        const platesNeigh = {}
+        const tkplMapPoints = {}
+        const tkplMapEdges = {}
+        const tkplMapSeeds = {}
         for (const iterator of randIndexes) {
-            tkplMapPoints[iterator] = []
-            tkplMapPredecesor[iterator] = []
+            platesNeigh[iterator] = {};
+            tkplMapPoints[iterator] = [];
+            tkplMapEdges[iterator] = new Set();
         }
 
 
@@ -366,43 +526,53 @@ export class Terrain extends Identifiable {
             const tpIndex = tree.origin[index];
             var geoPt = ptsGeo[index];
             tkplMapPoints[tpIndex].push(geoPt);
-            tkplMapPredecesor[tpIndex].push(0);
-            // console.log("tpIndex, index", tpIndex, index);
-            // ptToTkpl[index] = seedPtToIndex[tpIndex];
-            ptToIndex[index] = tkplMapPoints[tpIndex].length - 1;
+            globToLocal[index] = tkplMapPoints[tpIndex].length - 1;
+
+            if (tree.predecessor[index] == -1)
+                tkplMapSeeds[tpIndex] = tkplMapPoints[tpIndex].length - 1;
         }
 
-        for (let index = 0; index < tree.predecessor.length; index++) {
-            const tpIndex = tree.origin[index];
-            var predInd = tree.predecessor[index]
-            var thisPtIndex = ptToIndex[index]
-            var predPtIndex = ptToIndex[predInd]
-            tkplMapPredecesor[tpIndex][thisPtIndex] = predPtIndex;
+
+        for (let index = 0; index < dblEdges.length; index++) {
+            const ed1 = dblEdges[index][0];
+            const ed2 = dblEdges[index][1];
+            const or1 = tree.origin[ed1];
+            const or2 = tree.origin[ed2];
+            if (or1 == or2) continue;
+            platesNeigh[or1][or2] = true;
+            platesNeigh[or2][or1] = true;
+            isGlobEdge[ed1] = 1;
+            isGlobEdge[ed2] = 1;
+            tkplMapEdges[or1].add(globToLocal[ed1]);
+            tkplMapEdges[or2].add(globToLocal[ed2]);
         }
 
-        // console.log("tkplMapPredecesor", tkplMapPredecesor);
+
+
         // console.log("tmpTkplData", tkplMapPoints);
         // console.log("ptToTkpl", ptToTkpl);
-        // console.log("ptToIndex", ptToIndex);
+
 
         for (const iterator of randIndexes) {
             var tkplPoints = tkplMapPoints[iterator];
             var tkplPtSize = tkplMapPoints[iterator].length;
 
+            if (tkplPoints.length <= 2) continue;
+
             // console.log("tkplPoints", tkplPoints);
 
             var tkplObject = new TectonicPlate(this.newTkplId(), tkplPtSize, this.noise)
             tkplObject.setFromGeo(tkplPoints, this.tData);
-            tkplObject.setEdges(tkplMapPredecesor[iterator], this.tData);
+
+            // tkplObject.setEdges(tkplMapPredecesor[iterator], this.tData);
             // tkplObject.setStupedEdges(this.tData);
+            // tkplObject.computeHull(this.tData);
+            tkplObject.setEdges2([...tkplMapEdges[iterator].values()], this.tData);
+
+            tkplObject.setSeedIndex(tkplMapSeeds[iterator]);
             this.addTkpl(tkplObject)
+            // break;
         }
-
-
-
-
-
-
 
 
 

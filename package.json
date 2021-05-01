@@ -1,6 +1,6 @@
 {
     "name": "make-world",
-    "version": "0.50.1",
+    "version": "0.50.2",
     "description": "Make a realistic world by simulating as many aspects as possible",
     "main": "dist/main.js",
     "private": true,
@@ -42,11 +42,13 @@
         "worker-loader": "^3.0.8"
     },
     "dependencies": {
+        "@turf/concave": "^6.3.0",
         "d3": "^6.7.0",
         "d3-geo-voronoi": "^1.6.0",
         "idb": "^6.0.0",
         "lodash-es": "^4.17.21",
         "noisejs": "^2.1.0",
+        "robust-predicates": "^3.0.1",
         "three": "^0.128.0"
     }
 }

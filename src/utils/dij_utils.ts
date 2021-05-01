@@ -249,9 +249,7 @@ export function* shortest_tree({ graph, origins, cutoff = Number.POSITIVE_INFINI
 
 
 
-export function shortestTreeCustom({ graph, origins, cutoff = Number.POSITIVE_INFINITY, step = 0 }) {
-    // const start_time = performance.now();
-    const _step = step === undefined ? 0 : +step;
+export function shortestTreeCustom({ graph , origins, cutoff = Number.POSITIVE_INFINITY, directed = true }) {
     const neigh = new Map();
     let n = 0;
 
@@ -261,6 +259,11 @@ export function shortestTreeCustom({ graph, origins, cutoff = Number.POSITIVE_IN
             b = +graph[i][1];
         if (!neigh.has(a)) neigh.set(a, []);
         neigh.get(a).push(i);
+
+        if (directed == false) {
+            if (!neigh.has(b)) neigh.set(b, []);
+            neigh.get(b).push(i);
+        }
 
         // keep track of the highest node’s id
         n = Math.max(n, a + 1, b + 1);
@@ -274,12 +277,8 @@ export function shortestTreeCustom({ graph, origins, cutoff = Number.POSITIVE_IN
         status = {
             cost,
             predecessor,
-            // performance: 0,
             origin,
-            step: 0,
-            front,
             max_front_size: 0,
-            ended: false
         };
 
     origins.forEach(node => {
@@ -290,7 +289,6 @@ export function shortestTreeCustom({ graph, origins, cutoff = Number.POSITIVE_IN
         }
     });
 
-    // const time = performance.now();
 
     while (q.length > 0) {
         const curr = q.peekValue(),
@@ -312,18 +310,21 @@ export function shortestTreeCustom({ graph, origins, cutoff = Number.POSITIVE_IN
                     q.push(dest, (cost[dest] = tentative));
                     status.max_front_size = Math.max(status.max_front_size, front.length);
                 }
+
+                if (directed == false) {
+                    const destRev = graph[i][0];
+                    if (tentative >= 0 && tentative < cost[destRev]) {
+                        predecessor[destRev] = node;
+                        origin[destRev] = origin[node];
+                        q.push(destRev, (cost[destRev] = tentative));
+                        status.max_front_size = Math.max(status.max_front_size, front.length);
+                    }
+                }
             }
         }
 
-        status.step++;
-        if (_step && status.step % _step === 0) {
-            // status.performance = performance.now() - time;
-            // yield status;
-        }
     }
 
-    status.ended = true;
-    // status.performance = performance.now() - time;
     return status;
 }
 
