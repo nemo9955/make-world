@@ -32,7 +32,7 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
                 message: MessageType.CanvasMake,
                 metaCanvas: {
                     id: `${this.name}-canvas-DrawThreeTerrain`,
-                    order: MAIN_ORDINAL + "30",
+                    order: MAIN_ORDINAL + "10",
                     generalFlags: ["orbit"],
                 }
             });
@@ -40,7 +40,7 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
                 message: MessageType.CanvasMake,
                 metaCanvas: {
                     id: `${this.name}-canvas-DrawD3Terrain`,
-                    order: MAIN_ORDINAL + "20",
+                    order: MAIN_ORDINAL + "30",
                     generalFlags: ["d3"],
                 }
             });
@@ -126,7 +126,7 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
 
     private async refreshDeep(doSpecial = true) {
         console.debug("#HERELINE DrawWorker refreshDeep");
-        await this.world.writeAllRw();
+        // await this.world.writeAllRw();
         for (const draw_ of this.mapDraws.values()) draw_.updateDeep();
         if (doSpecial) {
             // this.updatePlSys();

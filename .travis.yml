@@ -5,6 +5,7 @@ node_js:
 
 script:
   - ls -ila
+  - bash ./scripts/edit_3rd_libs.sh
   - npm run dev
   # - mkdir dist ; mv ./make-world/dist/* ./dist/
   - ls -ila

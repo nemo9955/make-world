@@ -33,7 +33,7 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
     fakeDOM = new WorkerDOM();
 
 
-    ptsRadius: number = 320;
+    ptsRadius: number = 800;
 
     public terrain: Terrain = null;
 
@@ -187,6 +187,7 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
                     // vertexColors: true,
                 });
                 var line1Object = new THREE.LineSegments(line1Geometry, line1Material);
+                // const line1PosAttr = new THREE.Float32BufferAttribute(tkpl.linesHull, 3);
                 const line1PosAttr = new THREE.Float32BufferAttribute(tkpl.lines1, 3);
 
                 line1Geometry.setAttribute('position', line1PosAttr);
@@ -270,7 +271,7 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
 
     public addJgui(jData: jguiData): void {
 
-        jData.jGui.addSlider("THREE Points size", 0, 500, 1, this.ptsRadius)
+        jData.jGui.addSlider("THREE Points size", 0, 1000, 1, this.ptsRadius)
             .addEventListener(jData.jMng, "input", (event: WorkerEvent) => {
                 this.ptsRadius = Number.parseFloat(event.data.event.target.value);
                 this.updatePtsMaterials();
