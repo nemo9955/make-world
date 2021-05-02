@@ -91,6 +91,60 @@ export class TectonicPlate {
         this.mask = new Uint16Array(this.maxSize);
     }
 
+
+    setDel3D(del3d: Delaunator3D) {
+        console.log("del3d", del3d);
+
+        var color: THREE.Color = new THREE.Color(this.colorId);
+
+        var ptLen = del3d.coords.length / 3;
+
+        for (let index = 0; index < ptLen; index++) {
+            const stepInd = index * 3;
+
+            this.position[stepInd + 0] = del3d.coords[stepInd + 0]
+            this.position[stepInd + 1] = del3d.coords[stepInd + 1]
+            this.position[stepInd + 2] = del3d.coords[stepInd + 2]
+
+            this.color[stepInd + 0] = color.r
+            this.color[stepInd + 1] = color.g
+            this.color[stepInd + 2] = color.b
+        }
+
+
+        // this.lines1 = new Float32Array((del3d.triangles.length) * 3 * 2);
+        // var lsPos = 0;
+        // for (let index = 0; index < del3d.triangles.length; index += 3) {
+        //     const tr0 = del3d.triangles[index + 0];
+        //     const tr1 = del3d.triangles[index + 1];
+        //     const tr2 = del3d.triangles[index + 2];
+        //     this.lines1[lsPos++] = this.position[tr0 * 3 + 0] * 1.05;
+        //     this.lines1[lsPos++] = this.position[tr0 * 3 + 1] * 1.05;
+        //     this.lines1[lsPos++] = this.position[tr0 * 3 + 2] * 1.05;
+        //     this.lines1[lsPos++] = this.position[tr1 * 3 + 0] * 1.05;
+        //     this.lines1[lsPos++] = this.position[tr1 * 3 + 1] * 1.05;
+        //     this.lines1[lsPos++] = this.position[tr1 * 3 + 2] * 1.05;
+        // }
+
+        this.lines1 = new Float32Array(del3d.halfedges.length * 3 * 2);
+        var lsPos = 0;
+        for (let index = 0; index < del3d.halfedges.length; index += 2) {
+            const lnfr = del3d.halfedges[index + 0];
+            const lnto = del3d.halfedges[index + 1];
+            if (lnfr > ptLen || lnto > ptLen) continue;
+            this.lines1[lsPos++] = this.position[lnfr * 3 + 0] * 1.05;
+            this.lines1[lsPos++] = this.position[lnfr * 3 + 1] * 1.05;
+            this.lines1[lsPos++] = this.position[lnfr * 3 + 2] * 1.05;
+            this.lines1[lsPos++] = this.position[lnto * 3 + 0] * 1.05;
+            this.lines1[lsPos++] = this.position[lnto * 3 + 1] * 1.05;
+            this.lines1[lsPos++] = this.position[lnto * 3 + 2] * 1.05;
+        }
+
+
+
+    }
+
+
     public setFromGeo(tkplPoints: pointGeoArr, terrainData: TerrainData) {
         var color: THREE.Color = new THREE.Color();
         var sphSize = terrainData.sphereSize;
@@ -380,7 +434,7 @@ export class Terrain extends Identifiable {
         sphereSize: 1000,
         altitudeMinProc: -0.1, // How mutch the altitude will varry proportional to sphereSize
         altitudeMaxProc: +0.1, // How mutch the altitude will varry proportional to sphereSize
-        pointsToGen: 1000 * 1,
+        pointsToGen: 1000 * 10,
         noiseSensitivity: 2,
         noiseApplyAbs: false,
         noiseSeed: Math.random(),
@@ -400,26 +454,62 @@ export class Terrain extends Identifiable {
         this.tkplates = new Array<TectonicPlate>();
     }
 
-
-
-    public init(planet: Planet) {
+    public init(planet: Planet, doExperiment: boolean) {
+        console.debug(`#HERELINE Terrain init doExperiment:${doExperiment}`);
         this.orbitElemId = planet.id;
         this.tData.sphereSize = planet.radius.km;
         // this.tData.noiseSeed = Math.random();
-        this.generate();
-        // this.experiment();
+        this.resetTkpl();
+
+        if (doExperiment)
+            this.experiment();
+        else
+            this.generate();
     }
 
     public experiment() {
         var ptsGeo = Points.makeGeoPtsFibb(this.tData.pointsToGen);
         // var ptsGeo = Points.makeGeoPoissonDiscSample(this.tData.pointsToGen);
         // var ptsGeo = Points.makeGeoPtsRandOk(this.tData.pointsToGen);
+
+        var pts2d = new Float64Array(ptsGeo.length * 2);
+        var pts3d = new Float64Array(ptsGeo.length * 3);
+
+
+        for (let index = 0; index < ptsGeo.length; index++) {
+            const element = ptsGeo[index];
+            pts2d[index * 2 + 0] = element[0];
+            pts2d[index * 2 + 1] = element[1];
+
+            const cartPts = Calc.cartesianRadius(element, 5000);
+            pts3d[index * 3 + 0] = cartPts[0];
+            pts3d[index * 3 + 1] = cartPts[1];
+            pts3d[index * 3 + 2] = cartPts[2];
+        }
+
+
+
+        // console.log("pts2d", pts2d);
+        const del2d = new Delaunator2D(pts2d);
+        console.log("del2d", del2d);
+
+        // console.log("pts3d", pts3d);
+        var options3d = {
+            seedPointIndex: 0,
+        }
+        const del3d = new Delaunator3D(pts3d, options3d);
+        console.log("del3d", del3d);
+
+
+        var tkplObject = new TectonicPlate(this.newTkplId(), ptsGeo.length, this.noise)
+        tkplObject.setDel3D(del3d);
+        tkplObject.latlon = ptsGeo;
+        this.addTkpl(tkplObject)
+
     }
 
     public generate() {
         console.time(`#time Terrain generate`);
-
-        this.resetTkpl();
         this.noise = Random.makeNoise(this.tData.noiseSeed);
 
         // var ptsGeo = Points.makeGeoPtsSquares(0);

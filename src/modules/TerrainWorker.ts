@@ -16,6 +16,7 @@ const MAIN_ORDINAL = "2"
 export class TerrainWorker extends BaseDrawUpdateWorker {
 
 
+    public doExperiment = false;
     public terrain: Terrain;
 
     constructor(config: Config, worker: Worker, workerName: string, event: WorkerEvent) {
@@ -49,8 +50,7 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
             var DUMMY_PLANET = new Planet(this.world);
             DUMMY_PLANET.makeEarthLike();
             this.world.setRwObj(DUMMY_PLANET);
-
-            this.terrain.init(DUMMY_PLANET);
+            this.terrain.init(DUMMY_PLANET, this.doExperiment);
             this.world.setRwObj(this.terrain);
         }).then(() => {
             return this.refreshDeep(false);
@@ -174,6 +174,7 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
 
 
     private async genFromExistingPlanet() {
+        console.debug(`#HERELINE TerrainWorker genFromExistingPlanet `);
         var didOnce = false;
         for await (const planet_ of this.world.iterObjsType(Planet, "readwrite")) {
             if (didOnce) break;
@@ -182,7 +183,7 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
                 if (planet_.planetType == "Normal" && didOnce == false) {
                     console.log("planet_", planet_);
                     console.log("this.terrain", this.terrain);
-                    this.terrain.init(planet_);
+                    this.terrain.init(planet_, this.doExperiment);
                     planet_.setTerrain(this.terrain);
                     this.refreshDeep(false);
                     didOnce = true;
@@ -202,6 +203,12 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
             jGui: this.workerJguiCont,
             jMng: this.workerJguiManager,
         };
+
+
+        jData.jGui.addCheckButton("EXPERIMENT ?", this.doExperiment)[0].addEventListener(jData.jMng, "input", (event: WorkerEvent) => {
+            console.log("event.data.event.target", event.data.event.target);
+            this.doExperiment = event.data.event.target.checked; this.genFromExistingPlanet();
+        })
 
 
         var chboxUpd: JguiMake, chboxDraw: JguiMake;
@@ -229,7 +236,7 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
         jData.jGui.addNumber("altitudeMaxProc ", this.terrain.tData.altitudeMaxProc, 0.1).addEventListener(jData.jMng, "input", (event: WorkerEvent) => {
             this.terrain.tData.altitudeMaxProc = event.data.event.target.value; this.genFromExistingPlanet();
         })
-        jData.jGui.addNumber("pointsToGen ", this.terrain.tData.pointsToGen, 1000).addEventListener(jData.jMng, "input", (event: WorkerEvent) => {
+        jData.jGui.addNumber("pointsToGen ", this.terrain.tData.pointsToGen, 500).addEventListener(jData.jMng, "input", (event: WorkerEvent) => {
             this.terrain.tData.pointsToGen = event.data.event.target.value; this.genFromExistingPlanet();
         })
         jData.jGui.addNumber("noiseSensitivity ", this.terrain.tData.noiseSensitivity, 0.1).addEventListener(jData.jMng, "input", (event: WorkerEvent) => {

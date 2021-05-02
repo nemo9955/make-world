@@ -65,7 +65,7 @@ export class PlanetSysWorker extends BaseDrawUpdateWorker {
             this.spaceFactory.genStartingPlanetSystem(this.planetarySystem);
 
         }).then(() => {
-            console.log("this.world", this.world);
+            // console.log("this.world", this.world);
             //     return this.world.writeDeep();
         }).then(() => {
             return this.refreshDeep(false);
