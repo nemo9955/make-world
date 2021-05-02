@@ -16,12 +16,16 @@ const MAIN_ORDINAL = "2"
 export class TerrainWorker extends BaseDrawUpdateWorker {
 
 
-    public doExperiment = false;
+    public doExperiment = true;
     public terrain: Terrain;
 
     constructor(config: Config, worker: Worker, workerName: string, event: WorkerEvent) {
         super(config, worker, workerName, event);
         this.terrain = new Terrain(this.world);
+
+        if (this.doExperiment)
+            this.terrain.tData.pointsToGen = 50;
+
     }
 
 
