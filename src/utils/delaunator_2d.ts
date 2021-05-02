@@ -2,7 +2,7 @@
 const EPSILON = Math.pow(2, -52);
 const EDGE_STACK = new Uint32Array(512);
 
-import {orient2d} from 'robust-predicates';
+import { orient2d } from 'robust-predicates';
 
 export default class Delaunator2D {
     coords: any;
@@ -62,7 +62,7 @@ export default class Delaunator2D {
     }
 
     update() {
-        const {coords, _hullPrev: hullPrev, _hullNext: hullNext, _hullTri: hullTri, _hullHash: hullHash} =  this;
+        const { coords, _hullPrev: hullPrev, _hullNext: hullNext, _hullTri: hullTri, _hullHash: hullHash } = this;
         const n = coords.length >> 1;
 
         // populate an array of point indices; calculate input data bbox
@@ -278,7 +278,7 @@ export default class Delaunator2D {
     }
 
     _legalize(a) {
-        const {_triangles: triangles, _halfedges: halfedges, coords} = this;
+        const { _triangles: triangles, _halfedges: halfedges, coords } = this;
 
         let i = 0;
         let ar = 0;
@@ -410,11 +410,11 @@ function inCircle(ax, ay, bx, by, cx, cy, px, py) {
     const cp = fx * fx + fy * fy;
 
     return dx * (ey * cp - bp * fy) -
-           dy * (ex * cp - bp * fx) +
-           ap * (ex * fy - ey * fx) < 0;
+        dy * (ex * cp - bp * fx) +
+        ap * (ex * fy - ey * fx) < 0;
 }
 
-function circumradius(ax, ay, bx, by, cx, cy) {
+function circumradius(ax, ay, bx, by, cx, cy) { // also is sqrt
     const dx = bx - ax;
     const dy = by - ay;
     const ex = cx - ax;
@@ -430,6 +430,12 @@ function circumradius(ax, ay, bx, by, cx, cy) {
     return x * x + y * y;
 }
 
+// console.log("2d circumradius 00 01 10", circumradius(0, 0, 0, 1, 1, 0));
+// console.log("2d circumcenter 00 01 10", circumcenter(0, 0, 0, 1, 1, 0));
+
+// console.log("2d circumradius 00 01 90", circumradius(0, 0, 0, 1, 9, 0));
+// console.log("2d circumcenter 00 01 90", circumcenter(0, 0, 0, 1, 9, 0));
+
 function circumcenter(ax, ay, bx, by, cx, cy) {
     const dx = bx - ax;
     const dy = by - ay;
@@ -443,7 +449,7 @@ function circumcenter(ax, ay, bx, by, cx, cy) {
     const x = ax + (ey * bl - dy * cl) * d;
     const y = ay + (dx * cl - ex * bl) * d;
 
-    return {x, y};
+    return { x, y };
 }
 
 function quicksort(ids, dists, left, right) {
