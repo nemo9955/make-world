@@ -108543,8 +108543,10 @@ const MAIN_ORDINAL = "2";
 class TerrainWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
     constructor(config, worker, workerName, event) {
         super(config, worker, workerName, event);
-        this.doExperiment = false;
+        this.doExperiment = true;
         this.terrain = new Terrain_1.Terrain(this.world);
+        if (this.doExperiment)
+            this.terrain.tData.pointsToGen = 50;
     }
     init() {
         Promise.resolve().then(() => {
@@ -111125,7 +111127,10 @@ class Delaunator3D {
         console.log("this._ids", this._ids);
         console.log("this._dists", this._dists);
         // swap the order of the seed points for counter-clockwise orientation
-        if (robust_predicates_1.orient3d(i0x, i0y, i0z, i1x, i1y, i1z, i2x, i2y, i2z, 0, 0, 0) < 0) { // TODO should works if points are around 0,0,0 ?????
+        if (robust_predicates_1.orient3d(i0x, i0y, i0z, i1x, i1y, i1z, i2x, i2y, i2z, 0, 0, 0
+        // i0x * 2, i0y * 2, i0z * 2
+        // 0, 99990, 0
+        ) < 0) { // TODO should works if points are around 0,0,0 ?????
             const i = i1;
             const x = i1x;
             const y = i1y;
@@ -111198,6 +111203,8 @@ class Delaunator3D {
             start = hullPrev[start];
             let e = start, q;
             while (q = hullNext[e], robust_predicates_1.orient3d(x, y, z, coords[3 * e + 0], coords[3 * e + 1], coords[3 * e + 2], coords[3 * q + 0], coords[3 * q + 1], coords[3 * q + 2], 0, 0, 0) >= 0) {
+                // x * 2, y * 2, z * 2) >= 0) {
+                // 0, 99990, 0) >= 0) {
                 e = q;
                 if (e === start) {
                     e = -1;
@@ -111215,6 +111222,8 @@ class Delaunator3D {
             // walk forward through the hull, adding more triangles and flipping recursively
             let n = hullNext[e];
             while (q = hullNext[n], robust_predicates_1.orient3d(x, y, z, coords[3 * n + 0], coords[3 * n + 1], coords[3 * n + 2], coords[3 * q + 0], coords[3 * q + 1], coords[3 * q + 2], 0, 0, 0) < 0) {
+                // x * 2, y * 2, z * 2) < 0) {
+                // 0, 99990, 0) < 0) {
                 t = this._addTriangle(n, i, q, hullTri[i], -1, hullTri[n]);
                 hullTri[i] = this._legalize(t + 2);
                 hullNext[n] = n; // mark as removed
