@@ -249,7 +249,7 @@ export function* shortest_tree({ graph, origins, cutoff = Number.POSITIVE_INFINI
 
 
 
-export function shortestTreeCustom({ graph , origins, cutoff = Number.POSITIVE_INFINITY, directed = true }) {
+export function shortestTreeCustom({ graph, origins, cutoff = Number.POSITIVE_INFINITY, directed = true }) {
     const neigh = new Map();
     let n = 0;
 
@@ -269,30 +269,36 @@ export function shortestTreeCustom({ graph , origins, cutoff = Number.POSITIVE_I
         n = Math.max(n, a + 1, b + 1);
     }
 
-    const q = new FlatQueue(),
-        front = q.ids,
+    // TODO replace with https://github.com/luciopaiva/heapify
+    const queue = new FlatQueue(),
+        // front = q.ids,
         cost = new Float32Array(n).fill(Infinity),
         predecessor = new Int32Array(n).fill(-1),
         origin = new Int32Array(n).fill(-1),
+        // hops = new Int32Array(n).fill(-1),
         status = {
             cost,
             predecessor,
             origin,
-            max_front_size: 0,
+            // hops,
+            // max_front_size: 0,
         };
 
-    origins.forEach(node => {
-        if (isFinite(node)) node = { id: node, cost: 0 };
+    for (var index = 0; index < origins.length; index++) {
+        var node = origins[index];
+        if (isFinite(node)) node = { id: node, cost: 0 }
         if (node.id < n) {
             origin[node.id] = node.id;
-            q.push(node.id, (cost[node.id] = node.cost));
+            // hops[node.id] = 0;
+            cost[node.id] = node.cost;
+            queue.push(node.id, cost[node.id]);
         }
-    });
+    }
 
 
-    while (q.length > 0) {
-        const curr = q.peekValue(),
-            node = q.pop();
+    while (queue.length > 0) {
+        const curr = queue.peekValue();
+        const node = queue.pop();
         if (curr > cost[node]) continue; // ignore obsolete elements
 
         if (neigh.has(node)) {
@@ -306,18 +312,20 @@ export function shortestTreeCustom({ graph , origins, cutoff = Number.POSITIVE_I
                 const dest = graph[i][1];
                 if (tentative >= 0 && tentative < cost[dest]) {
                     predecessor[dest] = node;
+                    // hops[dest] = hops[node] + 1;
                     origin[dest] = origin[node];
-                    q.push(dest, (cost[dest] = tentative));
-                    status.max_front_size = Math.max(status.max_front_size, front.length);
+                    queue.push(dest, (cost[dest] = tentative));
+                    // status.max_front_size = Math.max(status.max_front_size, front.length);
                 }
 
                 if (directed == false) {
                     const destRev = graph[i][0];
                     if (tentative >= 0 && tentative < cost[destRev]) {
                         predecessor[destRev] = node;
+                        // hops[dest] = hops[node] + 1;
                         origin[destRev] = origin[node];
-                        q.push(destRev, (cost[destRev] = tentative));
-                        status.max_front_size = Math.max(status.max_front_size, front.length);
+                        queue.push(destRev, (cost[destRev] = tentative));
+                        // status.max_front_size = Math.max(status.max_front_size, front.length);
                     }
                 }
             }

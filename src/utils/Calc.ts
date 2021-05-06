@@ -26,7 +26,7 @@ export function spherical(cartesian) {
 }
 
 // Converts spherical coordinates (degrees) to 3D Cartesian.
-export function cartesian(coordinates, radius = 1) {
+export function cartesian(coordinates: pointGeo, radius = 1): arr3numb {
     var lambda = radius * coordinates[0] * radians,
         phi = radius * coordinates[1] * radians,
         cosphi = radius * cos(phi);
