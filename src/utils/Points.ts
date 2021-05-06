@@ -38,6 +38,25 @@ export function removeDupPts(points_: pointGeoArr) {
 
 
 
+export function make3DPtsFibb(number: number): pointGeoArr {
+    // http://extremelearning.com.au/how-to-evenly-distribute-points-on-a-sphere-more-effectively-than-the-canonical-fibonacci-lattice/
+    /*
+        from numpy import arange, pi, sin, cos, arccos
+        n = 50
+        goldenRatio = (1 + 5**0.5)/2
+        i = arange(0, n)
+        theta = 2 *pi * i / goldenRatio
+        phi = arccos(1 - 2*(i+0.5)/n)
+        x, y, z = cos(theta) * sin(phi), sin(theta) * sin(phi), cos(phi);
+    */
+    // var phi = (1 + Math.sqrt(5)) / 2
+    // return Array.from({ length: number }, (_, i) => [
+    //     i / phi * 360 % 360,
+    //     Math.acos(2 * i / number - 1) / Math.PI * 180 - 90
+    // ])
+    return null;
+}
+
 export function makeGeoPtsFibb(number: number): pointGeoArr {
     var phi = (1 + Math.sqrt(5)) / 2
     return Array.from({ length: number }, (_, i) => [

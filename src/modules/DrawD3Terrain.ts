@@ -20,7 +20,7 @@ import { WorkerDOM } from "../utils/WorkerDOM";
 import { OrbitingElement } from "../generate/OrbitingElement";
 import { SpaceGroup } from "../generate/SpaceGroup";
 import { PlanetarySystem } from "../generate/PlanetarySystem";
-import { Color } from "../utils/Color"
+import { Color, colorArray } from "../utils/Color"
 
 
 import { pointGeoArr } from "../utils/Points"
@@ -214,17 +214,24 @@ export class DrawD3Terrain implements DrawWorkerInstance {
         //     // coordinates: Points.makeGeoPtsRandOk(1000)
         // }
 
-        if (this.ptsRadius != 0)
-            for (const tkpl of this.terrain.tkplates) {
+        if (this.ptsRadius != 0) {
+            for (let index = 0; index < this.terrain.posGeo.length; index++) {
+                const element = this.terrain.posGeo[index];
+                // for (const tkpl of this.terrain.tkplates) {
                 this.ctx.beginPath();
                 var ptsWrapper = {
-                    type: "MultiPoint",
-                    coordinates: tkpl.latlon,
+                    type: "Point",
+                    coordinates: element,
                 }
                 this.path(ptsWrapper);
-                this.ctx.fillStyle = tkpl.colorId
+                // this.ctx.fillStyle = this.terrain.colorId
+                this.ctx.fillStyle = `rgb(${Math.floor(this.terrain.color[index * 3 + 0] * 255)},
+                                        ${Math.floor(this.terrain.color[index * 3 + 1] * 255)},
+                                        ${Math.floor(this.terrain.color[index * 3 + 2] * 255)})`
                 this.ctx.fill();
+
             }
+        }
 
         this.ctx.restore();
     }
@@ -283,8 +290,10 @@ export class DrawD3Terrain implements DrawWorkerInstance {
     public addJgui(jData: jguiData): void {
         // TODO make me a drop down list
 
+        var d3DrawTab = jData.jGui.addColapse("D3 Draw", true)
+
         var allProj = [...DrawD3Terrain.getGeoViewsMap().keys()];
-        var [_, prdDropList] = jData.jGui.addDropdown("D3 Projection", allProj)
+        var [_, prdDropList] = d3DrawTab.addDropdown("D3 Projection", allProj)
         for (const prjDdObj of prdDropList) {
             prjDdObj.addEventListener(jData.jMng, "click", (event: WorkerEvent) => {
                 this.updateProjection(event.data.event.extra.listValue);
@@ -293,7 +302,7 @@ export class DrawD3Terrain implements DrawWorkerInstance {
                 this.updateProjection(event.data.event.extra.listValue);
             })
         }
-        jData.jGui.addSlider("D3 Points size", 0, 15, 0.1, this.ptsRadius)
+        d3DrawTab.addSlider("D3 Points size", 0, 15, 0.1, this.ptsRadius)
             .addEventListener(jData.jMng, "input", (event: WorkerEvent) => {
                 this.ptsRadius = Number.parseFloat(event.data.event.target.value);
                 this.path.pointRadius(this.ptsRadius); this.drawOnce();

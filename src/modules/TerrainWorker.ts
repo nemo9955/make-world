@@ -15,16 +15,11 @@ const MAIN_ORDINAL = "2"
 
 export class TerrainWorker extends BaseDrawUpdateWorker {
 
-
-    public doExperiment = true;
     public terrain: Terrain;
 
     constructor(config: Config, worker: Worker, workerName: string, event: WorkerEvent) {
         super(config, worker, workerName, event);
         this.terrain = new Terrain(this.world);
-
-        if (this.doExperiment)
-            this.terrain.tData.pointsToGen = 50;
 
     }
 
@@ -54,8 +49,8 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
             var DUMMY_PLANET = new Planet(this.world);
             DUMMY_PLANET.makeEarthLike();
             this.world.setRwObj(DUMMY_PLANET);
-            this.terrain.init(DUMMY_PLANET, this.doExperiment);
-            this.world.setRwObj(this.terrain);
+            this.terrain.initFromPlanet(DUMMY_PLANET);
+            this.world.setRwObj(this.terrain.data);
         }).then(() => {
             return this.refreshDeep(false);
         })
@@ -130,7 +125,7 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
 
     private async refreshDeep(doSpecial = true) {
         console.debug("#HERELINE DrawWorker refreshDeep");
-        // await this.world.writeAllRw();
+        await this.world.writeAllRw();
         for (const draw_ of this.mapDraws.values()) draw_.updateDeep();
         if (doSpecial) {
             // this.updatePlSys();
@@ -187,7 +182,7 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
                 if (planet_.planetType == "Normal" && didOnce == false) {
                     console.log("planet_", planet_);
                     console.log("this.terrain", this.terrain);
-                    this.terrain.init(planet_, this.doExperiment);
+                    this.terrain.initFromPlanet(planet_);
                     planet_.setTerrain(this.terrain);
                     this.refreshDeep(false);
                     didOnce = true;
@@ -209,12 +204,6 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
         };
 
 
-        jData.jGui.addCheckButton("EXPERIMENT ?", this.doExperiment)[0].addEventListener(jData.jMng, "input", (event: WorkerEvent) => {
-            console.log("event.data.event.target", event.data.event.target);
-            this.doExperiment = event.data.event.target.checked; this.genFromExistingPlanet();
-        })
-
-
         var chboxUpd: JguiMake, chboxDraw: JguiMake;
         [chboxUpd, chboxDraw] = jData.jGui.add2CheckButtons("Update", this.doUpdate, "Draw", this.doDraw)
         chboxUpd.addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
@@ -225,32 +214,43 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
         })
 
 
-        jData.jGui.addButton("Re-Genearte")
+        var genTab = jData.jGui.addColapse("Genearte", true)
+
+        genTab.addButton("Re-Genearte")
             .addTooltip("Regenerating will use an actual Planet, first run uses a dummy instance so we do not wait for PlSys to gen.")
             .addEventListener(jData.jMng, "click", (event: WorkerEvent) => {
                 this.genFromExistingPlanet();
             })
 
-
-
-
-        jData.jGui.addNumber("altitudeMinProc ", this.terrain.tData.altitudeMinProc, 0.1).addEventListener(jData.jMng, "input", (event: WorkerEvent) => {
-            this.terrain.tData.altitudeMinProc = event.data.event.target.value; this.genFromExistingPlanet();
+        genTab.addNumber("altitudeMinProc ", this.terrain.data.altitudeMinProc, 0.02).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
+            this.terrain.data.altitudeMinProc = event.data.event.target.value; this.genFromExistingPlanet();
         })
-        jData.jGui.addNumber("altitudeMaxProc ", this.terrain.tData.altitudeMaxProc, 0.1).addEventListener(jData.jMng, "input", (event: WorkerEvent) => {
-            this.terrain.tData.altitudeMaxProc = event.data.event.target.value; this.genFromExistingPlanet();
+        genTab.addNumber("altitudeMaxProc ", this.terrain.data.altitudeMaxProc, 0.02).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
+            this.terrain.data.altitudeMaxProc = event.data.event.target.value; this.genFromExistingPlanet();
         })
-        jData.jGui.addNumber("pointsToGen ", this.terrain.tData.pointsToGen, 500).addEventListener(jData.jMng, "input", (event: WorkerEvent) => {
-            this.terrain.tData.pointsToGen = event.data.event.target.value; this.genFromExistingPlanet();
+        genTab.addNumber("pointsToGen ", this.terrain.data.pointsToGen, 500).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
+            this.terrain.data.pointsToGen = event.data.event.target.value; this.genFromExistingPlanet();
         })
-        jData.jGui.addNumber("noiseSensitivity ", this.terrain.tData.noiseSensitivity, 0.1).addEventListener(jData.jMng, "input", (event: WorkerEvent) => {
-            this.terrain.tData.noiseSensitivity = event.data.event.target.value; this.genFromExistingPlanet();
+        genTab.addNumber("noiseSeed ", this.terrain.data.noiseSeed, 0.00001).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
+            this.terrain.data.noiseSeed = event.data.event.target.value; this.genFromExistingPlanet();
         })
-        jData.jGui.addCheckButton("noiseApplyAbs ", this.terrain.tData.noiseApplyAbs)[0].addEventListener(jData.jMng, "input", (event: WorkerEvent) => {
-            this.terrain.tData.noiseApplyAbs = event.data.event.target.value; this.genFromExistingPlanet();
+        genTab.addCheckButton("noiseApplyAbs ", this.terrain.data.noiseApplyAbs)[0].addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
+            this.terrain.data.noiseApplyAbs = event.data.event.target.checked; this.genFromExistingPlanet();
         })
-        jData.jGui.addNumber("noiseSeed ", this.terrain.tData.noiseSeed, 0.00001).addEventListener(jData.jMng, "input", (event: WorkerEvent) => {
-            this.terrain.tData.noiseSeed = event.data.event.target.value; this.genFromExistingPlanet();
+        genTab.addNumber("noiseFrequency ", this.terrain.data.noiseFrequency, 0.5).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
+            this.terrain.data.noiseFrequency = event.data.event.target.value; this.genFromExistingPlanet();
+        })
+        genTab.addNumber("noiseAmplitude ", this.terrain.data.noiseAmplitude, 0.1).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
+            this.terrain.data.noiseAmplitude = event.data.event.target.value; this.genFromExistingPlanet();
+        })
+        genTab.addNumber("noisePersistence ", this.terrain.data.noisePersistence, 0.1).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
+            this.terrain.data.noisePersistence = event.data.event.target.value; this.genFromExistingPlanet();
+        })
+        genTab.addNumber("noiseOctaves ", this.terrain.data.noiseOctaves, 1).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
+            this.terrain.data.noiseOctaves = event.data.event.target.value; this.genFromExistingPlanet();
+        })
+        genTab.addNumber("noiseExponent ", this.terrain.data.noiseExponent, 1).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
+            this.terrain.data.noiseExponent = event.data.event.target.value; this.genFromExistingPlanet();
         })
 
 
