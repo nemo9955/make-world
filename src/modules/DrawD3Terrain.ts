@@ -1,10 +1,6 @@
 
 import { WorldData } from "./WorldData"
-
 import * as d3 from "d3"
-import { geoDelaunay, geoVoronoi, geoContour } from "d3-geo-voronoi"
-// node_modules/d3-geo-voronoi/dist/d3-geo-voronoi.js
-
 
 import { Config, WorkerEvent } from "./Config"
 import * as Convert from "../utils/Convert"

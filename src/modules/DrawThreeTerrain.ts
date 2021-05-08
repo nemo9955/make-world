@@ -7,8 +7,6 @@ import { freeFloat32Array, getFloat32Array, ObjectPool } from "../utils/ObjectPo
 import * as Convert from "../utils/Convert"
 
 import * as d3 from "d3"
-import { geoDelaunay, geoVoronoi, geoContour } from "d3-geo-voronoi"
-// node_modules/d3-geo-voronoi/dist/d3-geo-voronoi.js
 
 
 
@@ -23,6 +21,8 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 import { Terrain } from "../generate/Terrain";
 import { JguiMake, JguiManager } from "../gui/JguiMake";
 import { jguiData } from "../gui/JguiUtils";
+import { path } from "d3";
+import { Object3D } from "three";
 
 
 
@@ -79,8 +79,9 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
         this.hoverSphere.scale.setScalar(100)
         this.hoverSphere.visible = false;
         this.scene.add(this.hoverSphere);
-        this.raycaster.params.Points.threshold = 100; // DRAWUNIT
-        this.raycaster.params.Line.threshold = 100; // DRAWUNIT
+        const rayThresh = 200;
+        this.raycaster.params.Points.threshold = rayThresh; // DRAWUNIT
+        this.raycaster.params.Line.threshold = rayThresh; // DRAWUNIT
 
 
         // events set in src/modules/EventsManager.ts -> addOrbitCtrlEvents
@@ -114,29 +115,29 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
 
 
 
-    private canvasSelectionData = { mousex: 0, mousey: 0, mousep: { x: null, y: null }, hoverId: 0, selectedId: 0 };
+    private hoverData = { mousex: 0, mousey: 0, mousep: { x: null, y: null }, hoverId: 0, selectedId: 0 };
     private hoverMoved(event: any) {
-        this.canvasSelectionData.mousex = event.offsetX;
-        this.canvasSelectionData.mousey = event.offsetY;
-        this.canvasSelectionData.mousep.x = (this.canvasSelectionData.mousex / this.canvasOffscreen.width) * 2 - 1;
-        this.canvasSelectionData.mousep.y = - (this.canvasSelectionData.mousey / this.canvasOffscreen.height) * 2 + 1;
+        this.hoverData.mousex = event.offsetX;
+        this.hoverData.mousey = event.offsetY;
+        this.hoverData.mousep.x = (this.hoverData.mousex / this.canvasOffscreen.width) * 2 - 1;
+        this.hoverData.mousep.y = - (this.hoverData.mousey / this.canvasOffscreen.height) * 2 + 1;
 
 
-        // if (this.canvasSelectionData.mousep.x != null && this.canvasSelectionData.mousep.y != null) {
-        //     this.raycaster.setFromCamera(this.canvasSelectionData.mousep, this.camera);
-        //     // const intersects = this.raycaster.intersectObjects([...this.tpMesh.values()], false);
-        //     // const intersects = this.raycaster.intersectObjects([...this.tpPts.values()], false);
-        //     const ptsObj = this.tpPts.get(this.terrain.id);
-        //     const intersects = this.raycaster.intersectObject(this.tpPts.get(this.terrain.id), false);
-        //     if (intersects.length > 0) {
-        //         var orb_ = intersects[0]
-        //         this.hoverSphere.visible = true;
-        //         this.hoverSphere.position.copy(orb_.point)
-        //         console.log("orb_", orb_);
-        //     } else {
-        //         this.hoverSphere.visible = false;
-        //     }
-        // }
+        if (this.hoverData.mousep.x != null && this.hoverData.mousep.y != null) {
+            this.raycaster.setFromCamera(this.hoverData.mousep, this.camera);
+            const intersects = this.raycaster.intersectObject(this.tpPts, false);
+            if (intersects.length > 0) {
+                var orb_ = intersects[0]
+                this.hoverSphere.visible = true;
+                this.hoverData.hoverId = orb_.index;
+                const vec3pts = this.terrain.vec3pts[this.hoverData.hoverId];
+                this.hoverSphere.position.copy(vec3pts);
+                // console.log("orb_", orb_);
+            } else {
+                this.hoverData.hoverId = -1;
+                this.hoverSphere.visible = false;
+            }
+        }
 
 
     }
@@ -145,11 +146,61 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
         this.hoverMoved(event)
     }
     private hoverleave(event: any) {
-        this.canvasSelectionData.mousep.x = null;
-        this.canvasSelectionData.mousep.y = null;
+        this.hoverData.mousep.x = null;
+        this.hoverData.mousep.y = null;
     }
+
+    selectedPoints: number[] = [];
     private hoverClick(event: any) {
+        if (this.hoverData.hoverId == -1) {
+            this.selectedPoints.length = 0;
+            this.clearAllLines();
+        }
+        else
+            this.selectedPoints.push(this.hoverData.hoverId)
+
+        console.log("this.selectedPoints", this.selectedPoints);
+        // console.log("this.hoverData.hoverId", this.hoverData.hoverId);
+
+        if (this.selectedPoints.length >= 2) {
+            const paths = this.terrain.makePaths(this.selectedPoints)
+            this.drawLinesPaths(paths);
+        }
     }
+
+
+    private drawLinesPaths(paths: { cost: number; junction: number[]; path: number[]; }[]) {
+        var patSegLen = 0;
+        for (const path_ of paths)
+            patSegLen += path_.path.length;
+        patSegLen -= paths.length;
+
+
+        const vec3pts = this.terrain.vec3pts;
+        const segLen = patSegLen * 3 * 2;
+        freeFloat32Array(this.tpLines1?.geometry?.getAttribute('position').array as Float32Array);
+        const lineSegs = getFloat32Array(segLen);
+
+        var lineCnt = 0;
+        for (const path_ of paths) {
+            // console.log("path_", path_);
+            for (let index = 0; index < path_.path.length - 1; index++) {
+                const e1 = path_.path[index];
+                const e2 = path_.path[index + 1];
+                // console.log("e1,e2", e1, e2);
+                lineSegs[lineCnt++] = vec3pts[e1].x;
+                lineSegs[lineCnt++] = vec3pts[e1].y;
+                lineSegs[lineCnt++] = vec3pts[e1].z;
+                lineSegs[lineCnt++] = vec3pts[e2].x;
+                lineSegs[lineCnt++] = vec3pts[e2].y;
+                lineSegs[lineCnt++] = vec3pts[e2].z;
+            }
+        }
+        this.drawLinesSegments(lineSegs, segLen);
+    }
+
+
+
 
     // ptsGeometry: THREE.BufferGeometry;
     // ptsMaterial: THREE.PointsMaterial;
@@ -164,6 +215,7 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
     tpLines1: THREE.LineSegments<THREE.BufferGeometry, THREE.LineBasicMaterial>;
     tpMesh: THREE.Mesh<THREE.BufferGeometry, THREE.Material>;
 
+
     public syncTerrainData() {
         this.drawMeshTerrain();
         this.drawPoints();
@@ -177,7 +229,7 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
         var ptsMaterial = new THREE.PointsMaterial({
             size: this.ptsRadius,
             // sizeAttenuation: false,
-            vertexColors: true,
+            // vertexColors: true,
         });
         var ptsObject = new THREE.Points(ptsGeometry, ptsMaterial);
 
@@ -233,8 +285,12 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
             meshCol[index * 3 + 2] = color[pts3Vertex[index] * 3 + 2]
         }
 
-        ptcl.setAttribute('position', new THREE.Float32BufferAttribute(meshPos, 3));
-        ptcl.setAttribute('color', new THREE.Float32BufferAttribute(meshCol, 3));
+        const attrPos = new THREE.Float32BufferAttribute(meshPos, 3)
+        attrPos.count = pts3Vertex.length;
+        ptcl.setAttribute('position', attrPos);
+        const attrCol = new THREE.Float32BufferAttribute(meshCol, 3)
+        attrCol.count = pts3Vertex.length;
+        ptcl.setAttribute('color', attrCol);
         // ptcl.setAttribute( 'normal', new THREE.Float32BufferAttribute( normals, 3 ) );
 
 
@@ -258,12 +314,12 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
 
 
     private drawLinesPrede() {
-        this.clearAllLines()
 
         const vec3pts = this.terrain.vec3pts
         const ptsPred = this.terrain.ptsPred
+        const segLen = ptsPred.length * 3 * 2;
         freeFloat32Array(this.tpLines1?.geometry?.getAttribute('position').array as Float32Array)
-        const lineSegs = getFloat32Array(ptsPred.length * 3 * 2);
+        const lineSegs = getFloat32Array(segLen);
         for (let index = 0; index < ptsPred.length - 1; index++) {
             const ed = ptsPred[index];
             if (ed < 0) continue;
@@ -275,16 +331,16 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
             lineSegs[index * 6 + 5] = vec3pts[ed].z
         }
 
-        this.drawLinesSegments(lineSegs);
+        this.drawLinesSegments(lineSegs, segLen);
     }
 
     private drawLinesEdge() {
-        this.clearAllLines()
 
         const vec3pts = this.terrain.vec3pts
         const ptsEdges = this.terrain.ptsEdges
+        const segLen = ptsEdges.length * 3 * 2;
         freeFloat32Array(this.tpLines1?.geometry?.getAttribute('position').array as Float32Array)
-        const lineSegs = getFloat32Array(ptsEdges.length * 3 * 2);
+        const lineSegs = getFloat32Array(segLen);
         for (let index = 0; index < ptsEdges.length; index++) {
             const ed = ptsEdges[index];
             lineSegs[index * 6 + 0] = vec3pts[ed[0]].x;
@@ -295,18 +351,22 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
             lineSegs[index * 6 + 5] = vec3pts[ed[1]].z;
         }
 
-        this.drawLinesSegments(lineSegs);
+        this.drawLinesSegments(lineSegs, segLen);
     }
 
 
-    private drawLinesSegments(lineSegs: Float32Array) {
+    private drawLinesSegments(lineSegs: Float32Array, lineSegsLen: number) {
+        this.clearAllLines()
+
+
+        // console.log("lineSegsLen,lineSegs", lineSegsLen, lineSegs);
 
         // if (lineSegs)
-        //     for (let index = 0; index < lineSegs.length; index++)
+        //     for (let index = 0; index < lineSegsLen; index++)
         //         lineSegs[index] *= (Math.random() / 30) + 1
-        if (lineSegs)
-            for (let index = 0; index < lineSegs.length; index++)
-                lineSegs[index] *= 1.05
+        // if (lineSegs)
+        for (let index = 0; index < lineSegsLen; index++)
+            lineSegs[index] *= 1.01
 
         var line1Geometry = new THREE.BufferGeometry();
         var line1Material = new THREE.LineBasicMaterial({
@@ -320,6 +380,7 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
 
         // const line1PosAttr = new THREE.Float32BufferAttribute(this.terrain.linesHull, 3);
         const line1PosAttr = new THREE.Float32BufferAttribute(lineSegs, 3);
+        line1PosAttr.count = lineSegsLen / 3;
         line1Geometry.setAttribute('position', line1PosAttr);
         line1Geometry.computeBoundingSphere();
         var line1Object = new THREE.LineSegments(line1Geometry, line1Material);
@@ -370,8 +431,6 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
 
 
     public updatePtsMaterials() {
-        // this.raycaster.params.Points.threshold = this.ptsRadius; // DRAWUNIT
-        // this.raycaster.params.Line.threshold = this.ptsRadius; // DRAWUNIT
         this.tpPts.material.visible = (this.ptsRadius != 0)
         this.tpPts.material.size = this.ptsRadius;
         this.tpPts.material.needsUpdate = true;
@@ -389,7 +448,8 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
             })
 
 
-        const lineTypes = ["none", "edges", "predecesor"]
+        const lineTypes = ["none", "edges"]
+        // lineTypes.push("predecesor")
         var [_, prdDropList] = threeDrawTab.addDropdown("View lines", lineTypes)
         for (const prjDdObj of prdDropList) {
             prjDdObj.addEventListener(jData.jMng, "click", (event: WorkerEvent) => {
@@ -404,44 +464,6 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
     }
 
 
-
-
-    // public initData() {
-    //     console.debug(`#HERELINE DrawThreeTerrain 116 `);
-    //     this.ptsGeometry = new THREE.BufferGeometry();
-    //     this.ptsMaterial = new THREE.PointsMaterial({
-    //         size: 50,
-    //         // sizeAttenuation: false,
-    //         vertexColors: true,
-    //     });
-    //     this.ptsObject = new THREE.Points(this.ptsGeometry, this.ptsMaterial);
-    //     this.lineGeometry = new THREE.BufferGeometry();
-    //     this.lineMaterial = new THREE.LineBasicMaterial({
-    //         color: 0xffffff,
-    //         linewidth: 50,
-    //     });
-    //     this.lineObject = new THREE.LineSegments(this.lineGeometry, this.lineMaterial);
-    //     // this.lineObject.scale.set( 1, 1, 1 );
-    //     this.scene.add(this.ptsObject);
-    //     this.scene.add(this.lineObject);
-    // }
-    // public refreshTerrain() {
-    //     console.debug(`#HERELINE DrawThreeTerrain 130 `);
-    //     const ptsPosAttr = new THREE.Float32BufferAttribute(this.terrain.ptsCart, 3);
-    //     const ptsColAttr = new THREE.Float32BufferAttribute(this.terrain.ptsColor, 3);
-    //     this.ptsGeometry.setAttribute('position', ptsPosAttr);
-    //     this.ptsGeometry.setAttribute('color', ptsColAttr);
-    //     this.ptsGeometry.computeBoundingSphere();
-    //     const linePosAttr = new THREE.Float32BufferAttribute(this.terrain.ptsLines, 3);
-    //     this.lineGeometry.setAttribute('position', linePosAttr);
-    //     // this.lineGeometry.setPositions(this.terrain.ptsLines);
-    //     this.lineGeometry.computeBoundingSphere();
-    //     // console.log("this.terrain.ptsCart", this.terrain.ptsCart);
-    //     // console.log("posAttr", posAttr);
-    //     // console.log("this.terrain.ptsColor", this.terrain.ptsColor);
-    //     // console.log("colAttr", colAttr);
-
-    // }
 
 
 }

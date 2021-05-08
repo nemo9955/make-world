@@ -1,4 +1,4 @@
-
+// https://observablehq.com/@fil/dijkstra
 
 import * as d3 from "d3";
 
@@ -88,23 +88,24 @@ class FlatQueue {
 }
 
 // returns the junctions between zones
+// https://observablehq.com/@fil/dijkstra
 export function shortest_junctions(graph, tree) {
     const origins = [...new Set(tree.origin)].filter(i => i > -1);
     let costs = new Map(),
         junctions = new Map();
 
-    for (let l = 0; l < graph.sources.length; l++) {
-        const i = tree.origin[graph.sources[l]],
-            j = tree.origin[graph.targets[l]];
+    for (let l = 0; l < graph.length; l++) {
+        const i = tree.origin[graph[l][0]],
+            j = tree.origin[graph[l][1]];
         if (i !== j && i > -1 && j > -1) {
             const code = `${i}-${j}`;
-            const c =
-                graph.costs[l] +
-                tree.cost[graph.sources[l]] +
-                tree.cost[graph.targets[l]];
+
+            const gc = graph[l].length >= 3 ? +graph[l][2] : 1;
+            const c = gc + tree.cost[graph[l][0]] + tree.cost[graph[l][1]];
+
             if (!costs.has(code) || c < costs.get(code)) {
                 costs.set(code, c);
-                junctions.set(code, [graph.sources[l], graph.targets[l]]);
+                junctions.set(code, [graph[l][0], graph[l][1]]);
             }
         }
     }
@@ -116,6 +117,7 @@ export function shortest_junctions(graph, tree) {
 // returns the shortest path that connects i to j:
 // - without stepping into other origins’ zones
 // - without going above cutoff in each origin’s zone
+// https://observablehq.com/@fil/dijkstra
 export function shortest_path(graph, tree, i, j) {
     const P = shortest_junctions(graph, tree);
 
@@ -142,8 +144,9 @@ export function shortest_path(graph, tree, i, j) {
 
 
 
+// https://observablehq.com/@fil/dijkstra
 export function shortest_paths(graph, tree) {
-    const paths = [];
+    const paths: { cost:number, junction:number[], path:number[] }[] = [];
     const P = shortest_junctions(graph, tree);
 
     for (const code of P.costs.keys()) {
@@ -168,84 +171,84 @@ export type graphType = {
     costs: number[],
 }
 
-// https://observablehq.com/@fil/dijkstra
-export function* shortest_tree({ graph, origins, cutoff = Number.POSITIVE_INFINITY, step = 0 }) {
-    const start_time = performance.now(),
-        _step = step === undefined ? 0 : +step,
-        neigh = new Map();
-    let n = 0;
+// // https://observablehq.com/@fil/dijkstra
+// export function* shortest_tree({ graph, origins, cutoff = Number.POSITIVE_INFINITY, step = 0 }) {
+//     const start_time = performance.now(),
+//         _step = step === undefined ? 0 : +step,
+//         neigh = new Map();
+//     let n = 0;
 
-    // populate a fast lookup Map of links indices for each source
-    for (let i = 0, l = graph.sources.length; i < l; i++) {
-        const a = +graph.sources[i],
-            b = +graph.targets[i];
-        if (!neigh.has(a)) neigh.set(a, []);
-        neigh.get(a).push(i);
+//     // populate a fast lookup Map of links indices for each source
+//     for (let i = 0, l = graph.sources.length; i < l; i++) {
+//         const a = +graph.sources[i],
+//             b = +graph.targets[i];
+//         if (!neigh.has(a)) neigh.set(a, []);
+//         neigh.get(a).push(i);
 
-        // keep track of the highest node’s id
-        n = Math.max(n, a + 1, b + 1);
-    }
+//         // keep track of the highest node’s id
+//         n = Math.max(n, a + 1, b + 1);
+//     }
 
-    const q = new FlatQueue(),
-        front = q.ids,
-        cost = new Float64Array(n).fill(Infinity),
-        predecessor = new Int32Array(n).fill(-1),
-        origin = new Int32Array(n).fill(-1),
-        status = {
-            cost,
-            predecessor,
-            performance: 0,
-            origin,
-            step: 0,
-            front,
-            max_front_size: 0,
-            ended: false
-        };
+//     const q = new FlatQueue(),
+//         front = q.ids,
+//         cost = new Float64Array(n).fill(Infinity),
+//         predecessor = new Int32Array(n).fill(-1),
+//         origin = new Int32Array(n).fill(-1),
+//         status = {
+//             cost,
+//             predecessor,
+//             performance: 0,
+//             origin,
+//             step: 0,
+//             front,
+//             max_front_size: 0,
+//             ended: false
+//         };
 
-    origins.forEach(node => {
-        if (isFinite(node)) node = { id: node, cost: 0 };
-        if (node.id < n) {
-            origin[node.id] = node.id;
-            q.push(node.id, (cost[node.id] = node.cost));
-        }
-    });
+//     origins.forEach(node => {
+//         if (isFinite(node)) node = { id: node, cost: 0 };
+//         if (node.id < n) {
+//             origin[node.id] = node.id;
+//             q.push(node.id, (cost[node.id] = node.cost));
+//         }
+//     });
 
-    const time = performance.now();
+//     const time = performance.now();
 
-    while (q.length > 0) {
-        const curr = q.peekValue(),
-            node = q.pop();
-        if (curr > cost[node]) continue; // ignore obsolete elements
+//     while (q.length > 0) {
+//         const curr = q.peekValue(),
+//             node = q.pop();
+//         if (curr > cost[node]) continue; // ignore obsolete elements
 
-        if (neigh.has(node)) {
-            for (const i of neigh.get(node)) {
-                const c = graph.costs ? +graph.costs[i] : 1;
-                if (!isFinite(c)) continue;
+//         if (neigh.has(node)) {
+//             for (const i of neigh.get(node)) {
+//                 const c = graph.costs ? +graph.costs[i] : 1;
+//                 if (!isFinite(c)) continue;
 
-                const tentative = c + cost[node];
-                if (tentative > cutoff) continue;
+//                 const tentative = c + cost[node];
+//                 if (tentative > cutoff) continue;
 
-                const dest = graph.targets[i];
-                if (tentative >= 0 && tentative < cost[dest]) {
-                    predecessor[dest] = node;
-                    origin[dest] = origin[node];
-                    q.push(dest, (cost[dest] = tentative));
-                    status.max_front_size = Math.max(status.max_front_size, front.length);
-                }
-            }
-        }
+//                 const dest = graph.targets[i];
+//                 if (tentative >= 0 && tentative < cost[dest]) {
+//                     predecessor[dest] = node;
+//                     origin[dest] = origin[node];
+//                     q.push(dest, (cost[dest] = tentative));
+//                     status.max_front_size = Math.max(status.max_front_size, front.length);
+//                 }
+//             }
+//         }
 
-        status.step++;
-        if (_step && status.step % _step === 0) {
-            status.performance = performance.now() - time;
-            yield status;
-        }
-    }
+//         status.step++;
+//         if (_step && status.step % _step === 0) {
+//             status.performance = performance.now() - time;
+//             yield status;
+//         }
+//     }
 
-    status.ended = true;
-    status.performance = performance.now() - time;
-    yield status;
-}
+//     status.ended = true;
+//     status.performance = performance.now() - time;
+//     yield status;
+// }
 
 
 
@@ -514,18 +517,18 @@ export function poissonDisc2d(width, height, N) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-export function draw_connections(context, nodes, run) {
-    context.beginPath();
-    run.predecessor.forEach((d, i) => {
-        if (d > -1) {
-            context.moveTo(...nodes[i]);
-            context.lineTo(...nodes[d]);
-        }
-    });
-    context.lineWidth = 0.5;
-    context.strokeStyle = "white";
-    context.stroke();
-}
+// export function draw_connections(context, nodes, run) {
+//     context.beginPath();
+//     run.predecessor.forEach((d, i) => {
+//         if (d > -1) {
+//             context.moveTo(...nodes[i]);
+//             context.lineTo(...nodes[d]);
+//         }
+//     });
+//     context.lineWidth = 0.5;
+//     context.strokeStyle = "white";
+//     context.stroke();
+// }
 
 
 // export function draw_voronoi_cells(context, nodes, run) {

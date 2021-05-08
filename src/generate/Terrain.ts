@@ -18,7 +18,6 @@ import * as Calc from "../utils/Calc"
 
 import * as THREE from "three";
 import * as dju from "../utils/dij_utils";
-import { geoDelaunay, geoVoronoi, geoContour } from "d3-geo-voronoi"
 
 import * as d3 from "d3"
 import * as Graph from "../utils/Graph";
@@ -70,9 +69,20 @@ function tnoise(x: number, y: number, z: number, data: TerrainData, noise: Noise
             (data.noiseAmplitude * Math.pow(data.noisePersistence, octave));
     }
     value = value / (2 - 1 / Math.pow(2, data.noiseOctaves - 1));
-    // this.noise.perlin3(x, y, z)
 
-    value = Math.pow(value, data.noiseExponent);
+
+    if (data.noiseExponent1 !== 1) {
+        const sign = Math.sign(value)
+        value = Math.pow(Math.abs(value), data.noiseExponent1);
+        value *= sign;
+    }
+
+
+    if (data.noiseExponent2 !== 1) {
+        const sign = Math.sign(value)
+        value = Math.pow(Math.abs(value), data.noiseExponent2);
+        value *= sign;
+    }
 
     if (data.noiseApplyAbs)
         value = ((1 - Math.abs(value)) * 2) - 1
@@ -95,23 +105,25 @@ export class TerrainData extends Identifiable {
     noiseFrequency: number;
     noiseAmplitude: number;
     noisePersistence: number;
-    noiseExponent: number;
+    noiseExponent1: number;
+    noiseExponent2: number;
 
     constructor(worldData: WorldData) {
         super(worldData);
 
         this.sphereSize = 1000;
-        this.pointsToGen = 1000 * 50;
+        this.pointsToGen = 1000 * 30;
         this.altitudeMinProc = -0.03;
         this.altitudeMaxProc = +0.03;
         this.noiseApplyAbs = false;
         this.noiseSeed = Math.random();
 
-        this.noiseFrequency = 2;
-        this.noiseAmplitude = 2.0;
-        this.noiseOctaves = 5;
+        this.noiseFrequency = 2.5;
+        this.noiseAmplitude = 2.5;
         this.noisePersistence = 0.6;
-        this.noiseExponent = 1.0;
+        this.noiseOctaves = 5;
+        this.noiseExponent1 = 0.7;
+        this.noiseExponent2 = 2.0;
 
 
     }
@@ -122,11 +134,9 @@ export class TerrainData extends Identifiable {
 }
 
 export class Terrain {
-
     data: TerrainData;
     public orbitElemId: number = null;
     private noise: Noise;
-    relief_gradient: d3.ScaleLinear<string, string, never>;
 
     get world() { return this.data.getWorldData(); }
     get id() { return this.data.id; }
@@ -175,10 +185,7 @@ export class Terrain {
 
 
 
-    private generate() {
-        console.time(`#time Terrain generate`);
-        this.noise = Random.makeNoise(this.data.noiseSeed);
-
+    private genBasePoints() {
         // var ptsGeo = Points.makeGeoPtsSquares(7);
         var ptsGeo = Points.makeGeoPtsFibb(this.data.pointsToGen);
         // var ptsGeo = Points.makeGeoPoissonDiscSample(this.data.pointsToGen);
@@ -188,39 +195,29 @@ export class Terrain {
         this.posGeo = ptsGeo;
         this.ptsLength = ptsGeo.length;
         this.ptsMaxLength = Math.ceil(this.ptsLength * 1.3);
+    }
 
+    private genHull() {
 
-        const color: THREE.Color = new THREE.Color();
         const sphSize = this.data.sphereSize;
         const maxElev = this.data.altitudeMaxProc * sphSize;
         const minElev = this.data.altitudeMinProc * sphSize;
 
-        this.pos3d = getFloat32Array(this.ptsLength * 3, this.pos3d);
-        this.elevation = getFloat32Array(this.ptsLength, this.elevation);
-
-        var colorId = colorArray[0]; color.set(colorId);
-
         const newVec3Needed = this.ptsLength - this.vec3pts.length;
-        console.log("newVec3Needed", newVec3Needed);
         for (let index = 0; index < newVec3Needed; index++)
             this.vec3pts.push(new THREE.Vector3());
         for (let index = 0; index < this.ptsLength; index++)
             (this.vec3pts[index] as any).INDEX = index;
 
 
+        this.pos3d = getFloat32Array(this.ptsLength * 3, this.pos3d);
+        this.elevation = getFloat32Array(this.ptsLength, this.elevation);
         for (let index = 0; index < this.ptsLength; index++) {
-            const ptGeo = ptsGeo[index];
+            const ptGeo = this.posGeo[index];
 
             var cartPts = Calc.cartesian(ptGeo);
             var rawNoiseVal: number, altChange: number;
-            // if (this.data.noiseApplyAbs) {
-            //     rawNoiseVal = Math.abs(this.noise.perlin3(...cartPts));
-            //     altChange = Convert.mapLinear(rawNoiseVal, 0, 1, minElev, maxElev)
-            // }
-            // else {
-            //     rawNoiseVal = this.noise.perlin3(...cartPts);
-            //     altChange = Convert.mapLinear(rawNoiseVal, -1, 1, minElev, maxElev)
-            // }
+
             rawNoiseVal = tnoise(...cartPts, this.data, this.noise);
             altChange = Convert.mapLinear(rawNoiseVal, -1, 1, minElev, maxElev)
 
@@ -263,15 +260,32 @@ export class Terrain {
                 this.pos3d[index * 3 + 2],
             )
         }
+    }
 
-        this.ptsEdges = [];
-        this.pts3Vertex = [];
+
+    private genMeshData() {
+
+        this.pts3Vertex = []; // TODO consider a way to reuse as Float32Array
         const faces = this.conHull.faces;
         for (let i = 0; i < faces.length; i++) {
             const face = faces[i];
             let edge = face.edge;
             do {
                 this.pts3Vertex.push((edge.head().point as any).INDEX);
+                edge = edge.next;
+            } while (edge !== face.edge);
+        }
+
+    }
+
+
+    private genEdgesData() {
+        this.ptsEdges = [];
+        const faces = this.conHull.faces;
+        for (let i = 0; i < faces.length; i++) {
+            const face = faces[i];
+            let edge = face.edge;
+            do {
                 this.ptsEdges.push([(edge.head().point as any).INDEX, (edge.next.head().point as any).INDEX])
                 edge = edge.next;
             } while (edge !== face.edge);
@@ -284,16 +298,14 @@ export class Terrain {
             this.ptsNeigh[ite[0]].add(ite[1]);
         }
 
-
-        // console.log("vertexIndexes", vertexIndexes);
-        // console.log("edgesIndexes", edgesIndexes);
-
-        // const mesColAttr = new THREE.Float32BufferAttribute(this.terrain.color, 3);
-        // mesColAttr.count = this.terrain.ptsLength;
-        // ptsGeometry.setAttribute('color', mesColAttr);
+    }
 
 
-        // console.log("edges", dblEdges);
+
+
+
+    private genTectonicPlates() {
+        this.genEdgesData();
 
         const seedPtToIndex = {};
         const randCostsMap = {};
@@ -306,7 +318,7 @@ export class Terrain {
         // var randIndexes = Random.randIndexes(Random.randClampInt(25, 30), ptsGeo.length)
 
 
-        var totalPoints = ptsGeo.length;
+        var totalPoints = this.posGeo.length;
         var totalPlates = tpSeeds.length;
 
 
@@ -322,6 +334,7 @@ export class Terrain {
         console.log("costAvgPlateLarge", costAvgPlateLarge);
 
 
+        const sphSize = this.data.sphereSize;
         for (let cnter = 0; cnter < tpSeeds.length; cnter++) {
             const pt = tpSeeds[cnter];
             const cartPts = Calc.cartesianRadius(pt, sphSize);
@@ -365,56 +378,26 @@ export class Terrain {
         this.ptsPred = tree.predecessor
         this.ptsOrigin = tree.origin
 
+        this.colorTectonicPlates(seedPtToIndex);
 
-        // this.color = getFloat32Array(this.ptsLength * 3, this.color);
-        // for (let index = 0; index < tree.origin.length; index++) {
-        //     const element = tree.origin[index];
-        //     const incrInd = seedPtToIndex[element];
-        //     color.set(colorArray[incrInd]);
-        //     // console.log({ element, incrInd, color });
-        //     // if (randIndexes.includes(index))
-        //     //     color.setRGB(1, 0, 0);
-        //     if (tree.predecessor[index] == -1)
-        //         color.setRGB(0, 0, 0);
-        //     this.color[index * 3 + 0] = color.r
-        //     this.color[index * 3 + 1] = color.g
-        //     this.color[index * 3 + 2] = color.b
-        // }
-
-        this.calculate_altitude_colors(minElev, maxElev)
-        // var seq = d3.scaleSequential([minElev, maxElev], d3.interpolateTurbo).interpolator()
-
-        // var seq = d3
-        //     .scaleSequential<string, string, never>(["blue", "green"])
-        //     // .scaleSequential(["black", "blue", "yellow", "green", "white"])
-        //     .rangeRound([minElev, maxElev])
+    }
 
 
-        var seq = d3.scaleLinear<string, string, never>()
-            .domain([minElev, minElev * 0.5, 0, maxElev * 0.5, maxElev])
-            .range(["black", "blue", "yellow", "green", "white"])
 
-        // console.log("[minElev, 0, maxElev]", [minElev, 0, maxElev]);
-        // console.log("this.elevation", this.elevation);
 
+
+    private colorTectonicPlates(seedPtToIndex: any) {
+
+        const color: THREE.Color = new THREE.Color();
         this.color = getFloat32Array(this.ptsLength * 3, this.color);
-        for (let index = 0; index < tree.origin.length; index++) {
-            const element = tree.origin[index];
+        for (let index = 0; index < this.ptsOrigin.length; index++) {
+            const element = this.ptsOrigin[index];
             const incrInd = seedPtToIndex[element];
-            // color.set(colorArray[incrInd]);
-
-
-            const clr = this.relief_gradient(this.elevation[index])
-            // const clr = seq(this.elevation[index])
-            // const clr = seq(this.elevation[index])
-            color.set(clr);
-
-
-
+            color.set(colorArray[incrInd]);
             // console.log({ element, incrInd, color });
             // if (randIndexes.includes(index))
             //     color.setRGB(1, 0, 0);
-            if (tree.predecessor[index] == -1)
+            if (this.ptsPred[index] == -1)
                 color.setRGB(0, 0, 0);
             this.color[index * 3 + 0] = color.r
             this.color[index * 3 + 1] = color.g
@@ -425,18 +408,56 @@ export class Terrain {
 
 
 
+    }
 
 
 
 
-        // console.log("this.pos3d", this.pos3d);
-        // console.log("this.color", this.color);
 
-        // // TODO generate full number of points after basic Tectonic plates are calculated
-        // // to avoid running d3GeoWrapper/geoDelaunay on high number of points
-        // // var delawBig = new d3GeoWrapper(ptsGeo) // verry big nom=nom on resources ...
-        // var delaw = Graph.getD3Geo(ptsGeo) // verry big nom=nom on resources ...
-        // console.log("delaw", delaw);
+    private colorTerrain() {
+
+
+
+        const sphSize = this.data.sphereSize;
+        const maxElev = this.data.altitudeMaxProc * sphSize;
+        const minElev = this.data.altitudeMinProc * sphSize;
+        this.calculate_altitude_colors(minElev, maxElev)
+        this.color = getFloat32Array(this.ptsLength * 3, this.color);
+        const color: THREE.Color = new THREE.Color();
+        for (let index = 0; index < this.ptsLength; index++) {
+            // color.set(colorArray[incrInd]);
+            const clr = this.relief_gradient(this.elevation[index])
+            color.set(clr);
+            // console.log({ element, incrInd, color });
+            this.color[index * 3 + 0] = color.r
+            this.color[index * 3 + 1] = color.g
+            this.color[index * 3 + 2] = color.b
+        }
+
+
+
+
+
+    }
+
+
+
+
+
+    private generate() {
+        console.time(`#time Terrain generate`);
+        this.noise = Random.makeNoise(this.data.noiseSeed);
+
+        this.genBasePoints();
+        this.genHull();
+        this.genMeshData();
+
+
+
+        this.colorTerrain();
+
+        this.genEdgesData();
+        // this.genTectonicPlates();
 
 
         console.log("this", this);
@@ -454,8 +475,11 @@ export class Terrain {
         return "#" + this.componentToHex(r) + this.componentToHex(g) + this.componentToHex(b);
     }
 
-    public calculate_altitude_colors = (min: number, max: number) => {
 
+
+    private relief_gradient: d3.ScaleLinear<string, string, never>;
+    public calculate_altitude_colors = (min: number, max: number) => {
+        // https://observablehq.com/@d3/d3-scalelinear
         var rel_sc = d3.scaleLinear().domain([0, 100]).range([min, max])
         var sc_data = [
             [this.rgba(21, 15, 131, 1), rel_sc(0)],
@@ -465,7 +489,8 @@ export class Terrain {
             [this.rgba(31, 182, 46, 1), rel_sc(52)],
             [this.rgba(40, 159, 29, 1), rel_sc(70)],
             [this.rgba(80, 70, 70, 1), rel_sc(85)],
-            [this.rgba(70, 50, 50, 1), rel_sc(90)],
+            [this.rgba(70, 50, 50, 1), rel_sc(97)],
+            [this.rgba(250, 250, 250, 1), rel_sc(99)],
         ]
 
         // console.log(sc_data)
@@ -473,6 +498,22 @@ export class Terrain {
             .scaleLinear<string, string, never>()
             .domain(sc_data.map(d => { return <number>d[1] }))
             .range(sc_data.map(d => { return <string>d[0] }))
+    }
+
+
+    makePaths(selectedPoints: number[]) {
+        var tree = dju.shortestTreeCustom({
+            graph: this.ptsEdges,
+            origins: selectedPoints,
+            // origins: randIndexes,
+            // directed: false,
+        })
+        console.log("tree", tree);
+
+        var shPaths = dju.shortest_paths(this.ptsEdges, tree)
+        console.log("shPaths", shPaths);
+
+        return shPaths
     }
 
 
