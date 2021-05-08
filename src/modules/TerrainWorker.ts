@@ -219,14 +219,17 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
         genTab.addButton("Re-Genearte")
             .addTooltip("Regenerating will use an actual Planet, first run uses a dummy instance so we do not wait for PlSys to gen.")
             .addEventListener(jData.jMng, "click", (event: WorkerEvent) => {
-                this.genFromExistingPlanet();
+                this.terrain.data.noiseSeed = Math.random(); this.genFromExistingPlanet();
             })
 
-        genTab.addNumber("altitudeMinProc ", this.terrain.data.altitudeMinProc, 0.02).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
+        genTab.addNumber("altMinProc ", this.terrain.data.altitudeMinProc, 0.02).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
             this.terrain.data.altitudeMinProc = event.data.event.target.value; this.genFromExistingPlanet();
         })
-        genTab.addNumber("altitudeMaxProc ", this.terrain.data.altitudeMaxProc, 0.02).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
+        genTab.addNumber("altMaxProc ", this.terrain.data.altitudeMaxProc, 0.02).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
             this.terrain.data.altitudeMaxProc = event.data.event.target.value; this.genFromExistingPlanet();
+        })
+        genTab.addNumber("altOceanProc ", this.terrain.data.altitudeOceanProc, 0.001).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
+            this.terrain.data.altitudeOceanProc = event.data.event.target.value; this.genFromExistingPlanet();
         })
         genTab.addNumber("pointsToGen ", this.terrain.data.pointsToGen, 500).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
             this.terrain.data.pointsToGen = event.data.event.target.value; this.genFromExistingPlanet();
@@ -252,10 +255,6 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
         genTab.addNumber("noiseExponent1 ", this.terrain.data.noiseExponent1, 0.1).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
             this.terrain.data.noiseExponent1 = event.data.event.target.value; this.genFromExistingPlanet();
         })
-        genTab.addNumber("noiseExponent2 ", this.terrain.data.noiseExponent2, 0.1).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
-            this.terrain.data.noiseExponent2 = event.data.event.target.value; this.genFromExistingPlanet();
-        })
-
 
 
         setMainContainer(this.worker, this.workerJguiMain)

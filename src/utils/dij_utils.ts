@@ -1,91 +1,7 @@
 // https://observablehq.com/@fil/dijkstra
 
 import * as d3 from "d3";
-
-
-class FlatQueue {
-    ids: any[];
-    values: any[];
-    length: number;
-    // https://github.com/mourner/flatqueue
-
-    constructor() {
-        this.ids = [];
-        this.values = [];
-        this.length = 0;
-    }
-
-    clear() {
-        this.length = this.ids.length = this.values.length = 0;
-    }
-
-    push(id, value) {
-        this.ids.push(id);
-        this.values.push(value);
-
-        let pos = this.length++;
-        while (pos > 0) {
-            const parent = (pos - 1) >> 1;
-            const parentValue = this.values[parent];
-            if (value >= parentValue) break;
-            this.ids[pos] = this.ids[parent];
-            this.values[pos] = parentValue;
-            pos = parent;
-        }
-
-        this.ids[pos] = id;
-        this.values[pos] = value;
-    }
-
-    pop() {
-        if (this.length === 0) return undefined;
-
-        const top = this.ids[0];
-        this.length--;
-
-        if (this.length > 0) {
-            const id = this.ids[0] = this.ids[this.length];
-            const value = this.values[0] = this.values[this.length];
-            const halfLength = this.length >> 1;
-            let pos = 0;
-
-            while (pos < halfLength) {
-                let left = (pos << 1) + 1;
-                const right = left + 1;
-                let bestIndex = this.ids[left];
-                let bestValue = this.values[left];
-                const rightValue = this.values[right];
-
-                if (right < this.length && rightValue < bestValue) {
-                    left = right;
-                    bestIndex = this.ids[right];
-                    bestValue = rightValue;
-                }
-                if (bestValue >= value) break;
-
-                this.ids[pos] = bestIndex;
-                this.values[pos] = bestValue;
-                pos = left;
-            }
-
-            this.ids[pos] = id;
-            this.values[pos] = value;
-        }
-
-        this.ids.pop();
-        this.values.pop();
-
-        return top;
-    }
-
-    peek() {
-        return this.ids[0];
-    }
-
-    peekValue() {
-        return this.values[0];
-    }
-}
+import { Heapify } from "./Heapify";
 
 // returns the junctions between zones
 // https://observablehq.com/@fil/dijkstra
@@ -146,7 +62,7 @@ export function shortest_path(graph, tree, i, j) {
 
 // https://observablehq.com/@fil/dijkstra
 export function shortest_paths(graph, tree) {
-    const paths: { cost:number, junction:number[], path:number[] }[] = [];
+    const paths: { cost: number, junction: number[], path: number[] }[] = [];
     const P = shortest_junctions(graph, tree);
 
     for (const code of P.costs.keys()) {
@@ -165,93 +81,8 @@ export function shortest_paths(graph, tree) {
     return paths;
 }
 
-export type graphType = {
-    sources: number[],
-    targets: number[],
-    costs: number[],
-}
 
 // // https://observablehq.com/@fil/dijkstra
-// export function* shortest_tree({ graph, origins, cutoff = Number.POSITIVE_INFINITY, step = 0 }) {
-//     const start_time = performance.now(),
-//         _step = step === undefined ? 0 : +step,
-//         neigh = new Map();
-//     let n = 0;
-
-//     // populate a fast lookup Map of links indices for each source
-//     for (let i = 0, l = graph.sources.length; i < l; i++) {
-//         const a = +graph.sources[i],
-//             b = +graph.targets[i];
-//         if (!neigh.has(a)) neigh.set(a, []);
-//         neigh.get(a).push(i);
-
-//         // keep track of the highest node’s id
-//         n = Math.max(n, a + 1, b + 1);
-//     }
-
-//     const q = new FlatQueue(),
-//         front = q.ids,
-//         cost = new Float64Array(n).fill(Infinity),
-//         predecessor = new Int32Array(n).fill(-1),
-//         origin = new Int32Array(n).fill(-1),
-//         status = {
-//             cost,
-//             predecessor,
-//             performance: 0,
-//             origin,
-//             step: 0,
-//             front,
-//             max_front_size: 0,
-//             ended: false
-//         };
-
-//     origins.forEach(node => {
-//         if (isFinite(node)) node = { id: node, cost: 0 };
-//         if (node.id < n) {
-//             origin[node.id] = node.id;
-//             q.push(node.id, (cost[node.id] = node.cost));
-//         }
-//     });
-
-//     const time = performance.now();
-
-//     while (q.length > 0) {
-//         const curr = q.peekValue(),
-//             node = q.pop();
-//         if (curr > cost[node]) continue; // ignore obsolete elements
-
-//         if (neigh.has(node)) {
-//             for (const i of neigh.get(node)) {
-//                 const c = graph.costs ? +graph.costs[i] : 1;
-//                 if (!isFinite(c)) continue;
-
-//                 const tentative = c + cost[node];
-//                 if (tentative > cutoff) continue;
-
-//                 const dest = graph.targets[i];
-//                 if (tentative >= 0 && tentative < cost[dest]) {
-//                     predecessor[dest] = node;
-//                     origin[dest] = origin[node];
-//                     q.push(dest, (cost[dest] = tentative));
-//                     status.max_front_size = Math.max(status.max_front_size, front.length);
-//                 }
-//             }
-//         }
-
-//         status.step++;
-//         if (_step && status.step % _step === 0) {
-//             status.performance = performance.now() - time;
-//             yield status;
-//         }
-//     }
-
-//     status.ended = true;
-//     status.performance = performance.now() - time;
-//     yield status;
-// }
-
-
-
 export function shortestTreeCustom({ graph, origins, cutoff = Number.POSITIVE_INFINITY, directed = true }) {
     const neigh = new Map();
     let n = 0;
@@ -272,8 +103,7 @@ export function shortestTreeCustom({ graph, origins, cutoff = Number.POSITIVE_IN
         n = Math.max(n, a + 1, b + 1);
     }
 
-    // TODO replace with https://github.com/luciopaiva/heapify
-    const queue = new FlatQueue(),
+    const queue = new Heapify(n),
         // front = q.ids,
         cost = new Float32Array(n).fill(Infinity),
         predecessor = new Int32Array(n).fill(-1),
@@ -336,6 +166,7 @@ export function shortestTreeCustom({ graph, origins, cutoff = Number.POSITIVE_IN
 
     }
 
+    queue.free();
     return status;
 }
 

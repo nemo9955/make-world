@@ -3,7 +3,7 @@ import { Color, colorArray } from "../utils/Color"
 import * as Random from "../utils/Random"
 import * as Units from "../utils/Units"
 import * as Convert from "../utils/Convert"
-import { freeFloat32Array, getFloat32Array, ObjectPool } from "../utils/ObjectPool";
+import { freeFloat32Array, freeUint8Array, getFloat32Array, getUint8Array, ObjectPool } from "../utils/ObjectPool";
 import { WorldData } from "../modules/WorldData";
 import { Orbit } from "./Orbit";
 import { OrbitingElement } from "./OrbitingElement";
@@ -22,6 +22,8 @@ import * as dju from "../utils/dij_utils";
 import * as d3 from "d3"
 import * as Graph from "../utils/Graph";
 
+
+import { Heapify } from "../utils/Heapify";
 
 
 /*
@@ -77,15 +79,8 @@ function tnoise(x: number, y: number, z: number, data: TerrainData, noise: Noise
         value *= sign;
     }
 
-
-    if (data.noiseExponent2 !== 1) {
-        const sign = Math.sign(value)
-        value = Math.pow(Math.abs(value), data.noiseExponent2);
-        value *= sign;
-    }
-
     if (data.noiseApplyAbs)
-        value = ((1 - Math.abs(value)) * 2) - 1
+        value = ((Math.abs(value)) * 2) - 1
 
     // console.log("value", value);
     return value
@@ -98,6 +93,7 @@ export class TerrainData extends Identifiable {
     sphereSize: number;
     altitudeMinProc: number;
     altitudeMaxProc: number;
+    altitudeOceanProc: number;
     pointsToGen: number;
     noiseSeed: number;
     noiseApplyAbs: boolean;
@@ -106,7 +102,6 @@ export class TerrainData extends Identifiable {
     noiseAmplitude: number;
     noisePersistence: number;
     noiseExponent1: number;
-    noiseExponent2: number;
 
     constructor(worldData: WorldData) {
         super(worldData);
@@ -115,6 +110,7 @@ export class TerrainData extends Identifiable {
         this.pointsToGen = 1000 * 30;
         this.altitudeMinProc = -0.03;
         this.altitudeMaxProc = +0.03;
+        this.altitudeOceanProc = +0;
         this.noiseApplyAbs = false;
         this.noiseSeed = Math.random();
 
@@ -122,8 +118,8 @@ export class TerrainData extends Identifiable {
         this.noiseAmplitude = 2.5;
         this.noisePersistence = 0.6;
         this.noiseOctaves = 5;
-        this.noiseExponent1 = 0.7;
-        this.noiseExponent2 = 2.0;
+        this.noiseExponent1 = 1.0;
+        // this.noiseExponent1 = 0.7;
 
 
     }
@@ -137,6 +133,7 @@ export class Terrain {
     data: TerrainData;
     public orbitElemId: number = null;
     private noise: Noise;
+    private isWorking = false;
 
     get world() { return this.data.getWorldData(); }
     get id() { return this.data.id; }
@@ -146,6 +143,7 @@ export class Terrain {
 
     // TODO use a typedArray pool like https://github.com/mikolalysenko/typedarray-pool
 
+    mask1: Uint8Array;
     elevation: Float32Array;
     pos3d: Float32Array;
     posGeo: pointGeoArr;
@@ -160,6 +158,8 @@ export class Terrain {
 
     conHull: ConvexHull;
     vec3pts: THREE.Vector3[];
+
+    private heap: Heapify;
 
 
     constructor(worldData: WorldData) {
@@ -183,6 +183,12 @@ export class Terrain {
     }
 
 
+    private makeHeap() {
+        this.heap?.free();
+        this.heap = new Heapify(this.ptsMaxLength);
+    }
+
+
 
 
     private genBasePoints() {
@@ -200,8 +206,9 @@ export class Terrain {
     private genHull() {
 
         const sphSize = this.data.sphereSize;
-        const maxElev = this.data.altitudeMaxProc * sphSize;
         const minElev = this.data.altitudeMinProc * sphSize;
+        const maxElev = this.data.altitudeMaxProc * sphSize;
+        const oceanElev = this.data.altitudeOceanProc * sphSize;
 
         const newVec3Needed = this.ptsLength - this.vec3pts.length;
         for (let index = 0; index < newVec3Needed; index++)
@@ -212,6 +219,7 @@ export class Terrain {
 
         this.pos3d = getFloat32Array(this.ptsLength * 3, this.pos3d);
         this.elevation = getFloat32Array(this.ptsLength, this.elevation);
+        this.mask1 = getUint8Array(this.ptsLength, this.mask1).fill(0);
         for (let index = 0; index < this.ptsLength; index++) {
             const ptGeo = this.posGeo[index];
 
@@ -221,9 +229,11 @@ export class Terrain {
             rawNoiseVal = tnoise(...cartPts, this.data, this.noise);
             altChange = Convert.mapLinear(rawNoiseVal, -1, 1, minElev, maxElev)
 
-            const elevation_ = sphSize + altChange;
-            cartPts = Calc.cartesianRadius(ptGeo, elevation_);
+            cartPts = Calc.cartesianRadius(ptGeo, sphSize + altChange);
+
             this.elevation[index] = altChange;
+            this.mask1[index] |= altChange > oceanElev ? 1 : 2; // 1:land 2:water
+
 
             this.pos3d[index * 3 + 0] = cartPts[0]
             this.pos3d[index * 3 + 1] = cartPts[1]
@@ -249,6 +259,9 @@ export class Terrain {
         console.log("this.conHull", this.conHull);
         this.vec3pts.length = vec3ptsOrigLen;
 
+        // const gostVerts = []; // TODO 4 in 30k not added this, might cause issues in the future !!!
+        // for (const vert of this.conHull.vertices) if (!vert.face) gostVerts.push(vert);
+        // console.warn(`${gostVerts.length} vertices belong to no faces :`, gostVerts)
 
 
         this.ptsNeigh = new Array<Set<number>>(this.ptsLength)
@@ -421,7 +434,8 @@ export class Terrain {
         const sphSize = this.data.sphereSize;
         const maxElev = this.data.altitudeMaxProc * sphSize;
         const minElev = this.data.altitudeMinProc * sphSize;
-        this.calculate_altitude_colors(minElev, maxElev)
+        const oceanElev = this.data.altitudeOceanProc * sphSize;
+        this.calculate_altitude_colors(minElev, maxElev, oceanElev)
         this.color = getFloat32Array(this.ptsLength * 3, this.color);
         const color: THREE.Color = new THREE.Color();
         for (let index = 0; index < this.ptsLength; index++) {
@@ -451,6 +465,7 @@ export class Terrain {
         this.genBasePoints();
         this.genHull();
         this.genMeshData();
+        this.makeHeap();
 
 
 
@@ -478,19 +493,22 @@ export class Terrain {
 
 
     private relief_gradient: d3.ScaleLinear<string, string, never>;
-    public calculate_altitude_colors = (min: number, max: number) => {
+    public calculate_altitude_colors = (min: number, max: number, oceanLvl: number) => {
         // https://observablehq.com/@d3/d3-scalelinear
-        var rel_sc = d3.scaleLinear().domain([0, 100]).range([min, max])
+        var rOcean = d3.scaleLinear().domain([0, 100]).range([min, oceanLvl])
+        var rLand = d3.scaleLinear().domain([0, 100]).range([oceanLvl, max])
         var sc_data = [
-            [this.rgba(21, 15, 131, 1), rel_sc(0)],
-            [this.rgba(23, 23, 193, 1), rel_sc(22)],
-            [this.rgba(20, 154, 200, 1), rel_sc(36)],
-            [this.rgba(200, 181, 29, 1), rel_sc(43)],
-            [this.rgba(31, 182, 46, 1), rel_sc(52)],
-            [this.rgba(40, 159, 29, 1), rel_sc(70)],
-            [this.rgba(80, 70, 70, 1), rel_sc(85)],
-            [this.rgba(70, 50, 50, 1), rel_sc(97)],
-            [this.rgba(250, 250, 250, 1), rel_sc(99)],
+            [this.rgba(21, 15, 31, 1), rOcean(0)],
+            [this.rgba(21, 15, 131, 1), rOcean(20)],
+            [this.rgba(23, 23, 193, 1), rOcean(50)],
+            [this.rgba(20, 154, 200, 1), rOcean(90)],
+            [this.rgba(200, 181, 119, 1), rOcean(99)],
+            [this.rgba(200, 181, 19, 1), rLand(0)],
+            [this.rgba(31, 182, 46, 1), rLand(10)],
+            [this.rgba(40, 159, 29, 1), rLand(80)],
+            [this.rgba(80, 70, 70, 1), rLand(85)],
+            [this.rgba(70, 50, 50, 1), rLand(99)],
+            [this.rgba(250, 250, 250, 1), rLand(100)],
         ]
 
         // console.log(sc_data)
@@ -508,10 +526,10 @@ export class Terrain {
             // origins: randIndexes,
             // directed: false,
         })
-        console.log("tree", tree);
+        // console.log("tree", tree);
 
         var shPaths = dju.shortest_paths(this.ptsEdges, tree)
-        console.log("shPaths", shPaths);
+        // console.log("shPaths", shPaths);
 
         return shPaths
     }
@@ -542,15 +560,45 @@ export class Terrain {
         return minDistInd;
     }
 
-    // raycaster: THREE.Raycaster = new THREE.Raycaster();
-    // findClosest(x, y, z) {
-    //     this.raycaster.ray.origin.set(x, y, z).multiplyScalar(0.5);
-    //     this.raycaster.ray.direction.set(x, y, z).multiplyScalar(1.5);
-    //     this.raycaster.params.Points.threshold = 50;
-    //     this.raycaster.params.Line.threshold = 50;
-    //     this.raycaster.intersectObject(this.ptsObject)
-    //     // this.conHull.tolerance
-    // }
+
+    public scanMask(index: number, mask: number) {
+        const hpp: number[] = [];
+        const edgesArr = getFloat32Array(this.ptsEdges.length * 2).fill(-1);
+        const visited = getUint8Array(this.ptsLength).fill(0);
+        var edgesLen = 0;
+
+        hpp.push(index);
+        while (hpp.length > 0) {
+            const pt = hpp.shift(); // shift() or pop()
+            // const pt = hpp.pop(); // shift() or pop()
+            // if (visited[pt]) continue;
+            // visited[pt] = 1;
+            for (const neigh of this.ptsNeigh[pt]) {
+                if (visited[neigh]) continue;
+                visited[neigh] = 1;
+                if ((this.mask1[neigh] & mask) == 0) continue;
+
+                hpp.push(neigh);
+                edgesArr[edgesLen++] = pt;
+                edgesArr[edgesLen++] = neigh;
+            }
+        }
+
+        freeUint8Array(visited);
+        return { edgesArr, edgesLen };
+    }
+
+
+    public scanLand(index: number) {
+        return this.scanMask(index, 1); // 1:land 2:water
+    }
+
+    public scanWater(index: number) {
+        return this.scanMask(index, 2); // 1:land 2:water
+    }
+
+
+
 
 
 

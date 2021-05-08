@@ -43,7 +43,7 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
     renderer: THREE.WebGLRenderer;
     controls: OrbitControls;
 
-    hoverSphere: THREE.Mesh;
+    hoverSphere: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>;
     raycaster: THREE.Raycaster = new THREE.Raycaster();
 
 
@@ -152,6 +152,12 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
 
     selectedPoints: number[] = [];
     private hoverClick(event: any) {
+        if (this.specialHoverAction && this.hoverData.hoverId !== -1) {
+            this.specialHoverAction(this.hoverData.hoverId);
+            this.specialHoverAction = null;
+            return;
+        }
+
         if (this.hoverData.hoverId == -1) {
             this.selectedPoints.length = 0;
             this.clearAllLines();
@@ -355,6 +361,8 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
     }
 
 
+
+
     private drawLinesSegments(lineSegs: Float32Array, lineSegsLen: number) {
         this.clearAllLines()
 
@@ -436,10 +444,44 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
         this.tpPts.material.needsUpdate = true;
     }
 
+    private drawLinesSegmentsIndex(lineIndex: Float32Array, lineIndexLen: number) {
+        const vec3pts = this.terrain.vec3pts;
+        const segLen = lineIndexLen * 3;
+        freeFloat32Array(this.tpLines1?.geometry?.getAttribute('position').array as Float32Array);
+        const lineSegs = getFloat32Array(segLen);
+        var lineCnt = 0;
+        for (let index = 0; index < lineIndexLen; index++) {
+            const e1 = lineIndex[index];
+            lineSegs[lineCnt++] = vec3pts[e1].x;
+            lineSegs[lineCnt++] = vec3pts[e1].y;
+            lineSegs[lineCnt++] = vec3pts[e1].z;
+        }
+        this.drawLinesSegments(lineSegs, segLen);
+    }
 
+    private scanLand(index: number) {
+        var scanData = this.terrain.scanLand(index);
+        this.drawLinesSegmentsIndex(scanData.edgesArr, scanData.edgesLen);
+    }
+
+    private scanWater(index: number) {
+        var scanData = this.terrain.scanWater(index);
+        this.drawLinesSegmentsIndex(scanData.edgesArr, scanData.edgesLen);
+    }
+
+    specialHoverAction: any = null;
     public addJgui(jData: jguiData): void {
 
         var threeDrawTab = jData.jGui.addColapse("Three Draw", true)
+
+
+        var [butLand, butWat] = threeDrawTab.add2Buttons("Scan land", "Scan Water")
+        butLand.addEventListener(jData.jMng, "click", (event: WorkerEvent) => {
+            this.specialHoverAction = this.scanLand.bind(this);
+        })
+        butWat.addEventListener(jData.jMng, "click", (event: WorkerEvent) => {
+            this.specialHoverAction = this.scanWater.bind(this);
+        })
 
         threeDrawTab.addSlider("THREE Points size", 0, 1000, 1, this.ptsRadius)
             .addEventListener(jData.jMng, "input", (event: WorkerEvent) => {
