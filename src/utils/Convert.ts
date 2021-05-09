@@ -100,6 +100,11 @@ export function mapLinear(x: number, a1: number, a2: number, b1: number, b2: num
     return THREE.MathUtils.mapLinear(x, a1, a2, b1, b2)
 }
 
+export function lerp(x: number, y: number, t: number): number {
+    return THREE.MathUtils.lerp(x, y, t);
+
+}
+
 export function degToRev(degrees: number): number {
     return degrees / 360
 }

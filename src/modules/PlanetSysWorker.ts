@@ -259,7 +259,7 @@ export class PlanetSysWorker extends BaseDrawUpdateWorker {
 
         workerJgui.addSlider("Earth years upd", 0, 0.005, 0.00001, this.config.timeEarthYearsTick)
             .addEventListener(workerJguiManager, "input", (event: WorkerEvent) => {
-                this.config.timeEarthYearsTick = Number.parseFloat(event.data.event.target.value);
+                this.config.timeEarthYearsTick = event.data.event.target.valueAsNumber;
             })
 
 

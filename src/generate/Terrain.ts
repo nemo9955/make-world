@@ -60,6 +60,12 @@ import { ConvexHull } from "three/examples/jsm/math/ConvexHull"
 // node_modules/three/examples/jsm/geometries/ConvexGeometry.js   ConvexGeometry
 // node_modules/three/examples/jsm/math/ConvexHull.js
 
+export const TerrMask = {
+    // https://www.w3schools.com/js/js_bitwise.asp
+    LAND: 1 << 0,
+    WATER: 1 << 1,
+}
+
 
 function tnoise(x: number, y: number, z: number, data: TerrainData, noise: Noise): number {
     // Convert.mapLinear(rawNoiseVal, 0, 1, minElev, maxElev)
@@ -94,6 +100,7 @@ export class TerrainData extends Identifiable {
     altitudeMinProc: number;
     altitudeMaxProc: number;
     altitudeOceanProc: number;
+    altitudeMountainProc: number;
     pointsToGen: number;
     noiseSeed: number;
     noiseApplyAbs: boolean;
@@ -108,9 +115,11 @@ export class TerrainData extends Identifiable {
 
         this.sphereSize = 1000;
         this.pointsToGen = 1000 * 30;
+        // this.pointsToGen = 100;
         this.altitudeMinProc = -0.03;
         this.altitudeMaxProc = +0.03;
-        this.altitudeOceanProc = +0;
+        this.altitudeOceanProc = 0.5;
+        this.altitudeMountainProc = 0.8;
         this.noiseApplyAbs = false;
         this.noiseSeed = Math.random();
 
@@ -169,14 +178,24 @@ export class Terrain {
     }
 
 
+    public get elevAvg() { return this.data.sphereSize; }
+    public get elevMin() { return this.data.altitudeMinProc * this.data.sphereSize; }
+    public get elevMax() { return this.data.altitudeMaxProc * this.data.sphereSize; }
+    public get elevOcean() { return Convert.lerp(this.elevMin, this.elevMax, this.data.altitudeOceanProc); }
+    public get elevMountain() { return Convert.lerp(this.elevMin, this.elevMax, this.data.altitudeMountainProc); }
+
+
+
     public initFromPlanet(planet: Planet) {
         console.debug(`#HERELINE Terrain init `);
         this.orbitElemId = planet.id;
         this.data.sphereSize = planet.radius.km;
 
+
         this.clear();
         this.generate();
     }
+
 
     public clear() {
 
@@ -203,13 +222,8 @@ export class Terrain {
         this.ptsMaxLength = Math.ceil(this.ptsLength * 1.3);
     }
 
+
     private genHull() {
-
-        const sphSize = this.data.sphereSize;
-        const minElev = this.data.altitudeMinProc * sphSize;
-        const maxElev = this.data.altitudeMaxProc * sphSize;
-        const oceanElev = this.data.altitudeOceanProc * sphSize;
-
         const newVec3Needed = this.ptsLength - this.vec3pts.length;
         for (let index = 0; index < newVec3Needed; index++)
             this.vec3pts.push(new THREE.Vector3());
@@ -219,7 +233,6 @@ export class Terrain {
 
         this.pos3d = getFloat32Array(this.ptsLength * 3, this.pos3d);
         this.elevation = getFloat32Array(this.ptsLength, this.elevation);
-        this.mask1 = getUint8Array(this.ptsLength, this.mask1).fill(0);
         for (let index = 0; index < this.ptsLength; index++) {
             const ptGeo = this.posGeo[index];
 
@@ -227,19 +240,16 @@ export class Terrain {
             var rawNoiseVal: number, altChange: number;
 
             rawNoiseVal = tnoise(...cartPts, this.data, this.noise);
-            altChange = Convert.mapLinear(rawNoiseVal, -1, 1, minElev, maxElev)
+            altChange = Convert.mapLinear(rawNoiseVal, -1, 1, this.elevMin, this.elevMax)
 
-            cartPts = Calc.cartesianRadius(ptGeo, sphSize + altChange);
-
+            cartPts = Calc.cartesianRadius(ptGeo, this.elevAvg + altChange);
             this.elevation[index] = altChange;
-            this.mask1[index] |= altChange > oceanElev ? 1 : 2; // 1:land 2:water
-
 
             this.pos3d[index * 3 + 0] = cartPts[0]
             this.pos3d[index * 3 + 1] = cartPts[1]
             this.pos3d[index * 3 + 2] = cartPts[2]
 
-            cartPts = Calc.cartesianRadius(ptGeo, sphSize);
+            cartPts = Calc.cartesianRadius(ptGeo, this.elevAvg);
             this.vec3pts[index].set(...cartPts)
 
         }
@@ -347,10 +357,9 @@ export class Terrain {
         console.log("costAvgPlateLarge", costAvgPlateLarge);
 
 
-        const sphSize = this.data.sphereSize;
         for (let cnter = 0; cnter < tpSeeds.length; cnter++) {
             const pt = tpSeeds[cnter];
-            const cartPts = Calc.cartesianRadius(pt, sphSize);
+            const cartPts = Calc.cartesianRadius(pt, this.elevAvg);
             var index = this.findClosest(...cartPts);
             randIndexes.push(index);
             seedPtToIndex[index] = cnter;
@@ -429,18 +438,29 @@ export class Terrain {
 
     private colorTerrain() {
 
-
-
-        const sphSize = this.data.sphereSize;
-        const maxElev = this.data.altitudeMaxProc * sphSize;
-        const minElev = this.data.altitudeMinProc * sphSize;
-        const oceanElev = this.data.altitudeOceanProc * sphSize;
-        this.calculate_altitude_colors(minElev, maxElev, oceanElev)
+        this.calculate_altitude_colors(this.elevMin, this.elevMax, this.elevOcean)
         this.color = getFloat32Array(this.ptsLength * 3, this.color);
         const color: THREE.Color = new THREE.Color();
         for (let index = 0; index < this.ptsLength; index++) {
             // color.set(colorArray[incrInd]);
-            const clr = this.relief_gradient(this.elevation[index])
+            var clr = "cyan";
+
+            if ((this.mask1[index] & TerrMask.WATER) == TerrMask.WATER)
+                clr = this.gradientWater(this.elevation[index])
+            if ((this.mask1[index] & TerrMask.LAND) == TerrMask.LAND)
+                clr = this.gradientLand(this.elevation[index])
+
+            if ((this.mask1[index] & TerrMask.WATER) == TerrMask.WATER
+                && (this.mask1[index] & TerrMask.LAND) == TerrMask.LAND)
+                clr = "red"; // DEBUG !!!!!!
+
+            if ((this.mask1[index] & TerrMask.WATER) != TerrMask.WATER
+                && (this.mask1[index] & TerrMask.LAND) != TerrMask.LAND)
+                clr = "brown"; // DEBUG !!!!!!
+
+
+
+
             color.set(clr);
             // console.log({ element, incrInd, color });
             this.color[index * 3 + 0] = color.r
@@ -456,6 +476,43 @@ export class Terrain {
 
 
 
+    private genMasks() {
+        var lowData = this.getLowestElevPoints(this.elevOcean)
+        var lowSum = 0, lowCnt = 0;
+        for (const ld of lowData.lowestData) {
+            lowCnt++;
+            lowSum += ld.size;
+            // console.log("ld.size", ld.size);
+        }
+        const avgSize = lowSum / lowCnt;
+        console.log("avgSize", avgSize);
+
+        this.mask1 = getUint8Array(this.ptsLength, this.mask1).fill(0);
+
+        for (const ld of lowData.lowestData) {
+            // console.log("ld", ld);
+            if (ld.size > avgSize) // mark as WATER only biggest zones under the oceanElev elevation
+                for (let index = 0; index < ld.indexesLen; index++) {
+                    const element = ld.indexesArr[index];
+                    this.mask1[element] |= TerrMask.WATER; // mark water
+                }
+        }
+
+
+        // make all non-water land
+        for (let index = 0; index < this.ptsLength; index++)
+            if ((this.mask1[index] & TerrMask.WATER) != TerrMask.WATER)
+                this.mask1[index] |= TerrMask.LAND;
+
+        // for (let index = 0; index < this.ptsLength; index++) {
+        //     const elev = this.elevation[index];
+        //     this.mask1[index] |= elev > oceanElev ? TerrMask.LAND : TerrMask.WATER; // 1:land 2:water
+        // }
+
+
+        // for (const ld of lowData.lowestData) freeFloat32Array(ld.indexesArr); //////
+        freeFloat32Array(lowData.edgesArr);
+    }
 
 
     private generate() {
@@ -467,11 +524,11 @@ export class Terrain {
         this.genMeshData();
         this.makeHeap();
 
+        this.genEdgesData();
 
+        this.genMasks();
 
         this.colorTerrain();
-
-        this.genEdgesData();
         // this.genTectonicPlates();
 
 
@@ -492,30 +549,44 @@ export class Terrain {
 
 
 
-    private relief_gradient: d3.ScaleLinear<string, string, never>;
+    private gradientWater: d3.ScaleLinear<string, string, never>;
+    private gradientLand: d3.ScaleLinear<string, string, never>;
     public calculate_altitude_colors = (min: number, max: number, oceanLvl: number) => {
         // https://observablehq.com/@d3/d3-scalelinear
         var rOcean = d3.scaleLinear().domain([0, 100]).range([min, oceanLvl])
         var rLand = d3.scaleLinear().domain([0, 100]).range([oceanLvl, max])
-        var sc_data = [
+        var rFull = d3.scaleLinear().domain([0, 100]).range([min, max])
+
+        var waterRange = [
             [this.rgba(21, 15, 31, 1), rOcean(0)],
             [this.rgba(21, 15, 131, 1), rOcean(20)],
             [this.rgba(23, 23, 193, 1), rOcean(50)],
-            [this.rgba(20, 154, 200, 1), rOcean(90)],
-            [this.rgba(200, 181, 119, 1), rOcean(99)],
-            [this.rgba(200, 181, 19, 1), rLand(0)],
-            [this.rgba(31, 182, 46, 1), rLand(10)],
-            [this.rgba(40, 159, 29, 1), rLand(80)],
+            [this.rgba(20, 154, 200, 1), rOcean(80)],
+            [this.rgba(200, 181, 19, 1), rOcean(90)],
+        ]
+
+        var landRange = [
+            // [this.rgba(173, 227, 25, 1), rOcean(0)],
+            // [this.rgba(103, 237, 7, 1), rOcean(100)],
+            // [this.rgba(31, 182, 46, 1), rLand(0)],
+            [this.rgba(40, 159, 29, 1), rLand(0)],
+            [this.rgba(85, 125, 50, 1), rLand(80)],
             [this.rgba(80, 70, 70, 1), rLand(85)],
             [this.rgba(70, 50, 50, 1), rLand(99)],
             [this.rgba(250, 250, 250, 1), rLand(100)],
         ]
 
-        // console.log(sc_data)
-        this.relief_gradient = d3
+        var allRange = [...waterRange, ...landRange]
+
+        this.gradientLand = d3
             .scaleLinear<string, string, never>()
-            .domain(sc_data.map(d => { return <number>d[1] }))
-            .range(sc_data.map(d => { return <string>d[0] }))
+            .domain(landRange.map(d => { return <number>d[1] }))
+            .range(landRange.map(d => { return <string>d[0] }))
+
+        this.gradientWater = d3
+            .scaleLinear<string, string, never>()
+            .domain(allRange.map(d => { return <number>d[1] }))
+            .range(allRange.map(d => { return <string>d[0] }))
     }
 
 
@@ -561,7 +632,117 @@ export class Terrain {
     }
 
 
-    public scanMask(index: number, mask: number) {
+    public getLowestElevPoints(maxElev: number) {
+        const valid = getUint8Array(this.ptsLength).fill(0);
+        for (let index = 0; index < this.ptsLength; index++) {
+            const elev = this.elevation[index];
+            if (elev <= maxElev) valid[index] = 1;
+        }
+        const zonedata = this.getValidZones(valid);
+        freeUint8Array(valid);
+        return zonedata
+    }
+
+    public getHighestElevPoints(minElev: number) {
+        const valid = getUint8Array(this.ptsLength).fill(0);
+        for (let index = 0; index < this.ptsLength; index++) {
+            const elev = this.elevation[index];
+            if (elev >= minElev) valid[index] = 1;
+        }
+        const zonedata = this.getValidZones(valid);
+        freeUint8Array(valid);
+        return zonedata
+    }
+
+    public getRiverOrig() {
+        const minElev = this.elevMountain;
+        const valid = getUint8Array(this.ptsLength).fill(0);
+
+        for (let index = 0; index < this.ptsLength; index++)
+            if (this.elevation[index] >= minElev) valid[index] = 1;
+
+
+        const zonedata = this.getValidZones(valid);
+        freeUint8Array(valid);
+        return zonedata
+    }
+
+    public getValidZones(valid: Uint8Array) {
+        const zone = getFloat32Array(this.ptsLength).fill(-1);
+
+        // mostly for testing ......
+        const edgesArr = getFloat32Array(this.ptsEdges.length * 2).fill(-1);
+        var edgesLen = 0;
+
+        const lowestData: { size, minIndex, minElev, indexesArr, indexesLen }[] = [];
+
+        const heap = getFloat32Array(this.ptsLength);
+        var heapLow = 0, heapHi = 0;
+
+
+        var zoneCnt = -1;
+
+        for (let index = 0; index < this.ptsLength; index++) {
+            if (valid[index] == 1 && zone[index] == -1) {
+                // const indexesArr = getFloat32Array(this.ptsLength).fill(-1); ////////
+                const indexesArr = []; ////////
+
+                zoneCnt++; // increase the current zone
+                const zoneData = {
+                    size: 1,
+                    zoneId: zoneCnt,
+                    minIndex: index,
+                    minElev: this.elevation[index],
+                    maxIndex: index,
+                    maxElev: this.elevation[index],
+                    indexesArr: indexesArr,
+                    indexesLen: 0,
+                }
+                heapLow = heapHi = 0;
+                heap[heapHi++] = index;
+
+
+                while (heapHi - heapLow > 0) { // while "heap".len > 0
+                    const pt = heap[heapLow++]; // same as .shift()
+
+
+                    if (valid[pt] == 0) continue; // valid and not zoned
+                    if (zone[pt] != -1) continue; // valid and not zoned
+
+                    // heap[heapHi++] = pt;
+
+                    zoneData.size++;
+                    zone[pt] = zoneData.zoneId;
+                    // indexesArr[zoneData.indexesLen++] = pt; ////////
+                    indexesArr.push(pt); zoneData.indexesLen++; ////////
+
+                    const elev = this.elevation[pt];
+                    if (elev < zoneData.minElev) {
+                        zoneData.minIndex = pt;
+                        zoneData.minElev = elev;
+                    }
+                    if (elev > zoneData.maxElev) {
+                        zoneData.maxIndex = pt;
+                        zoneData.maxElev = elev;
+                    }
+
+                    for (const neigh of this.ptsNeigh[pt]) {
+                        // if (valid[neigh] == 0) continue; // valid and not zoned
+                        // if (zone[neigh] != -1) continue; // valid and not zoned
+                        heap[heapHi++] = neigh;
+                        edgesArr[edgesLen++] = pt;
+                        edgesArr[edgesLen++] = neigh;
+                    }
+                }
+                lowestData.push(zoneData);
+            }
+        }
+
+        freeFloat32Array(zone);
+        return { lowestData, edgesArr, edgesLen };
+    }
+
+    public scanMaskEdges(index: number, mask: number) {
         const hpp: number[] = [];
         const edgesArr = getFloat32Array(this.ptsEdges.length * 2).fill(-1);
         const visited = getUint8Array(this.ptsLength).fill(0);
@@ -571,8 +752,6 @@ export class Terrain {
         while (hpp.length > 0) {
             const pt = hpp.shift(); // shift() or pop()
             // const pt = hpp.pop(); // shift() or pop()
-            // if (visited[pt]) continue;
-            // visited[pt] = 1;
             for (const neigh of this.ptsNeigh[pt]) {
                 if (visited[neigh]) continue;
                 visited[neigh] = 1;
@@ -590,11 +769,11 @@ export class Terrain {
 
 
     public scanLand(index: number) {
-        return this.scanMask(index, 1); // 1:land 2:water
+        return this.scanMaskEdges(index, TerrMask.LAND); // 1:land 2:water
     }
 
     public scanWater(index: number) {
-        return this.scanMask(index, 2); // 1:land 2:water
+        return this.scanMaskEdges(index, TerrMask.WATER); // 1:land 2:water
     }
 
 

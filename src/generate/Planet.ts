@@ -258,7 +258,7 @@ export class Planet extends OrbitingElement {
     public addToJgui(jData: jguiData) {
         jData.jGui.addColor("Color", this.color.getRgb().formatHex())
             .addEventListener(jData.jMng, "input", (event: WorkerEvent) => {
-                this.color.set_color(event.data.event.target.value)
+                this.color.set_color(event.data.event.target.valueAsNumber)
             })
 
         super.addToJgui(jData);

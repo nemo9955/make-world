@@ -427,6 +427,7 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
         this.setCamera();
         this.clearTerrainData();
         this.syncTerrainData();
+        this.scanMountains();
         console.timeEnd(`#time DrawThreeTerrain updateDeep`);
     }
 
@@ -469,13 +470,43 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
         this.drawLinesSegmentsIndex(scanData.edgesArr, scanData.edgesLen);
     }
 
+    private scanLower(index: number) {
+        const elev = this.terrain.elevation[index]
+        var scanData = this.terrain.getLowestElevPoints(elev);
+        this.drawLinesSegmentsIndex(scanData.edgesArr, scanData.edgesLen);
+    }
+
+    private scanHigher(index: number) {
+        const elev = this.terrain.elevation[index]
+        var scanData = this.terrain.getHighestElevPoints(elev);
+        this.drawLinesSegmentsIndex(scanData.edgesArr, scanData.edgesLen);
+    }
+
+    private scanOcean() {
+        var scanData = this.terrain.getLowestElevPoints(this.terrain.elevOcean);
+        console.log("scanData", scanData);
+        this.drawLinesSegmentsIndex(scanData.edgesArr, scanData.edgesLen);
+    }
+
+    private scanContinent() {
+        var scanData = this.terrain.getHighestElevPoints(this.terrain.elevOcean);
+        console.log("scanData", scanData);
+        this.drawLinesSegmentsIndex(scanData.edgesArr, scanData.edgesLen);
+    }
+
+    private scanMountains() {
+        var scanData = this.terrain.getRiverOrig();
+        console.log("scanData", scanData);
+        this.drawLinesSegmentsIndex(scanData.edgesArr, scanData.edgesLen);
+    }
+
     specialHoverAction: any = null;
     public addJgui(jData: jguiData): void {
 
         var threeDrawTab = jData.jGui.addColapse("Three Draw", true)
 
 
-        var [butLand, butWat] = threeDrawTab.add2Buttons("Scan land", "Scan Water")
+        var [butLand, butWat] = threeDrawTab.add2Buttons("Zone land", "Zone Water")
         butLand.addEventListener(jData.jMng, "click", (event: WorkerEvent) => {
             this.specialHoverAction = this.scanLand.bind(this);
         })
@@ -483,9 +514,29 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
             this.specialHoverAction = this.scanWater.bind(this);
         })
 
+        var [butLow, butOcean] = threeDrawTab.add2Buttons("Scan low", "Scan ocean")
+        butLow.addEventListener(jData.jMng, "click", (event: WorkerEvent) => {
+            this.specialHoverAction = this.scanLower.bind(this);
+        })
+        butOcean.addEventListener(jData.jMng, "click", (event: WorkerEvent) => {
+            this.scanOcean();
+        })
+
+        var [butHii, butLand] = threeDrawTab.add2Buttons("Scan hi", "Scan land")
+        butHii.addEventListener(jData.jMng, "click", (event: WorkerEvent) => {
+            this.specialHoverAction = this.scanHigher.bind(this);
+        })
+        butLand.addEventListener(jData.jMng, "click", (event: WorkerEvent) => {
+            this.scanContinent();
+        })
+
+        threeDrawTab.addButton("Scan Mtn").addEventListener(jData.jMng, "click", (event: WorkerEvent) => {
+            this.scanMountains();
+        })
+
         threeDrawTab.addSlider("THREE Points size", 0, 1000, 1, this.ptsRadius)
             .addEventListener(jData.jMng, "input", (event: WorkerEvent) => {
-                this.ptsRadius = Number.parseFloat(event.data.event.target.value);
+                this.ptsRadius = event.data.event.target.valueAsNumber;
                 this.updatePtsMaterials();
             })
 

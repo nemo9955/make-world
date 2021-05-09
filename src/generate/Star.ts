@@ -226,19 +226,19 @@ export class Star extends OrbitingElement {
 
         jData.jGui.addColor("Color", this.color.getRgb().formatHex())
             .addEventListener(jData.jMng, "input", (event: WorkerEvent) => {
-                this.color.set_color(event.data.event.target.value)
+                this.color.set_color(event.data.event.target.valueAsNumber)
             })
         jData.jGui.addNumber("radius.km", this.radius.km)
             .addEventListener(jData.jMng, "input", (event: WorkerEvent) => {
-                this.radius.km = event.data.event.target.value;
+                this.radius.km = event.data.event.target.valueAsNumber;
             })
         jData.jGui.addNumber("mass.Yg", this.mass.Yg)
             .addEventListener(jData.jMng, "input", (event: WorkerEvent) => {
-                this.mass.Yg = event.data.event.target.value;
+                this.mass.Yg = event.data.event.target.valueAsNumber;
             })
         jData.jGui.addNumber("lifetime.eby", this.lifetime.eby)
             .addEventListener(jData.jMng, "input", (event: WorkerEvent) => {
-                this.lifetime.eby = event.data.event.target.value;
+                this.lifetime.eby = event.data.event.target.valueAsNumber;
             })
 
     }

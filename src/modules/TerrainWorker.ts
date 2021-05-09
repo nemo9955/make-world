@@ -194,7 +194,7 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
 
     private makeJgiu() {
         const jguiOrdinal = MAIN_ORDINAL + "00";
-        var startExpanded = !true;
+        var startExpanded = true;
 
         [this.workerJguiMain, this.workerJguiCont] = new JguiMake(null).mkWorkerJgui("terr", jguiOrdinal, startExpanded);
 
@@ -223,37 +223,40 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
             })
 
         genTab.addNumber("altMinProc ", this.terrain.data.altitudeMinProc, 0.02).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
-            this.terrain.data.altitudeMinProc = event.data.event.target.value; this.genFromExistingPlanet();
+            this.terrain.data.altitudeMinProc = event.data.event.target.valueAsNumber; this.genFromExistingPlanet();
         })
         genTab.addNumber("altMaxProc ", this.terrain.data.altitudeMaxProc, 0.02).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
-            this.terrain.data.altitudeMaxProc = event.data.event.target.value; this.genFromExistingPlanet();
+            this.terrain.data.altitudeMaxProc = event.data.event.target.valueAsNumber; this.genFromExistingPlanet();
         })
-        genTab.addNumber("altOceanProc ", this.terrain.data.altitudeOceanProc, 0.001).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
-            this.terrain.data.altitudeOceanProc = event.data.event.target.value; this.genFromExistingPlanet();
+        genTab.addNumber("altOceanProc ", this.terrain.data.altitudeOceanProc, 0.05).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
+            this.terrain.data.altitudeOceanProc = event.data.event.target.valueAsNumber; this.genFromExistingPlanet();
+        })
+        genTab.addNumber("altMountainProc ", this.terrain.data.altitudeMountainProc, 0.05).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
+            this.terrain.data.altitudeMountainProc = event.data.event.target.valueAsNumber; this.genFromExistingPlanet();
         })
         genTab.addNumber("pointsToGen ", this.terrain.data.pointsToGen, 500).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
-            this.terrain.data.pointsToGen = event.data.event.target.value; this.genFromExistingPlanet();
+            this.terrain.data.pointsToGen = event.data.event.target.valueAsNumber; this.genFromExistingPlanet();
         })
         genTab.addNumber("noiseSeed ", this.terrain.data.noiseSeed, 0.0001).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
-            this.terrain.data.noiseSeed = event.data.event.target.value; this.genFromExistingPlanet();
+            this.terrain.data.noiseSeed = event.data.event.target.valueAsNumber; this.genFromExistingPlanet();
         })
         genTab.addCheckButton("noiseApplyAbs ", this.terrain.data.noiseApplyAbs)[0].addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
             this.terrain.data.noiseApplyAbs = event.data.event.target.checked; this.genFromExistingPlanet();
         })
         genTab.addNumber("noiseFrequency ", this.terrain.data.noiseFrequency, 0.25).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
-            this.terrain.data.noiseFrequency = event.data.event.target.value; this.genFromExistingPlanet();
+            this.terrain.data.noiseFrequency = event.data.event.target.valueAsNumber; this.genFromExistingPlanet();
         })
         genTab.addNumber("noiseAmplitude ", this.terrain.data.noiseAmplitude, 0.1).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
-            this.terrain.data.noiseAmplitude = event.data.event.target.value; this.genFromExistingPlanet();
+            this.terrain.data.noiseAmplitude = event.data.event.target.valueAsNumber; this.genFromExistingPlanet();
         })
         genTab.addNumber("noisePersistence ", this.terrain.data.noisePersistence, 0.1).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
-            this.terrain.data.noisePersistence = event.data.event.target.value; this.genFromExistingPlanet();
+            this.terrain.data.noisePersistence = event.data.event.target.valueAsNumber; this.genFromExistingPlanet();
         })
         genTab.addNumber("noiseOctaves ", this.terrain.data.noiseOctaves, 1).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
-            this.terrain.data.noiseOctaves = event.data.event.target.value; this.genFromExistingPlanet();
+            this.terrain.data.noiseOctaves = event.data.event.target.valueAsNumber; this.genFromExistingPlanet();
         })
         genTab.addNumber("noiseExponent1 ", this.terrain.data.noiseExponent1, 0.1).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
-            this.terrain.data.noiseExponent1 = event.data.event.target.value; this.genFromExistingPlanet();
+            this.terrain.data.noiseExponent1 = event.data.event.target.valueAsNumber; this.genFromExistingPlanet();
         })
 
 
