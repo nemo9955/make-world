@@ -62,8 +62,9 @@ import { ConvexHull } from "three/examples/jsm/math/ConvexHull"
 
 export const TerrMask = {
     // https://www.w3schools.com/js/js_bitwise.asp
-    LAND: 1 << 0,
-    WATER: 1 << 1,
+    WATER: 1 << 0,
+    LAND: 1 << 1,
+    MOUNTAIN: 1 << 2,
 }
 
 
@@ -152,12 +153,15 @@ export class Terrain {
 
     // TODO use a typedArray pool like https://github.com/mikolalysenko/typedarray-pool
 
+    bordering: Uint8Array;
     mask1: Uint8Array;
+
     elevation: Float32Array;
     pos3d: Float32Array;
     posGeo: pointGeoArr;
 
     color: Float32Array;
+    colorDebug: Float32Array;
 
     ptsPred: Int32Array;
     ptsOrigin: Int32Array;
@@ -439,7 +443,7 @@ export class Terrain {
     private colorTerrain() {
 
         this.calculate_altitude_colors(this.elevMin, this.elevMax, this.elevOcean)
-        this.color = getFloat32Array(this.ptsLength * 3, this.color);
+        this.color = getFloat32Array(this.ptsLength * 3, this.color).fill(0);
         const color: THREE.Color = new THREE.Color();
         for (let index = 0; index < this.ptsLength; index++) {
             // color.set(colorArray[incrInd]);
@@ -498,19 +502,48 @@ export class Terrain {
                 }
         }
 
-
         // make all non-water land
         for (let index = 0; index < this.ptsLength; index++)
             if ((this.mask1[index] & TerrMask.WATER) != TerrMask.WATER)
                 this.mask1[index] |= TerrMask.LAND;
 
-        // for (let index = 0; index < this.ptsLength; index++) {
-        //     const elev = this.elevation[index];
-        //     this.mask1[index] |= elev > oceanElev ? TerrMask.LAND : TerrMask.WATER; // 1:land 2:water
-        // }
+
+        for (let index = 0; index < this.ptsLength; index++)
+            if (this.elevation[index] >= this.elevMountain)
+                if ((this.mask1[index] & TerrMask.LAND) == TerrMask.LAND)
+                    this.mask1[index] |= TerrMask.MOUNTAIN;
 
 
-        // for (const ld of lowData.lowestData) freeFloat32Array(ld.indexesArr); //////
+        this.bordering = getUint8Array(this.ptsLength, this.bordering).fill(0);
+
+        for (const [edg1, edg2] of this.ptsEdges) {
+            // we only take action on edg1 and just compare edg2
+            const msk1 = this.mask1[edg1];
+            const msk2 = this.mask1[edg2];
+            if ((msk1 & TerrMask.WATER) == TerrMask.WATER)
+                if ((msk2 & TerrMask.WATER) != TerrMask.WATER)
+                    this.bordering[edg1] |= TerrMask.WATER;
+            if ((msk1 & TerrMask.LAND) == TerrMask.LAND)
+                if ((msk2 & TerrMask.LAND) != TerrMask.LAND)
+                    this.bordering[edg1] |= TerrMask.LAND;
+            if ((msk1 & TerrMask.MOUNTAIN) == TerrMask.MOUNTAIN)
+                if ((msk2 & TerrMask.MOUNTAIN) != TerrMask.MOUNTAIN)
+                    this.bordering[edg1] |= TerrMask.MOUNTAIN;
+        }
+
+
+        this.colorDebug = getFloat32Array(this.ptsLength * 3, this.colorDebug).fill(0);
+        for (let index = 0; index < this.ptsLength; index++) {
+            if ((this.bordering[index] & TerrMask.MOUNTAIN) == TerrMask.MOUNTAIN)
+                this.colorDebug[index * 3 + 0] = 100; // r
+            if ((this.bordering[index] & TerrMask.LAND) == TerrMask.LAND)
+                this.colorDebug[index * 3 + 1] = 100; // g
+            if ((this.bordering[index] & TerrMask.WATER) == TerrMask.WATER)
+                this.colorDebug[index * 3 + 2] = 100; // b
+        }
+
+
+
         freeFloat32Array(lowData.edgesArr);
     }
 
@@ -527,6 +560,8 @@ export class Terrain {
         this.genEdgesData();
 
         this.genMasks();
+        this.genCommonPaths();
+
 
         this.colorTerrain();
         // this.genTectonicPlates();
@@ -554,8 +589,8 @@ export class Terrain {
     public calculate_altitude_colors = (min: number, max: number, oceanLvl: number) => {
         // https://observablehq.com/@d3/d3-scalelinear
         var rOcean = d3.scaleLinear().domain([0, 100]).range([min, oceanLvl])
-        var rLand = d3.scaleLinear().domain([0, 100]).range([oceanLvl, max])
-        var rFull = d3.scaleLinear().domain([0, 100]).range([min, max])
+        var rLand = d3.scaleLinear().domain([0, 100]).range([oceanLvl, this.elevMountain])
+        var rMount = d3.scaleLinear().domain([0, 100]).range([this.elevMountain, max])
 
         var waterRange = [
             [this.rgba(21, 15, 31, 1), rOcean(0)],
@@ -566,14 +601,11 @@ export class Terrain {
         ]
 
         var landRange = [
-            // [this.rgba(173, 227, 25, 1), rOcean(0)],
-            // [this.rgba(103, 237, 7, 1), rOcean(100)],
-            // [this.rgba(31, 182, 46, 1), rLand(0)],
             [this.rgba(40, 159, 29, 1), rLand(0)],
             [this.rgba(85, 125, 50, 1), rLand(80)],
-            [this.rgba(80, 70, 70, 1), rLand(85)],
-            [this.rgba(70, 50, 50, 1), rLand(99)],
-            [this.rgba(250, 250, 250, 1), rLand(100)],
+            [this.rgba(80, 70, 70, 1), rMount(0)],
+            [this.rgba(70, 50, 50, 1), rMount(99)],
+            [this.rgba(250, 250, 250, 1), rMount(100)],
         ]
 
         var allRange = [...waterRange, ...landRange]
@@ -654,17 +686,172 @@ export class Terrain {
         return zonedata
     }
 
+
+    pathToWatter: Float32Array;
+    private genCommonPaths() {
+        this.pathToWatter = getFloat32Array(this.ptsLength, this.pathToWatter).fill(-1);
+
+        const fifoc = getFloat32Array(this.ptsLength * 2);
+        var fifoh = 0, fifot = 0;
+
+        fifoh = fifot = 0;
+        for (let index = 0; index < this.ptsLength; index++)
+            if ((this.bordering[index] & TerrMask.WATER) == TerrMask.WATER)
+                fifoc[fifot++] = index;
+        while (fifot - fifoh > 0) {
+            const ind = fifoc[fifoh++];
+            const elev = this.elevation[ind];
+            // if (!this.ptsNeigh[ind]) continue;
+
+            var bestUps = -1;
+            for (const nei of this.ptsNeigh[ind]) {
+                if ((this.mask1[nei] & TerrMask.LAND) !== TerrMask.LAND) continue; // to land
+                if (this.pathToWatter[nei] != -1) continue;// no path there
+                const elevNei = this.elevation[nei];
+                if (elevNei < elev) continue;
+                bestUps = nei;
+            }
+            if (bestUps != -1) {
+                this.pathToWatter[bestUps] = ind;
+                fifoc[fifot++] = bestUps;
+            }
+        }
+
+
+        freeFloat32Array(fifoc);
+    }
+
     public getRiverOrig() {
+        console.time(`#time Terrain getRiverOrig`);
         const minElev = this.elevMountain;
         const valid = getUint8Array(this.ptsLength).fill(0);
 
         for (let index = 0; index < this.ptsLength; index++)
             if (this.elevation[index] >= minElev) valid[index] = 1;
 
+        for (let index = 0; index < this.ptsLength; index++)
+            if (valid[index])
+                for (const neigh of this.ptsNeigh[index])
+                    if (valid[neigh] == 0) { valid[index] = 2; break; }
 
-        const zonedata = this.getValidZones(valid);
+
+        const edgesArr = getFloat32Array(this.ptsEdges.length * 2);
+        var edgesLen = 0;
+
+        const fifoc = getFloat32Array(this.ptsLength * 2);
+        var fifoh = 0, fifot = 0;
+
+        for (let index = 0; index < this.ptsLength; index++)
+            if (valid[index] == 2) {
+                fifoc[fifot++] = index;
+            }
+
+        while (fifot - fifoh > 0) {
+            const ind = fifoc[fifoh++];
+            const toWat = this.pathToWatter[ind];
+            if (toWat < 0) continue;
+            edgesArr[edgesLen++] = ind;
+            edgesArr[edgesLen++] = toWat;
+            fifoc[fifot++] = toWat;
+        }
+        // console.log("edgesArr", edgesArr);
+
+        freeFloat32Array(fifoc);
+        // const hriv = getFloat32Array(this.ptsLength * 2);
+        // var hrivLow = 0, hrivHi = 0;
+
+        // const ploc = getFloat32Array(this.ptsLength).fill(-2);
+        // const hloc = getFloat32Array(this.ptsLength);
+        // var hlocLow = 0, hlocHi = 0;
+
+        // const riverNext = getFloat32Array(this.ptsLength).fill(-2);
+        // const riverPrev = getFloat32Array(this.ptsLength).fill(-2);
+        // const riverCost = getFloat32Array(this.ptsLength).fill(0);
+        // // -2:nothing -1:origin 0+:downstream to water
+
+        // for (let index = 0; index < this.ptsLength; index++)
+        //     if (valid[index] == 2)
+        //         hriv[hrivHi++] = index; // river origin some high points
+
+        // while (hrivHi - hrivLow > 0) { // while "heap".len > 0
+        //     // const pt = heap[heapLow++]; // same as .shift()
+        //     const pt = hriv[--hrivHi]; // same as .pop()
+        //     // console.log("pt", pt);
+
+        //     if ((this.mask1[pt] & TerrMask.WATER) == TerrMask.WATER)
+        //         continue;
+
+        //     if (riverCost[pt] == 0) {
+        //         riverNext[pt] = -1;
+        //         riverPrev[pt] = -1;
+        //         riverCost[pt] = 1;
+        //     }
+        //     // else
+        //     //     console.warn("riv", riverNext[pt]);
+
+        //     // var foundEnd = -1;
+        //     // hlocLow = 0, hlocHi = 0;
+        //     // hloc[hlocHi++] = pt;
+        //     // ploc[pt] = -1;
+        //     // while (foundEnd == -1 || hlocHi - hlocLow > 0) {
+        //     //     const ind = hloc[hlocLow++]; // same as .shift()
+        //     //     // const ind = hloc[--hlocHi]; // same as .pop()
+        //     //     if (!this.ptsNeigh[ind]) continue;
+        //     //     for (const neigh of this.ptsNeigh[ind]) {
+        //     //         if (ploc[neigh] != -2) continue;
+        //     //         hloc[hlocHi++] = neigh;
+        //     //         ploc[neigh] = ind;
+        //     //         // ploc[ind] = neigh;
+        //     //     }
+        //     //     if ((this.mask1[ind] & TerrMask.WATER) == TerrMask.WATER) foundEnd = ind;
+        //     // }
+        //     // // console.log("pt -> foundEnd", pt, foundEnd);
+        //     // if (foundEnd >= 0) {
+        //     //     edgesArr[edgesLen++] = pt;
+        //     //     edgesArr[edgesLen++] = foundEnd;
+        //     // }
+
+        //     // var rivSize = 0;
+        //     // while (true) {
+        //     //     const upstream = ploc[foundEnd]
+        //     //     if (upstream < 0) break;
+        //     //     if (upstream == foundEnd) break;
+        //     //     if (foundEnd == pt) break;
+        //     //     if (upstream == pt) break;
+        //     //     edgesArr[edgesLen++] = upstream;
+        //     //     edgesArr[edgesLen++] = foundEnd;
+        //     //     foundEnd = upstream;
+        //     //     rivSize++;
+        //     // }
+        //     // console.log("rivSize, pt -> foundEnd", rivSize, pt, foundEnd);
+
+        //     // // /////////////////////////////////////////////////
+        //     // const elev = this.elevation[pt];
+        //     // var nextInd = -1;
+        //     // var nextElev = elev;
+        //     // for (const neigh of this.ptsNeigh[pt]) {
+        //     //     const nelev = this.elevation[neigh];
+        //     //     if (nelev < nextElev) {
+        //     //         nextElev = nelev;
+        //     //         nextInd = neigh;
+        //     //     }
+        //     // }
+        //     // if (nextInd != -1) {//found valid downstrem river
+        //     //     riverNext[pt] = nextInd;
+        //     //     riverPrev[nextInd] = pt;
+        //     //     riverCost[nextInd]++;
+        //     //     hriv[hrivHi++] = nextInd;
+        //     //     edgesArr[edgesLen++] = pt;
+        //     //     edgesArr[edgesLen++] = nextInd;
+        //     // }
+        // }
+
+
+        // freeFloat32Array(hriv);
+        // freeFloat32Array(ploc);
         freeUint8Array(valid);
-        return zonedata
+        console.timeEnd(`#time Terrain getRiverOrig`);
+        return { edgesArr, edgesLen };
     }
 
     public getValidZones(valid: Uint8Array) {
@@ -738,6 +925,7 @@ export class Terrain {
             }
         }
 
+        freeFloat32Array(heap);
         freeFloat32Array(zone);
         return { lowestData, edgesArr, edgesLen };
     }
@@ -755,7 +943,7 @@ export class Terrain {
             for (const neigh of this.ptsNeigh[pt]) {
                 if (visited[neigh]) continue;
                 visited[neigh] = 1;
-                if ((this.mask1[neigh] & mask) == 0) continue;
+                if ((this.mask1[neigh] & mask) != mask) continue;
 
                 hpp.push(neigh);
                 edgesArr[edgesLen++] = pt;
@@ -769,11 +957,11 @@ export class Terrain {
 
 
     public scanLand(index: number) {
-        return this.scanMaskEdges(index, TerrMask.LAND); // 1:land 2:water
+        return this.scanMaskEdges(index, TerrMask.LAND);
     }
 
     public scanWater(index: number) {
-        return this.scanMaskEdges(index, TerrMask.WATER); // 1:land 2:water
+        return this.scanMaskEdges(index, TerrMask.WATER);
     }
 
 

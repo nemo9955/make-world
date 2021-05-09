@@ -165,7 +165,7 @@ export class JsonToGUI {
                     // console.log("event", event);
                     var worker = this.listenersJguiMap.get(listen.id);
                     if (worker) {
-                        console.log("RAW event ::: ", event);
+                        // console.log("RAW event ::: ", event);
                         var basicEvent = EventUtils.getBasicEvent(event);
                         basicEvent.extra = jguiMake.extra;
                         // console.log("basicEvent", basicEvent);
