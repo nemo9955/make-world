@@ -31102,6 +31102,213 @@ function defaultGetY(p) {
 
 /***/ }),
 
+/***/ "./node_modules/heapify/heapify.mjs":
+/*!******************************************!*\
+  !*** ./node_modules/heapify/heapify.mjs ***!
+  \******************************************/
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ Heapify)
+/* harmony export */ });
+
+// this is just to make it clear that we are using a 1-based array; changing it to zero won't work without code changes
+const ROOT_INDEX = 1;
+
+class Heapify {
+
+    constructor(capacity = 64, keys = [], priorities = [],
+        KeysBackingArrayType = Uint32Array,
+        PrioritiesBackingArrayType = Uint32Array) {
+
+        this._capacity = capacity;
+        this._keys = new KeysBackingArrayType(capacity + ROOT_INDEX);
+        this._priorities = new PrioritiesBackingArrayType(capacity + ROOT_INDEX);
+        // to keep track of whether the first element is a deleted one
+        this._hasPoppedElement = false;
+
+        if (keys.length !== priorities.length) {
+            throw new Error("Number of keys does not match number of priorities provided.");
+        }
+        if (capacity < keys.length) {
+            throw new Error("Capacity less than number of provided keys.");
+        }
+        // copy data from user
+        for (let i = 0; i < keys.length; i++) {
+            this._keys[i + ROOT_INDEX] = keys[i];
+            this._priorities[i + ROOT_INDEX] = priorities[i];
+        }
+        this.length = keys.length;
+        for (let i = keys.length >>> 1; i >= ROOT_INDEX; i--) {
+            this.bubbleDown(i);
+        }
+    }
+
+    get capacity() {
+        return this._capacity;
+    }
+
+    clear() {
+        this.length = 0;
+        this._hasPoppedElement = false;
+    }
+
+    /**
+     * Bubble an item up until its heap property is satisfied.
+     *
+     * @param {Number} index
+     * @private
+     */
+    bubbleUp(index) {
+        const key = this._keys[index];
+        const priority = this._priorities[index];
+
+        while (index > ROOT_INDEX) {
+            // get its parent item
+            const parentIndex = index >>> 1;
+            if (this._priorities[parentIndex] <= priority) {
+                break;  // if parent priority is smaller, heap property is satisfied
+            }
+            // bubble parent down so the item can go up
+            this._keys[index] = this._keys[parentIndex];
+            this._priorities[index] = this._priorities[parentIndex];
+
+            // repeat for the next level
+            index = parentIndex;
+        }
+
+        // we finally found the place where the initial item should be; write it there
+        this._keys[index] = key;
+        this._priorities[index] = priority;
+    }
+
+    /**
+     * Bubble an item down until its heap property is satisfied.
+     *
+     * @param {Number} index
+     * @private
+     */
+    bubbleDown(index) {
+        const key = this._keys[index];
+        const priority = this._priorities[index];
+
+        const halfLength = ROOT_INDEX + (this.length >>> 1);  // no need to check the last level
+        const lastIndex = this.length + ROOT_INDEX;
+        while (index < halfLength) {
+            const left = index << 1;
+
+            // pick the left child
+            let childPriority = this._priorities[left];
+            let childKey = this._keys[left];
+            let childIndex = left;
+
+            // if there's a right child, choose the child with the smallest priority
+            const right = left + 1;
+            if (right < lastIndex) {
+                const rightPriority = this._priorities[right];
+                if (rightPriority < childPriority) {
+                    childPriority = rightPriority;
+                    childKey = this._keys[right];
+                    childIndex = right;
+                }
+            }
+
+            if (childPriority >= priority) {
+                break;  // if children have higher priority, heap property is satisfied
+            }
+
+            // bubble the child up to where the parent is
+            this._keys[index] = childKey;
+            this._priorities[index] = childPriority;
+
+            // repeat for the next level
+            index = childIndex;
+        }
+
+        // we finally found the place where the initial item should be; write it there
+        this._keys[index] = key;
+        this._priorities[index] = priority;
+    }
+
+    /**
+     * @param {*} key the identifier of the object to be pushed into the heap
+     * @param {Number} priority 32-bit value corresponding to the priority of this key
+     */
+    push(key, priority) {
+        if (this.length === this._capacity) {
+            throw new Error("Heap has reached capacity, can't push new items");
+        }
+
+        if (this._hasPoppedElement) {
+            // replace root element (which was deleted from the last pop)
+            this._keys[ROOT_INDEX] = key;
+            this._priorities[ROOT_INDEX] = priority;
+
+            this.bubbleDown(ROOT_INDEX);
+            this._hasPoppedElement = false;
+        } else {
+            const pos = this.length + ROOT_INDEX;
+            this._keys[pos] = key;
+            this._priorities[pos] = priority;
+            this.bubbleUp(pos);
+        }
+
+        this.length++;
+    }
+
+    pop() {
+        if (this.length === 0) {
+            return undefined;
+        }
+        this.removePoppedElement();
+
+        this.length--;
+        this._hasPoppedElement = true;
+
+        return this._keys[ROOT_INDEX];
+    }
+
+    peekPriority() {
+        this.removePoppedElement();
+        return this._priorities[ROOT_INDEX];
+    }
+
+    peek() {
+        this.removePoppedElement();
+        return this._keys[ROOT_INDEX];
+    }
+
+    removePoppedElement() {
+        if (this._hasPoppedElement) {
+            // since root element was already deleted from pop, replace with last and bubble down
+            this._keys[ROOT_INDEX] = this._keys[this.length + ROOT_INDEX];
+            this._priorities[ROOT_INDEX] = this._priorities[this.length + ROOT_INDEX];
+
+            this.bubbleDown(ROOT_INDEX);
+            this._hasPoppedElement = false;
+        }
+    }
+
+    get size() {
+        return this.length;
+    }
+
+    dumpRawPriorities() {
+        this.removePoppedElement();
+
+        const result = Array(this.length - ROOT_INDEX);
+        for (let i = 0; i < this.length; i++) {
+            result[i] = this._priorities[i + ROOT_INDEX];
+        }
+        return `[${result.join(" ")}]`;
+    }
+}
+
+
+/***/ }),
+
 /***/ "./node_modules/idb/build/esm/index.js":
 /*!*********************************************!*\
   !*** ./node_modules/idb/build/esm/index.js ***!
@@ -84605,7 +84812,7 @@ class Planet extends OrbitingElement_1.OrbitingElement {
     addToJgui(jData) {
         jData.jGui.addColor("Color", this.color.getRgb().formatHex())
             .addEventListener(jData.jMng, "input", (event) => {
-            this.color.set_color(event.data.event.target.value);
+            this.color.set_color(event.data.event.target.valueAsNumber);
         });
         super.addToJgui(jData);
     }
@@ -85313,19 +85520,19 @@ class Star extends OrbitingElement_1.OrbitingElement {
         super.addToJgui(jData);
         jData.jGui.addColor("Color", this.color.getRgb().formatHex())
             .addEventListener(jData.jMng, "input", (event) => {
-            this.color.set_color(event.data.event.target.value);
+            this.color.set_color(event.data.event.target.valueAsNumber);
         });
         jData.jGui.addNumber("radius.km", this.radius.km)
             .addEventListener(jData.jMng, "input", (event) => {
-            this.radius.km = event.data.event.target.value;
+            this.radius.km = event.data.event.target.valueAsNumber;
         });
         jData.jGui.addNumber("mass.Yg", this.mass.Yg)
             .addEventListener(jData.jMng, "input", (event) => {
-            this.mass.Yg = event.data.event.target.value;
+            this.mass.Yg = event.data.event.target.valueAsNumber;
         });
         jData.jGui.addNumber("lifetime.eby", this.lifetime.eby)
             .addEventListener(jData.jMng, "input", (event) => {
-            this.lifetime.eby = event.data.event.target.value;
+            this.lifetime.eby = event.data.event.target.valueAsNumber;
         });
     }
     clone() { return new Star(this.getWorldData()).copyLogic(this); }
@@ -85346,7 +85553,7 @@ exports.Star = Star;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.Terrain = exports.TerrainData = void 0;
+exports.Terrain = exports.TerrainData = exports.TerrMask = void 0;
 const Color_1 = __webpack_require__(/*! ../utils/Color */ "./src/utils/Color.ts");
 const Random = __webpack_require__(/*! ../utils/Random */ "./src/utils/Random.ts");
 const Convert = __webpack_require__(/*! ../utils/Convert */ "./src/utils/Convert.ts");
@@ -85357,10 +85564,17 @@ const Calc = __webpack_require__(/*! ../utils/Calc */ "./src/utils/Calc.ts");
 const THREE = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 const dju = __webpack_require__(/*! ../utils/dij_utils */ "./src/utils/dij_utils.ts");
 const d3 = __webpack_require__(/*! d3 */ "./node_modules/d3/index.js");
+const Heapify_1 = __webpack_require__(/*! ../utils/Heapify */ "./src/utils/Heapify.ts");
 const ConvexHull_1 = __webpack_require__(/*! three/examples/jsm/math/ConvexHull */ "./node_modules/three/examples/jsm/math/ConvexHull.js");
 // node_modules/@types/three/examples/jsm/geometries/ConvexGeometry.d.ts
 // node_modules/three/examples/jsm/geometries/ConvexGeometry.js   ConvexGeometry
 // node_modules/three/examples/jsm/math/ConvexHull.js
+exports.TerrMask = {
+    // https://www.w3schools.com/js/js_bitwise.asp
+    WATER: 1 << 0,
+    LAND: 1 << 1,
+    MOUNTAIN: 1 << 2,
+};
 function tnoise(x, y, z, data, noise) {
     // Convert.mapLinear(rawNoiseVal, 0, 1, minElev, maxElev)
     var value = 0.0;
@@ -85370,10 +85584,13 @@ function tnoise(x, y, z, data, noise) {
             (data.noiseAmplitude * Math.pow(data.noisePersistence, octave));
     }
     value = value / (2 - 1 / Math.pow(2, data.noiseOctaves - 1));
-    // this.noise.perlin3(x, y, z)
-    value = Math.pow(value, data.noiseExponent);
+    if (data.noiseExponent1 !== 1) {
+        const sign = Math.sign(value);
+        value = Math.pow(Math.abs(value), data.noiseExponent1);
+        value *= sign;
+    }
     if (data.noiseApplyAbs)
-        value = ((1 - Math.abs(value)) * 2) - 1;
+        value = ((Math.abs(value)) * 2) - 1;
     // console.log("value", value);
     return value;
 }
@@ -85381,16 +85598,20 @@ class TerrainData extends ObjectsHacker_1.Identifiable {
     constructor(worldData) {
         super(worldData);
         this.sphereSize = 1000;
-        this.pointsToGen = 1000 * 50;
+        this.pointsToGen = 1000 * 30;
+        // this.pointsToGen = 100;
         this.altitudeMinProc = -0.03;
         this.altitudeMaxProc = +0.03;
+        this.altitudeOceanProc = 0.5;
+        this.altitudeMountainProc = 0.8;
         this.noiseApplyAbs = false;
         this.noiseSeed = Math.random();
-        this.noiseFrequency = 2;
-        this.noiseAmplitude = 2.0;
-        this.noiseOctaves = 5;
+        this.noiseFrequency = 2.5;
+        this.noiseAmplitude = 2.5;
         this.noisePersistence = 0.6;
-        this.noiseExponent = 1.0;
+        this.noiseOctaves = 5;
+        this.noiseExponent1 = 1.0;
+        // this.noiseExponent1 = 0.7;
     }
     clone() { return new TerrainData(this.getWorldData()).copyLogic(this); }
     static clone(worldData, data_) { return new TerrainData(worldData).copyDeep(data_); }
@@ -85400,6 +85621,7 @@ exports.TerrainData = TerrainData;
 class Terrain {
     constructor(worldData) {
         this.orbitElemId = null;
+        this.isWorking = false;
         this.componentToHex = (c) => {
             var hex = c.toString(16);
             return hex.length == 1 ? "0" + hex : hex;
@@ -85407,23 +85629,34 @@ class Terrain {
         this.rgba = (r, g, b, a) => {
             return "#" + this.componentToHex(r) + this.componentToHex(g) + this.componentToHex(b);
         };
-        this.calculate_altitude_colors = (min, max) => {
-            var rel_sc = d3.scaleLinear().domain([0, 100]).range([min, max]);
-            var sc_data = [
-                [this.rgba(21, 15, 131, 1), rel_sc(0)],
-                [this.rgba(23, 23, 193, 1), rel_sc(22)],
-                [this.rgba(20, 154, 200, 1), rel_sc(36)],
-                [this.rgba(200, 181, 29, 1), rel_sc(43)],
-                [this.rgba(31, 182, 46, 1), rel_sc(52)],
-                [this.rgba(40, 159, 29, 1), rel_sc(70)],
-                [this.rgba(80, 70, 70, 1), rel_sc(85)],
-                [this.rgba(70, 50, 50, 1), rel_sc(90)],
+        this.calculate_altitude_colors = (min, max, oceanLvl) => {
+            // https://observablehq.com/@d3/d3-scalelinear
+            var rOcean = d3.scaleLinear().domain([0, 100]).range([min, oceanLvl]);
+            var rLand = d3.scaleLinear().domain([0, 100]).range([oceanLvl, this.elevMountain]);
+            var rMount = d3.scaleLinear().domain([0, 100]).range([this.elevMountain, max]);
+            var waterRange = [
+                [this.rgba(21, 15, 31, 1), rOcean(0)],
+                [this.rgba(21, 15, 131, 1), rOcean(20)],
+                [this.rgba(23, 23, 193, 1), rOcean(50)],
+                [this.rgba(20, 154, 200, 1), rOcean(80)],
+                [this.rgba(200, 181, 19, 1), rOcean(90)],
             ];
-            // console.log(sc_data)
-            this.relief_gradient = d3
+            var landRange = [
+                [this.rgba(40, 159, 29, 1), rLand(0)],
+                [this.rgba(85, 125, 50, 1), rLand(80)],
+                [this.rgba(80, 70, 70, 1), rMount(0)],
+                [this.rgba(70, 50, 50, 1), rMount(99)],
+                [this.rgba(250, 250, 250, 1), rMount(100)],
+            ];
+            var allRange = [...waterRange, ...landRange];
+            this.gradientLand = d3
                 .scaleLinear()
-                .domain(sc_data.map(d => { return d[1]; }))
-                .range(sc_data.map(d => { return d[0]; }));
+                .domain(landRange.map(d => { return d[1]; }))
+                .range(landRange.map(d => { return d[0]; }));
+            this.gradientWater = d3
+                .scaleLinear()
+                .domain(allRange.map(d => { return d[1]; }))
+                .range(allRange.map(d => { return d[0]; }));
         };
         this.findClosestVec3 = new THREE.Vector3();
         this.data = new TerrainData(worldData);
@@ -85431,6 +85664,11 @@ class Terrain {
     }
     get world() { return this.data.getWorldData(); }
     get id() { return this.data.id; }
+    get elevAvg() { return this.data.sphereSize; }
+    get elevMin() { return this.data.altitudeMinProc * this.data.sphereSize; }
+    get elevMax() { return this.data.altitudeMaxProc * this.data.sphereSize; }
+    get elevOcean() { return Convert.lerp(this.elevMin, this.elevMax, this.data.altitudeOceanProc); }
+    get elevMountain() { return Convert.lerp(this.elevMin, this.elevMax, this.data.altitudeMountainProc); }
     initFromPlanet(planet) {
         console.debug(`#HERELINE Terrain init `);
         this.orbitElemId = planet.id;
@@ -85440,9 +85678,12 @@ class Terrain {
     }
     clear() {
     }
-    generate() {
-        console.time(`#time Terrain generate`);
-        this.noise = Random.makeNoise(this.data.noiseSeed);
+    makeHeap() {
+        var _a;
+        (_a = this.heap) === null || _a === void 0 ? void 0 : _a.free();
+        this.heap = new Heapify_1.Heapify(this.ptsMaxLength);
+    }
+    genBasePoints() {
         // var ptsGeo = Points.makeGeoPtsSquares(7);
         var ptsGeo = Points.makeGeoPtsFibb(this.data.pointsToGen);
         // var ptsGeo = Points.makeGeoPoissonDiscSample(this.data.pointsToGen);
@@ -85451,41 +85692,27 @@ class Terrain {
         this.posGeo = ptsGeo;
         this.ptsLength = ptsGeo.length;
         this.ptsMaxLength = Math.ceil(this.ptsLength * 1.3);
-        const color = new THREE.Color();
-        const sphSize = this.data.sphereSize;
-        const maxElev = this.data.altitudeMaxProc * sphSize;
-        const minElev = this.data.altitudeMinProc * sphSize;
-        this.pos3d = ObjectPool_1.getFloat32Array(this.ptsLength * 3, this.pos3d);
-        this.elevation = ObjectPool_1.getFloat32Array(this.ptsLength, this.elevation);
-        var colorId = Color_1.colorArray[0];
-        color.set(colorId);
+    }
+    genHull() {
         const newVec3Needed = this.ptsLength - this.vec3pts.length;
-        console.log("newVec3Needed", newVec3Needed);
         for (let index = 0; index < newVec3Needed; index++)
             this.vec3pts.push(new THREE.Vector3());
         for (let index = 0; index < this.ptsLength; index++)
             this.vec3pts[index].INDEX = index;
+        this.pos3d = ObjectPool_1.getFloat32Array(this.ptsLength * 3, this.pos3d);
+        this.elevation = ObjectPool_1.getFloat32Array(this.ptsLength, this.elevation);
         for (let index = 0; index < this.ptsLength; index++) {
-            const ptGeo = ptsGeo[index];
+            const ptGeo = this.posGeo[index];
             var cartPts = Calc.cartesian(ptGeo);
             var rawNoiseVal, altChange;
-            // if (this.data.noiseApplyAbs) {
-            //     rawNoiseVal = Math.abs(this.noise.perlin3(...cartPts));
-            //     altChange = Convert.mapLinear(rawNoiseVal, 0, 1, minElev, maxElev)
-            // }
-            // else {
-            //     rawNoiseVal = this.noise.perlin3(...cartPts);
-            //     altChange = Convert.mapLinear(rawNoiseVal, -1, 1, minElev, maxElev)
-            // }
             rawNoiseVal = tnoise(...cartPts, this.data, this.noise);
-            altChange = Convert.mapLinear(rawNoiseVal, -1, 1, minElev, maxElev);
-            const elevation_ = sphSize + altChange;
-            cartPts = Calc.cartesianRadius(ptGeo, elevation_);
+            altChange = Convert.mapLinear(rawNoiseVal, -1, 1, this.elevMin, this.elevMax);
+            cartPts = Calc.cartesianRadius(ptGeo, this.elevAvg + altChange);
             this.elevation[index] = altChange;
             this.pos3d[index * 3 + 0] = cartPts[0];
             this.pos3d[index * 3 + 1] = cartPts[1];
             this.pos3d[index * 3 + 2] = cartPts[2];
-            cartPts = Calc.cartesianRadius(ptGeo, sphSize);
+            cartPts = Calc.cartesianRadius(ptGeo, this.elevAvg);
             this.vec3pts[index].set(...cartPts);
         }
         // for (let index = 0; index < this.pos3d.length; index++) {
@@ -85499,19 +85726,34 @@ class Terrain {
         this.conHull.setFromPoints(this.vec3pts);
         console.log("this.conHull", this.conHull);
         this.vec3pts.length = vec3ptsOrigLen;
+        // const gostVerts = []; // TODO 4 in 30k not added this, might cause issues in the future !!!
+        // for (const vert of this.conHull.vertices) if (!vert.face) gostVerts.push(vert);
+        // console.warn(`${gostVerts.length} vertices belong to no faces :`, gostVerts)
         this.ptsNeigh = new Array(this.ptsLength);
         for (let index = 0; index < this.ptsLength; index++) {
             this.ptsNeigh[index] = new Set();
             this.vec3pts[index].set(this.pos3d[index * 3 + 0], this.pos3d[index * 3 + 1], this.pos3d[index * 3 + 2]);
         }
-        this.ptsEdges = [];
-        this.pts3Vertex = [];
+    }
+    genMeshData() {
+        this.pts3Vertex = []; // TODO consider a way to reuse as Float32Array
         const faces = this.conHull.faces;
         for (let i = 0; i < faces.length; i++) {
             const face = faces[i];
             let edge = face.edge;
             do {
                 this.pts3Vertex.push(edge.head().point.INDEX);
+                edge = edge.next;
+            } while (edge !== face.edge);
+        }
+    }
+    genEdgesData() {
+        this.ptsEdges = [];
+        const faces = this.conHull.faces;
+        for (let i = 0; i < faces.length; i++) {
+            const face = faces[i];
+            let edge = face.edge;
+            do {
                 this.ptsEdges.push([edge.head().point.INDEX, edge.next.head().point.INDEX]);
                 edge = edge.next;
             } while (edge !== face.edge);
@@ -85522,12 +85764,9 @@ class Terrain {
             this.ptsNeigh[ite[1]].add(ite[0]);
             this.ptsNeigh[ite[0]].add(ite[1]);
         }
-        // console.log("vertexIndexes", vertexIndexes);
-        // console.log("edgesIndexes", edgesIndexes);
-        // const mesColAttr = new THREE.Float32BufferAttribute(this.terrain.color, 3);
-        // mesColAttr.count = this.terrain.ptsLength;
-        // ptsGeometry.setAttribute('color', mesColAttr);
-        // console.log("edges", dblEdges);
+    }
+    genTectonicPlates() {
+        this.genEdgesData();
         const seedPtToIndex = {};
         const randCostsMap = {};
         const randIndexes = [];
@@ -85536,7 +85775,7 @@ class Terrain {
         // var tpSeeds = Points.makeGeoPtsFibb(Random.randClampInt(25, 30));
         // console.log("tpSeeds", tpSeeds);
         // var randIndexes = Random.randIndexes(Random.randClampInt(25, 30), ptsGeo.length)
-        var totalPoints = ptsGeo.length;
+        var totalPoints = this.posGeo.length;
         var totalPlates = tpSeeds.length;
         console.log("totalPoints", totalPoints);
         console.log("totalPlates", totalPlates);
@@ -85548,7 +85787,7 @@ class Terrain {
         console.log("costAvgPlateLarge", costAvgPlateLarge);
         for (let cnter = 0; cnter < tpSeeds.length; cnter++) {
             const pt = tpSeeds[cnter];
-            const cartPts = Calc.cartesianRadius(pt, sphSize);
+            const cartPts = Calc.cartesianRadius(pt, this.elevAvg);
             var index = this.findClosest(...cartPts);
             randIndexes.push(index);
             seedPtToIndex[index] = cnter;
@@ -85580,58 +85819,128 @@ class Terrain {
         console.log("tree", tree);
         this.ptsPred = tree.predecessor;
         this.ptsOrigin = tree.origin;
-        // this.color = getFloat32Array(this.ptsLength * 3, this.color);
-        // for (let index = 0; index < tree.origin.length; index++) {
-        //     const element = tree.origin[index];
-        //     const incrInd = seedPtToIndex[element];
-        //     color.set(colorArray[incrInd]);
-        //     // console.log({ element, incrInd, color });
-        //     // if (randIndexes.includes(index))
-        //     //     color.setRGB(1, 0, 0);
-        //     if (tree.predecessor[index] == -1)
-        //         color.setRGB(0, 0, 0);
-        //     this.color[index * 3 + 0] = color.r
-        //     this.color[index * 3 + 1] = color.g
-        //     this.color[index * 3 + 2] = color.b
-        // }
-        this.calculate_altitude_colors(minElev, maxElev);
-        // var seq = d3.scaleSequential([minElev, maxElev], d3.interpolateTurbo).interpolator()
-        // var seq = d3
-        //     .scaleSequential<string, string, never>(["blue", "green"])
-        //     // .scaleSequential(["black", "blue", "yellow", "green", "white"])
-        //     .rangeRound([minElev, maxElev])
-        var seq = d3.scaleLinear()
-            .domain([minElev, minElev * 0.5, 0, maxElev * 0.5, maxElev])
-            .range(["black", "blue", "yellow", "green", "white"]);
-        // console.log("[minElev, 0, maxElev]", [minElev, 0, maxElev]);
-        // console.log("this.elevation", this.elevation);
+        this.colorTectonicPlates(seedPtToIndex);
+    }
+    colorTectonicPlates(seedPtToIndex) {
+        const color = new THREE.Color();
         this.color = ObjectPool_1.getFloat32Array(this.ptsLength * 3, this.color);
-        for (let index = 0; index < tree.origin.length; index++) {
-            const element = tree.origin[index];
+        for (let index = 0; index < this.ptsOrigin.length; index++) {
+            const element = this.ptsOrigin[index];
             const incrInd = seedPtToIndex[element];
-            // color.set(colorArray[incrInd]);
-            const clr = this.relief_gradient(this.elevation[index]);
-            // const clr = seq(this.elevation[index])
-            // const clr = seq(this.elevation[index])
-            color.set(clr);
+            color.set(Color_1.colorArray[incrInd]);
             // console.log({ element, incrInd, color });
             // if (randIndexes.includes(index))
             //     color.setRGB(1, 0, 0);
-            if (tree.predecessor[index] == -1)
+            if (this.ptsPred[index] == -1)
                 color.setRGB(0, 0, 0);
             this.color[index * 3 + 0] = color.r;
             this.color[index * 3 + 1] = color.g;
             this.color[index * 3 + 2] = color.b;
         }
-        // console.log("this.pos3d", this.pos3d);
-        // console.log("this.color", this.color);
-        // // TODO generate full number of points after basic Tectonic plates are calculated
-        // // to avoid running d3GeoWrapper/geoDelaunay on high number of points
-        // // var delawBig = new d3GeoWrapper(ptsGeo) // verry big nom=nom on resources ...
-        // var delaw = Graph.getD3Geo(ptsGeo) // verry big nom=nom on resources ...
-        // console.log("delaw", delaw);
+    }
+    colorTerrain() {
+        this.calculate_altitude_colors(this.elevMin, this.elevMax, this.elevOcean);
+        this.color = ObjectPool_1.getFloat32Array(this.ptsLength * 3, this.color).fill(0);
+        const color = new THREE.Color();
+        for (let index = 0; index < this.ptsLength; index++) {
+            // color.set(colorArray[incrInd]);
+            var clr = "cyan";
+            if ((this.mask1[index] & exports.TerrMask.WATER) == exports.TerrMask.WATER)
+                clr = this.gradientWater(this.elevation[index]);
+            if ((this.mask1[index] & exports.TerrMask.LAND) == exports.TerrMask.LAND)
+                clr = this.gradientLand(this.elevation[index]);
+            if ((this.mask1[index] & exports.TerrMask.WATER) == exports.TerrMask.WATER
+                && (this.mask1[index] & exports.TerrMask.LAND) == exports.TerrMask.LAND)
+                clr = "red"; // DEBUG !!!!!!
+            if ((this.mask1[index] & exports.TerrMask.WATER) != exports.TerrMask.WATER
+                && (this.mask1[index] & exports.TerrMask.LAND) != exports.TerrMask.LAND)
+                clr = "brown"; // DEBUG !!!!!!
+            color.set(clr);
+            // console.log({ element, incrInd, color });
+            this.color[index * 3 + 0] = color.r;
+            this.color[index * 3 + 1] = color.g;
+            this.color[index * 3 + 2] = color.b;
+        }
+    }
+    genMasks() {
+        var lowData = this.getLowestElevPoints(this.elevOcean);
+        var lowSum = 0, lowCnt = 0;
+        for (const ld of lowData.lowestData) {
+            lowCnt++;
+            lowSum += ld.size;
+            // console.log("ld.size", ld.size);
+        }
+        const avgSize = lowSum / lowCnt;
+        console.log("avgSize", avgSize);
+        this.mask1 = ObjectPool_1.getUint8Array(this.ptsLength, this.mask1).fill(0);
+        for (const ld of lowData.lowestData) {
+            // console.log("ld", ld);
+            if (ld.size > avgSize) // mark as WATER only biggest zones under the oceanElev elevation
+                for (let index = 0; index < ld.indexesLen; index++) {
+                    const element = ld.indexesArr[index];
+                    this.mask1[element] |= exports.TerrMask.WATER; // mark water
+                }
+        }
+        // make all non-water land
+        for (let index = 0; index < this.ptsLength; index++)
+            if ((this.mask1[index] & exports.TerrMask.WATER) != exports.TerrMask.WATER)
+                this.mask1[index] |= exports.TerrMask.LAND;
+        for (let index = 0; index < this.ptsLength; index++)
+            if (this.elevation[index] >= this.elevMountain)
+                if ((this.mask1[index] & exports.TerrMask.LAND) == exports.TerrMask.LAND)
+                    this.mask1[index] |= exports.TerrMask.MOUNTAIN;
+        this.bordering = ObjectPool_1.getUint8Array(this.ptsLength, this.bordering).fill(0);
+        for (const [edg1, edg2] of this.ptsEdges) {
+            // we only take action on edg1 and just compare edg2
+            const msk1 = this.mask1[edg1];
+            const msk2 = this.mask1[edg2];
+            if ((msk1 & exports.TerrMask.WATER) == exports.TerrMask.WATER)
+                if ((msk2 & exports.TerrMask.WATER) != exports.TerrMask.WATER)
+                    this.bordering[edg1] |= exports.TerrMask.WATER;
+            if ((msk1 & exports.TerrMask.LAND) == exports.TerrMask.LAND)
+                if ((msk2 & exports.TerrMask.LAND) != exports.TerrMask.LAND)
+                    this.bordering[edg1] |= exports.TerrMask.LAND;
+            if ((msk1 & exports.TerrMask.MOUNTAIN) == exports.TerrMask.MOUNTAIN)
+                if ((msk2 & exports.TerrMask.MOUNTAIN) != exports.TerrMask.MOUNTAIN)
+                    this.bordering[edg1] |= exports.TerrMask.MOUNTAIN;
+        }
+        this.colorDebug = ObjectPool_1.getFloat32Array(this.ptsLength * 3, this.colorDebug).fill(0);
+        for (let index = 0; index < this.ptsLength; index++) {
+            if ((this.bordering[index] & exports.TerrMask.MOUNTAIN) == exports.TerrMask.MOUNTAIN)
+                this.colorDebug[index * 3 + 0] = 100; // r
+            if ((this.bordering[index] & exports.TerrMask.LAND) == exports.TerrMask.LAND)
+                this.colorDebug[index * 3 + 1] = 100; // g
+            if ((this.bordering[index] & exports.TerrMask.WATER) == exports.TerrMask.WATER)
+                this.colorDebug[index * 3 + 2] = 100; // b
+        }
+        ObjectPool_1.freeFloat32Array(lowData.edgesArr);
+    }
+    generate() {
+        console.time(`#time Terrain generate`);
+        this.noise = Random.makeNoise(this.data.noiseSeed);
+        this.genBasePoints();
+        this.genHull();
+        this.genMeshData();
+        this.makeHeap();
+        this.genEdgesData();
+        this.genMasks();
+        this.genCommonPaths();
+        this.colorTerrain();
+        // this.genTectonicPlates();
         console.log("this", this);
         console.timeEnd(`#time Terrain generate`);
+    }
+    makePaths(selectedPoints) {
+        var tree = dju.shortestTreeCustom({
+            graph: this.ptsEdges,
+            origins: selectedPoints,
+            // origins: randIndexes,
+            // directed: false,
+        });
+        // console.log("tree", tree);
+        var shPaths = dju.shortest_paths(this.ptsEdges, tree);
+        // console.log("shPaths", shPaths);
+        return shPaths;
     }
     findClosest(x, y, z, startIndex = 0) {
         this.findClosestVec3.set(x, y, z);
@@ -85653,6 +85962,267 @@ class Terrain {
             }
         } while (foundCloser);
         return minDistInd;
+    }
+    getLowestElevPoints(maxElev) {
+        const valid = ObjectPool_1.getUint8Array(this.ptsLength).fill(0);
+        for (let index = 0; index < this.ptsLength; index++) {
+            const elev = this.elevation[index];
+            if (elev <= maxElev)
+                valid[index] = 1;
+        }
+        const zonedata = this.getValidZones(valid);
+        ObjectPool_1.freeUint8Array(valid);
+        return zonedata;
+    }
+    getHighestElevPoints(minElev) {
+        const valid = ObjectPool_1.getUint8Array(this.ptsLength).fill(0);
+        for (let index = 0; index < this.ptsLength; index++) {
+            const elev = this.elevation[index];
+            if (elev >= minElev)
+                valid[index] = 1;
+        }
+        const zonedata = this.getValidZones(valid);
+        ObjectPool_1.freeUint8Array(valid);
+        return zonedata;
+    }
+    genCommonPaths() {
+        this.pathToWatter = ObjectPool_1.getFloat32Array(this.ptsLength, this.pathToWatter).fill(-1);
+        const fifoc = ObjectPool_1.getFloat32Array(this.ptsLength * 2);
+        var fifoh = 0, fifot = 0;
+        fifoh = fifot = 0;
+        for (let index = 0; index < this.ptsLength; index++)
+            if ((this.bordering[index] & exports.TerrMask.WATER) == exports.TerrMask.WATER)
+                fifoc[fifot++] = index;
+        while (fifot - fifoh > 0) {
+            const ind = fifoc[fifoh++];
+            const elev = this.elevation[ind];
+            // if (!this.ptsNeigh[ind]) continue;
+            var bestUps = -1;
+            for (const nei of this.ptsNeigh[ind]) {
+                if ((this.mask1[nei] & exports.TerrMask.LAND) !== exports.TerrMask.LAND)
+                    continue; // to land
+                if (this.pathToWatter[nei] != -1)
+                    continue; // no path there
+                const elevNei = this.elevation[nei];
+                if (elevNei < elev)
+                    continue;
+                bestUps = nei;
+            }
+            if (bestUps != -1) {
+                this.pathToWatter[bestUps] = ind;
+                fifoc[fifot++] = bestUps;
+            }
+        }
+        ObjectPool_1.freeFloat32Array(fifoc);
+    }
+    getRiverOrig() {
+        console.time(`#time Terrain getRiverOrig`);
+        const minElev = this.elevMountain;
+        const valid = ObjectPool_1.getUint8Array(this.ptsLength).fill(0);
+        for (let index = 0; index < this.ptsLength; index++)
+            if (this.elevation[index] >= minElev)
+                valid[index] = 1;
+        for (let index = 0; index < this.ptsLength; index++)
+            if (valid[index])
+                for (const neigh of this.ptsNeigh[index])
+                    if (valid[neigh] == 0) {
+                        valid[index] = 2;
+                        break;
+                    }
+        const edgesArr = ObjectPool_1.getFloat32Array(this.ptsEdges.length * 2);
+        var edgesLen = 0;
+        const fifoc = ObjectPool_1.getFloat32Array(this.ptsLength * 2);
+        var fifoh = 0, fifot = 0;
+        for (let index = 0; index < this.ptsLength; index++)
+            if (valid[index] == 2) {
+                fifoc[fifot++] = index;
+            }
+        while (fifot - fifoh > 0) {
+            const ind = fifoc[fifoh++];
+            const toWat = this.pathToWatter[ind];
+            if (toWat < 0)
+                continue;
+            edgesArr[edgesLen++] = ind;
+            edgesArr[edgesLen++] = toWat;
+            fifoc[fifot++] = toWat;
+        }
+        // console.log("edgesArr", edgesArr);
+        ObjectPool_1.freeFloat32Array(fifoc);
+        // const hriv = getFloat32Array(this.ptsLength * 2);
+        // var hrivLow = 0, hrivHi = 0;
+        // const ploc = getFloat32Array(this.ptsLength).fill(-2);
+        // const hloc = getFloat32Array(this.ptsLength);
+        // var hlocLow = 0, hlocHi = 0;
+        // const riverNext = getFloat32Array(this.ptsLength).fill(-2);
+        // const riverPrev = getFloat32Array(this.ptsLength).fill(-2);
+        // const riverCost = getFloat32Array(this.ptsLength).fill(0);
+        // // -2:nothing -1:origin 0+:downstream to water
+        // for (let index = 0; index < this.ptsLength; index++)
+        //     if (valid[index] == 2)
+        //         hriv[hrivHi++] = index; // river origin some high points
+        // while (hrivHi - hrivLow > 0) { // while "heap".len > 0
+        //     // const pt = heap[heapLow++]; // same as .shift()
+        //     const pt = hriv[--hrivHi]; // same as .pop()
+        //     // console.log("pt", pt);
+        //     if ((this.mask1[pt] & TerrMask.WATER) == TerrMask.WATER)
+        //         continue;
+        //     if (riverCost[pt] == 0) {
+        //         riverNext[pt] = -1;
+        //         riverPrev[pt] = -1;
+        //         riverCost[pt] = 1;
+        //     }
+        //     // else
+        //     //     console.warn("riv", riverNext[pt]);
+        //     // var foundEnd = -1;
+        //     // hlocLow = 0, hlocHi = 0;
+        //     // hloc[hlocHi++] = pt;
+        //     // ploc[pt] = -1;
+        //     // while (foundEnd == -1 || hlocHi - hlocLow > 0) {
+        //     //     const ind = hloc[hlocLow++]; // same as .shift()
+        //     //     // const ind = hloc[--hlocHi]; // same as .pop()
+        //     //     if (!this.ptsNeigh[ind]) continue;
+        //     //     for (const neigh of this.ptsNeigh[ind]) {
+        //     //         if (ploc[neigh] != -2) continue;
+        //     //         hloc[hlocHi++] = neigh;
+        //     //         ploc[neigh] = ind;
+        //     //         // ploc[ind] = neigh;
+        //     //     }
+        //     //     if ((this.mask1[ind] & TerrMask.WATER) == TerrMask.WATER) foundEnd = ind;
+        //     // }
+        //     // // console.log("pt -> foundEnd", pt, foundEnd);
+        //     // if (foundEnd >= 0) {
+        //     //     edgesArr[edgesLen++] = pt;
+        //     //     edgesArr[edgesLen++] = foundEnd;
+        //     // }
+        //     // var rivSize = 0;
+        //     // while (true) {
+        //     //     const upstream = ploc[foundEnd]
+        //     //     if (upstream < 0) break;
+        //     //     if (upstream == foundEnd) break;
+        //     //     if (foundEnd == pt) break;
+        //     //     if (upstream == pt) break;
+        //     //     edgesArr[edgesLen++] = upstream;
+        //     //     edgesArr[edgesLen++] = foundEnd;
+        //     //     foundEnd = upstream;
+        //     //     rivSize++;
+        //     // }
+        //     // console.log("rivSize, pt -> foundEnd", rivSize, pt, foundEnd);
+        //     // // /////////////////////////////////////////////////
+        //     // const elev = this.elevation[pt];
+        //     // var nextInd = -1;
+        //     // var nextElev = elev;
+        //     // for (const neigh of this.ptsNeigh[pt]) {
+        //     //     const nelev = this.elevation[neigh];
+        //     //     if (nelev < nextElev) {
+        //     //         nextElev = nelev;
+        //     //         nextInd = neigh;
+        //     //     }
+        //     // }
+        //     // if (nextInd != -1) {//found valid downstrem river
+        //     //     riverNext[pt] = nextInd;
+        //     //     riverPrev[nextInd] = pt;
+        //     //     riverCost[nextInd]++;
+        //     //     hriv[hrivHi++] = nextInd;
+        //     //     edgesArr[edgesLen++] = pt;
+        //     //     edgesArr[edgesLen++] = nextInd;
+        //     // }
+        // }
+        // freeFloat32Array(hriv);
+        // freeFloat32Array(ploc);
+        ObjectPool_1.freeUint8Array(valid);
+        console.timeEnd(`#time Terrain getRiverOrig`);
+        return { edgesArr, edgesLen };
+    }
+    getValidZones(valid) {
+        const zone = ObjectPool_1.getFloat32Array(this.ptsLength).fill(-1);
+        // mostly for testing ......
+        const edgesArr = ObjectPool_1.getFloat32Array(this.ptsEdges.length * 2).fill(-1);
+        var edgesLen = 0;
+        const lowestData = [];
+        const heap = ObjectPool_1.getFloat32Array(this.ptsLength);
+        var heapLow = 0, heapHi = 0;
+        var zoneCnt = -1;
+        for (let index = 0; index < this.ptsLength; index++) {
+            if (valid[index] == 1 && zone[index] == -1) {
+                // const indexesArr = getFloat32Array(this.ptsLength).fill(-1); ////////
+                const indexesArr = []; ////////
+                zoneCnt++; // increase the current zone
+                const zoneData = {
+                    size: 1,
+                    zoneId: zoneCnt,
+                    minIndex: index,
+                    minElev: this.elevation[index],
+                    maxIndex: index,
+                    maxElev: this.elevation[index],
+                    indexesArr: indexesArr,
+                    indexesLen: 0,
+                };
+                heapLow = heapHi = 0;
+                heap[heapHi++] = index;
+                while (heapHi - heapLow > 0) { // while "heap".len > 0
+                    const pt = heap[heapLow++]; // same as .shift()
+                    if (valid[pt] == 0)
+                        continue; // valid and not zoned
+                    if (zone[pt] != -1)
+                        continue; // valid and not zoned
+                    // heap[heapHi++] = pt;
+                    zoneData.size++;
+                    zone[pt] = zoneData.zoneId;
+                    // indexesArr[zoneData.indexesLen++] = pt; ////////
+                    indexesArr.push(pt);
+                    zoneData.indexesLen++; ////////
+                    const elev = this.elevation[pt];
+                    if (elev < zoneData.minElev) {
+                        zoneData.minIndex = pt;
+                        zoneData.minElev = elev;
+                    }
+                    if (elev > zoneData.maxElev) {
+                        zoneData.maxIndex = pt;
+                        zoneData.maxElev = elev;
+                    }
+                    for (const neigh of this.ptsNeigh[pt]) {
+                        // if (valid[neigh] == 0) continue; // valid and not zoned
+                        // if (zone[neigh] != -1) continue; // valid and not zoned
+                        heap[heapHi++] = neigh;
+                        edgesArr[edgesLen++] = pt;
+                        edgesArr[edgesLen++] = neigh;
+                    }
+                }
+                lowestData.push(zoneData);
+            }
+        }
+        ObjectPool_1.freeFloat32Array(heap);
+        ObjectPool_1.freeFloat32Array(zone);
+        return { lowestData, edgesArr, edgesLen };
+    }
+    scanMaskEdges(index, mask) {
+        const hpp = [];
+        const edgesArr = ObjectPool_1.getFloat32Array(this.ptsEdges.length * 2).fill(-1);
+        const visited = ObjectPool_1.getUint8Array(this.ptsLength).fill(0);
+        var edgesLen = 0;
+        hpp.push(index);
+        while (hpp.length > 0) {
+            const pt = hpp.shift(); // shift() or pop()
+            // const pt = hpp.pop(); // shift() or pop()
+            for (const neigh of this.ptsNeigh[pt]) {
+                if (visited[neigh])
+                    continue;
+                visited[neigh] = 1;
+                if ((this.mask1[neigh] & mask) != mask)
+                    continue;
+                hpp.push(neigh);
+                edgesArr[edgesLen++] = pt;
+                edgesArr[edgesLen++] = neigh;
+            }
+        }
+        ObjectPool_1.freeUint8Array(visited);
+        return { edgesArr, edgesLen };
+    }
+    scanLand(index) {
+        return this.scanMaskEdges(index, exports.TerrMask.LAND);
+    }
+    scanWater(index) {
+        return this.scanMaskEdges(index, exports.TerrMask.WATER);
     }
 }
 exports.Terrain = Terrain;
@@ -86489,7 +87059,7 @@ class DrawD3Terrain {
         }
         d3DrawTab.addSlider("D3 Points size", 0, 15, 0.1, this.ptsRadius)
             .addEventListener(jData.jMng, "input", (event) => {
-            this.ptsRadius = Number.parseFloat(event.data.event.target.value);
+            this.ptsRadius = event.data.event.target.valueAsNumber;
             this.path.pointRadius(this.ptsRadius);
             this.drawOnce();
         });
@@ -86527,7 +87097,6 @@ class DrawThreePlsys {
         this.config = null;
         this.canvasOffscreen = null;
         this.fakeDOM = new WorkerDOM_1.WorkerDOM();
-        this.mouse = new THREE.Vector2();
         this.raycaster = new THREE.Raycaster();
         // sun: THREE.Mesh;
         this.orb_lines = [];
@@ -86548,7 +87117,7 @@ class DrawThreePlsys {
         this.selectedThing = null;
         this.planetarySystem = null;
         this.distToTarget = 0;
-        this.canvasSelectionData = { mousex: 0, mousey: 0, hoverId: 0, selectedId: 0 };
+        this.hoverData = { mousex: 0, mousey: 0, mousep: { x: null, y: null }, hoverId: 0, selectedId: 0 };
         this.workerJguiManager = null;
         this.worker = null;
         this.raycaster.params.Line.threshold = 10; // DRAWUNIT
@@ -86627,7 +87196,11 @@ class DrawThreePlsys {
         this.fakeDOM.addEventListener("resize", (event_) => { this.resize(event_); });
         this.controls.addEventListener("change", this.cameraMoved.bind(this));
         this.cameraMoved();
-        this.fakeDOM.addEventListener("mousemove", this.hoverMoved.bind(this)); // mouseleave
+        // this.fakeDOM.addEventListener("mousemove", this.hoverMoved.bind(this)) // mouseleave
+        // this.fakeDOM.addEventListener("contextmenu", this.hoverClick.bind(this))
+        this.fakeDOM.addEventListener("mouseenter", this.hoverEnter.bind(this));
+        this.fakeDOM.addEventListener("mousemove", this.hoverMoved.bind(this));
+        this.fakeDOM.addEventListener("mouseleave", this.hoverleave.bind(this));
         this.fakeDOM.addEventListener("contextmenu", this.hoverClick.bind(this));
         this.tjs_pool_lines.expand(20);
         this.tjs_pool_orbobjects.expand(20);
@@ -86672,21 +87245,51 @@ class DrawThreePlsys {
         this.hoverSphere.scale.setScalar(this.raycaster.params.Line.threshold / 2);
         // console.log("this.camera.position", this.camera.position);
     }
+    hoverEnter(event) {
+        this.hoverMoved(event);
+    }
+    hoverleave(event) {
+        this.hoverData.mousep.x = null;
+        this.hoverData.mousep.y = null;
+    }
     hoverMoved(event) {
-        this.canvasSelectionData.mousex = event.offsetX;
-        this.canvasSelectionData.mousey = event.offsetY;
-        // var rect = canvas.getBoundingClientRect();
-        // this.canvasSelectionData.mousex = event.clientX - rect.left;
-        // this.canvasSelectionData.mousey = event.clientY - rect.top;
-        // console.log("event", event);
-        // console.log("this.canvasSelectionData", this.canvasSelectionData);
+        var _a;
+        this.hoverData.mousex = event.offsetX;
+        this.hoverData.mousey = event.offsetY;
+        this.hoverData.mousep.x = (this.hoverData.mousex / this.canvasOffscreen.width) * 2 - 1;
+        this.hoverData.mousep.y = -(this.hoverData.mousey / this.canvasOffscreen.height) * 2 + 1;
+        this.hoverSphere.visible = false;
+        if (this.config.follow_pointed_orbit !== "none") {
+            if (this.hoverData.mousex != 0 && this.hoverData.mousey != 0) {
+                // var allIntersect = [...this.orb_lines, ...this.orb_planets]
+                // const intersects = this.raycaster.intersectObjects(allIntersect, false);
+                this.raycaster.setFromCamera(this.hoverData.mousep, this.camera);
+                const intersects = this.raycaster.intersectObjects(this.scene.children, true);
+                if (intersects.length > 0) {
+                    var orb_ = intersects[0];
+                    var targ_ = orb_.object.parent.userData;
+                    if ((_a = targ_ === null || targ_ === void 0 ? void 0 : targ_.orbitingElement) === null || _a === void 0 ? void 0 : _a.id) {
+                        this.hoverSphere.visible = true;
+                        this.hoverSphere.position.copy(orb_.point);
+                        this.hoverData.hoverId = targ_.orbitingElement.id;
+                    }
+                    // console.log("targ_", targ_);
+                    // this.camera.lookAt(targ_.position)
+                    // this.controls.target = targ_.position
+                    // TODO set a shared data variable with the ID of the selected/focused WORLD thing (orbit,planet,cell,etc.)
+                }
+                else {
+                    this.hoverData.hoverId = null;
+                }
+            }
+        }
     }
     hoverClick(event) {
-        if (this.canvasSelectionData.selectedId !== this.canvasSelectionData.hoverId) {
-            this.canvasSelectionData.selectedId = this.canvasSelectionData.hoverId;
+        if (this.hoverData.selectedId !== this.hoverData.hoverId) {
+            this.hoverData.selectedId = this.hoverData.hoverId;
             // var selected = mngr.world.idObjMap.get(this.canvasSelectionData.hoverId)
             // mngr.gui.selectOrbElement(selected as OrbitingElement);
-            var selOrbElem = this.world.getAnyObj(this.canvasSelectionData.selectedId);
+            var selOrbElem = this.world.getAnyObj(this.hoverData.selectedId);
             if (selOrbElem) {
                 var tempJgui = new JguiMake_1.JguiMake(null).mkContainer();
                 // tempJgui.addButton("genStartingPlanetSystem")
@@ -86983,7 +87586,6 @@ class DrawThreePlsys {
         }
     }
     draw() {
-        var _a;
         // console.debug("#HERELINE "+this.type+" draw ", this.world.planetary_system.time.ey);
         this.updateShallow();
         if (this.selectedThing) {
@@ -86991,34 +87593,6 @@ class DrawThreePlsys {
         }
         for (const iterator of this.orbElemToGroup.values()) {
             this.calculatePos(iterator);
-        }
-        this.hoverSphere.visible = false;
-        if (this.config.follow_pointed_orbit !== "none") {
-            if (this.canvasSelectionData.mousex != 0 && this.canvasSelectionData.mousey != 0) {
-                this.mouse.x = (this.canvasSelectionData.mousex / this.canvasOffscreen.width) * 2 - 1;
-                this.mouse.y = -(this.canvasSelectionData.mousey / this.canvasOffscreen.height) * 2 + 1;
-                // console.log("this.mouse", this.mouse);
-                // var allIntersect = [...this.orb_lines, ...this.orb_planets]
-                // const intersects = this.raycaster.intersectObjects(allIntersect, false);
-                this.raycaster.setFromCamera(this.mouse, this.camera);
-                const intersects = this.raycaster.intersectObjects(this.scene.children, true);
-                if (intersects.length > 0) {
-                    var orb_ = intersects[0];
-                    var targ_ = orb_.object.parent.userData;
-                    if ((_a = targ_ === null || targ_ === void 0 ? void 0 : targ_.orbitingElement) === null || _a === void 0 ? void 0 : _a.id) {
-                        this.hoverSphere.visible = true;
-                        this.hoverSphere.position.copy(orb_.point);
-                        this.canvasSelectionData.hoverId = targ_.orbitingElement.id;
-                    }
-                    // console.log("targ_", targ_);
-                    // this.camera.lookAt(targ_.position)
-                    // this.controls.target = targ_.position
-                    // TODO set a shared data variable with the ID of the selected/focused WORLD thing (orbit,planet,cell,etc.)
-                }
-                else {
-                    this.canvasSelectionData.hoverId = null;
-                }
-            }
         }
         if (this.selectedThing) {
             this.selectedPrevPos.sub(this.selectedThing.position); //reuse Vec3 for delta
@@ -87029,8 +87603,8 @@ class DrawThreePlsys {
         // https://stackoverflow.com/questions/37482231/camera-position-changes-in-three-orbitcontrols-in-three-js
         // https://stackoverflow.com/questions/53292145/forcing-orbitcontrols-to-navigate-around-a-moving-object-almost-working
         // https://github.com/mrdoob/three.js/pull/16374#issuecomment-489773834
-        if (this.lastSelectedId != this.canvasSelectionData.selectedId) {
-            this.lastSelectedId = this.canvasSelectionData.selectedId;
+        if (this.lastSelectedId != this.hoverData.selectedId) {
+            this.lastSelectedId = this.hoverData.selectedId;
             // console.log("this.lastSelectedId", this.lastSelectedId);
             var selOrbElem = this.world.getAnyObj(this.lastSelectedId);
             if (selOrbElem) {
@@ -87077,7 +87651,6 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.DrawThreeTerrain = void 0;
 const WorkerDOM_1 = __webpack_require__(/*! ../utils/WorkerDOM */ "./src/utils/WorkerDOM.ts");
 const ObjectPool_1 = __webpack_require__(/*! ../utils/ObjectPool */ "./src/utils/ObjectPool.ts");
-// node_modules/d3-geo-voronoi/dist/d3-geo-voronoi.js
 // Would be nice to have THICKER lines
 // https://github.com/mrdoob/three.js/blob/master/examples/webgl_lines_fat.html
 // import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2"
@@ -87091,7 +87664,9 @@ class DrawThreeTerrain {
         this.ptsRadius = 0;
         this.terrain = null;
         this.raycaster = new THREE.Raycaster();
-        this.canvasSelectionData = { mousex: 0, mousey: 0, mousep: { x: null, y: null }, hoverId: 0, selectedId: 0 };
+        this.hoverData = { mousex: 0, mousey: 0, mousep: { x: null, y: null }, hoverId: 0, selectedId: 0 };
+        this.selectedPoints = [];
+        this.specialHoverAction = null;
     }
     init(event) {
         this.canvasOffscreen = event.data.canvas;
@@ -87113,8 +87688,9 @@ class DrawThreeTerrain {
         this.hoverSphere.scale.setScalar(100);
         this.hoverSphere.visible = false;
         this.scene.add(this.hoverSphere);
-        this.raycaster.params.Points.threshold = 100; // DRAWUNIT
-        this.raycaster.params.Line.threshold = 100; // DRAWUNIT
+        const rayThresh = 200;
+        this.raycaster.params.Points.threshold = rayThresh; // DRAWUNIT
+        this.raycaster.params.Line.threshold = rayThresh; // DRAWUNIT
         // events set in src/modules/EventsManager.ts -> addOrbitCtrlEvents
         this.controls = new OrbitControls_1.OrbitControls(this.camera, this.fakeDOM);
         this.controls.enablePan = false;
@@ -87137,34 +87713,79 @@ class DrawThreeTerrain {
         this.renderer.setSize(event_.width, event_.height, false);
     }
     hoverMoved(event) {
-        this.canvasSelectionData.mousex = event.offsetX;
-        this.canvasSelectionData.mousey = event.offsetY;
-        this.canvasSelectionData.mousep.x = (this.canvasSelectionData.mousex / this.canvasOffscreen.width) * 2 - 1;
-        this.canvasSelectionData.mousep.y = -(this.canvasSelectionData.mousey / this.canvasOffscreen.height) * 2 + 1;
-        // if (this.canvasSelectionData.mousep.x != null && this.canvasSelectionData.mousep.y != null) {
-        //     this.raycaster.setFromCamera(this.canvasSelectionData.mousep, this.camera);
-        //     // const intersects = this.raycaster.intersectObjects([...this.tpMesh.values()], false);
-        //     // const intersects = this.raycaster.intersectObjects([...this.tpPts.values()], false);
-        //     const ptsObj = this.tpPts.get(this.terrain.id);
-        //     const intersects = this.raycaster.intersectObject(this.tpPts.get(this.terrain.id), false);
-        //     if (intersects.length > 0) {
-        //         var orb_ = intersects[0]
-        //         this.hoverSphere.visible = true;
-        //         this.hoverSphere.position.copy(orb_.point)
-        //         console.log("orb_", orb_);
-        //     } else {
-        //         this.hoverSphere.visible = false;
-        //     }
-        // }
+        this.hoverData.mousex = event.offsetX;
+        this.hoverData.mousey = event.offsetY;
+        this.hoverData.mousep.x = (this.hoverData.mousex / this.canvasOffscreen.width) * 2 - 1;
+        this.hoverData.mousep.y = -(this.hoverData.mousey / this.canvasOffscreen.height) * 2 + 1;
+        if (this.hoverData.mousep.x != null && this.hoverData.mousep.y != null) {
+            this.raycaster.setFromCamera(this.hoverData.mousep, this.camera);
+            const intersects = this.raycaster.intersectObject(this.tpPts, false);
+            if (intersects.length > 0) {
+                var orb_ = intersects[0];
+                this.hoverSphere.visible = true;
+                this.hoverData.hoverId = orb_.index;
+                const vec3pts = this.terrain.vec3pts[this.hoverData.hoverId];
+                this.hoverSphere.position.copy(vec3pts);
+                // console.log("orb_", orb_);
+            }
+            else {
+                this.hoverData.hoverId = -1;
+                this.hoverSphere.visible = false;
+            }
+        }
     }
     hoverEnter(event) {
         this.hoverMoved(event);
     }
     hoverleave(event) {
-        this.canvasSelectionData.mousep.x = null;
-        this.canvasSelectionData.mousep.y = null;
+        this.hoverData.mousep.x = null;
+        this.hoverData.mousep.y = null;
     }
     hoverClick(event) {
+        if (this.specialHoverAction && this.hoverData.hoverId !== -1) {
+            this.specialHoverAction(this.hoverData.hoverId);
+            this.specialHoverAction = null;
+            return;
+        }
+        if (this.hoverData.hoverId == -1) {
+            this.selectedPoints.length = 0;
+            this.clearAllLines();
+        }
+        else
+            this.selectedPoints.push(this.hoverData.hoverId);
+        console.log("this.selectedPoints", this.selectedPoints);
+        // console.log("this.hoverData.hoverId", this.hoverData.hoverId);
+        if (this.selectedPoints.length >= 2) {
+            const paths = this.terrain.makePaths(this.selectedPoints);
+            this.drawLinesPaths(paths);
+        }
+    }
+    drawLinesPaths(paths) {
+        var _a, _b;
+        var patSegLen = 0;
+        for (const path_ of paths)
+            patSegLen += path_.path.length;
+        patSegLen -= paths.length;
+        const vec3pts = this.terrain.vec3pts;
+        const segLen = patSegLen * 3 * 2;
+        ObjectPool_1.freeFloat32Array((_b = (_a = this.tpLines1) === null || _a === void 0 ? void 0 : _a.geometry) === null || _b === void 0 ? void 0 : _b.getAttribute('position').array);
+        const lineSegs = ObjectPool_1.getFloat32Array(segLen);
+        var lineCnt = 0;
+        for (const path_ of paths) {
+            // console.log("path_", path_);
+            for (let index = 0; index < path_.path.length - 1; index++) {
+                const e1 = path_.path[index];
+                const e2 = path_.path[index + 1];
+                // console.log("e1,e2", e1, e2);
+                lineSegs[lineCnt++] = vec3pts[e1].x;
+                lineSegs[lineCnt++] = vec3pts[e1].y;
+                lineSegs[lineCnt++] = vec3pts[e1].z;
+                lineSegs[lineCnt++] = vec3pts[e2].x;
+                lineSegs[lineCnt++] = vec3pts[e2].y;
+                lineSegs[lineCnt++] = vec3pts[e2].z;
+            }
+        }
+        this.drawLinesSegments(lineSegs, segLen);
     }
     syncTerrainData() {
         this.drawMeshTerrain();
@@ -87181,7 +87802,8 @@ class DrawThreeTerrain {
         var ptsObject = new THREE.Points(ptsGeometry, ptsMaterial);
         const ptsPosAttr = new THREE.Float32BufferAttribute(this.terrain.pos3d, 3);
         ptsPosAttr.count = this.terrain.ptsLength;
-        const ptsColAttr = new THREE.Float32BufferAttribute(this.terrain.color, 3);
+        // const ptsColAttr = new THREE.Float32BufferAttribute(this.terrain.color, 3);
+        const ptsColAttr = new THREE.Float32BufferAttribute(this.terrain.colorDebug, 3);
         ptsColAttr.count = this.terrain.ptsLength;
         ptsGeometry.setAttribute('position', ptsPosAttr);
         ptsGeometry.setAttribute('color', ptsColAttr);
@@ -87219,8 +87841,12 @@ class DrawThreeTerrain {
             meshCol[index * 3 + 1] = color[pts3Vertex[index] * 3 + 1];
             meshCol[index * 3 + 2] = color[pts3Vertex[index] * 3 + 2];
         }
-        ptcl.setAttribute('position', new THREE.Float32BufferAttribute(meshPos, 3));
-        ptcl.setAttribute('color', new THREE.Float32BufferAttribute(meshCol, 3));
+        const attrPos = new THREE.Float32BufferAttribute(meshPos, 3);
+        attrPos.count = pts3Vertex.length;
+        ptcl.setAttribute('position', attrPos);
+        const attrCol = new THREE.Float32BufferAttribute(meshCol, 3);
+        attrCol.count = pts3Vertex.length;
+        ptcl.setAttribute('color', attrCol);
         // ptcl.setAttribute( 'normal', new THREE.Float32BufferAttribute( normals, 3 ) );
         this.tpMesh = mesObject;
         this.scene.add(mesObject);
@@ -87231,13 +87857,16 @@ class DrawThreeTerrain {
     clearAllLines() {
         this.disposeObj(this.tpLines1);
     }
+    clearRivers() {
+        this.disposeObj(this.rivers);
+    }
     drawLinesPrede() {
         var _a, _b;
-        this.clearAllLines();
         const vec3pts = this.terrain.vec3pts;
         const ptsPred = this.terrain.ptsPred;
+        const segLen = ptsPred.length * 3 * 2;
         ObjectPool_1.freeFloat32Array((_b = (_a = this.tpLines1) === null || _a === void 0 ? void 0 : _a.geometry) === null || _b === void 0 ? void 0 : _b.getAttribute('position').array);
-        const lineSegs = ObjectPool_1.getFloat32Array(ptsPred.length * 3 * 2);
+        const lineSegs = ObjectPool_1.getFloat32Array(segLen);
         for (let index = 0; index < ptsPred.length - 1; index++) {
             const ed = ptsPred[index];
             if (ed < 0)
@@ -87249,15 +87878,15 @@ class DrawThreeTerrain {
             lineSegs[index * 6 + 4] = vec3pts[ed].y;
             lineSegs[index * 6 + 5] = vec3pts[ed].z;
         }
-        this.drawLinesSegments(lineSegs);
+        this.drawLinesSegments(lineSegs, segLen);
     }
     drawLinesEdge() {
         var _a, _b;
-        this.clearAllLines();
         const vec3pts = this.terrain.vec3pts;
         const ptsEdges = this.terrain.ptsEdges;
+        const segLen = ptsEdges.length * 3 * 2;
         ObjectPool_1.freeFloat32Array((_b = (_a = this.tpLines1) === null || _a === void 0 ? void 0 : _a.geometry) === null || _b === void 0 ? void 0 : _b.getAttribute('position').array);
-        const lineSegs = ObjectPool_1.getFloat32Array(ptsEdges.length * 3 * 2);
+        const lineSegs = ObjectPool_1.getFloat32Array(segLen);
         for (let index = 0; index < ptsEdges.length; index++) {
             const ed = ptsEdges[index];
             lineSegs[index * 6 + 0] = vec3pts[ed[0]].x;
@@ -87267,15 +87896,17 @@ class DrawThreeTerrain {
             lineSegs[index * 6 + 4] = vec3pts[ed[1]].y;
             lineSegs[index * 6 + 5] = vec3pts[ed[1]].z;
         }
-        this.drawLinesSegments(lineSegs);
+        this.drawLinesSegments(lineSegs, segLen);
     }
-    drawLinesSegments(lineSegs) {
+    drawLinesSegments(lineSegs, lineSegsLen) {
+        this.clearAllLines();
+        // console.log("lineSegsLen,lineSegs", lineSegsLen, lineSegs);
         // if (lineSegs)
-        //     for (let index = 0; index < lineSegs.length; index++)
+        //     for (let index = 0; index < lineSegsLen; index++)
         //         lineSegs[index] *= (Math.random() / 30) + 1
-        if (lineSegs)
-            for (let index = 0; index < lineSegs.length; index++)
-                lineSegs[index] *= 1.05;
+        // if (lineSegs)
+        for (let index = 0; index < lineSegsLen; index++)
+            lineSegs[index] *= 1.01;
         var line1Geometry = new THREE.BufferGeometry();
         var line1Material = new THREE.LineBasicMaterial({
             color: 0xffffff,
@@ -87286,11 +87917,38 @@ class DrawThreeTerrain {
         // var line1Object = new THREE.LineSegments(edges, line1Material);
         // const line1PosAttr = new THREE.Float32BufferAttribute(this.terrain.linesHull, 3);
         const line1PosAttr = new THREE.Float32BufferAttribute(lineSegs, 3);
+        line1PosAttr.count = lineSegsLen / 3;
         line1Geometry.setAttribute('position', line1PosAttr);
         line1Geometry.computeBoundingSphere();
         var line1Object = new THREE.LineSegments(line1Geometry, line1Material);
         this.tpLines1 = line1Object;
         this.scene.add(line1Object);
+    }
+    drawRivers(lineSegs, lineSegsLen) {
+        this.clearRivers();
+        // console.log("lineSegsLen,lineSegs", lineSegsLen, lineSegs);
+        // if (lineSegs)
+        //     for (let index = 0; index < lineSegsLen; index++)
+        //         lineSegs[index] *= (Math.random() / 30) + 1
+        // if (lineSegs)
+        for (let index = 0; index < lineSegsLen; index++)
+            lineSegs[index] *= 1.01;
+        var riversGeometry = new THREE.BufferGeometry();
+        var riversMaterial = new THREE.LineBasicMaterial({
+            color: 0x07cdf5,
+            linewidth: 50, // not working :(
+            // vertexColors: true,
+        });
+        // const edges = new THREE.EdgesGeometry(ptcl);
+        // var line1Object = new THREE.LineSegments(edges, line1Material);
+        // const line1PosAttr = new THREE.Float32BufferAttribute(this.terrain.linesHull, 3);
+        const riversPosAttr = new THREE.Float32BufferAttribute(lineSegs, 3);
+        riversPosAttr.count = lineSegsLen / 3;
+        riversGeometry.setAttribute('position', riversPosAttr);
+        riversGeometry.computeBoundingSphere();
+        var riversObject = new THREE.LineSegments(riversGeometry, riversMaterial);
+        this.rivers = riversObject;
+        this.scene.add(riversObject);
     }
     disposeObj(threeObj) {
         var _a, _b;
@@ -87318,6 +87976,8 @@ class DrawThreeTerrain {
         this.setCamera();
         this.clearTerrainData();
         this.syncTerrainData();
+        this.scanRivers();
+        // this.pathToWater();
         console.timeEnd(`#time DrawThreeTerrain updateDeep`);
     }
     draw() {
@@ -87325,20 +87985,123 @@ class DrawThreeTerrain {
         this.renderer.render(this.scene, this.camera);
     }
     updatePtsMaterials() {
-        // this.raycaster.params.Points.threshold = this.ptsRadius; // DRAWUNIT
-        // this.raycaster.params.Line.threshold = this.ptsRadius; // DRAWUNIT
         this.tpPts.material.visible = (this.ptsRadius != 0);
         this.tpPts.material.size = this.ptsRadius;
         this.tpPts.material.needsUpdate = true;
     }
+    drawLinesSegmentsIndex(lineIndex, lineIndexLen) {
+        var _a, _b;
+        const vec3pts = this.terrain.vec3pts;
+        const segLen = lineIndexLen * 3;
+        ObjectPool_1.freeFloat32Array((_b = (_a = this.tpLines1) === null || _a === void 0 ? void 0 : _a.geometry) === null || _b === void 0 ? void 0 : _b.getAttribute('position').array);
+        const lineSegs = ObjectPool_1.getFloat32Array(segLen);
+        var lineCnt = 0;
+        for (let index = 0; index < lineIndexLen; index++) {
+            const e1 = lineIndex[index];
+            lineSegs[lineCnt++] = vec3pts[e1].x;
+            lineSegs[lineCnt++] = vec3pts[e1].y;
+            lineSegs[lineCnt++] = vec3pts[e1].z;
+        }
+        this.drawLinesSegments(lineSegs, segLen);
+    }
+    scanLand(index) {
+        var scanData = this.terrain.scanLand(index);
+        this.drawLinesSegmentsIndex(scanData.edgesArr, scanData.edgesLen);
+    }
+    scanWater(index) {
+        var scanData = this.terrain.scanWater(index);
+        this.drawLinesSegmentsIndex(scanData.edgesArr, scanData.edgesLen);
+    }
+    scanLower(index) {
+        const elev = this.terrain.elevation[index];
+        var scanData = this.terrain.getLowestElevPoints(elev);
+        this.drawLinesSegmentsIndex(scanData.edgesArr, scanData.edgesLen);
+    }
+    scanHigher(index) {
+        const elev = this.terrain.elevation[index];
+        var scanData = this.terrain.getHighestElevPoints(elev);
+        this.drawLinesSegmentsIndex(scanData.edgesArr, scanData.edgesLen);
+    }
+    scanOcean() {
+        var scanData = this.terrain.getLowestElevPoints(this.terrain.elevOcean);
+        this.drawLinesSegmentsIndex(scanData.edgesArr, scanData.edgesLen);
+    }
+    scanContinent() {
+        var scanData = this.terrain.getHighestElevPoints(this.terrain.elevOcean);
+        this.drawLinesSegmentsIndex(scanData.edgesArr, scanData.edgesLen);
+    }
+    scanMountains() {
+        var scanData = this.terrain.getHighestElevPoints(this.terrain.elevMountain);
+        this.drawLinesSegmentsIndex(scanData.edgesArr, scanData.edgesLen);
+    }
+    scanRivers() {
+        var _a, _b;
+        var scanData = this.terrain.getRiverOrig();
+        const vec3pts = this.terrain.vec3pts;
+        const segLen = scanData.edgesLen * 3;
+        ObjectPool_1.freeFloat32Array((_b = (_a = this.rivers) === null || _a === void 0 ? void 0 : _a.geometry) === null || _b === void 0 ? void 0 : _b.getAttribute('position').array);
+        const lineSegs = ObjectPool_1.getFloat32Array(segLen);
+        var lineCnt = 0;
+        for (let index = 0; index < scanData.edgesLen; index++) {
+            const e1 = scanData.edgesArr[index];
+            lineSegs[lineCnt++] = vec3pts[e1].x;
+            lineSegs[lineCnt++] = vec3pts[e1].y;
+            lineSegs[lineCnt++] = vec3pts[e1].z;
+        }
+        this.drawRivers(lineSegs, segLen);
+    }
+    pathToWater() {
+        const edgesArr = ObjectPool_1.getFloat32Array(this.terrain.ptsEdges.length * 2).fill(-1);
+        var edgesLen = 0;
+        for (let index = 0; index < this.terrain.ptsEdges.length; index++) {
+            const tow = this.terrain.pathToWatter[index];
+            if (tow == -1)
+                continue;
+            if (isNaN(tow))
+                continue;
+            edgesArr[edgesLen++] = index;
+            edgesArr[edgesLen++] = tow;
+        }
+        // console.log("edgesArr", edgesArr);
+        this.drawLinesSegmentsIndex(edgesArr, edgesLen);
+    }
     addJgui(jData) {
         var threeDrawTab = jData.jGui.addColapse("Three Draw", true);
+        var [butLand, butWat] = threeDrawTab.add2Buttons("Zone land", "Zone Water");
+        butLand.addEventListener(jData.jMng, "click", (event) => {
+            this.specialHoverAction = this.scanLand.bind(this);
+        });
+        butWat.addEventListener(jData.jMng, "click", (event) => {
+            this.specialHoverAction = this.scanWater.bind(this);
+        });
+        var [butLow, butOcean] = threeDrawTab.add2Buttons("Scan low", "Scan ocean");
+        butLow.addEventListener(jData.jMng, "click", (event) => {
+            this.specialHoverAction = this.scanLower.bind(this);
+        });
+        butOcean.addEventListener(jData.jMng, "click", (event) => {
+            this.scanOcean();
+        });
+        var [butHii, butLand] = threeDrawTab.add2Buttons("Scan hi", "Scan land");
+        butHii.addEventListener(jData.jMng, "click", (event) => {
+            this.specialHoverAction = this.scanHigher.bind(this);
+        });
+        butLand.addEventListener(jData.jMng, "click", (event) => {
+            this.scanContinent();
+        });
+        var [butriv, butMtn] = threeDrawTab.add2Buttons("Scan river", "Scan mtn");
+        butriv.addEventListener(jData.jMng, "click", (event) => {
+            this.scanRivers();
+        });
+        butMtn.addEventListener(jData.jMng, "click", (event) => {
+            this.scanMountains();
+        });
         threeDrawTab.addSlider("THREE Points size", 0, 1000, 1, this.ptsRadius)
             .addEventListener(jData.jMng, "input", (event) => {
-            this.ptsRadius = Number.parseFloat(event.data.event.target.value);
+            this.ptsRadius = event.data.event.target.valueAsNumber;
             this.updatePtsMaterials();
         });
-        const lineTypes = ["none", "edges", "predecesor"];
+        const lineTypes = ["none", "edges", "allRivers"];
+        // lineTypes.push("predecesor")
         var [_, prdDropList] = threeDrawTab.addDropdown("View lines", lineTypes);
         for (const prjDdObj of prdDropList) {
             prjDdObj.addEventListener(jData.jMng, "click", (event) => {
@@ -87348,6 +88111,9 @@ class DrawThreeTerrain {
                         break;
                     case "edges":
                         this.drawLinesEdge();
+                        break;
+                    case "allRivers":
+                        this.pathToWater();
                         break;
                     case "predecesor":
                         this.drawLinesPrede();
@@ -87784,7 +88550,7 @@ class PlanetSysWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
         // })
         workerJgui.addSlider("Earth years upd", 0, 0.005, 0.00001, this.config.timeEarthYearsTick)
             .addEventListener(workerJguiManager, "input", (event) => {
-            this.config.timeEarthYearsTick = Number.parseFloat(event.data.event.target.value);
+            this.config.timeEarthYearsTick = event.data.event.target.valueAsNumber;
         });
         JguiUtils_1.setMainContainer(this.worker, this.workerJguiMain);
     }
@@ -87973,7 +88739,7 @@ class TerrainWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
     }
     makeJgiu() {
         const jguiOrdinal = MAIN_ORDINAL + "00";
-        var startExpanded = !true;
+        var startExpanded = true;
         [this.workerJguiMain, this.workerJguiCont] = new JguiMake_1.JguiMake(null).mkWorkerJgui("terr", jguiOrdinal, startExpanded);
         var jData = {
             jGui: this.workerJguiCont,
@@ -87991,46 +88757,55 @@ class TerrainWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
         genTab.addButton("Re-Genearte")
             .addTooltip("Regenerating will use an actual Planet, first run uses a dummy instance so we do not wait for PlSys to gen.")
             .addEventListener(jData.jMng, "click", (event) => {
+            this.terrain.data.noiseSeed = Math.random();
             this.genFromExistingPlanet();
         });
-        genTab.addNumber("altitudeMinProc ", this.terrain.data.altitudeMinProc, 0.02).addEventListener(jData.jMng, "change", (event) => {
-            this.terrain.data.altitudeMinProc = event.data.event.target.value;
+        genTab.addNumber("altMinProc ", this.terrain.data.altitudeMinProc, 0.02).addEventListener(jData.jMng, "change", (event) => {
+            this.terrain.data.altitudeMinProc = event.data.event.target.valueAsNumber;
             this.genFromExistingPlanet();
         });
-        genTab.addNumber("altitudeMaxProc ", this.terrain.data.altitudeMaxProc, 0.02).addEventListener(jData.jMng, "change", (event) => {
-            this.terrain.data.altitudeMaxProc = event.data.event.target.value;
+        genTab.addNumber("altMaxProc ", this.terrain.data.altitudeMaxProc, 0.02).addEventListener(jData.jMng, "change", (event) => {
+            this.terrain.data.altitudeMaxProc = event.data.event.target.valueAsNumber;
+            this.genFromExistingPlanet();
+        });
+        genTab.addNumber("altOceanProc ", this.terrain.data.altitudeOceanProc, 0.05).addEventListener(jData.jMng, "change", (event) => {
+            this.terrain.data.altitudeOceanProc = event.data.event.target.valueAsNumber;
+            this.genFromExistingPlanet();
+        });
+        genTab.addNumber("altMountainProc ", this.terrain.data.altitudeMountainProc, 0.05).addEventListener(jData.jMng, "change", (event) => {
+            this.terrain.data.altitudeMountainProc = event.data.event.target.valueAsNumber;
             this.genFromExistingPlanet();
         });
         genTab.addNumber("pointsToGen ", this.terrain.data.pointsToGen, 500).addEventListener(jData.jMng, "change", (event) => {
-            this.terrain.data.pointsToGen = event.data.event.target.value;
+            this.terrain.data.pointsToGen = event.data.event.target.valueAsNumber;
             this.genFromExistingPlanet();
         });
-        genTab.addNumber("noiseSeed ", this.terrain.data.noiseSeed, 0.00001).addEventListener(jData.jMng, "change", (event) => {
-            this.terrain.data.noiseSeed = event.data.event.target.value;
+        genTab.addNumber("noiseSeed ", this.terrain.data.noiseSeed, 0.0001).addEventListener(jData.jMng, "change", (event) => {
+            this.terrain.data.noiseSeed = event.data.event.target.valueAsNumber;
             this.genFromExistingPlanet();
         });
         genTab.addCheckButton("noiseApplyAbs ", this.terrain.data.noiseApplyAbs)[0].addEventListener(jData.jMng, "change", (event) => {
             this.terrain.data.noiseApplyAbs = event.data.event.target.checked;
             this.genFromExistingPlanet();
         });
-        genTab.addNumber("noiseFrequency ", this.terrain.data.noiseFrequency, 0.5).addEventListener(jData.jMng, "change", (event) => {
-            this.terrain.data.noiseFrequency = event.data.event.target.value;
+        genTab.addNumber("noiseFrequency ", this.terrain.data.noiseFrequency, 0.25).addEventListener(jData.jMng, "change", (event) => {
+            this.terrain.data.noiseFrequency = event.data.event.target.valueAsNumber;
             this.genFromExistingPlanet();
         });
         genTab.addNumber("noiseAmplitude ", this.terrain.data.noiseAmplitude, 0.1).addEventListener(jData.jMng, "change", (event) => {
-            this.terrain.data.noiseAmplitude = event.data.event.target.value;
+            this.terrain.data.noiseAmplitude = event.data.event.target.valueAsNumber;
             this.genFromExistingPlanet();
         });
         genTab.addNumber("noisePersistence ", this.terrain.data.noisePersistence, 0.1).addEventListener(jData.jMng, "change", (event) => {
-            this.terrain.data.noisePersistence = event.data.event.target.value;
+            this.terrain.data.noisePersistence = event.data.event.target.valueAsNumber;
             this.genFromExistingPlanet();
         });
         genTab.addNumber("noiseOctaves ", this.terrain.data.noiseOctaves, 1).addEventListener(jData.jMng, "change", (event) => {
-            this.terrain.data.noiseOctaves = event.data.event.target.value;
+            this.terrain.data.noiseOctaves = event.data.event.target.valueAsNumber;
             this.genFromExistingPlanet();
         });
-        genTab.addNumber("noiseExponent ", this.terrain.data.noiseExponent, 1).addEventListener(jData.jMng, "change", (event) => {
-            this.terrain.data.noiseExponent = event.data.event.target.value;
+        genTab.addNumber("noiseExponent1 ", this.terrain.data.noiseExponent1, 0.1).addEventListener(jData.jMng, "change", (event) => {
+            this.terrain.data.noiseExponent1 = event.data.event.target.valueAsNumber;
             this.genFromExistingPlanet();
         });
         JguiUtils_1.setMainContainer(this.worker, this.workerJguiMain);
@@ -88631,7 +89406,7 @@ exports.Color = Color;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.NumberRadiantFlux = exports.NumberTemperature = exports.NumberTime = exports.NumberAngle = exports.NumberDensity = exports.NumberBigMass = exports.NumberMass = exports.NumberVolume = exports.NumberLength = exports.NumberConverter = exports.true_anomaly_rev = exports.copyDeep = exports.copyShallow = exports.sphereVolumeBig = exports.sphereVolume = exports.copy = exports.clamp = exports.revToDeg = exports.degToRev = exports.mapLinear = exports.radToRev = exports.revToRad = exports.radToDeg = exports.degToRad = exports.srToAu = exports.auToSr = exports.earthJupMass = exports.jupEarthMass = exports.jupmToKg = exports.kgToJupm = exports.juprToKm = exports.kmToJupr = exports.erToKm = exports.kmToEr = exports.srToKm = exports.kmToSr = exports.auToGm = exports.GmToAu = exports.auToKm = exports.kmToAu = exports.emToKg = exports.kgToEm = exports.smToKg = exports.kgToSm = void 0;
+exports.NumberRadiantFlux = exports.NumberTemperature = exports.NumberTime = exports.NumberAngle = exports.NumberDensity = exports.NumberBigMass = exports.NumberMass = exports.NumberVolume = exports.NumberLength = exports.NumberConverter = exports.true_anomaly_rev = exports.copyDeep = exports.copyShallow = exports.sphereVolumeBig = exports.sphereVolume = exports.copy = exports.clamp = exports.revToDeg = exports.degToRev = exports.lerp = exports.mapLinear = exports.radToRev = exports.revToRad = exports.radToDeg = exports.degToRad = exports.srToAu = exports.auToSr = exports.earthJupMass = exports.jupEarthMass = exports.jupmToKg = exports.kgToJupm = exports.juprToKm = exports.kmToJupr = exports.erToKm = exports.kmToEr = exports.srToKm = exports.kmToSr = exports.auToGm = exports.GmToAu = exports.auToKm = exports.kmToAu = exports.emToKg = exports.kgToEm = exports.smToKg = exports.kgToSm = void 0;
 const THREE = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 const Units = __webpack_require__(/*! ../utils/Units */ "./src/utils/Units.ts");
 // import * as Convert from "../utils/Convert"
@@ -88735,6 +89510,10 @@ function mapLinear(x, a1, a2, b1, b2) {
     return THREE.MathUtils.mapLinear(x, a1, a2, b1, b2);
 }
 exports.mapLinear = mapLinear;
+function lerp(x, y, t) {
+    return THREE.MathUtils.lerp(x, y, t);
+}
+exports.lerp = lerp;
 function degToRev(degrees) {
     return degrees / 360;
 }
@@ -89003,6 +89782,67 @@ class NumberRadiantFlux extends NumberConverter {
     set watt(value) { this.value = value; }
 }
 exports.NumberRadiantFlux = NumberRadiantFlux;
+
+
+/***/ }),
+
+/***/ "./src/utils/Heapify.ts":
+/*!******************************!*\
+  !*** ./src/utils/Heapify.ts ***!
+  \******************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Heapify = void 0;
+const heapify = __webpack_require__(/*! ../../node_modules/heapify/heapify.mjs */ "./node_modules/heapify/heapify.mjs");
+const ObjectPool_1 = __webpack_require__(/*! ../utils/ObjectPool */ "./src/utils/ObjectPool.ts");
+class Heapify {
+    constructor(capacity) {
+        const arrCap = Math.ceil((capacity + 10) * 1.3);
+        this.heapify = new heapify.default(1, [], [], Uint32Array, Float32Array);
+        this.heapify._keys = ObjectPool_1.getUint32Array(arrCap);
+        this.heapify._priorities = ObjectPool_1.getFloat32Array(arrCap);
+        this.heapify._capacity = capacity;
+    }
+    /**
+     * @param {*} key the identifier of the object to be pushed into the heap
+     * @param {Number} priority 32-bit value corresponding to the priority of this key
+     */
+    push(key, priority) {
+        this.heapify.push(key, priority);
+    }
+    pop() {
+        return this.heapify.pop();
+    }
+    peekPriority() {
+        return this.heapify.peekPriority();
+    }
+    peekValue() {
+        return this.heapify.peekPriority();
+    }
+    peekKey() {
+        return this.heapify.peek();
+    }
+    peek() {
+        return this.heapify.peek();
+    }
+    clear() {
+        this.heapify.clear();
+    }
+    dumpRawPriorities() {
+        return this.heapify.dumpRawPriorities();
+    }
+    get length() { return this.heapify.size; }
+    get size() { return this.heapify.size; }
+    get capacity() { return this.heapify.capacity; }
+    free() {
+        ObjectPool_1.freeUint32Array(this.heapify._keys);
+        ObjectPool_1.freeFloat32Array(this.heapify._priorities);
+    }
+}
+exports.Heapify = Heapify;
 
 
 /***/ }),
@@ -89873,90 +90713,25 @@ exports.WorkerDocument = WorkerDocument;
 
 "use strict";
 
+// https://observablehq.com/@fil/dijkstra
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.draw_connections = exports.poissonDisc2d = exports.pick2d = exports.normal2d = exports.grid2d = exports.hexgrid2d = exports.poissonDiscSampler = exports.random2d = exports.shortestTreeCustom = exports.shortest_tree = exports.shortest_paths = exports.shortest_path = exports.shortest_junctions = void 0;
+exports.poissonDisc2d = exports.pick2d = exports.normal2d = exports.grid2d = exports.hexgrid2d = exports.poissonDiscSampler = exports.random2d = exports.shortestTreeCustom = exports.shortest_paths = exports.shortest_path = exports.shortest_junctions = void 0;
 const d3 = __webpack_require__(/*! d3 */ "./node_modules/d3/index.js");
-class FlatQueue {
-    // https://github.com/mourner/flatqueue
-    constructor() {
-        this.ids = [];
-        this.values = [];
-        this.length = 0;
-    }
-    clear() {
-        this.length = this.ids.length = this.values.length = 0;
-    }
-    push(id, value) {
-        this.ids.push(id);
-        this.values.push(value);
-        let pos = this.length++;
-        while (pos > 0) {
-            const parent = (pos - 1) >> 1;
-            const parentValue = this.values[parent];
-            if (value >= parentValue)
-                break;
-            this.ids[pos] = this.ids[parent];
-            this.values[pos] = parentValue;
-            pos = parent;
-        }
-        this.ids[pos] = id;
-        this.values[pos] = value;
-    }
-    pop() {
-        if (this.length === 0)
-            return undefined;
-        const top = this.ids[0];
-        this.length--;
-        if (this.length > 0) {
-            const id = this.ids[0] = this.ids[this.length];
-            const value = this.values[0] = this.values[this.length];
-            const halfLength = this.length >> 1;
-            let pos = 0;
-            while (pos < halfLength) {
-                let left = (pos << 1) + 1;
-                const right = left + 1;
-                let bestIndex = this.ids[left];
-                let bestValue = this.values[left];
-                const rightValue = this.values[right];
-                if (right < this.length && rightValue < bestValue) {
-                    left = right;
-                    bestIndex = this.ids[right];
-                    bestValue = rightValue;
-                }
-                if (bestValue >= value)
-                    break;
-                this.ids[pos] = bestIndex;
-                this.values[pos] = bestValue;
-                pos = left;
-            }
-            this.ids[pos] = id;
-            this.values[pos] = value;
-        }
-        this.ids.pop();
-        this.values.pop();
-        return top;
-    }
-    peek() {
-        return this.ids[0];
-    }
-    peekValue() {
-        return this.values[0];
-    }
-}
+const Heapify_1 = __webpack_require__(/*! ./Heapify */ "./src/utils/Heapify.ts");
 // returns the junctions between zones
+// https://observablehq.com/@fil/dijkstra
 function shortest_junctions(graph, tree) {
     const origins = [...new Set(tree.origin)].filter(i => i > -1);
     let costs = new Map(), junctions = new Map();
-    for (let l = 0; l < graph.sources.length; l++) {
-        const i = tree.origin[graph.sources[l]], j = tree.origin[graph.targets[l]];
+    for (let l = 0; l < graph.length; l++) {
+        const i = tree.origin[graph[l][0]], j = tree.origin[graph[l][1]];
         if (i !== j && i > -1 && j > -1) {
             const code = `${i}-${j}`;
-            const c = graph.costs[l] +
-                tree.cost[graph.sources[l]] +
-                tree.cost[graph.targets[l]];
+            const gc = graph[l].length >= 3 ? +graph[l][2] : 1;
+            const c = gc + tree.cost[graph[l][0]] + tree.cost[graph[l][1]];
             if (!costs.has(code) || c < costs.get(code)) {
                 costs.set(code, c);
-                junctions.set(code, [graph.sources[l], graph.targets[l]]);
+                junctions.set(code, [graph[l][0], graph[l][1]]);
             }
         }
     }
@@ -89966,6 +90741,7 @@ exports.shortest_junctions = shortest_junctions;
 // returns the shortest path that connects i to j:
 // - without stepping into other origins’ zones
 // - without going above cutoff in each origin’s zone
+// https://observablehq.com/@fil/dijkstra
 function shortest_path(graph, tree, i, j) {
     const P = shortest_junctions(graph, tree);
     let cost = Infinity, junction = [], path = [];
@@ -89984,6 +90760,7 @@ function shortest_path(graph, tree, i, j) {
     return { cost, junction, path };
 }
 exports.shortest_path = shortest_path;
+// https://observablehq.com/@fil/dijkstra
 function shortest_paths(graph, tree) {
     const paths = [];
     const P = shortest_junctions(graph, tree);
@@ -90000,70 +90777,7 @@ function shortest_paths(graph, tree) {
     return paths;
 }
 exports.shortest_paths = shortest_paths;
-// https://observablehq.com/@fil/dijkstra
-function* shortest_tree({ graph, origins, cutoff = Number.POSITIVE_INFINITY, step = 0 }) {
-    const start_time = performance.now(), _step = step === undefined ? 0 : +step, neigh = new Map();
-    let n = 0;
-    // populate a fast lookup Map of links indices for each source
-    for (let i = 0, l = graph.sources.length; i < l; i++) {
-        const a = +graph.sources[i], b = +graph.targets[i];
-        if (!neigh.has(a))
-            neigh.set(a, []);
-        neigh.get(a).push(i);
-        // keep track of the highest node’s id
-        n = Math.max(n, a + 1, b + 1);
-    }
-    const q = new FlatQueue(), front = q.ids, cost = new Float64Array(n).fill(Infinity), predecessor = new Int32Array(n).fill(-1), origin = new Int32Array(n).fill(-1), status = {
-        cost,
-        predecessor,
-        performance: 0,
-        origin,
-        step: 0,
-        front,
-        max_front_size: 0,
-        ended: false
-    };
-    origins.forEach(node => {
-        if (isFinite(node))
-            node = { id: node, cost: 0 };
-        if (node.id < n) {
-            origin[node.id] = node.id;
-            q.push(node.id, (cost[node.id] = node.cost));
-        }
-    });
-    const time = performance.now();
-    while (q.length > 0) {
-        const curr = q.peekValue(), node = q.pop();
-        if (curr > cost[node])
-            continue; // ignore obsolete elements
-        if (neigh.has(node)) {
-            for (const i of neigh.get(node)) {
-                const c = graph.costs ? +graph.costs[i] : 1;
-                if (!isFinite(c))
-                    continue;
-                const tentative = c + cost[node];
-                if (tentative > cutoff)
-                    continue;
-                const dest = graph.targets[i];
-                if (tentative >= 0 && tentative < cost[dest]) {
-                    predecessor[dest] = node;
-                    origin[dest] = origin[node];
-                    q.push(dest, (cost[dest] = tentative));
-                    status.max_front_size = Math.max(status.max_front_size, front.length);
-                }
-            }
-        }
-        status.step++;
-        if (_step && status.step % _step === 0) {
-            status.performance = performance.now() - time;
-            yield status;
-        }
-    }
-    status.ended = true;
-    status.performance = performance.now() - time;
-    yield status;
-}
-exports.shortest_tree = shortest_tree;
+// // https://observablehq.com/@fil/dijkstra
 function shortestTreeCustom({ graph, origins, cutoff = Number.POSITIVE_INFINITY, directed = true }) {
     const neigh = new Map();
     let n = 0;
@@ -90081,8 +90795,7 @@ function shortestTreeCustom({ graph, origins, cutoff = Number.POSITIVE_INFINITY,
         // keep track of the highest node’s id
         n = Math.max(n, a + 1, b + 1);
     }
-    // TODO replace with https://github.com/luciopaiva/heapify
-    const queue = new FlatQueue(), 
+    const queue = new Heapify_1.Heapify(n), 
     // front = q.ids,
     cost = new Float32Array(n).fill(Infinity), predecessor = new Int32Array(n).fill(-1), origin = new Int32Array(n).fill(-1), 
     // hops = new Int32Array(n).fill(-1),
@@ -90138,6 +90851,7 @@ function shortestTreeCustom({ graph, origins, cutoff = Number.POSITIVE_INFINITY,
             }
         }
     }
+    queue.free();
     return status;
 }
 exports.shortestTreeCustom = shortestTreeCustom;
@@ -90274,19 +90988,18 @@ exports.poissonDisc2d = poissonDisc2d;
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-function draw_connections(context, nodes, run) {
-    context.beginPath();
-    run.predecessor.forEach((d, i) => {
-        if (d > -1) {
-            context.moveTo(...nodes[i]);
-            context.lineTo(...nodes[d]);
-        }
-    });
-    context.lineWidth = 0.5;
-    context.strokeStyle = "white";
-    context.stroke();
-}
-exports.draw_connections = draw_connections;
+// export function draw_connections(context, nodes, run) {
+//     context.beginPath();
+//     run.predecessor.forEach((d, i) => {
+//         if (d > -1) {
+//             context.moveTo(...nodes[i]);
+//             context.lineTo(...nodes[d]);
+//         }
+//     });
+//     context.lineWidth = 0.5;
+//     context.strokeStyle = "white";
+//     context.stroke();
+// }
 // export function draw_voronoi_cells(context, nodes, run) {
 //     const width = parseInt(context.canvas.style.width),
 //         height = (context.canvas.height / context.canvas.width) * width,

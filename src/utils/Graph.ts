@@ -3,7 +3,6 @@
 
 
 import * as d3 from "d3"
-import { geoDelaunay, geoVoronoi, geoContour } from "d3-geo-voronoi"
 // node_modules/d3-geo-voronoi/dist/d3-geo-voronoi.js
 import { pointGeoArr, pointGeo } from "./Points"
 import * as Points from "../utils/Points"
@@ -19,100 +18,98 @@ import * as dju from "../utils/dij_utils";
 // https://github.com/Fil/d3-geo-voronoi
 
 
-// rellys on scripts/edit_3rd_libs.sh to exporte all the base functions of the lib
-import * as cGeo from "../../node_modules/d3-geo-voronoi/dist/d3-geo-voronoi.js";
 
 
-export interface D3GeoType {
-    readonly centers: [number, number][];
-    readonly edges: [number, number][];
-    readonly neighbors: number[][];
-    readonly polygons: number[][];
-    readonly triangles: [number, number, number][];
-    readonly hull: number[];
-    readonly mesh: [number, number][];
-    find(x: number, y: number, next?: number);
-}
+// export interface D3GeoType {
+//     readonly centers: [number, number][];
+//     readonly edges: [number, number][];
+//     readonly neighbors: number[][];
+//     readonly polygons: number[][];
+//     readonly triangles: [number, number, number][];
+//     readonly hull: number[];
+//     readonly mesh: [number, number][];
+//     find(x: number, y: number, next?: number);
+// }
 
-class D3GeoFull implements D3GeoType {
-    rawDel: any;
+// class D3GeoFull implements D3GeoType {
+//     rawDel: any;
 
-    public get centers(): [number, number][] { return this.rawDel.centers }
-    public get edges(): [number, number][] { return this.rawDel.edges }
-    public get neighbors(): number[][] { return this.rawDel.neighbors }
-    public get polygons(): number[][] { return this.rawDel.polygons }
-    public get triangles(): [number, number, number][] { return this.rawDel.triangles }
-    public get hull(): number[] { return this.rawDel.hull }
-    public get mesh(): [number, number][] { return this.rawDel.mesh }
+//     public get centers(): [number, number][] { return this.rawDel.centers }
+//     public get edges(): [number, number][] { return this.rawDel.edges }
+//     public get neighbors(): number[][] { return this.rawDel.neighbors }
+//     public get polygons(): number[][] { return this.rawDel.polygons }
+//     public get triangles(): [number, number, number][] { return this.rawDel.triangles }
+//     public get hull(): number[] { return this.rawDel.hull }
+//     public get mesh(): [number, number][] { return this.rawDel.mesh }
 
-    public rawPts: pointGeoArr;
+//     public rawPts: pointGeoArr;
 
-    constructor(ptsGeo: pointGeoArr, level = 2) {
-        this.rawPts = ptsGeo;
-        this.rawDel = geoDelaunay(ptsGeo);
-        // console.log("this.delGeo", this.rawDel);
-    }
-
-
-    find(x: number, y: number, next = 0) {
-        return this.rawDel.find(x, y, next) as number;
-    }
+//     constructor(ptsGeo: pointGeoArr, level = 2) {
+//         this.rawPts = ptsGeo;
+//         this.rawDel = geoDelaunay(ptsGeo);
+//         // console.log("this.delGeo", this.rawDel);
+//     }
 
 
-    getTree(seedsIndex: number[]) {
-        return dju.shortestTreeCustom({
-            graph: this.edges,
-            origins: seedsIndex,
-            directed: false,
-        })
-    }
+//     find(x: number, y: number, next = 0) {
+//         return this.rawDel.find(x, y, next) as number;
+//     }
+
+
+//     getTree(seedsIndex: number[]) {
+//         return dju.shortestTreeCustom({
+//             graph: this.edges,
+//             origins: seedsIndex,
+//             directed: false,
+//         })
+//     }
 
 
 
-}
+// }
 
 
 
 
 
-class D3GeoLite implements D3GeoType {
-    delaunay: any;
-    edges: [number, number][];
-    neighbors: number[][];
-    triangles: [number, number, number][];
+// class D3GeoLite implements D3GeoType {
+//     delaunay: any;
+//     edges: [number, number][];
+//     neighbors: number[][];
+//     triangles: [number, number, number][];
 
-    centers: [number, number][];
-    polygons: number[][];
-    hull: number[];
-    mesh: [number, number][];
+//     centers: [number, number][];
+//     polygons: number[][];
+//     hull: number[];
+//     mesh: [number, number][];
 
 
-    gfind: any;
+//     gfind: any;
 
-    constructor(public points: pointGeoArr, level = 2) {
-        this.delaunay = cGeo.geo_delaunay_from(points);
-        this.triangles = cGeo.geo_triangles(this.delaunay);
+//     constructor(public points: pointGeoArr, level = 2) {
+//         this.delaunay = cGeo.geo_delaunay_from(points);
+//         this.triangles = cGeo.geo_triangles(this.delaunay);
 
-        if (level >= 1)
-            this.edges = cGeo.geo_edges(this.triangles, points);
+//         if (level >= 1)
+//             this.edges = cGeo.geo_edges(this.triangles, points);
 
-        if (level >= 2) {
-            this.neighbors = cGeo.geo_neighbors(this.triangles, points.length);
-            this.gfind = cGeo.geo_find(this.neighbors, points);
-        }
-    }
-    public find(x: number, y: number, next = 0) {
-        return this.gfind(x, y, next) as number;
-    }
-}
+//         if (level >= 2) {
+//             this.neighbors = cGeo.geo_neighbors(this.triangles, points.length);
+//             this.gfind = cGeo.geo_find(this.neighbors, points);
+//         }
+//     }
+//     public find(x: number, y: number, next = 0) {
+//         return this.gfind(x, y, next) as number;
+//     }
+// }
 
-export function getD3Geo(points: pointGeoArr, level = 2): D3GeoType {
-    console.log("cGeo.geo_delaunay_from", cGeo.geo_delaunay_from);
-    if (cGeo.geo_delaunay_from)
-        return new D3GeoLite(points, level)
-    else
-        return new D3GeoFull(points, level)
-}
+// export function getD3Geo(points: pointGeoArr, level = 2): D3GeoType {
+//     console.log("cGeo.geo_delaunay_from", cGeo.geo_delaunay_from);
+//     if (cGeo.geo_delaunay_from)
+//         return new D3GeoLite(points, level)
+//     else
+//         return new D3GeoFull(points, level)
+// }
 
 
 // import concave from "@turf/concave"

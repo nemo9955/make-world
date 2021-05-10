@@ -1,10 +1,6 @@
 
 import { WorldData } from "./WorldData"
-
 import * as d3 from "d3"
-import { geoDelaunay, geoVoronoi, geoContour } from "d3-geo-voronoi"
-// node_modules/d3-geo-voronoi/dist/d3-geo-voronoi.js
-
 
 import { Config, WorkerEvent } from "./Config"
 import * as Convert from "../utils/Convert"
@@ -304,7 +300,7 @@ export class DrawD3Terrain implements DrawWorkerInstance {
         }
         d3DrawTab.addSlider("D3 Points size", 0, 15, 0.1, this.ptsRadius)
             .addEventListener(jData.jMng, "input", (event: WorkerEvent) => {
-                this.ptsRadius = Number.parseFloat(event.data.event.target.value);
+                this.ptsRadius = event.data.event.target.valueAsNumber;
                 this.path.pointRadius(this.ptsRadius); this.drawOnce();
             })
 

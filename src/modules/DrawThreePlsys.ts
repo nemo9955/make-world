@@ -49,7 +49,6 @@ export class DrawThreePlsys implements DrawWorkerInstance {
     canvasOffscreen: OffscreenCanvas = null;
     fakeDOM = new WorkerDOM();
 
-    mouse = new THREE.Vector2();
     raycaster = new THREE.Raycaster();
 
     scene: THREE.Scene;
@@ -181,9 +180,13 @@ export class DrawThreePlsys implements DrawWorkerInstance {
         this.controls.addEventListener("change", this.cameraMoved.bind(this))
         this.cameraMoved();
 
-        this.fakeDOM.addEventListener("mousemove", this.hoverMoved.bind(this)) // mouseleave
-        this.fakeDOM.addEventListener("contextmenu", this.hoverClick.bind(this))
+        // this.fakeDOM.addEventListener("mousemove", this.hoverMoved.bind(this)) // mouseleave
+        // this.fakeDOM.addEventListener("contextmenu", this.hoverClick.bind(this))
 
+        this.fakeDOM.addEventListener("mouseenter", this.hoverEnter.bind(this))
+        this.fakeDOM.addEventListener("mousemove", this.hoverMoved.bind(this))
+        this.fakeDOM.addEventListener("mouseleave", this.hoverleave.bind(this))
+        this.fakeDOM.addEventListener("contextmenu", this.hoverClick.bind(this))
 
         this.tjs_pool_lines.expand(20);
         this.tjs_pool_orbobjects.expand(20);
@@ -238,16 +241,47 @@ export class DrawThreePlsys implements DrawWorkerInstance {
     }
 
 
+    private hoverEnter(event: any) {
+        this.hoverMoved(event)
+    }
 
-    private canvasSelectionData = { mousex: 0, mousey: 0, hoverId: 0, selectedId: 0 };
+    private hoverleave(event: any) {
+        this.hoverData.mousep.x = null;
+        this.hoverData.mousep.y = null;
+    }
+
+    private hoverData = { mousex: 0, mousey: 0, mousep: { x: null, y: null }, hoverId: 0, selectedId: 0 };
     private hoverMoved(event: any) {
-        this.canvasSelectionData.mousex = event.offsetX;
-        this.canvasSelectionData.mousey = event.offsetY;
-        // var rect = canvas.getBoundingClientRect();
-        // this.canvasSelectionData.mousex = event.clientX - rect.left;
-        // this.canvasSelectionData.mousey = event.clientY - rect.top;
-        // console.log("event", event);
-        // console.log("this.canvasSelectionData", this.canvasSelectionData);
+        this.hoverData.mousex = event.offsetX;
+        this.hoverData.mousey = event.offsetY;
+        this.hoverData.mousep.x = (this.hoverData.mousex / this.canvasOffscreen.width) * 2 - 1;
+        this.hoverData.mousep.y = - (this.hoverData.mousey / this.canvasOffscreen.height) * 2 + 1;
+
+        this.hoverSphere.visible = false;
+        if (this.config.follow_pointed_orbit !== "none") {
+            if (this.hoverData.mousex != 0 && this.hoverData.mousey != 0) {
+                // var allIntersect = [...this.orb_lines, ...this.orb_planets]
+                // const intersects = this.raycaster.intersectObjects(allIntersect, false);
+                this.raycaster.setFromCamera(this.hoverData.mousep, this.camera);
+                const intersects = this.raycaster.intersectObjects(this.scene.children, true);
+                if (intersects.length > 0) {
+                    var orb_ = intersects[0]
+                    var targ_ = orb_.object.parent.userData as ThreeUserData
+                    if (targ_?.orbitingElement?.id) {
+                        this.hoverSphere.visible = true;
+                        this.hoverSphere.position.copy(orb_.point)
+                        this.hoverData.hoverId = targ_.orbitingElement.id
+                    }
+                    // console.log("targ_", targ_);
+                    // this.camera.lookAt(targ_.position)
+                    // this.controls.target = targ_.position
+                    // TODO set a shared data variable with the ID of the selected/focused WORLD thing (orbit,planet,cell,etc.)
+                } else {
+                    this.hoverData.hoverId = null;
+                }
+            }
+        }
+
     }
 
 
@@ -255,12 +289,12 @@ export class DrawThreePlsys implements DrawWorkerInstance {
     worker: Worker = null;
 
     private hoverClick(event: any) {
-        if (this.canvasSelectionData.selectedId !== this.canvasSelectionData.hoverId) {
-            this.canvasSelectionData.selectedId = this.canvasSelectionData.hoverId;
+        if (this.hoverData.selectedId !== this.hoverData.hoverId) {
+            this.hoverData.selectedId = this.hoverData.hoverId;
             // var selected = mngr.world.idObjMap.get(this.canvasSelectionData.hoverId)
             // mngr.gui.selectOrbElement(selected as OrbitingElement);
 
-            var selOrbElem = this.world.getAnyObj(this.canvasSelectionData.selectedId) as OrbitingElement;
+            var selOrbElem = this.world.getAnyObj(this.hoverData.selectedId) as OrbitingElement;
 
             if (selOrbElem) {
                 var tempJgui = new JguiMake(null).mkContainer()
@@ -667,35 +701,6 @@ export class DrawThreePlsys implements DrawWorkerInstance {
             this.calculatePos(iterator);
         }
 
-        this.hoverSphere.visible = false;
-        if (this.config.follow_pointed_orbit !== "none") {
-            if (this.canvasSelectionData.mousex != 0 && this.canvasSelectionData.mousey != 0) {
-                this.mouse.x = (this.canvasSelectionData.mousex / this.canvasOffscreen.width) * 2 - 1;
-                this.mouse.y = - (this.canvasSelectionData.mousey / this.canvasOffscreen.height) * 2 + 1;
-                // console.log("this.mouse", this.mouse);
-
-                // var allIntersect = [...this.orb_lines, ...this.orb_planets]
-                // const intersects = this.raycaster.intersectObjects(allIntersect, false);
-                this.raycaster.setFromCamera(this.mouse, this.camera);
-                const intersects = this.raycaster.intersectObjects(this.scene.children, true);
-                if (intersects.length > 0) {
-                    var orb_ = intersects[0]
-                    var targ_ = orb_.object.parent.userData as ThreeUserData
-                    if (targ_?.orbitingElement?.id) {
-                        this.hoverSphere.visible = true;
-                        this.hoverSphere.position.copy(orb_.point)
-                        this.canvasSelectionData.hoverId = targ_.orbitingElement.id
-                    }
-                    // console.log("targ_", targ_);
-                    // this.camera.lookAt(targ_.position)
-                    // this.controls.target = targ_.position
-                    // TODO set a shared data variable with the ID of the selected/focused WORLD thing (orbit,planet,cell,etc.)
-                } else {
-                    this.canvasSelectionData.hoverId = null;
-                }
-            }
-        }
-
 
         if (this.selectedThing) {
             this.selectedPrevPos.sub(this.selectedThing.position);//reuse Vec3 for delta
@@ -708,8 +713,8 @@ export class DrawThreePlsys implements DrawWorkerInstance {
         // https://stackoverflow.com/questions/53292145/forcing-orbitcontrols-to-navigate-around-a-moving-object-almost-working
         // https://github.com/mrdoob/three.js/pull/16374#issuecomment-489773834
 
-        if (this.lastSelectedId != this.canvasSelectionData.selectedId) {
-            this.lastSelectedId = this.canvasSelectionData.selectedId;
+        if (this.lastSelectedId != this.hoverData.selectedId) {
+            this.lastSelectedId = this.hoverData.selectedId;
             // console.log("this.lastSelectedId", this.lastSelectedId);
             var selOrbElem = this.world.getAnyObj(this.lastSelectedId) as OrbitingElement
             if (selOrbElem) {
