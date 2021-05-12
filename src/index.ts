@@ -1,5 +1,6 @@
 
 export { MainManager } from "./modules/MainManager"
+export { MainLanguageManager } from "./modules/MainLanguageManager"
 
 // export { test_1 } from "../snipets/test_1"
 // export { test_2 } from "../snipets/test_2"
