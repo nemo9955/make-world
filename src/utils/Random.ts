@@ -64,7 +64,7 @@ export function pickAllOverlaping(spot: number, pickData: OverlapingData[]) {
 }
 
 
-export function customComparator(propToUse: string, reverse = false) {
+export function customComparator(propToUse: string | number, reverse = false) {
     // https://stackoverflow.com/questions/1129216/sort-array-of-objects-by-string-property-value
     var less: -1 | 1 = -1;
     var great: -1 | 1 = 1;
