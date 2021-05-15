@@ -1,10 +1,25 @@
 # make-world
 Make a realistic world by simulating as many aspects as possible.
 
-Latest build can be accesed here: https://nemo9955.github.io/make-world/pages/World.html
+Latest build can be accesed here: https://nemo9955.github.io/make-world/
+
+World page: https://nemo9955.github.io/make-world/pages/World.html
+
+Language page: https://nemo9955.github.io/make-world/pages/Language.html
+
+
+
 
 
 [![Build Status](https://travis-ci.com/nemo9955/make-world.svg?branch=master)](https://travis-ci.com/nemo9955/make-world)
+
+
+## Warnings
+This tool uses [transferControlToOffscreen](https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/transferControlToOffscreen) which is an experimental feature!
+
+Please use Google Chrome to access the live build, Edge and Opera could also work.
+
+Firefox and Safari DO NOT support this feature.
 
 
 ## Keys
@@ -24,6 +39,7 @@ Latest build can be accesed here: https://nemo9955.github.io/make-world/pages/Wo
     ✅ GUI to interact with the tool
     ✅ DB to hold information locally
     🌓 Linearly (re)generate world : Planet Sys -> Terrain -> Region -> Town
+    🌓 Dedicated Pages to experiment with/generate single world parts like Planet Sys, Terrain, Towns, Languages, etc.
     🌑 Proper Save, Select & Load of worlds from local DB
 
     ✔️ Planetary system - functionally implemented
@@ -33,8 +49,12 @@ Latest build can be accesed here: https://nemo9955.github.io/make-world/pages/Wo
 
     🌍 Planet terrain - under developement
         ✔️ Store and smoothly draw up to 100k points (target is 500k)
-        🌍 Static Tectonic plates for basic implementation
-        🌑 Moving Tectonic plates for more complex shapes
+        🌍 Static terrain with graph algos. to generate different elements like rivers
+        🌑 Moving Tectonic plates for more complex terrain
+
+    🌍 Languages - grooming
+        🌍 Experiemnet with a few existing names/words generating libs
+        🌍 Make a custom way of generating names/words by passing text and extracting probabilities
 
     🌓 Interaction between elements
         🌓 Heating of the Planets from the Star(s)
