@@ -16,11 +16,8 @@ export function makeWorkerCanvas(mngr: MainManager, the_worker: GenericWorkerIns
 
     var canvas = addCanvas(metaCanvas, mngr, the_worker)
     sortExistingElements(metaCanvas, mngr, the_worker)
-    addMouseSharedBuffer(metaCanvas, mngr, the_worker, canvas); // TODO proper mouse sharedData
     addResizeListener(metaCanvas, mngr, the_worker, canvas);
     EventUtils.addRightClickStuff(metaCanvas, mngr, the_worker, canvas);
-
-    mngr.viewableThings.push(canvas);
 
     // TODO have a more dynamic ID-based way of propagating events
 
@@ -43,24 +40,6 @@ export function makeWorkerCanvas(mngr: MainManager, the_worker: GenericWorkerIns
 
 }
 
-
-
-
-function addMouseSharedBuffer(metaCanvas: MetaCanvas, mngr: MainManager, the_worker: GenericWorkerInstance, canvas: HTMLCanvasElement): void {
-    // console.log("canvas", canvas);
-    // // "mousedown" "mouseenter" "mouseleave" "mousemove" "mouseout" "mouseover" "mouseup":
-    // if (metaCanvas.generalFlags.includes("orbit")) {
-    //     canvas.addEventListener('mousemove', (evt) => {
-    //         var rect = canvas.getBoundingClientRect();
-    //         mngr.sharedData.mousex = evt.clientX - rect.left;
-    //         mngr.sharedData.mousey = evt.clientY - rect.top;
-    //     }, false);
-    //     canvas.addEventListener('mouseleave', () => {
-    //         mngr.sharedData.mousex = null;
-    //         mngr.sharedData.mousey = null;
-    //     }, false);
-    // }
-}
 
 function addResizeListener(metaCanvas: MetaCanvas, mngr: MainManager, the_worker: GenericWorkerInstance, canvas: HTMLCanvasElement): void {
 
@@ -121,144 +100,3 @@ function addCanvas(metaCanvas: MetaCanvas, mngr: MainManager, the_worker: Generi
     // canvas.focus();
     return canvas;
 }
-
-
-    // export function initDrawWorkerCanvas(mngr: MainManager, the_worker: GenericWorkerInstance, event: WorkerEvent) {
-    //     // CanvasManager.initD3Stats(mngr, the_worker, event, "DrawD3TerrainCanvas");
-    //     // CanvasManager.initThreePlsysReal(mngr, the_worker, event);
-    //     // CanvasManager.initD3Stats(mngr, the_worker, event, "DrawD3PlsysCanvas");
-    //     // mngr.focusableThings[1].focus();
-    // }
-
-    // function initThreePlsysReal(mngr: MainManager, the_worker: GenericWorkerInstance, event: WorkerEvent) {
-    //     var body = document.getElementsByTagName("body")[0];
-    //     body.style.margin = "0"
-    //     const canvas = document.createElement('canvas');
-    //     canvas.id = "DrawThreePlsysCanvas";
-    //     canvas.tabIndex = 0; // so canvas can get keydown events
-    //     // canvas.style.position = "absolute";
-    //     // canvas.style.zIndex = "8";
-    //     // canvas.style.border = "1px solid";
-    //     // const div_ = document.createElement('div'); body.appendChild(div_); mngr.viewableThings.push(div_);
-    //     body.appendChild(canvas);
-    //     mngr.viewableThings.push(canvas);
-
-    //     // Disable middle click scroll https://stackoverflow.com/a/30423436/2948519
-    //     // document.body.onmousedown = function (e) { if (e.button === 1) return false; }
-    //     canvas.onmousedown = function (e) { if (e.button === 1) return false; }
-
-    //     // TODO TMP needs to have initial size set
-    //     canvas.width = window.innerWidth - SCROLL_THING_SIZE;
-    //     canvas.height = window.innerHeight;
-    //     // canvas.focus();
-
-    //     // console.log("canvas", canvas);
-    //     // "mousedown" "mouseenter" "mouseleave" "mousemove" "mouseout" "mouseover" "mouseup":
-    //     canvas.addEventListener('mousemove', (evt) => {
-    //         var rect = canvas.getBoundingClientRect();
-    //         mngr.sharedData.mousex = evt.clientX - rect.left;
-    //         mngr.sharedData.mousey = evt.clientY - rect.top;
-    //     }, false);
-    //     canvas.addEventListener('mouseleave', () => {
-    //         mngr.sharedData.mousex = null;
-    //         mngr.sharedData.mousey = null;
-    //     }, false);
-
-    //     var canvasOffscreen = canvas.transferControlToOffscreen();
-    //     var canvasResize = () => {
-    //         var fakeResizeEvent: any = new Event("resize");
-    //         fakeResizeEvent.width = window.innerWidth - SCROLL_THING_SIZE
-    //         fakeResizeEvent.height = window.innerHeight
-    //         canvas.dispatchEvent(fakeResizeEvent);
-
-    //         // canvasOffscreen.width = fakeResizeEvent.width;
-    //         // canvasOffscreen.height = fakeResizeEvent.height;
-
-    //         // console.log("initThreePlsysReal canvas", canvas);
-    //     }
-    //     // window.addEventListener('resize', canvasResize.bind(this));
-    //     window.addEventListener('resize', canvasResize);
-    //     canvasResize();
-
-    //     var selectListener = (evt_: Event) => {
-    //         canvas.focus()
-    //         evt_.preventDefault();
-    //         if (mngr.sharedData.selectedId !== mngr.sharedData.hoverId) {
-
-    //             var selected = mngr.world.idObjMap.get(mngr.sharedData.hoverId)
-    //             mngr.gui.selectOrbElement(selected as OrbitingElement);
-    //         }
-    //     };
-    //     canvas.addEventListener("contextmenu", selectListener.bind(mngr));
-
-    //     // TODO have a more dynamic ID-based way of propagating events
-    //     EventUtils.addOrbitCtrlEvents(canvas, canvas.id, the_worker)
-    //     EventUtils.addResizeEvents(canvas, canvas.id, the_worker)
-
-    //     the_worker.postMessage(<WorkerPacket>{
-    //         message: MessageType.CanvasReady,
-    //         config: mngr.config,
-    //         canvas: canvasOffscreen,
-    //         canvas_id: canvas.id,
-    //     }, [canvasOffscreen]);
-    // }
-
-    // function initD3Stats(mngr: MainManager, the_worker: GenericWorkerInstance, event: WorkerEvent, useId: string) {
-
-    //     var body = document.getElementsByTagName("body")[0];
-    //     body.style.margin = "0"
-    //     const canvas = document.createElement('canvas');
-    //     canvas.id = useId;
-    //     // canvas.style.position = "absolute";
-    //     canvas.tabIndex = 0; // so canvas can get keydown events
-    //     // canvas.style.zIndex = "8";
-    //     // canvas.style.border = "1px solid";
-    //     // const div_ = document.createElement('div'); body.appendChild(div_); mngr.viewableThings.push(div_);
-    //     body.appendChild(canvas);
-    //     mngr.viewableThings.push(canvas);
-
-    //     // Disable middle click scroll https://stackoverflow.com/a/30423436/2948519
-    //     // document.body.onmousedown = function (e) { if (e.button === 1) return false; }
-    //     canvas.onmousedown = function (e) { if (e.button === 1) return false; }
-
-    //     // TODO TMP needs to have initial size set
-    //     canvas.width = window.innerWidth - SCROLL_THING_SIZE;
-    //     canvas.height = window.innerHeight;
-    //     // canvas.focus();
-
-    //     var canvasOffscreen = canvas.transferControlToOffscreen();
-    //     var canvasResize = () => {
-    //         // canvasOffscreen.width = window.innerWidth - SCROLL_THING_SIZE;
-    //         // canvasOffscreen.height = window.innerHeight;
-
-    //         // canvas.width = canvasOffscreen.width
-    //         // canvas.height = canvasOffscreen.height
-
-    //         var fakeResizeEvent: any = new Event("resize");
-    //         fakeResizeEvent.width = window.innerWidth - SCROLL_THING_SIZE;
-    //         fakeResizeEvent.height = window.innerHeight;
-    //         canvas.dispatchEvent(fakeResizeEvent);
-    //         // console.log("initD3Stats canvas", canvas);
-    //     }
-    //     // window.addEventListener('resize', canvasResize.bind(this));
-    //     window.addEventListener('resize', canvasResize);
-    //     canvasResize();
-
-    //     var selectListener = (evt_: Event) => {
-    //         canvas.focus();
-    //         evt_.preventDefault();
-    //     };
-    //     canvas.addEventListener("contextmenu", selectListener.bind(mngr));
-
-    //     EventUtils.addEventsD3Canvas(canvas, canvas.id, the_worker)
-    //     EventUtils.addResizeEvents(canvas, canvas.id, the_worker)
-
-    //     the_worker.postMessage(<WorkerPacket>{
-    //         message: MessageType.CanvasReady,
-    //         config: mngr.config,
-    //         canvas: canvasOffscreen,
-    //         canvas_id: canvas.id,
-    //     }, [canvasOffscreen]);
-    // }
-
-

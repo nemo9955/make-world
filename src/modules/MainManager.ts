@@ -27,10 +27,6 @@ export class MainManager {
     world: WorldData;
     config: Config;
 
-    // ticker: Ticker;
-
-    viewableThings: HTMLElement[] = [];
-
     constructor() {
         this.jgui = new JsonToGUI();
         this.config = new Config();

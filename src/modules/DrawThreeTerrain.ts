@@ -239,6 +239,7 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
             vertexColors: true,
         });
         var ptsObject = new THREE.Points(ptsGeometry, ptsMaterial);
+        ptsObject.material.visible = (this.ptsRadius != 0)
 
         const ptsPosAttr = new THREE.Float32BufferAttribute(this.terrain.pos3d, 3);
         ptsPosAttr.count = this.terrain.ptsLength;
@@ -420,7 +421,7 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
         var riversGeometry = new THREE.BufferGeometry();
         var riversMaterial = new THREE.LineBasicMaterial({
             color: 0x07cdf5,
-            linewidth: 50, // not working :(
+            linewidth: 1, // not working :(
             // vertexColors: true,
         });
 

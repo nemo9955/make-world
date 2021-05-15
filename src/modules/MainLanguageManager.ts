@@ -43,7 +43,7 @@ export class MainLanguageManager {
 
     readFileButton(event: any) {
         // console.log("event.target.value", event.target.value);
-        var path = `../../data/${event.target.value}`
+        var path = `../data/${event.target.value}`
         console.log("path", path);
         fetch(path)
             .then(response => response.text())
@@ -73,6 +73,7 @@ export class MainLanguageManager {
             .attr("class", "btn btn-primary")
             .attr("value", "randomText")
             .on("click", () => this.setMainText(randomText))
+
         for (const iterator of listFiles) {
             body.append("input")
                 .attr("type", "button")

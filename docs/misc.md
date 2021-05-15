@@ -42,8 +42,15 @@ Points stuff :
     https://hofk.de/main/discourse.threejs/2018/Triangulation/Triangulation.html
 
 
+Procedrural city :
+    https://www.reddit.com/r/proceduralgeneration/comments/n6khor/wip_hierarchical_poisson_disks_for_city_landmark/
 
 Procedural Tectonic Planets
+    https://www.britannica.com/science/plate-tectonics
+
+    https://www.reddit.com/r/proceduralgeneration/comments/dudauc/simulating_tectonic_plates_on_a_sphere_details_in/
+
+
     https://perso.liris.cnrs.fr/eric.galin/Articles/2019-planets.pdf
     https://www.redblobgames.com/x/1843-planet-generation/
 
