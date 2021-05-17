@@ -42,8 +42,25 @@ Points stuff :
     https://hofk.de/main/discourse.threejs/2018/Triangulation/Triangulation.html
 
 
+climate and simulations :
+    https://www.reddit.com/r/proceduralgeneration/comments/mpq2vs/its_rain_season/
+
+
+    badlands model
+    https://www.youtube.com/channel/UC3mu0qg-m0gUdbNWQxzuQnw
+
+
+    island sim :
+    https://dood.al/test/island/
+    view-source:https://dood.al/test/island/
+    https://www.reddit.com/r/proceduralgeneration/comments/8lh8ol/procedural_island/
+
+
 Procedrural city :
     https://www.reddit.com/r/proceduralgeneration/comments/n6khor/wip_hierarchical_poisson_disks_for_city_landmark/
+
+    https://www.reddit.com/r/proceduralgeneration/comments/n3id9t/wip_attempt_at_a_homegrown_pattern_creation/
+
 
 Procedural Tectonic Planets
     https://www.britannica.com/science/plate-tectonics
@@ -78,6 +95,13 @@ draw shape wsing lots of sprite points
 
 
 WORDS and language generation
+
+    https://donjon.bin.sh/code/name/ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    https://donjon.bin.sh/code/name/ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    https://donjon.bin.sh/code/name/ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    https://donjon.bin.sh/code/name/ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    https://donjon.bin.sh/code/name/ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
     https://gist.github.com/swenzel/70beac153cdf23803f89 JavaScript random word generator
     http://mewo2.com/notes/naming-language/
 

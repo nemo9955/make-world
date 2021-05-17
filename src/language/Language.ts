@@ -1,7 +1,7 @@
 import { customComparator } from "../utils/Random";
 
 
-import { last } from "lodash-es"
+import { last, method } from "lodash-es"
 
 const eng1 = require("../../data/lang-english-v1_1.json")
 const eng2 = require("../../data/lang-english-v1_2.json")
@@ -16,9 +16,9 @@ const eng2 = require("../../data/lang-english-v1_2.json")
 // this.textOut.html(JSON.stringify(eng1))
 // console.log("eng1", eng1);
 
-
-export const VOWEL = "aeiouăîâ"
-export const CONSONS = "bcdfghjklmnpqrsșțtvwxzy"
+const VOWEL_LOW = "yaeiouăîâé";
+export const VOWEL = VOWEL_LOW.toLowerCase() + VOWEL_LOW.toUpperCase();
+// console.log("VOWEL", VOWEL);
 
 export class Language {
 
@@ -55,19 +55,25 @@ export class Language {
 
     getWord({
         minLen = 5,
-        maxLen = 10,
+        maxLen = 20,
         maxSame = 2,
         maxConsons = 3,
         maxSameConsons = 1,
+        maxSameVowels = 1,
         maxVowels = 2,
     } = {}) {
         var word = "";
         var lastPick = " ";
+        // console.log("minLen", minLen);
 
-        var attempts = 500;
+        var attempts = 5000;
         while (attempts-- > 0) {
+            // console.log({ word });
 
-            if (word.length >= maxLen) return word;
+            if (word.length >= maxLen) {
+                // console.log({ maxLen, word }, word.length);
+                return word;
+            }
 
             const lastTotal = this.totalWeight.get(lastPick)
             const lastPicks = this.sortedWeight.get(lastPick)
@@ -87,8 +93,10 @@ export class Language {
 
 
             if (pickCharr === " ") {
-                if ((word.length + pickCharr.length) >= minLen)
+                if (word.length >= minLen) {
+                    // console.log({ minLen, word }, word.length);
                     return word;
+                }
             }
             else {
 
@@ -96,16 +104,19 @@ export class Language {
                 const testWord = word + pickCharr;
 
                 var cntSame = 0, cntCheck = last(testWord), cntConsons = 0, cntVowels = 0;
-                for (var index = testWord.length - 1; index >= 0; index--) {
+                for (var index = testWord.length - 1; index >= Math.max(0, testWord.length - pickCharr.length - 2); index--) {
                     const char = testWord[index];
                     if (char == cntCheck) cntSame++;
                     else { cntCheck = char; cntSame = 1; }
 
-                    if (VOWEL.includes(char)) cntVowels++;
-                    const isCons = CONSONS.includes(char);
+                    const isVowel = VOWEL.includes(char);
+                    const isCons = !isVowel;
+
+                    if (isVowel) cntVowels++;
                     if (isCons) cntConsons++;
 
                     if (isCons && cntSame > maxSameConsons) { isValid = false; break; }
+                    if (isVowel && cntSame > maxSameVowels) { isValid = false; break; }
                     if (cntSame > maxSame) { isValid = false; break; }
                     if (cntVowels > maxConsons) { isValid = false; break; }
                     if (cntConsons > maxVowels) { isValid = false; break; }
@@ -113,10 +124,14 @@ export class Language {
 
                 if (isValid) {
                     word = testWord;
-                    lastPick = last(pickCharr);
+                    lastPick = last(word);
+                }
+                else {
+                    lastPick = " "; // reset to start of word if invalid found
                 }
             }
         }
+        // console.log({ attempts, word });
         return word;
     }
 

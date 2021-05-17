@@ -77,7 +77,7 @@ function mdebug(){
 }
 
 function mwarn(){
-	warn "$@"
+	echo -e "${bldylw}[ WRN ] >>>${txtylw} ${*} ${txtrst}" >&2
 }
 
 function merror(){
@@ -122,7 +122,7 @@ function runq(){
         return 0
     else
         local the_ec=$?
-        warn "Failed, exit code: ${the_ec}"
+        mwarn "Failed, exit code: ${the_ec}"
         return ${the_ec}
     fi
 }
@@ -133,7 +133,7 @@ function run(){
         return 0
     else
         local the_ec=$?
-        warn "Failed, exit code: ${the_ec}"
+        mwarn "Failed, exit code: ${the_ec}"
         return ${the_ec}
     fi
 }
