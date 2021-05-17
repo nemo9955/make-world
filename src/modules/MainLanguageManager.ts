@@ -12,20 +12,49 @@ import { Language } from "../language/Language";
 
 
 const listFiles = [
-    // "lang-english-v1_1.json",
-    // "lang-english-v1_2.json",
-    "baltagul.txt",
-    "hillbilly_names_1.txt",
     "romaninan_names_1.txt",
+    "russian_1.txt",
+    "slavic_names_1.txt",
+    "french_1.txt",
+    "french_names_1.txt",
+    "japanese_1.txt",
+    "japanese_names_1.txt",
+    "latin_1.txt",
+    "Shakespeare_1.txt",
+    "organs_1.txt",
+    "turkish_names_1.txt",
+    "lorem_ipsum.txt",
+    "hillbilly_names_1.txt",
+    "baltagul.txt",
+    "luceafarul.txt",
+    "russian_2.txt",
 ]
 
 export class MainLanguageManager {
     textIn: d3.Selection<HTMLTextAreaElement, unknown, HTMLElement, any>;
+    textProc: d3.Selection<HTMLTextAreaElement, unknown, HTMLElement, any>;
     textOut: d3.Selection<HTMLTextAreaElement, unknown, HTMLElement, any>;
 
 
     weights = {};
     langWords: d3.Selection<d3.BaseType, unknown, HTMLElement, any>;
+
+
+
+
+    wordsToGenerate = 100;
+    increaseEndWeight = 4;
+
+    langParams = {
+        minLen: 5,
+        maxLen: 10,
+        maxSame: 2,
+        maxConsons: 3,
+        maxSameConsons: 1,
+        maxSameVowels: 1,
+        maxVowels: 2,
+    };
+
 
     constructor() {
 
@@ -41,9 +70,9 @@ export class MainLanguageManager {
 
     }
 
-    readFileButton(event: any) {
+    readFileButton(file_: string) {
         // console.log("event.target.value", event.target.value);
-        var path = `../data/${event.target.value}`
+        var path = `../data/${file_}`
         console.log("path", path);
         fetch(path)
             .then(response => response.text())
@@ -57,36 +86,33 @@ export class MainLanguageManager {
         //     .then(response => response.text())
         //     .then(text => console.log(text))
 
-
     }
 
     init() {
         this.makeGui();
-        this.setMainText(randomText);
+        this.readFileButton(listFiles[0]);
+        // this.setMainText(randomText);
     }
+
 
     makeGui() {
         const body = d3.select("body");
 
-        body.append("input")
-            .attr("type", "button")
-            .attr("class", "btn btn-primary")
-            .attr("value", "randomText")
-            .on("click", () => this.setMainText(randomText))
+        // body.append("input")
+        //     .attr("type", "button")
+        //     .attr("class", "btn btn-primary")
+        //     .attr("value", "randomText")
+        //     .on("click", () => this.setMainText(randomText))
 
         for (const iterator of listFiles) {
             body.append("input")
                 .attr("type", "button")
                 .attr("class", "btn btn-primary")
                 .attr("value", iterator)
-                .on("click", this.readFileButton.bind(this))
+                .on("click", event => { this.readFileButton(event.target.value) })
         }
 
         this.textIn = body.append("textarea")
-            .style("width", "98%")
-            .style("height", "200px")
-
-        this.textOut = body.append("textarea")
             .style("width", "98%")
             .style("height", "200px")
 
@@ -95,11 +121,67 @@ export class MainLanguageManager {
             .attr("class", "btn btn-primary")
             .attr("value", "Gen lang weights")
             .on("click", this.extractWeights.bind(this))
+
+        body.append("label").html("increaseEndWeight").append("input").attr("type", "number")
+            .attr("value", this.increaseEndWeight).style("width", "50px")
+            .on("change", eve => { this.increaseEndWeight = eve.target.valueAsNumber; this.extractWeights(); })
+
+        this.textOut = body.append("textarea")
+            .style("width", "98%")
+            .style("height", "100px")
         // .html("Gen lang weights")
+
+        this.textProc = body.append("textarea")
+            .style("width", "98%")
+            .style("height", "100px")
+        // .html("Gen lang weights")
+
+
+        body.append("label").html("minLen").append("input").attr("type", "number")
+            .attr("value", this.langParams.minLen).style("width", "50px")
+            .on("change", eve => { this.langParams.minLen = eve.target.valueAsNumber; this.generateText(); })
+
+        body.append("label").html("maxLen").append("input").attr("type", "number")
+            .attr("value", this.langParams.maxLen).style("width", "50px")
+            .on("change", eve => { this.langParams.maxLen = eve.target.valueAsNumber; this.generateText(); })
+
+        body.append("label").html("maxSame").append("input").attr("type", "number")
+            .attr("value", this.langParams.maxSame).style("width", "50px")
+            .on("change", eve => { this.langParams.maxSame = eve.target.valueAsNumber; this.generateText(); })
+
+        body.append("label").html("maxConsons").append("input").attr("type", "number")
+            .attr("value", this.langParams.maxConsons).style("width", "50px")
+            .on("change", eve => { this.langParams.maxConsons = eve.target.valueAsNumber; this.generateText(); })
+
+        body.append("label").html("maxSameConsons").append("input").attr("type", "number")
+            .attr("value", this.langParams.maxSameConsons).style("width", "50px")
+            .on("change", eve => { this.langParams.maxSameConsons = eve.target.valueAsNumber; this.generateText(); })
+
+        body.append("label").html("maxSameVowels").append("input").attr("type", "number")
+            .attr("value", this.langParams.maxSameVowels).style("width", "50px")
+            .on("change", eve => { this.langParams.maxSameVowels = eve.target.valueAsNumber; this.generateText(); })
+
+        body.append("label").html("maxVowels").append("input").attr("type", "number")
+            .attr("value", this.langParams.maxVowels).style("width", "50px")
+            .on("change", eve => { this.langParams.maxVowels = eve.target.valueAsNumber; this.generateText(); })
+
+        body.append("br")
+
+        body.append("input")
+            .attr("type", "button")
+            .attr("class", "btn btn-primary")
+            .attr("value", "Gen text")
+            .on("click", this.generateText.bind(this))
+
+        body.append("label").html("wordsToGenerate").append("input").attr("type", "number")
+            .attr("value", this.wordsToGenerate).attr("step", 10).style("width", "50px")
+            .on("change", eve => { this.wordsToGenerate = eve.target.valueAsNumber; this.generateText(); })
+
 
         this.langWords = body.append("p")
             .attr("class", "text-start")
     }
+
 
     addWeight(from: string, to: string) {
         if (this.weights[from] === undefined)
@@ -107,16 +189,20 @@ export class MainLanguageManager {
         const fromw = this.weights[from];
         if (fromw[to] === undefined)
             fromw[to] = 0;
-        fromw[to]++;
+        if (to === " ")
+            fromw[to] += this.increaseEndWeight;
+        else
+            fromw[to]++;
     }
 
     extractWeights() {
         this.weights = {};
         var text = this.textIn.node().value;
-        text = text.toLowerCase();
+        // text = text.toLowerCase();
         // text = text.replace(/[\s\d]/gi, " ");
         // text = text.replace(/[\W\s\d]/gi, " ");
-        text = text.replace(/[\,\.\(\)\[\]\!\?\»\”\„\"\'\`\’\;\—\-\d\s]/gi, " ");
+        text = text.replace(/[\…\,\.\(\)\[\]\!\?\»\”\„\"\'\`\;\:\—\-\d\s]/gi, " ");
+        // text = text.replace(/[\…\,\.\(\)\[\]\!\?\»\”\„\"\'\`\’\;\:\—\-\d\s]/gi, " ");
         text = text.replace(/ +/gi, " ");
         // var words = text.split(" ");
         var words = new Set(text.split(" "));
@@ -127,14 +213,14 @@ export class MainLanguageManager {
                 const leter = word[index];
                 if (index == 0)
                     this.addWeight(" ", leter);
-                if (index + 1 < word.length)
-                    this.addWeight(leter, word[index + 1]);
-                if (index + 2 < word.length)
-                    this.addWeight(leter, word[index + 1] + word[index + 2]);
-                if (index + 3 < word.length)
-                    this.addWeight(leter, word[index + 1] + word[index + 2] + word[index + 3]);
                 if (index + 1 == word.length)
                     this.addWeight(leter, " ");
+                if (index + 1 < word.length)
+                    this.addWeight(leter, word[index + 1]);
+                // if (index + 2 < word.length)
+                //     this.addWeight(leter, word[index + 1] + word[index + 2]);
+                // if (index + 3 < word.length)
+                //     this.addWeight(leter, word[index + 1] + word[index + 2] + word[index + 3]);
             }
         }
 
@@ -149,18 +235,29 @@ export class MainLanguageManager {
         // this.textOut.text(JSON.stringify(this.weights))
         this.textOut.node().value = JSON.stringify(this.weights)
         // this.textOut.html(this.weights)
+        this.textOut.node().value = this.textOut.node().value.replace(/(\".+\"\:\{)/gi, "\n$1")
+        this.textOut.node().value = this.textOut.node().value.split('},"').join('},\n\n"')
+        this.textOut.node().value = this.textOut.node().value.split('":{').join('":\n{')
+
+        this.textProc.node().value = [...words].join(" ")
+
+        this.generateText();
+
+    }
 
 
+    generateText() {
         const lang = new Language();
-        lang.useCustomRaw(this.weights);
+        lang.useCustomRaw(JSON.parse(this.textOut.node().value));
 
-        const langWords = []
+        const langWords = [];
+        // console.log("this.langParams", this.langParams);
 
-        for (let index = 0; index < 100; index++)
-            langWords.push(lang.getWord())
+        for (let index = 0; index < this.wordsToGenerate; index++)
+            langWords.push(lang.getWord(this.langParams))
+        // console.log("langWords", langWords);
 
         this.langWords.html(langWords.join("   "))
-
     }
 
 
@@ -197,5 +294,4 @@ export class MainLanguageManager {
 
 // http://www.russianlessons.net/articles/mynameismasha.php
 
-const randomText = "Mouth Teeth Tongue Salivary glands Parotid glands Submandibular glands Sublingual glands Pharynx Esophagus Stomach Small intestine Duodenum Jejunum Ileum Large intestine Cecum Ascending colon Transverse colon Descending colon Sigmoid colon Rectum Liver Gallbladder Mesentery Pancreas Anal canal Nasal cavity Pharynx Larynx Trachea Bronchi Bronchioles and smaller air passages Lungs Muscles of breathing Kidneys Ureter Bladder Urethra Internal reproductive organs Ovaries Fallopian tubes Uterus Cervix Vagina External reproductive organs Vulva Clitoris Placenta Internal reproductive organs Testes Epididymis Vas deferens Seminal vesicles Prostate Bulbourethral glands External reproductive organs Penis Scrotum Pituitary gland Pineal gland Thyroid gland Parathyroid glands Adrenal glands Pancreas Heart Patent Foramen Ovale Arteries Veins Capillaries Lymphatic vessel Lymph node Bone marrow Thymus Spleen Gut-associated lymphoid tissue Tonsils Interstitium Brain Cerebrum Cerebral hemispheres Diencephalon The brainstem Midbrain Pons Medulla oblongata Cerebellum The spinal cord The ventricular system Choroid plexus Nerves Cranial nerves Spinal nerves Ganglia Enteric nervous system Skin Subcutaneous tissue"
 
