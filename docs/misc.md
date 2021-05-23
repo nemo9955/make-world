@@ -96,6 +96,8 @@ draw shape wsing lots of sprite points
 
 WORDS and language generation
 
+    https://www.mithrilandmages.com/utilities/MedievalBrowse.php?letter=A&fms=S
+
     https://donjon.bin.sh/code/name/ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     https://donjon.bin.sh/code/name/ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     https://donjon.bin.sh/code/name/ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
