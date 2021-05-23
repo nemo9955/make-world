@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 
-init_colors() {
+function init_colors() {
 	txtblk='\e[0;30m' # Black - Regular
 	txtred='\e[0;31m' # Red
 	txtgrn='\e[0;32m' # Green
