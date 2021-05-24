@@ -137,3 +137,43 @@ function run(){
         return ${the_ec}
     fi
 }
+
+
+
+
+function completeFilesGen(){
+    for finish in $(find ${REPOPATH}/data -type f -name "*.json") ; do
+        evars finish
+        local lastlines="$(tail -5 "${finish}" | tr -d " \t\n\r"  )" # this is incredible .....
+        # lastlines="${lastlines//[$'\t\r\n ']}"
+        # evars lastlines
+        if [[ "${lastlines}" == *"," ]] ; then # ends with , means json needs wrapping off
+            # cat "${finish}" |  sed 's/[ \t]*$//'  > "${finish}"
+            # run sed -i 's/\n*$//g' "${finish}"
+            # run sed -i -n 'H;${g;s/\n/ /g;p}'  "${finish}"
+            # for run in {1..10}; do sed -i '$ s/\s$//' "${finish}"; done
+            # sed -i 's/\s*$/_/g' "${finish}"
+            # sed -i '$ s/[\n,\]]*$//' "${finish}"
+            while [[ "${lastlines}" == *"," ]] ; do
+                run truncate -s-1 "${finish}"
+                lastlines="$(tail -5 "${finish}" | tr -d " \t\n\r"  )" # this is incredible .....
+            done
+            echo -e "\n]" >> "${finish}" # finish of the json
+        fi
+        # if [[ "$(tail -5 "${finish}")" == *,\n\n ]] ; then
+        # if tail -5 "${finish}" | grep -qP "[.\n]*},$" ; then
+            # echo "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+            # sed -i '$ s/[\n\],]$//' "${finish}"
+            # sed -i '$ s/[\n,\]]*$//' "${finish}"
+            # echo -e "]" >> "${finish}"
+        # fi
+        # run jq -n -f "${finish}"
+        rm -f "${finish}.seen"
+    done
+
+    (
+        cd ${REPOPATH}/data
+        find . -type f  > ${REPOPATH}/data/all_data_files.txt
+    )
+
+}

@@ -96,12 +96,14 @@ draw shape wsing lots of sprite points
 
 WORDS and language generation
 
+    http://www.namenerds.com/scottish/scotss.html !!!!!!!!!!!!!!!!!!!!!
+    http://www.namenerds.com/scottish/scotss.html !!!!!!!!!!!!!!!!!!!!!
+    http://www.namenerds.com/scottish/scotss.html !!!!!!!!!!!!!!!!!!!!!
+    http://www.namenerds.com/scottish/scotss.html !!!!!!!!!!!!!!!!!!!!!
+    http://www.namenerds.com/scottish/scotss.html !!!!!!!!!!!!!!!!!!!!!
+
     https://www.mithrilandmages.com/utilities/MedievalBrowse.php?letter=A&fms=S
 
-    https://donjon.bin.sh/code/name/ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    https://donjon.bin.sh/code/name/ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    https://donjon.bin.sh/code/name/ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    https://donjon.bin.sh/code/name/ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     https://donjon.bin.sh/code/name/ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     https://gist.github.com/swenzel/70beac153cdf23803f89 JavaScript random word generator

@@ -66,7 +66,7 @@ function appendCatValues(){
     local line=""
     local iter=0
 
-    local valjson="$(curl -sS -G \
+    local valjson="$(timeout 20 curl -sS -G \
         --data-urlencode "cmtitle=${categnow}" \
         -d "action=query" \
         -d "list=categorymembers" \
@@ -85,6 +85,7 @@ function appendCatValues(){
             line=${line//*middle name*}
             line=${line//*aristocratic and*}
             line=${line//Naming laws*}
+            line=${line//Names *}
             line=${line//*List of*}
             line=${line//*Category*}
             # line=${line##*( )}
@@ -105,7 +106,7 @@ function appendCatValues(){
 
         [[ "${contvalue}" == "null" ]] && break
 
-        valjson="$(curl -sS -G \
+        valjson="$(timeout 20 curl -sS -G \
             --data-urlencode "cmtitle=${categnow}" \
             -d "cmcontinue=${contvalue}" \
             -d "action=query" \
@@ -162,9 +163,10 @@ function recursiveGetCat(){
 
 
     local categpaths="${prevcategs}|${categnowenc}"
+    [[ "${prevcategs}" == "${categnowenc}" ]] && categpaths="${categnowenc}"
+    [[ "${prevcategs}" == "" ]] && categpaths="${categnowenc}"
     categpaths="${categpaths// /_}"
     # local categpaths="${prevcategs}\t${categnowenc}"
-    # [[ "${prevcategs}" == "" ]] && categpaths="${categnowenc}"
 
     # echo "======|${outfile}|${wikiroot}|${categnow}|${prevcategs}|${depth}|${maxdepth}|"
     # return 0
@@ -199,7 +201,7 @@ function recursiveGetCat(){
         # exit 0
     fi
 
-    local subcatjson="$(curl -sS -G \
+    local subcatjson="$(timeout 20 curl -sS -G \
         --data-urlencode "cmtitle=${categnow}" \
         -d "action=query" \
         -d "list=categorymembers" \
@@ -263,10 +265,10 @@ function getCategWrapper(){
 
     # run sed -i '$ s/.$//' \"${categfilepath}\" ; echo -e \"]\n\" >> \"${categfilepath}\"
 
-    trap "sed -i '$ s/.$//' \"${categfilepath}\"" EXIT
-    trap "sed -i '$ s/.$//' \"${categfilepath}\"" EXIT
-    trap "echo -e \"]\n\" >> \"${categfilepath}\"" EXIT
-    trap "rm \"${categfilepath}.seen\"" EXIT
+    # trap "sed -i '$ s/.$//' \"${categfilepath}\"" EXIT
+    # trap "sed -i '$ s/.$//' \"${categfilepath}\"" EXIT
+    # trap "echo -e \"]\n\" >> \"${categfilepath}\"" EXIT
+    # trap "rm \"${categfilepath}.seen\"" EXIT
 
     # run rm "${categfilepath}.seen" || true
     # run rm "${categfilepath}.lock" || true
@@ -299,13 +301,22 @@ function getCategWrapper(){
 echo "" > "${REPOPATH}/data/wiki_categs/tmp_arr.txt"
 mkdir -p "${REPOPATH}/data/wiki_categs"
 
-getCategWrapper "Category:Given_names_by_culture" "7"
-getCategWrapper "Category:Surnames_by_language" "7"
-getCategWrapper "Category:Drug_brand_names" "7"
-getCategWrapper "Category:Drug_delivery_devices" "7"
+# getCategWrapper "Category:Given_names_by_culture" "7"
+# getCategWrapper "Category:Surnames_by_language" "7"
+# getCategWrapper "Category:Drug_brand_names" "7"
+# getCategWrapper "Category:Drug_delivery_devices" "7"
 # getCategWrapper "Category:Pharmacology" "4"
-# getCategWrapper "Category:Counties" "1"
-# getCategWrapper "Category:Countries_by_continent" "1"
+# getCategWrapper "Category:Counties" "3"
+# getCategWrapper "Category:Countries_by_continent" "3"
+# getCategWrapper "Category:Nicknames" "5"
+getCategWrapper "Category:Names_of_God" "5"
+getCategWrapper "Category:Ship_names" "5"
+
+
+# TODO replace " " with "\ " in the file if part of a parameter
+# TODO or replace spaces with something like \0 while writing it and then replacing it back
+
+
 
 export -f recursiveGetCat appendCatValues rawurldecode rawurlencode
 export -f init_colors print_runq print_run minfo myay mhmm mdebug mwarn merror evars runq run
@@ -333,21 +344,6 @@ done
 rm -f  "${REPOPATH}/data/wiki_categs/tmp_arr.txt"
 rm -f  "${REPOPATH}/data/wiki_categs/tmp_arr_use.txt"
 
-run sleep 20
-
-for finish in ${REPOPATH}/data/wiki_categs/*.json ; do
-    evars finish
-    # if [[ "$(tail -5 "${finish}")" == *,\n\n ]] ; then
-    # if tail -5 "${finish}" | grep -qP "[.\n]*},$" ; then
-        # echo "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-        # sed -i '$ s/[\n\],]$//' "${finish}"
-        sed -i '$ s/[\n,\]]*$//' "${finish}"
-        echo -e "]" >> "${finish}"
-    # fi
-    # run jq -n -f "${finish}"
-    rm -f "${finish}.seen"
-done
-
-
 run wait
 
+run sleep 30 && run completeFilesGen
