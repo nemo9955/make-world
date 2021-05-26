@@ -1,114 +1,176 @@
-Size for 1 square Km
-510072000*4*64=130578432000 bytes = 1 044.62746 gigabits
-510072000*3*64=97933824000 bytes = 783.470592 gigabits
+    Size for 1 square Km
+    510072000*4*64=130578432000 bytes = 1 044.62746 gigabits
+    510072000*3*64=97933824000 bytes = 783.470592 gigabits
 
 
-Interesting :
+# From bookmarks :
 
-    interesting branching patter, maybe usefull for rivers/textures ?
-    https://observablehq.com/@makio135/confined-trees
+https://heredragonsabound.blogspot.com/
 
+http://mewo2.com/notes/terrain/
 
-    js graph lib : dagrejs/graphlib
-    https://github.com/dagrejs/graphlib
+https://www.google.com/search?q=medieval+city+plans&tbm=isch
 
+https://gamedev.stackexchange.com/questions/122015/how-to-generate-a-city-street-network#
 
+https://www.theguardian.com/cities/2015/jun/30/how-build-city-step-by-step-diy-guide
 
-Sphere stuff :
-    Circles and spheres - In what follows are various notes and algorithms dealing with circles and spheres.
-    http://paulbourke.net/geometry/circlesphere/
+http://experilous.com/1/blog/post/procedural-planet-generation
 
-    https://www.redblobgames.com/x/1932-sphere-healpix/ Tiling a sphere with diagonal squares
-    https://www.redblobgames.com/x/1938-square-tiling-of-sphere/ Tiling a sphere with squares
+https://github.com/mewo2/naming-language
 
+https://www.tmwhere.com/city_generation.html
 
-    Fibonacci points, Delaunay triangles, Voronoi regions
-    https://github.com/redblobgames/1843-planet-generation
+https://doc-00-64-apps-viewer.googleusercontent.com/viewer/secure/pdf/qu4l834sj4tvurvh874oreqi176gn1qt/80fj86mctechcfpq4aa6vqlfd4cdug67/1579272000000/drive/07856247601046551936/ACFrOgBkWZ9xsk_0IUYEHkhYJaiZc318vLIEG7l-nvr4MT7RCYeVnej_boXQPhMDRYBqeROqHbdM1YW-rFfaSnocC5dVJkSQqNERTdmXcs46Sv3MNVNlluLhLigy5RQq8EhLU1M344O0jvU2HFDi?print=true&nonce=sl97m4kbl71p4&user=07856247601046551936&hash=vgoece1mut5bdne6r83cp3slm5qdrlts
 
+https://stackexchange.com/search?q=tectonic+plates
 
-Points stuff :
-    1 Million Points in Three.js
-    https://observablehq.com/@joewdavies/1-million-points-in-three-js
+https://www.mathopenref.com/radians.html
 
-    three points examples :
-    https://threejs.org/examples/?q=point#webgl_interactive_raycasting_points
+http://pytectonics.sourceforge.net/index.shtml
 
-    Three.js Optimize Lots of Objects
-    https://threejsfundamentals.org/threejs/lessons/threejs-optimize-lots-of-objects.html
+https://perso.liris.cnrs.fr/eric.galin/Articles/2019-planets.pdf
 
+https://en.wikipedia.org/wiki/Geodynamics
 
-    Three.js + delaunator (Delaunay triangulation)
-    https://codepen.io/prisoner849/pen/bQWOjY
-    https://hofk.de/main/discourse.threejs/2018/Triangulation/Triangulation.html
+https://ccl.northwestern.edu/rp/cities/core.shtml
 
+https://imgur.com/gallery/rnyN9WZ
 
-climate and simulations :
-    https://www.reddit.com/r/proceduralgeneration/comments/mpq2vs/its_rain_season/
+https://developpaper.com/three-js-simulation-to-realize-the-function-of-planetary-system-in-solar-system/
 
+https://visualstudiomagazine.com/articles/2016/09/01/working-with-indexeddb.aspx
 
-    badlands model
-    https://www.youtube.com/channel/UC3mu0qg-m0gUdbNWQxzuQnw
+https://stackoverflow.com/questions/8410667/object-pools-in-high-performance-javascript
 
+https://worldbuildingpasta.blogspot.com/p/blog-page.html
 
-    island sim :
-    https://dood.al/test/island/
-    view-source:https://dood.al/test/island/
-    https://www.reddit.com/r/proceduralgeneration/comments/8lh8ol/procedural_island/
+https://imgur.com/a/Cb5ri
 
-
-Procedrural city :
-    https://www.reddit.com/r/proceduralgeneration/comments/n6khor/wip_hierarchical_poisson_disks_for_city_landmark/
-
-    https://www.reddit.com/r/proceduralgeneration/comments/n3id9t/wip_attempt_at_a_homegrown_pattern_creation/
-
-
-Procedural Tectonic Planets
-    https://www.britannica.com/science/plate-tectonics
-
-    https://www.reddit.com/r/proceduralgeneration/comments/dudauc/simulating_tectonic_plates_on_a_sphere_details_in/
-
-
-    https://perso.liris.cnrs.fr/eric.galin/Articles/2019-planets.pdf
-    https://www.redblobgames.com/x/1843-planet-generation/
-
-
-    Clustered Convection for Procedural Plate Tectonics
-    https://weigert.vsos.ethz.ch/2020/12/03/clustered-convection-for-simulating-plate-tectonics/
+https://www.redblobgames.com/x/1843-planet-generation/#more
 
 
 
-for editing roads and lines and stuff :
-    Interaction with Points - @author prisoner849
-    https://hofk.de/main/discourse.threejs/2018/Interaction%20with%20Points/Interaction%20with%20Points.html
+# Interesting :
 
-    interactiveShape - @author prisoner849
-    https://hofk.de/main/discourse.threejs/2018/interactiveShape/interactiveShape.html
+https://github.com/nemo9955/make-world
+
+https://terrarray.itch.io/orbis-multiplex
+
+interesting branching patter, maybe usefull for rivers/textures ?
+https://observablehq.com/@makio135/confined-trees
 
 
-draw shape wsing lots of sprite points
-    clampLength - @author prisoner849
-    https://hofk.de/main/discourse.threejs/2018/clampLength/clampLength.html
-
-    https://hofk.de/main/discourse.threejs/2018/Points%20to%20Sphere/Points%20to%20Sphere.html
-    https://hofk.de/main/discourse.threejs/2018/Points%20to%20Sphere%20uniformly/Points%20to%20Sphere%20uniformly.html
+js graph lib : dagrejs/graphlib
+https://github.com/dagrejs/graphlib
 
 
 
-WORDS and language generation
+# Sphere stuff :
+Circles and spheres - In what follows are various notes and algorithms dealing with circles and spheres.
+http://paulbourke.net/geometry/circlesphere/
 
-    http://www.namenerds.com/scottish/scotss.html !!!!!!!!!!!!!!!!!!!!!
-    http://www.namenerds.com/scottish/scotss.html !!!!!!!!!!!!!!!!!!!!!
-    http://www.namenerds.com/scottish/scotss.html !!!!!!!!!!!!!!!!!!!!!
-    http://www.namenerds.com/scottish/scotss.html !!!!!!!!!!!!!!!!!!!!!
-    http://www.namenerds.com/scottish/scotss.html !!!!!!!!!!!!!!!!!!!!!
+Tiling a sphere with diagonal squares
+https://www.redblobgames.com/x/1932-sphere-healpix/
 
-    https://www.mithrilandmages.com/utilities/MedievalBrowse.php?letter=A&fms=S
+Tiling a sphere with squares
+https://www.redblobgames.com/x/1938-square-tiling-of-sphere/
 
-    https://donjon.bin.sh/code/name/ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    https://gist.github.com/swenzel/70beac153cdf23803f89 JavaScript random word generator
-    http://mewo2.com/notes/naming-language/
+Fibonacci points, Delaunay triangles, Voronoi regions
+https://github.com/redblobgames/1843-planet-generation
 
-    https://github.com/ryelle/naming-language ryelle/naming-language
+
+# Points stuff :
+1 Million Points in Three.js
+https://observablehq.com/@joewdavies/1-million-points-in-three-js
+
+three points examples :
+https://threejs.org/examples/?q=point#webgl_interactive_raycasting_points
+
+Three.js Optimize Lots of Objects
+https://threejsfundamentals.org/threejs/lessons/threejs-optimize-lots-of-objects.html
+
+
+Three.js + delaunator (Delaunay triangulation)
+https://codepen.io/prisoner849/pen/bQWOjY
+
+https://hofk.de/main/discourse.threejs/2018/Triangulation/Triangulation.html
+
+
+# climate and simulations :
+https://www.reddit.com/r/proceduralgeneration/comments/mpq2vs/its_rain_season/
+
+
+badlands model
+https://www.youtube.com/channel/UC3mu0qg-m0gUdbNWQxzuQnw
+
+
+island sim :
+https://www.reddit.com/r/proceduralgeneration/comments/8lh8ol/procedural_island/
+
+https://dood.al/test/island/
+view-source:https://dood.al/test/island/
+
+
+# Procedrural city :
+https://www.reddit.com/r/proceduralgeneration/comments/n6khor/wip_hierarchical_poisson_disks_for_city_landmark/
+
+https://www.reddit.com/r/proceduralgeneration/comments/n3id9t/wip_attempt_at_a_homegrown_pattern_creation/
+
+
+# Procedural Tectonic Planets
+https://www.britannica.com/science/plate-tectonics
+
+https://www.reddit.com/r/proceduralgeneration/comments/dudauc/simulating_tectonic_plates_on_a_sphere_details_in/
+
+
+https://perso.liris.cnrs.fr/eric.galin/Articles/2019-planets.pdf
+https://www.redblobgames.com/x/1843-planet-generation/
+
+
+Clustered Convection for Procedural Plate Tectonics
+https://weigert.vsos.ethz.ch/2020/12/03/clustered-convection-for-simulating-plate-tectonics/
+
+
+
+# for editing roads and lines and stuff :
+Interaction with Points - @author prisoner849
+https://hofk.de/main/discourse.threejs/2018/Interaction%20with%20Points/Interaction%20with%20Points.html
+
+interactiveShape - @author prisoner849
+https://hofk.de/main/discourse.threejs/2018/interactiveShape/interactiveShape.html
+
+
+# draw shape wsing lots of sprite points
+clampLength - @author prisoner849
+https://hofk.de/main/discourse.threejs/2018/clampLength/clampLength.html
+
+
+https://hofk.de/main/discourse.threejs/2018/Points%20to%20Sphere/Points%20to%20Sphere.html
+
+https://hofk.de/main/discourse.threejs/2018/Points%20to%20Sphere%20uniformly/Points%20to%20Sphere%20uniformly.html
+
+
+# REALISTIC STUFF  :
+
+https://www.fs.fed.us/psw/cirmount/meetings/agu/pdf2011/Stephenson_talk_AGU2011.pdf
+
+http://www.mit.edu/~jessicav/6.S198/Blog_Post/ProceduralGeneration.html
+
+
+# WORDS and language generation
+
+http://www.namenerds.com/scottish/scotss.html !!!!!!!!!!!!!!!!!!!!!
+
+https://www.mithrilandmages.com/utilities/MedievalBrowse.php?letter=A&fms=S
+
+https://donjon.bin.sh/code/name/ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+https://gist.github.com/swenzel/70beac153cdf23803f89 JavaScript random word generator
+
+http://mewo2.com/notes/naming-language/
+
+https://github.com/ryelle/naming-language ryelle/naming-language
 
 
