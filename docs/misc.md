@@ -152,6 +152,10 @@ https://hofk.de/main/discourse.threejs/2018/Points%20to%20Sphere/Points%20to%20S
 https://hofk.de/main/discourse.threejs/2018/Points%20to%20Sphere%20uniformly/Points%20to%20Sphere%20uniformly.html
 
 
+# Noise
+
+https://www.reddit.com/r/proceduralgeneration/comments/ncizfs/i_created_a_library_to_very_easily_include_many/
+
 # REALISTIC STUFF  :
 
 https://www.fs.fed.us/psw/cirmount/meetings/agu/pdf2011/Stephenson_talk_AGU2011.pdf

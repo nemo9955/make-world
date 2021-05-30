@@ -11,26 +11,9 @@ import * as d3 from "d3"
 import { Language } from "../language/Language";
 
 
-const listFiles = [
-    "romaninan_names_1.txt",
-    "russian_1.txt",
-    "slavic_names_1.txt",
-    "french_1.txt",
-    "french_names_1.txt",
-    "japanese_1.txt",
-    "japanese_names_1.txt",
-    "latin_1.txt",
-    "Shakespeare_1.txt",
-    "organs_1.txt",
-    "turkish_names_1.txt",
-    "lorem_ipsum.txt",
-    "hillbilly_names_1.txt",
-    "baltagul.txt",
-    "luceafarul.txt",
-    "russian_2.txt",
-]
 
 export class MainLanguageManager {
+    rawJson: d3.Selection<HTMLTextAreaElement, unknown, HTMLElement, any>;
     textIn: d3.Selection<HTMLTextAreaElement, unknown, HTMLElement, any>;
     textProc: d3.Selection<HTMLTextAreaElement, unknown, HTMLElement, any>;
     textOut: d3.Selection<HTMLTextAreaElement, unknown, HTMLElement, any>;
@@ -40,6 +23,7 @@ export class MainLanguageManager {
     langWords: d3.Selection<d3.BaseType, unknown, HTMLElement, any>;
 
 
+    allFilesList: string[];
 
 
     wordsToGenerate = 100;
@@ -61,16 +45,209 @@ export class MainLanguageManager {
 
     }
 
-    setMainText(text: string) {
-        // console.log("text", text);
-        this.textIn.node().value = text;
-        // this.textIn.node().value = longTextRus
-        // this.textIn.node().value = longTestBaltagul
-        this.extractWeights();
+
+
+    init() {
+        var path = `../data/all_data_files.txt`
+        fetch(path)
+            .then(response => response.text())
+            .then(text => {
+                var allf = text.split("\n")
+                this.allFilesList = allf;
+                this.postInit();
+            })
+    }
+
+    postInit() {
+        // this.initRawText();
+        this.initWikiCateg();
+    }
+
+
+
+    makeGuiMain() {
+        const body = d3.select("body");
+
+
+        body.append("input")
+            .attr("type", "button")
+            .attr("class", "btn btn-success btn-sm")
+            .attr("value", "Raw text")
+            .on("click", this.initRawText.bind(this))
+
+        body.append("input")
+            .attr("type", "button")
+            .attr("class", "btn btn-success btn-sm")
+            .attr("value", "Wiki Categories")
+            .on("click", this.initWikiCateg.bind(this))
+
+        body.append("br")
+    }
+
+
+    initWikiCateg() {
+        const body = d3.select("body");
+        body.selectAll("*").remove()
+
+        this.makeGuiMain()
+
+
+        for (const iterator of this.allFilesList) {
+            if (iterator.includes("/wiki_categs/") == false) continue
+            var liteValue = iterator.replace(/.*\//, "")
+            body.append("input")
+                .attr("type", "button")
+                .attr("class", "btn btn-primary btn-sm")
+                .attr("value", liteValue)
+                .on("click", event => {
+                    this.readFileButton(iterator, this.setWikiCategMainText.bind(this));
+                })
+        }
+
+
+        this.rawJson = body.append("textarea")
+            .style("width", "98%")
+            .style("height", "80px")
+
+
+
+        this.readFileButton(this.allFilesList[26 - 1], this.setWikiCategMainText.bind(this))
+    }
+
+
+    removeAfter(delAfter: d3.Selection<HTMLTextAreaElement, unknown, HTMLElement, any>) {
+
+        const body = d3.select("body");
+        var found = false;
+
+        var allelems = body.selectChildren("*")
+        for (const iterator of allelems.nodes()) {
+            // console.log("iterator", iterator);
+            if (found == true) {
+                d3.select(iterator).remove()
+            }
+
+            if (iterator == delAfter.node()) {
+                found = true;
+            }
+        }
+
 
     }
 
-    readFileButton(file_: string) {
+    setWikiCategMainText(text: string, file_: string) {
+        this.removeAfter(this.rawJson)
+        this.rawJson.node().value = text;
+        const body = d3.select("body");
+
+
+        body.append("label").html(file_)
+        var catdata = JSON.parse(text);
+
+        var exactOneCat = body.append("div")
+            .attr("class", "btn-group")
+        exactOneCat.append("button")
+            .attr("type", "button")
+            .attr("class", "btn btn-info dropdown-toggle btn-sm")
+            .attr("data-bs-toggle", "dropdown")
+            .attr("aria-expanded", "false")
+            .html("Exact one category")
+        var exactOneCatUl = exactOneCat.append("ul")
+            .attr("class", "dropdown-menu")
+
+        for (const iterator of catdata) {
+            var showText = `${iterator.word_count} `
+            showText += iterator.category.replace("Category:", "")
+            exactOneCatUl.append("li").append("a")
+                .attr("class", "dropdown-item")
+                .attr("href", "#")
+                .html(showText)
+                .on("click", event => {
+                    console.log("iterator", iterator);
+                    this.textIn.node().value = iterator.values.join(" ");
+                    this.extractWeights();
+                })
+        }
+
+        var allInCatHierarch = body.append("div")
+            .attr("class", "btn-group")
+        allInCatHierarch.append("button")
+            .attr("type", "button")
+            .attr("class", "btn btn-info dropdown-toggle btn-sm")
+            .attr("data-bs-toggle", "dropdown")
+            .attr("aria-expanded", "false")
+            .html("All in category")
+        var allInCatHierarchUl = allInCatHierarch.append("ul")
+            .attr("class", "dropdown-menu")
+
+        var hierarchData = new Map<string, any>();
+
+        for (const iter1 of catdata) {
+            for (const categ of iter1.categories) {
+                if (hierarchData.has(categ) == false) {
+                    var datat: any = {};
+                    datat.word_count = 0;
+                    datat.values = [];
+                    datat.category = categ;
+                    hierarchData.set(categ, datat);
+                }
+                var data = hierarchData.get(categ);
+                data.word_count += iter1.word_count;
+                data.values.push(...iter1.values);
+            }
+        }
+
+        for (const iterator of hierarchData.values()) {
+            var showText = `${iterator.word_count} `
+            showText += iterator.category.replace("Category:", "")
+            allInCatHierarchUl.append("li").append("a")
+                .attr("class", "dropdown-item")
+                .attr("href", "#")
+                .html(showText)
+                .on("click", event => {
+                    console.log("iterator", iterator);
+                    this.textIn.node().value = iterator.values.join(" ");
+                    this.extractWeights();
+                })
+        }
+
+
+        body.append("br")
+        body.append("label").html("Resulted sample text :")
+        this.textIn = body.append("textarea")
+            .style("width", "98%")
+            .style("height", "80px")
+
+
+        body.append("label").html("Resulted cleaned sample text :")
+        this.textProc = body.append("textarea")
+            .style("width", "98%")
+            .style("height", "100px")
+
+
+        body.append("label").html("Resulted weights :")
+        this.textOut = body.append("textarea")
+            .style("width", "98%")
+            .style("height", "100px")
+
+        this.langWords = body.append("p")
+            .attr("class", "text-start")
+
+
+        // POPULATE SOME INITAL VALUE
+        this.textIn.node().value = hierarchData.values().next().value.values.join(" ");
+        // this.textIn.node().value = catdata[0].values.join(" ");
+        this.extractWeights();
+
+
+    }
+
+
+
+
+
+
+    readFileButton(file_: string, afterAction: any) {
         // console.log("event.target.value", event.target.value);
         var path = `../data/${file_}`
         console.log("path", path);
@@ -78,7 +255,7 @@ export class MainLanguageManager {
             .then(response => response.text())
             .then(text => {
                 // console.log("text", text);
-                this.setMainText(text)
+                afterAction(text, file_)
             })
 
 
@@ -88,28 +265,37 @@ export class MainLanguageManager {
 
     }
 
-    init() {
-        this.makeGui();
-        this.readFileButton(listFiles[0]);
-        // this.setMainText(randomText);
+
+
+    setRawMainText(text: string, file_: string) {
+        // console.log("text", text);
+        this.textIn.node().value = text;
+        // this.textIn.node().value = longTextRus
+        // this.textIn.node().value = longTestBaltagul
+        this.extractWeights();
+
     }
 
 
-    makeGui() {
+    initRawText() {
+        this.makeGuiRawTex();
+        this.readFileButton(this.allFilesList[1], this.setRawMainText.bind(this));
+    }
+
+    makeGuiRawTex() {
         const body = d3.select("body");
+        body.selectAll("*").remove()
 
-        // body.append("input")
-        //     .attr("type", "button")
-        //     .attr("class", "btn btn-primary")
-        //     .attr("value", "randomText")
-        //     .on("click", () => this.setMainText(randomText))
+        this.makeGuiMain()
 
-        for (const iterator of listFiles) {
+        for (const iterator of this.allFilesList) {
+            if (iterator.includes("/raw_text/") == false) continue
+            var liteValue = iterator.replace(/.*\//, "")
             body.append("input")
                 .attr("type", "button")
-                .attr("class", "btn btn-primary")
-                .attr("value", iterator)
-                .on("click", event => { this.readFileButton(event.target.value) })
+                .attr("class", "btn btn-primary btn-sm")
+                .attr("value", liteValue)
+                .on("click", event => { this.readFileButton(iterator, this.setRawMainText.bind(this)) })
         }
 
         this.textIn = body.append("textarea")
@@ -118,7 +304,7 @@ export class MainLanguageManager {
 
         body.append("input")
             .attr("type", "button")
-            .attr("class", "btn btn-primary")
+            .attr("class", "btn btn-primary btn-sm")
             .attr("value", "Gen lang weights")
             .on("click", this.extractWeights.bind(this))
 
@@ -169,7 +355,7 @@ export class MainLanguageManager {
 
         body.append("input")
             .attr("type", "button")
-            .attr("class", "btn btn-primary")
+            .attr("class", "btn btn-primary btn-sm")
             .attr("value", "Gen text")
             .on("click", this.generateText.bind(this))
 
@@ -198,15 +384,19 @@ export class MainLanguageManager {
     extractWeights() {
         this.weights = {};
         var text = this.textIn.node().value;
-        // text = text.toLowerCase();
+        text = text.toLowerCase();
         // text = text.replace(/[\s\d]/gi, " ");
         // text = text.replace(/[\W\s\d]/gi, " ");
-        text = text.replace(/[\…\,\.\(\)\[\]\!\?\»\”\„\"\'\`\;\:\—\-\d\s]/gi, " ");
+        text = text.replace(/[\\\/\…\,\.\(\)\[\]\!\?\»\”\„\"\'\`\;\:\–\—\-\+\d\s]/gi, " ");
         // text = text.replace(/[\…\,\.\(\)\[\]\!\?\»\”\„\"\'\`\’\;\:\—\-\d\s]/gi, " ");
         text = text.replace(/ +/gi, " ");
         // var words = text.split(" ");
         var words = new Set(text.split(" "));
+
+
+        this.textProc.node().value = [...words].join(" ")
         console.log("words", words);
+
         for (const word of words) {
             if (word.length <= 2) continue;
             for (let index = 0; index < word.length; index++) {
@@ -239,7 +429,6 @@ export class MainLanguageManager {
         this.textOut.node().value = this.textOut.node().value.split('},"').join('},\n\n"')
         this.textOut.node().value = this.textOut.node().value.split('":{').join('":\n{')
 
-        this.textProc.node().value = [...words].join(" ")
 
         this.generateText();
 
