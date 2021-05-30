@@ -3,8 +3,6 @@ import { customComparator } from "../utils/Random";
 
 import { last, method } from "lodash-es"
 
-const eng1 = require("../../data/lang-english-v1_1.json")
-const eng2 = require("../../data/lang-english-v1_2.json")
 
 
 // for (const key1 in eng1) {
@@ -27,13 +25,6 @@ export class Language {
 
     constructor() {
 
-    }
-
-    usePredefined(name: string) {
-        switch (name) {
-            case "eng1": this.useCustomRaw(eng1); break;
-            case "eng2": this.useCustomRaw(eng2); break;
-        }
     }
 
     useCustomRaw(langJson: any) {
