@@ -22,6 +22,13 @@ Please use Google Chrome to access the live build, Edge and Opera could also wor
 Firefox and Safari DO NOT support this feature.
 
 
+## Contact
+
+We created a discord server to gather all Worldbuilding developers and enthusiasts toghether so we can create and share awesome experiences!
+
+Open Worldbuilding discord server invite : https://discord.gg/JNFcxXMYEX
+
+
 ## Keys
     LEFT MOUSE BUTTON is used to move the view inside a canvas and interact with GUI
     MIDDLE MOUSE BUTTON is for alternative zooming in some places
