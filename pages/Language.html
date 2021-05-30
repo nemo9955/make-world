@@ -17,10 +17,11 @@
         crossorigin="anonymous"></script>
 
     <script src="../dist/main.js" type="text/javascript"></script>
-
     <script language="javascript">
-        var mng = new make_world.MainLanguageManager();
-        mng.init();
+        setTimeout(function () { // run after HTML is fully loaded
+            var mng = new make_world.MainLanguageManager();
+            mng.init();
+        }, 0);
     </script>
 
 </head>

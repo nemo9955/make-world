@@ -17,11 +17,11 @@
         crossorigin="anonymous"></script>
 
     <script src="../dist/main.js" type="text/javascript"></script>
-
     <script language="javascript">
-        // console.log("make_world", make_world);
-        var main_manager = new make_world.MainManager();
-        main_manager.init();
+        setTimeout(function () { // run after HTML is fully loaded
+            var main_manager = new make_world.MainManager();
+            main_manager.init();
+        }, 0);
     </script>
 
 </head>
