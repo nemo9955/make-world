@@ -59,6 +59,13 @@ export type MetaCanvas = {
 }
 
 
+export enum WorldGenType {
+    Inital,
+    Regenerate,
+    Tweaked,
+}
+
+
 export enum MessageType {
     Event = "Event",
     Ready = "Ready",
@@ -72,3 +79,4 @@ export enum MessageType {
     CanvasMake = "CanvasMake",
     RefreshJGUI = "RefreshJGUI"
 }
+
