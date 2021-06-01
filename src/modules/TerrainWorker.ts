@@ -194,6 +194,7 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
                     // console.log("this.terrain", this.terrain);
                     this.terrain.initFromPlanet(planet_);
                     planet_.setTerrain(this.terrain);
+                    this.world.setRwObj(this.terrain.data);
                     didOnce = true;
                 }
             }

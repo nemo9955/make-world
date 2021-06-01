@@ -316,8 +316,6 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
         this.disposeObj(this.tpMesh)
     }
 
-
-
     private clearAllLines() {
         this.disposeObj(this.tpLines1)
     }
@@ -325,9 +323,6 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
     private clearRivers() {
         this.disposeObj(this.rivers)
     }
-
-
-
 
     private drawLinesPrede() {
 
@@ -467,12 +462,22 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
         this.camera.lookAt(0, 0, 0)
     }
 
+    setDistCamera(): void {
+        this.camera.position.normalize();
+        this.camera.position.multiplyScalar(this.terrain.data.sphereSize * 2.2)// DRAWUNIT
+        this.camera.lookAt(0, 0, 0)
+    }
+
     updateDeep(): void {
         console.time(`#time DrawThreeTerrain updateDeep`);
-        this.setCamera();
+
+        // RESET !!!!!!!!
+        this.selectedPoints.length = 0;
+
+        this.setDistCamera();
         this.clearTerrainData();
         this.syncTerrainData();
-        this.scanRivers();
+        // this.scanRivers();
         // this.pathToWater();
         console.timeEnd(`#time DrawThreeTerrain updateDeep`);
     }
@@ -629,7 +634,7 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
         for (const prjDdObj of prdDropList) {
             prjDdObj.addEventListener(jData.jMng, "click", (event: WorkerEvent) => {
                 switch (event.data.event.extra.listValue) {
-                    case "none": this.clearAllLines(); break;
+                    case "none": this.clearAllLines(); this.clearRivers(); break;
                     case "edges": this.drawLinesEdge(); break;
                     case "allRivers": this.pathToWater(); break;
                     case "predecesor": this.drawLinesPrede(); break;

@@ -87994,12 +87994,19 @@ class DrawThreeTerrain {
         this.camera.position.z = 0;
         this.camera.lookAt(0, 0, 0);
     }
+    setDistCamera() {
+        this.camera.position.normalize();
+        this.camera.position.multiplyScalar(this.terrain.data.sphereSize * 2.2); // DRAWUNIT
+        this.camera.lookAt(0, 0, 0);
+    }
     updateDeep() {
         console.time(`#time DrawThreeTerrain updateDeep`);
-        this.setCamera();
+        // RESET !!!!!!!!
+        this.selectedPoints.length = 0;
+        this.setDistCamera();
         this.clearTerrainData();
         this.syncTerrainData();
-        this.scanRivers();
+        // this.scanRivers();
         // this.pathToWater();
         console.timeEnd(`#time DrawThreeTerrain updateDeep`);
     }
@@ -88131,6 +88138,7 @@ class DrawThreeTerrain {
                 switch (event.data.event.extra.listValue) {
                     case "none":
                         this.clearAllLines();
+                        this.clearRivers();
                         break;
                     case "edges":
                         this.drawLinesEdge();
@@ -88799,6 +88807,7 @@ class TerrainWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
                     // console.log("this.terrain", this.terrain);
                     this.terrain.initFromPlanet(planet_);
                     planet_.setTerrain(this.terrain);
+                    this.world.setRwObj(this.terrain.data);
                     didOnce = true;
                 }
             }
