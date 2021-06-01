@@ -85520,7 +85520,7 @@ class Star extends OrbitingElement_1.OrbitingElement {
         super.addToJgui(jData);
         jData.jGui.addColor("Color", this.color.getRgb().formatHex())
             .addEventListener(jData.jMng, "input", (event) => {
-            this.color.set_color(event.data.event.target.valueAsNumber);
+            this.color.set_color(event.data.event.target.value);
         });
         jData.jGui.addNumber("radius.km", this.radius.km)
             .addEventListener(jData.jMng, "input", (event) => {
@@ -86952,6 +86952,15 @@ class DrawD3Terrain {
             .pointRadius(this.ptsRadius);
         this.grid = this.graticule();
         this.zoom = d3.zoom()
+            .filter(event => {
+            // console.log("event", event);
+            switch (event.type) {
+                // https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/button
+                case "mousedown": return event.button === 2;
+                case "wheel": return event.button === 0;
+                default: return false;
+            }
+        })
             .scaleExtent([0.2, 7])
             .on("zoom", this.zoomed.bind(this));
         var fakeSelect = d3.select(this.fakeDOM).selection();
@@ -87200,16 +87209,18 @@ class DrawThreePlsys {
         this.scene.add(this.hoverSphere);
         // events set in src/modules/EventsManager.ts -> addOrbitCtrlEvents
         this.controls = new OrbitControls_1.OrbitControls(this.camera, this.fakeDOM);
-        this.controls.enablePan = false;
         this.fakeDOM.addEventListener("resize", (event_) => { this.resize(event_); });
         this.controls.addEventListener("change", this.cameraMoved.bind(this));
         this.cameraMoved();
+        this.controls.enablePan = false;
+        this.controls.mouseButtons = { RIGHT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, LEFT: THREE.MOUSE.PAN };
         // this.fakeDOM.addEventListener("mousemove", this.hoverMoved.bind(this)) // mouseleave
         // this.fakeDOM.addEventListener("contextmenu", this.hoverClick.bind(this))
         this.fakeDOM.addEventListener("mouseenter", this.hoverEnter.bind(this));
         this.fakeDOM.addEventListener("mousemove", this.hoverMoved.bind(this));
         this.fakeDOM.addEventListener("mouseleave", this.hoverleave.bind(this));
-        this.fakeDOM.addEventListener("contextmenu", this.hoverClick.bind(this));
+        this.fakeDOM.addEventListener("click", this.hoverClick.bind(this));
+        // this.fakeDOM.addEventListener("contextmenu", this.hoverClick.bind(this))
         this.tjs_pool_lines.expand(20);
         this.tjs_pool_orbobjects.expand(20);
         this.tjs_pool_groups.expand(50);
@@ -87699,15 +87710,17 @@ class DrawThreeTerrain {
         const rayThresh = 200;
         this.raycaster.params.Points.threshold = rayThresh; // DRAWUNIT
         this.raycaster.params.Line.threshold = rayThresh; // DRAWUNIT
+        this.fakeDOM.addEventListener("resize", (event_) => { this.resize(event_); });
         // events set in src/modules/EventsManager.ts -> addOrbitCtrlEvents
         this.controls = new OrbitControls_1.OrbitControls(this.camera, this.fakeDOM);
-        this.controls.enablePan = false;
-        this.fakeDOM.addEventListener("resize", (event_) => { this.resize(event_); });
         // this.controls.addEventListener("change", this.cameraMoved.bind(this))
+        this.controls.enablePan = false;
+        this.controls.mouseButtons = { RIGHT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, LEFT: THREE.MOUSE.PAN };
         this.fakeDOM.addEventListener("mouseenter", this.hoverEnter.bind(this));
         this.fakeDOM.addEventListener("mousemove", this.hoverMoved.bind(this));
         this.fakeDOM.addEventListener("mouseleave", this.hoverleave.bind(this));
-        this.fakeDOM.addEventListener("contextmenu", this.hoverClick.bind(this));
+        this.fakeDOM.addEventListener("click", this.hoverClick.bind(this));
+        // this.fakeDOM.addEventListener("contextmenu", this.hoverClick.bind(this))
         // this.syncTerrainData();
     }
     resize(event_) {

@@ -84,17 +84,19 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
         this.raycaster.params.Line.threshold = rayThresh; // DRAWUNIT
 
 
+        this.fakeDOM.addEventListener("resize", (event_) => { this.resize(event_); })
         // events set in src/modules/EventsManager.ts -> addOrbitCtrlEvents
         this.controls = new OrbitControls(this.camera, this.fakeDOM);
-        this.controls.enablePan = false;
-        this.fakeDOM.addEventListener("resize", (event_) => { this.resize(event_); })
         // this.controls.addEventListener("change", this.cameraMoved.bind(this))
+        this.controls.enablePan = false;
+        this.controls.mouseButtons = { RIGHT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, LEFT: THREE.MOUSE.PAN }
 
 
         this.fakeDOM.addEventListener("mouseenter", this.hoverEnter.bind(this))
         this.fakeDOM.addEventListener("mousemove", this.hoverMoved.bind(this))
         this.fakeDOM.addEventListener("mouseleave", this.hoverleave.bind(this))
-        this.fakeDOM.addEventListener("contextmenu", this.hoverClick.bind(this))
+        this.fakeDOM.addEventListener("click", this.hoverClick.bind(this))
+        // this.fakeDOM.addEventListener("contextmenu", this.hoverClick.bind(this))
 
         // this.syncTerrainData();
 
