@@ -160,6 +160,15 @@ export class DrawD3Terrain implements DrawWorkerInstance {
         this.grid = this.graticule();
 
         this.zoom = d3.zoom()
+        .filter(event => {
+            // console.log("event", event);
+            switch (event.type) {
+                // https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/button
+                case "mousedown": return event.button === 2
+                case "wheel": return event.button === 0
+                default: return false
+            }
+        })
             .scaleExtent([0.2, 7])
             .on("zoom", this.zoomed.bind(this))
 

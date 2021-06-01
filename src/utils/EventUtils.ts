@@ -170,6 +170,7 @@ export function addOrbitCtrlEvents(canvas: HTMLElement, canvas_id: any, worker: 
     /////// "mousedown" "mouseenter" "mouseleave" "mousemove" "mouseout" "mouseover" "mouseup":
     // genericRedirect("keydown", canvas, canvas_id, worker)
 
+    genericRedirect("click", canvas, canvas_id, worker)
     // genericRedirect("pointermove", canvas, canvas_id, worker)
     genericRedirect("mousemove", canvas, canvas_id, worker)
     genericRedirect("mouseleave", canvas, canvas_id, worker)
@@ -194,6 +195,7 @@ export function addEventsD3Canvas(canvas: HTMLElement, canvas_id: any, worker: G
     // genericRedirect("pointerdown", canvas, canvas_id, worker)
     // genericRedirect("pointerup", canvas, canvas_id, worker)
 
+    genericRedirect("click", canvas, canvas_id, worker)
     // genericRedirect("dblclick", canvas, canvas_id, worker)
     // genericRedirect("mousedown", canvas, canvas_id, worker)
     genericConditionalRedirect("wheel", canvas, canvas_id, worker, isShiftPressed.bind(this))

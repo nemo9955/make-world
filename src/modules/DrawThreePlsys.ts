@@ -175,10 +175,11 @@ export class DrawThreePlsys implements DrawWorkerInstance {
 
         // events set in src/modules/EventsManager.ts -> addOrbitCtrlEvents
         this.controls = new OrbitControls(this.camera, this.fakeDOM);
-        this.controls.enablePan = false;
         this.fakeDOM.addEventListener("resize", (event_) => { this.resize(event_); })
         this.controls.addEventListener("change", this.cameraMoved.bind(this))
         this.cameraMoved();
+        this.controls.enablePan = false;
+        this.controls.mouseButtons = { RIGHT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, LEFT: THREE.MOUSE.PAN }
 
         // this.fakeDOM.addEventListener("mousemove", this.hoverMoved.bind(this)) // mouseleave
         // this.fakeDOM.addEventListener("contextmenu", this.hoverClick.bind(this))
@@ -186,7 +187,8 @@ export class DrawThreePlsys implements DrawWorkerInstance {
         this.fakeDOM.addEventListener("mouseenter", this.hoverEnter.bind(this))
         this.fakeDOM.addEventListener("mousemove", this.hoverMoved.bind(this))
         this.fakeDOM.addEventListener("mouseleave", this.hoverleave.bind(this))
-        this.fakeDOM.addEventListener("contextmenu", this.hoverClick.bind(this))
+        this.fakeDOM.addEventListener("click", this.hoverClick.bind(this))
+        // this.fakeDOM.addEventListener("contextmenu", this.hoverClick.bind(this))
 
         this.tjs_pool_lines.expand(20);
         this.tjs_pool_orbobjects.expand(20);

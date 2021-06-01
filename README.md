@@ -30,9 +30,9 @@ Open Worldbuilding discord server invite : https://discord.gg/JNFcxXMYEX
 
 
 ## Keys
-    LEFT MOUSE BUTTON is used to move the view inside a canvas and interact with GUI
-    MIDDLE MOUSE BUTTON is for alternative zooming in some places
     LEFT MOUSE BUTTON is for clicking inse the canvas
+    RIGHT MOUSE BUTTON is used to move the camera inside a canvas
+    MIDDLE MOUSE BUTTON is for alternative zooming in some places
     SHIFT is used to enable special scroll functionality in canvas, mostly zooming
 
 
