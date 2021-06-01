@@ -174,6 +174,7 @@ export class DrawD3Terrain implements DrawWorkerInstance {
     }
 
     public drawOnce() {
+        if (!this.terrain.posGeo) return; // TODO make more elegant !!!!!
         if (this.fastDrawTimeout > 0) this.fastDrawTimeout--;
         // console.log("this.fastDrawTimeout", this.fastDrawTimeout);
 

@@ -49,7 +49,7 @@ export abstract class BaseWorker {
     public abstract init(): void;
 
     public getMessage(event: WorkerEvent) {
-        console.debug(`#HERELINE ${this.name} getMessage  ${event.data.message}`);
+        // console.debug(`#HERELINE ${this.name} getMessage  ${event.data.message}`);
 
         if (event?.data?.config && this.config)
             this.config.copy(event.data.config as Config)
@@ -85,6 +85,23 @@ export abstract class BaseWorker {
     protected updPlay() {
         this.ticker.start();
     }
+
+    protected broadcastEvent(event: any) {
+        console.debug(`#HERELINE GenWorkerMetadata broadcastEvent `, event);
+        this.worker.postMessage(<WorkerPacket>{
+            message: MessageType.Event,
+            metadata: {
+                broadcast: true,
+                isWorldEvent: true,
+            },
+            from: this.name,
+            event: event,
+            // event_id: null, // TODO what to do with it ?
+        });
+    }
+
+
+
 }
 
 
@@ -118,12 +135,16 @@ export abstract class BaseDrawUpdateWorker extends BaseWorker {
         this.workerJguiManager = new JguiManager(worker, workerName);
     }
 
+    public abstract getWorldEvent(event: WorkerEvent): void;
+
     callEvent(woEvent: WorkerEvent) {
         var event = woEvent.data.event;
         var event_id = woEvent.data.event_id;
 
         if (woEvent.data?.metadata?.isFromJgui) {
             this.workerJguiManager.dispachListener(event_id, woEvent)
+        } else if (woEvent.data?.metadata?.isWorldEvent) {
+            this.getWorldEvent(woEvent);
         } else {
             var drawRedirect = this.mapDraws.get(event_id);
             drawRedirect.fakeDOM.dispatchEvent(event);

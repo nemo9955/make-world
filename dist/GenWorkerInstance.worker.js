@@ -85724,7 +85724,7 @@ class Terrain {
         this.vec3pts.length = this.ptsLength;
         this.conHull = new ConvexHull_1.ConvexHull();
         this.conHull.setFromPoints(this.vec3pts);
-        console.log("this.conHull", this.conHull);
+        // console.log("this.conHull", this.conHull);
         this.vec3pts.length = vec3ptsOrigLen;
         // const gostVerts = []; // TODO 4 in 30k not added this, might cause issues in the future !!!
         // for (const vert of this.conHull.vertices) if (!vert.face) gostVerts.push(vert);
@@ -85871,7 +85871,7 @@ class Terrain {
             // console.log("ld.size", ld.size);
         }
         const avgSize = lowSum / lowCnt;
-        console.log("avgSize", avgSize);
+        // console.log("avgSize", avgSize);
         this.mask1 = ObjectPool_1.getUint8Array(this.ptsLength, this.mask1).fill(0);
         for (const ld of lowData.lowestData) {
             // console.log("ld", ld);
@@ -85927,7 +85927,7 @@ class Terrain {
         this.genCommonPaths();
         this.colorTerrain();
         // this.genTectonicPlates();
-        console.log("this", this);
+        // console.log("this", this);
         console.timeEnd(`#time Terrain generate`);
     }
     makePaths(selectedPoints) {
@@ -86597,7 +86597,7 @@ exports.setTempContainer = setTempContainer;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.MessageType = exports.Config = void 0;
+exports.MessageType = exports.WorldGenType = exports.Config = void 0;
 const Convert = __webpack_require__(/*! ../utils/Convert */ "./src/utils/Convert.ts");
 // TODO things to add, with parameters being in SpaceConfig!
 // genMainOrbits ... bool ensure_habitable
@@ -86621,6 +86621,12 @@ class Config {
     }
 }
 exports.Config = Config;
+var WorldGenType;
+(function (WorldGenType) {
+    WorldGenType[WorldGenType["Inital"] = 0] = "Inital";
+    WorldGenType[WorldGenType["Regenerate"] = 1] = "Regenerate";
+    WorldGenType[WorldGenType["Tweaked"] = 2] = "Tweaked";
+})(WorldGenType = exports.WorldGenType || (exports.WorldGenType = {}));
 var MessageType;
 (function (MessageType) {
     MessageType["Event"] = "Event";
@@ -86955,6 +86961,8 @@ class DrawD3Terrain {
         this.fastDrawTimeout = 2;
     }
     drawOnce() {
+        if (!this.terrain.posGeo)
+            return; // TODO make more elegant !!!!!
         if (this.fastDrawTimeout > 0)
             this.fastDrawTimeout--;
         // console.log("this.fastDrawTimeout", this.fastDrawTimeout);
@@ -87700,7 +87708,7 @@ class DrawThreeTerrain {
         this.fakeDOM.addEventListener("mousemove", this.hoverMoved.bind(this));
         this.fakeDOM.addEventListener("mouseleave", this.hoverleave.bind(this));
         this.fakeDOM.addEventListener("contextmenu", this.hoverClick.bind(this));
-        this.syncTerrainData();
+        // this.syncTerrainData();
     }
     resize(event_) {
         // console.debug("#HERELINE DrawThreePlsys resize", event_);
@@ -87717,22 +87725,23 @@ class DrawThreeTerrain {
         this.hoverData.mousey = event.offsetY;
         this.hoverData.mousep.x = (this.hoverData.mousex / this.canvasOffscreen.width) * 2 - 1;
         this.hoverData.mousep.y = -(this.hoverData.mousey / this.canvasOffscreen.height) * 2 + 1;
-        if (this.hoverData.mousep.x != null && this.hoverData.mousep.y != null) {
-            this.raycaster.setFromCamera(this.hoverData.mousep, this.camera);
-            const intersects = this.raycaster.intersectObject(this.tpPts, false);
-            if (intersects.length > 0) {
-                var orb_ = intersects[0];
-                this.hoverSphere.visible = true;
-                this.hoverData.hoverId = orb_.index;
-                const vec3pts = this.terrain.vec3pts[this.hoverData.hoverId];
-                this.hoverSphere.position.copy(vec3pts);
-                // console.log("orb_", orb_);
+        if (this.tpPts)
+            if (this.hoverData.mousep.x != null && this.hoverData.mousep.y != null) {
+                this.raycaster.setFromCamera(this.hoverData.mousep, this.camera);
+                const intersects = this.raycaster.intersectObject(this.tpPts, false);
+                if (intersects.length > 0) {
+                    var orb_ = intersects[0];
+                    this.hoverSphere.visible = true;
+                    this.hoverData.hoverId = orb_.index;
+                    const vec3pts = this.terrain.vec3pts[this.hoverData.hoverId];
+                    this.hoverSphere.position.copy(vec3pts);
+                    // console.log("orb_", orb_);
+                }
+                else {
+                    this.hoverData.hoverId = -1;
+                    this.hoverSphere.visible = false;
+                }
             }
-            else {
-                this.hoverData.hoverId = -1;
-                this.hoverSphere.visible = false;
-            }
-        }
     }
     hoverEnter(event) {
         this.hoverMoved(event);
@@ -88202,8 +88211,8 @@ class BaseWorker {
             object_.worker = this.worker;
     }
     getMessage(event) {
+        // console.debug(`#HERELINE ${this.name} getMessage  ${event.data.message}`);
         var _a;
-        console.debug(`#HERELINE ${this.name} getMessage  ${event.data.message}`);
         if (((_a = event === null || event === void 0 ? void 0 : event.data) === null || _a === void 0 ? void 0 : _a.config) && this.config)
             this.config.copy(event.data.config);
         const message_ = event.data.message;
@@ -88234,6 +88243,19 @@ class BaseWorker {
     updPlay() {
         this.ticker.start();
     }
+    broadcastEvent(event) {
+        console.debug(`#HERELINE GenWorkerMetadata broadcastEvent `, event);
+        this.worker.postMessage({
+            message: Config_1.MessageType.Event,
+            metadata: {
+                broadcast: true,
+                isWorldEvent: true,
+            },
+            from: this.name,
+            event: event,
+            // event_id: null, // TODO what to do with it ?
+        });
+    }
 }
 exports.BaseWorker = BaseWorker;
 class BaseDrawUpdateWorker extends BaseWorker {
@@ -88248,11 +88270,14 @@ class BaseDrawUpdateWorker extends BaseWorker {
         this.workerJguiManager = new JguiMake_1.JguiManager(worker, workerName);
     }
     callEvent(woEvent) {
-        var _a, _b;
+        var _a, _b, _c, _d;
         var event = woEvent.data.event;
         var event_id = woEvent.data.event_id;
         if ((_b = (_a = woEvent.data) === null || _a === void 0 ? void 0 : _a.metadata) === null || _b === void 0 ? void 0 : _b.isFromJgui) {
             this.workerJguiManager.dispachListener(event_id, woEvent);
+        }
+        else if ((_d = (_c = woEvent.data) === null || _c === void 0 ? void 0 : _c.metadata) === null || _d === void 0 ? void 0 : _d.isWorldEvent) {
+            this.getWorldEvent(woEvent);
         }
         else {
             var drawRedirect = this.mapDraws.get(event_id);
@@ -88348,7 +88373,8 @@ const SpaceFactory_1 = __webpack_require__(/*! ../generate/SpaceFactory */ "./sr
 // TODO move generation in this worker instead of in the main thread
 // TODO simplify the refresh deep/shallow mechanisms since most actions will be done in this worker
 // TODO store position and rotation of objects inside themselves after time/orbit update so other workers can do "basic" checks and calculations
-const MAIN_ORDINAL = "5";
+const JGUI_ORDINAL = "5";
+const WORLD_GEN_ORDER = 101;
 class PlanetSysWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
     constructor(config, worker, workerName, event) {
         super(config, worker, workerName, event);
@@ -88368,7 +88394,7 @@ class PlanetSysWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
                 message: Config_1.MessageType.CanvasMake,
                 metaCanvas: {
                     id: `${this.name}-canvas-DrawThreePlsys`,
-                    order: MAIN_ORDINAL + "10",
+                    order: JGUI_ORDINAL + "10",
                     generalFlags: ["orbit"],
                 }
             });
@@ -88376,7 +88402,7 @@ class PlanetSysWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
                 message: Config_1.MessageType.CanvasMake,
                 metaCanvas: {
                     id: `${this.name}-canvas-DrawD3Plsys`,
-                    order: MAIN_ORDINAL + "20",
+                    order: JGUI_ORDINAL + "20",
                     generalFlags: [],
                 }
             });
@@ -88389,7 +88415,13 @@ class PlanetSysWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
             // console.log("this.world", this.world);
             //     return this.world.writeDeep();
         }).then(() => {
-            return this.refreshDeep(false);
+            return this.world.writeAllRw();
+            // return this.refreshDeep(false);
+        }).then(() => {
+            this.broadcastEvent({
+                worldGenIndex: WORLD_GEN_ORDER,
+                worldGenType: Config_1.WorldGenType.Inital,
+            });
         });
     }
     CanvasReady(event) {
@@ -88421,6 +88453,14 @@ class PlanetSysWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
             object_.spaceFactory = this.spaceFactory;
         if (object_.planetarySystem === null)
             object_.planetarySystem = this.planetarySystem;
+    }
+    getWorldEvent(event) {
+        if (WORLD_GEN_ORDER > event.data.event.worldGenIndex) {
+            console.warn(`PLACEHOLDER in ${this.name} !`);
+        }
+        else {
+            console.debug(`World event is upstream, no acetion needed for ${this.name} !`);
+        }
     }
     getMessageExtra(event) {
         // console.debug(`#HERELINE ${this.name} getMessageExtra  ${event.data.message}`, event.data);
@@ -88465,6 +88505,13 @@ class PlanetSysWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
             prom = this.refreshShallow(doSpecial);
         await prom.finally(() => {
             console.timeEnd(`#time ${this.name} refreshDb ${refreshType} `);
+        });
+    }
+    async regenerate(doSpecial = true) {
+        await this.refreshDeep(doSpecial);
+        this.broadcastEvent({
+            worldGenIndex: WORLD_GEN_ORDER,
+            worldGenType: Config_1.WorldGenType.Regenerate,
         });
     }
     async refreshDeep(doSpecial = true) {
@@ -88515,7 +88562,7 @@ class PlanetSysWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
         var workerJguiManager = this.workerJguiManager;
         var workerJgui;
         var startExpanded = false;
-        const jguiOrdinal = MAIN_ORDINAL + "00";
+        const jguiOrdinal = JGUI_ORDINAL + "00";
         [this.workerJguiMain, workerJgui] = new JguiMake_1.JguiMake(null).mkWorkerJgui("plsys", jguiOrdinal, startExpanded);
         var chboxUpd, chboxDraw;
         [chboxUpd, chboxDraw] = workerJgui.add2CheckButtons("Update", this.doUpdate, "Draw", this.doDraw);
@@ -88527,27 +88574,26 @@ class PlanetSysWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
         });
         workerJgui.addButton("genStartingPlanetSystem").addEventListener(this.workerJguiManager, "click", (event) => {
             this.spaceFactory.genStartingPlanetSystem(plsys);
-            this.refreshDeep();
+            this.regenerate();
         });
         workerJgui.addButton("genStar").addEventListener(this.workerJguiManager, "click", (event) => {
             this.spaceFactory.genStar(plsys, plsys);
-            this.refreshDeep();
+            this.regenerate();
         });
         workerJgui.addButton("genPTypeStarts").addEventListener(this.workerJguiManager, "click", (event) => {
             this.spaceFactory.genPTypeStarts(plsys, plsys);
-            this.refreshDeep();
+            this.regenerate();
         });
         workerJgui.addButton("genOrbitsSimple").addEventListener(this.workerJguiManager, "click", (event) => {
             this.spaceFactory.genOrbitsSimple(plsys, plsys.root());
-            this.refreshDeep();
+            this.regenerate();
         });
         workerJgui.addButton("genOrbitsSimpleMoons").addEventListener(this.workerJguiManager, "click", (event) => {
             this.spaceFactory.genOrbitsSimpleMoons(plsys, plsys.root());
-            this.refreshDeep();
+            this.regenerate();
         });
         // workerJgui.addButton("genOrbitsUniform").addEventListener(this.workerJguiManager, "click", (event: WorkerEvent) => {
-        //     this.spaceFactory.genOrbitsUniform(plsys, plsys.root())
-        //     this.refreshDeep()
+        //     this.spaceFactory.genOrbitsUniform(plsys, plsys.root()); this.regenerate();
         // })
         workerJgui.addSlider("Earth years upd", 0, 0.005, 0.00001, this.config.timeEarthYearsTick)
             .addEventListener(workerJguiManager, "input", (event) => {
@@ -88579,7 +88625,8 @@ const JguiUtils_1 = __webpack_require__(/*! ../gui/JguiUtils */ "./src/gui/JguiU
 const Terrain_1 = __webpack_require__(/*! ../generate/Terrain */ "./src/generate/Terrain.ts");
 const DrawThreeTerrain_1 = __webpack_require__(/*! ./DrawThreeTerrain */ "./src/modules/DrawThreeTerrain.ts");
 const Planet_1 = __webpack_require__(/*! ../generate/Planet */ "./src/generate/Planet.ts");
-const MAIN_ORDINAL = "2";
+const JGUI_ORDINAL = "2";
+const WORLD_GEN_ORDER = 201;
 class TerrainWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
     constructor(config, worker, workerName, event) {
         super(config, worker, workerName, event);
@@ -88593,7 +88640,7 @@ class TerrainWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
                 message: Config_1.MessageType.CanvasMake,
                 metaCanvas: {
                     id: `${this.name}-canvas-DrawThreeTerrain`,
-                    order: MAIN_ORDINAL + "10",
+                    order: JGUI_ORDINAL + "10",
                     generalFlags: ["orbit"],
                 }
             });
@@ -88601,19 +88648,12 @@ class TerrainWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
                 message: Config_1.MessageType.CanvasMake,
                 metaCanvas: {
                     id: `${this.name}-canvas-DrawD3Terrain`,
-                    order: MAIN_ORDINAL + "30",
+                    order: JGUI_ORDINAL + "30",
                     generalFlags: ["d3"],
                 }
             });
-        }).then(() => {
-            /// TODO FIXME TMP until we have a proper "sequence" of generartion steps
-            var DUMMY_PLANET = new Planet_1.Planet(this.world);
-            DUMMY_PLANET.makeEarthLike();
-            this.world.setRwObj(DUMMY_PLANET);
-            this.terrain.initFromPlanet(DUMMY_PLANET);
-            this.world.setRwObj(this.terrain.data);
-        }).then(() => {
-            return this.refreshDeep(false);
+            // }).then(() => {
+            //     return this.refreshDeep(false);
         });
     }
     CanvasReady(event) {
@@ -88642,6 +88682,20 @@ class TerrainWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
         super.spread_objects(object_);
         if (object_.terrain === null)
             object_.terrain = this.terrain;
+    }
+    async getWorldEvent(event) {
+        console.debug(`#HERELINE TerrainWorker getWorldEvent `, event.data);
+        if (WORLD_GEN_ORDER > event.data.event.worldGenIndex) {
+            this.terrain.data.noiseSeed = Math.random();
+            await this.genFromExistingPlanet();
+            this.broadcastEvent({
+                worldGenIndex: WORLD_GEN_ORDER,
+                worldGenType: Config_1.WorldGenType.Inital,
+            });
+        }
+        else {
+            console.debug(`World event is upstream, no acetion needed for ${this.name} !`);
+        }
     }
     getMessageExtra(event) {
         // console.debug(`#HERELINE ${this.name} getMessageExtra  ${event.data.message}`);
@@ -88728,18 +88782,27 @@ class TerrainWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
             if (planet_ instanceof Planet_1.Planet && planet_.isInHabZone) {
                 // if (planet_.planetType == "Normal" && planet_.terrainId == null) {
                 if (planet_.planetType == "Normal" && didOnce == false) {
-                    console.log("planet_", planet_);
-                    console.log("this.terrain", this.terrain);
+                    // console.log("planet_", planet_);
+                    // console.log("this.terrain", this.terrain);
                     this.terrain.initFromPlanet(planet_);
                     planet_.setTerrain(this.terrain);
-                    this.refreshDeep(false);
                     didOnce = true;
                 }
             }
         }
+        if (didOnce) {
+            await this.refreshDeep(false);
+            this.broadcastEvent({
+                worldGenIndex: WORLD_GEN_ORDER,
+                worldGenType: Config_1.WorldGenType.Inital,
+            });
+            this.makeJgiu();
+            for (const draw_ of this.mapDraws.values())
+                this.updateJgiu(draw_);
+        }
     }
     makeJgiu() {
-        const jguiOrdinal = MAIN_ORDINAL + "00";
+        const jguiOrdinal = JGUI_ORDINAL + "00";
         var startExpanded = true;
         [this.workerJguiMain, this.workerJguiCont] = new JguiMake_1.JguiMake(null).mkWorkerJgui("terr", jguiOrdinal, startExpanded);
         var jData = {

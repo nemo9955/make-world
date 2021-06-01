@@ -270,7 +270,7 @@ export class Terrain {
         this.vec3pts.length = this.ptsLength;
         this.conHull = new ConvexHull();
         this.conHull.setFromPoints(this.vec3pts)
-        console.log("this.conHull", this.conHull);
+        // console.log("this.conHull", this.conHull);
         this.vec3pts.length = vec3ptsOrigLen;
 
         // const gostVerts = []; // TODO 4 in 30k not added this, might cause issues in the future !!!
@@ -489,7 +489,7 @@ export class Terrain {
             // console.log("ld.size", ld.size);
         }
         const avgSize = lowSum / lowCnt;
-        console.log("avgSize", avgSize);
+        // console.log("avgSize", avgSize);
 
         this.mask1 = getUint8Array(this.ptsLength, this.mask1).fill(0);
 
@@ -567,7 +567,7 @@ export class Terrain {
         // this.genTectonicPlates();
 
 
-        console.log("this", this);
+        // console.log("this", this);
         console.timeEnd(`#time Terrain generate`);
     }
 

@@ -77,91 +77,7 @@ export class MainManager {
 
     public pauseAll() {
         console.debug(`#HERELINE MainManager pauseAll `);
-        // this.config.globalIsReady = false;
-        // this.gui.selectOrbElement(null);
-        // this.ticker.stop();
-        // for (const worker_ of this.workers) {
-        //     // waitBlocking(50); // TODO TMP !!!!!!!!!!!!!!
-        //     // this.workersData.get(worker_).state = WorkerState.Paused;
-        //     console.debug("MainManager pauseAll postMessage ", worker_.name);
-        //     worker_.postMessage(<WorkerPacket>{
-        //         message: MessageType.Pause,
-        //         config: this.config
-        //     });
-        // }
     }
-
-    // public playAll(refreshType: MessageType) {
-    //     console.debug(`#HERELINE MainManager playAll `);
-    //     this.config.globalIsReady = true;
-    //     // this.gui.selectOrbElement(null);
-    //     this.ticker.updateState(this.config.globalIsReady)
-    //     for (const worker_ of this.workers) {
-    //         // waitBlocking(50); // TODO TMP !!!!!!!!!!!!!!
-    //         // this.workersData.get(worker_).state = WorkerState.Running;
-    //         console.debug("MainManager playAll postMessage ", worker_.name);
-    //         worker_.postMessage(<WorkerPacket>{
-    //             message: refreshType,
-    //             config: this.config
-    //         });
-    //     }
-    // }
-
-
-    // public loopCheck() {
-    //     // if ((this.lastHover?.id === undefined && this.sharedData.hoverId !== null)
-    //     //     || this.lastHover?.id != this.sharedData.hoverId) {
-
-    //     //     this.lastHover = this.world.idObjMap.get(this.sharedData.hoverId)
-    //     //     // console.log("this.lastHover?.id", this.lastHover?.id);
-    //     //     // console.log("this.sharedData.hoverId", this.sharedData.hoverId);
-
-    //     // }
-    // }
-    /*
-        public async readDeep() {
-            await this.world.readDeep();
-        }
-
-        public async readShallow() {
-            await this.world.readShallow();
-        }
-
-        public async writeDeep() {
-            console.time("#time MainManager writeDeep");
-
-            await this.world.writeDeep();
-
-            // if (this.workers.every(work_ => this.workersData.get(work_).state >= WorkerState.Ready))
-            this.playAll(MessageType.RefreshDBDeep);
-            // for (const worker_ of this.workers) {
-            //     // waitBlocking(50); // TODO TMP !!!!!!!!!!!!!!
-            //     console.log("MainManager writeDeep postMessage ", worker_.name);
-            //     worker_.postMessage(<WorkerPacket>{
-            //         message: MessageType.RefreshDBDeep,
-            //         config: this.config
-            //     });
-            // }
-            console.timeEnd("#time MainManager writeDeep");
-        }
-
-        public async writeShallow() {
-            console.time("#time MainManager writeShallow");
-
-            await this.world.writeShallow();
-
-            for (const worker_ of this.workers) {
-                // waitBlocking(50); // TODO TMP !!!!!!!!!!!!!!
-                console.log("MainManager writeShallow postMessage ", worker_.name);
-                worker_.postMessage(<WorkerPacket>{
-                    message: MessageType.RefreshDBShallow,
-                    config: this.config
-                });
-            }
-
-            console.timeEnd("#time MainManager writeShallow");
-        }
-    */
 
 
     public initGenericWorker(workerClass: typeof BaseWorker, startId: number) {
@@ -188,6 +104,27 @@ export class MainManager {
         });
     }
 
+
+    callEvent(the_worker: GenericWorkerInstance, woEvent: WorkerEvent) {
+        if (woEvent.data?.metadata?.broadcast) {
+            for (const worker of this.workers) {
+                if (worker != the_worker) {
+                    worker.postMessage(<WorkerPacket>woEvent.data);
+                }
+            }
+        } else {
+            console.warn("Not implemented", woEvent)
+        }
+
+        // if (woEvent.data?.metadata?.isWorldEvent) {
+        //     console.warn("Not implemented", woEvent)
+        // } else {
+        //     console.warn("Not implemented", woEvent)
+        // }
+    }
+
+
+
     public getMessage(the_worker: GenericWorkerInstance, event: WorkerEvent) {
         // console.debug("#HERELINE MainManager getMessage ", event.data.message, the_worker.name);
 
@@ -203,13 +140,12 @@ export class MainManager {
             case MessageType.RefreshJGUI:
                 this.jgui.refreshJgui(the_worker, event); break;
             case MessageType.CanvasMake:
-                CanvasUtils.makeWorkerCanvas(this, the_worker, event);
-                break;
+                CanvasUtils.makeWorkerCanvas(this, the_worker, event); break;
+            case MessageType.Event:
+                this.callEvent(the_worker, event); break;
             default:
                 console.warn("DEFAULT not implemented !"); break
         }
     }
-
-
 
 }

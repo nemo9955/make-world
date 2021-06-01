@@ -96,7 +96,7 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
         this.fakeDOM.addEventListener("mouseleave", this.hoverleave.bind(this))
         this.fakeDOM.addEventListener("contextmenu", this.hoverClick.bind(this))
 
-        this.syncTerrainData();
+        // this.syncTerrainData();
 
     }
 
@@ -123,21 +123,22 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
         this.hoverData.mousep.y = - (this.hoverData.mousey / this.canvasOffscreen.height) * 2 + 1;
 
 
-        if (this.hoverData.mousep.x != null && this.hoverData.mousep.y != null) {
-            this.raycaster.setFromCamera(this.hoverData.mousep, this.camera);
-            const intersects = this.raycaster.intersectObject(this.tpPts, false);
-            if (intersects.length > 0) {
-                var orb_ = intersects[0]
-                this.hoverSphere.visible = true;
-                this.hoverData.hoverId = orb_.index;
-                const vec3pts = this.terrain.vec3pts[this.hoverData.hoverId];
-                this.hoverSphere.position.copy(vec3pts);
-                // console.log("orb_", orb_);
-            } else {
-                this.hoverData.hoverId = -1;
-                this.hoverSphere.visible = false;
+        if (this.tpPts)
+            if (this.hoverData.mousep.x != null && this.hoverData.mousep.y != null) {
+                this.raycaster.setFromCamera(this.hoverData.mousep, this.camera);
+                const intersects = this.raycaster.intersectObject(this.tpPts, false);
+                if (intersects.length > 0) {
+                    var orb_ = intersects[0]
+                    this.hoverSphere.visible = true;
+                    this.hoverData.hoverId = orb_.index;
+                    const vec3pts = this.terrain.vec3pts[this.hoverData.hoverId];
+                    this.hoverSphere.position.copy(vec3pts);
+                    // console.log("orb_", orb_);
+                } else {
+                    this.hoverData.hoverId = -1;
+                    this.hoverSphere.visible = false;
+                }
             }
-        }
 
 
     }

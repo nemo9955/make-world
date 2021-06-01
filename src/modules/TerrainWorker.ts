@@ -1,7 +1,7 @@
 import { BaseDrawUpdateWorker, DrawWorkerInstance } from "./GenWorkerMetadata";
 import * as Convert from "../utils/Convert"
 import * as Units from "../utils/Units"
-import { Config, MessageType, WorkerEvent, WorkerPacket } from "./Config";
+import { Config, MessageType, WorkerEvent, WorkerPacket, WorldGenType } from "./Config";
 import { DrawD3Terrain } from "./DrawD3Terrain";
 import { JguiMake } from "../gui/JguiMake";
 import { jguiData, setMainContainer } from "../gui/JguiUtils";
@@ -11,7 +11,8 @@ import { Planet } from "../generate/Planet";
 
 
 
-const MAIN_ORDINAL = "2"
+const JGUI_ORDINAL = "2"
+const WORLD_GEN_ORDER = 201;
 
 export class TerrainWorker extends BaseDrawUpdateWorker {
 
@@ -32,7 +33,7 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
                 message: MessageType.CanvasMake,
                 metaCanvas: {
                     id: `${this.name}-canvas-DrawThreeTerrain`,
-                    order: MAIN_ORDINAL + "10",
+                    order: JGUI_ORDINAL + "10",
                     generalFlags: ["orbit"],
                 }
             });
@@ -40,19 +41,12 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
                 message: MessageType.CanvasMake,
                 metaCanvas: {
                     id: `${this.name}-canvas-DrawD3Terrain`,
-                    order: MAIN_ORDINAL + "30",
+                    order: JGUI_ORDINAL + "30",
                     generalFlags: ["d3"],
                 }
             });
-        }).then(() => {
-            /// TODO FIXME TMP until we have a proper "sequence" of generartion steps
-            var DUMMY_PLANET = new Planet(this.world);
-            DUMMY_PLANET.makeEarthLike();
-            this.world.setRwObj(DUMMY_PLANET);
-            this.terrain.initFromPlanet(DUMMY_PLANET);
-            this.world.setRwObj(this.terrain.data);
-        }).then(() => {
-            return this.refreshDeep(false);
+            // }).then(() => {
+            //     return this.refreshDeep(false);
         })
     }
 
@@ -83,6 +77,22 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
     public spread_objects(object_: any) {
         super.spread_objects(object_);
         if (object_.terrain === null) object_.terrain = this.terrain;
+    }
+
+
+    public async getWorldEvent(event: WorkerEvent) {
+        console.debug(`#HERELINE TerrainWorker getWorldEvent `, event.data);
+        if (WORLD_GEN_ORDER > event.data.event.worldGenIndex) {
+            this.terrain.data.noiseSeed = Math.random();
+            await this.genFromExistingPlanet();
+            this.broadcastEvent({
+                worldGenIndex: WORLD_GEN_ORDER,
+                worldGenType: WorldGenType.Inital,
+            });
+        } else {
+            console.debug(`World event is upstream, no acetion needed for ${this.name} !`)
+        }
+
     }
 
     public getMessageExtra(event: WorkerEvent) {
@@ -180,20 +190,32 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
             if (planet_ instanceof Planet && planet_.isInHabZone) {
                 // if (planet_.planetType == "Normal" && planet_.terrainId == null) {
                 if (planet_.planetType == "Normal" && didOnce == false) {
-                    console.log("planet_", planet_);
-                    console.log("this.terrain", this.terrain);
+                    // console.log("planet_", planet_);
+                    // console.log("this.terrain", this.terrain);
                     this.terrain.initFromPlanet(planet_);
                     planet_.setTerrain(this.terrain);
-                    this.refreshDeep(false);
                     didOnce = true;
                 }
             }
+        }
+
+        if (didOnce) {
+            await this.refreshDeep(false);
+
+            this.broadcastEvent({
+                worldGenIndex: WORLD_GEN_ORDER,
+                worldGenType: WorldGenType.Inital,
+            });
+
+            this.makeJgiu();
+            for (const draw_ of this.mapDraws.values())
+                this.updateJgiu(draw_)
         }
     }
 
 
     private makeJgiu() {
-        const jguiOrdinal = MAIN_ORDINAL + "00";
+        const jguiOrdinal = JGUI_ORDINAL + "00";
         var startExpanded = true;
 
         [this.workerJguiMain, this.workerJguiCont] = new JguiMake(null).mkWorkerJgui("terr", jguiOrdinal, startExpanded);
