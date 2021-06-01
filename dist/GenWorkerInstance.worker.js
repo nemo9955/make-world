@@ -84812,7 +84812,7 @@ class Planet extends OrbitingElement_1.OrbitingElement {
     addToJgui(jData) {
         jData.jGui.addColor("Color", this.color.getRgb().formatHex())
             .addEventListener(jData.jMng, "input", (event) => {
-            this.color.set_color(event.data.event.target.valueAsNumber);
+            this.color.set_color(event.data.event.target.value);
         });
         super.addToJgui(jData);
     }
