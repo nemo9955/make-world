@@ -1,7 +1,7 @@
 import { WorldWebPage } from "../modules/WorldWebPage";
 import type GenericWorkerInstance from "worker-loader!./GenWorkerInstance.ts";
 import { OrbitingElement } from "../orbiting_elements/OrbitingElement";
-import { WorkerEvent, MetaCanvas, MessageType, WorkerPacket } from "../modules/Config";
+import { WorkerEvent, MetaCanvas, MessageType, WorkerPacket, Config } from "../modules/Config";
 
 
 import * as EventUtils from "./EventUtils";
@@ -11,28 +11,23 @@ export const SCROLL_THING_SIZE = 20;
 
 
 
-export function makeWorkerCanvas(mngr: WorldWebPage, the_worker: GenericWorkerInstance, event: WorkerEvent) {
+export function makeWorkerCanvas(config: Config, the_worker: GenericWorkerInstance, event: WorkerEvent) {
     var metaCanvas = event.data.metaCanvas
 
-    var canvas = addCanvas(metaCanvas, mngr, the_worker)
-    sortExistingElements(metaCanvas, mngr, the_worker)
-    addResizeListener(metaCanvas, mngr, the_worker, canvas);
-    EventUtils.addRightClickStuff(metaCanvas, mngr, the_worker, canvas);
+    var canvas = addCanvas(metaCanvas)
+    sortExistingElements(metaCanvas)
+    addWorkerResizeListener(metaCanvas, the_worker, canvas);
+    EventUtils.addRightClickStuff(metaCanvas, the_worker, canvas);
 
     // TODO have a more dynamic ID-based way of propagating events
 
-    if (metaCanvas.generalFlags.includes("orbit"))
-        EventUtils.addOrbitCtrlEvents(canvas, canvas.id, the_worker)
-
-
-    if (metaCanvas.generalFlags.includes("d3"))
-        EventUtils.addEventsD3Canvas(canvas, canvas.id, the_worker)
+    addWorkerEvents(metaCanvas, canvas, the_worker);
 
 
     var canvasOffscreen = canvas.transferControlToOffscreen();
     the_worker.postMessage(<WorkerPacket>{
         message: MessageType.CanvasReady,
-        config: mngr.config,
+        config: config,
         metaCanvas: metaCanvas,
         canvas: canvasOffscreen,
         canvas_id: canvas.id,
@@ -40,8 +35,25 @@ export function makeWorkerCanvas(mngr: WorldWebPage, the_worker: GenericWorkerIn
 
 }
 
+export function makePageCanvas(config: Config, metaCanvas: MetaCanvas) {
+    var canvas = addCanvas(metaCanvas)
 
-function addResizeListener(metaCanvas: MetaCanvas, mngr: WorldWebPage, the_worker: GenericWorkerInstance, canvas: HTMLCanvasElement): void {
+
+    return canvas;
+}
+
+function addWorkerEvents(metaCanvas: MetaCanvas, canvas: HTMLCanvasElement, the_worker: GenericWorkerInstance) {
+    if (metaCanvas.generalFlags.includes("orbit"))
+        EventUtils.addOrbitCtrlEvents(canvas, canvas.id, the_worker);
+
+
+    if (metaCanvas.generalFlags.includes("d3"))
+        EventUtils.addEventsD3Canvas(canvas, canvas.id, the_worker);
+}
+
+
+
+function addWorkerResizeListener(metaCanvas: MetaCanvas, the_worker: GenericWorkerInstance, canvas: HTMLCanvasElement): void {
 
     var canvasResize = () => {
         var fakeResizeEvent: any = new Event("resize");
@@ -61,7 +73,7 @@ function addResizeListener(metaCanvas: MetaCanvas, mngr: WorldWebPage, the_worke
     EventUtils.addResizeEvents(canvas, canvas.id, the_worker)
 }
 
-function sortExistingElements(metaCanvas: MetaCanvas, mngr: WorldWebPage, the_worker: GenericWorkerInstance): void {
+function sortExistingElements(metaCanvas: MetaCanvas): void {
 
     var body = document.getElementsByTagName("body")[0];
     var stores_li = body.getElementsByTagName("canvas");
@@ -76,7 +88,7 @@ function sortExistingElements(metaCanvas: MetaCanvas, mngr: WorldWebPage, the_wo
 }
 
 
-function addCanvas(metaCanvas: MetaCanvas, mngr: WorldWebPage, the_worker: GenericWorkerInstance): HTMLCanvasElement {
+function addCanvas(metaCanvas: MetaCanvas): HTMLCanvasElement {
     var body = document.getElementsByTagName("body")[0];
     body.style.margin = "0"
     const canvas = document.createElement('canvas');

@@ -60,7 +60,7 @@ export function getBasicEvent(source_: any) {
 }
 
 
-export function addRightClickStuff(metaCanvas: MetaCanvas, mngr: WorldWebPage, the_worker: GenericWorkerInstance, canvas: HTMLCanvasElement): void {
+export function addRightClickStuff(metaCanvas: MetaCanvas, the_worker: GenericWorkerInstance, canvas: HTMLCanvasElement): void {
     var event_name = "contextmenu";
     var rightClick = (evt_) => {
 

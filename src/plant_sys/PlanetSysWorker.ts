@@ -87,7 +87,7 @@ export class PlanetSysWorker extends BaseDrawUpdateWorker {
                 var draw1_ = new DrawThreePlsys();
                 this.mapDraws.set(event.data.canvas_id, draw1_);
                 this.spread_objects(draw1_)
-                draw1_.init(event);
+                draw1_.initWorker(event);
                 this.updateJgiu(draw1_)
                 draw1_.updateDeep();
                 break;
@@ -95,7 +95,7 @@ export class PlanetSysWorker extends BaseDrawUpdateWorker {
                 var draw2_ = new DrawD3Plsys();
                 this.mapDraws.set(event.data.canvas_id, draw2_);
                 this.spread_objects(draw2_)
-                draw2_.init(event);
+                draw2_.initWorker(event);
                 this.updateJgiu(draw2_)
                 break;
             default:

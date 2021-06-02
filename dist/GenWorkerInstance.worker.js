@@ -86604,7 +86604,7 @@ class DrawD3Terrain {
         this.previousScaleFactor = 1;
         this.fastDrawTimeout = 0;
     }
-    init(event) {
+    initWorker(event) {
         console.debug(`#HERELINE ${this.type} init `);
         this.canvasOffscreen = event.data.canvas;
         this.ctx = this.canvasOffscreen.getContext("2d");
@@ -86831,7 +86831,7 @@ class DrawThreeTerrain {
         this.selectedPoints = [];
         this.specialHoverAction = null;
     }
-    init(event) {
+    initWorker(event) {
         this.canvasOffscreen = event.data.canvas;
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(75, this.canvasOffscreen.width / this.canvasOffscreen.height, 0.1, 1000000);
@@ -88046,14 +88046,14 @@ class TerrainWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
                 this.mapDraws.set(event.data.canvas_id, draw1_);
                 this.spread_objects(draw1_);
                 this.updateJgiu(draw1_);
-                draw1_.init(event);
+                draw1_.initWorker(event);
                 break;
             case `${this.name}-canvas-DrawD3Terrain`:
                 var draw2_ = new DrawD3Terrain_1.DrawD3Terrain();
                 this.mapDraws.set(event.data.canvas_id, draw2_);
                 this.spread_objects(draw2_);
                 this.updateJgiu(draw2_);
-                draw2_.init(event);
+                draw2_.initWorker(event);
                 break;
             default:
                 console.warn(`Not implemented in ${this.name} : ${event.data.metaCanvas.id} !`);
@@ -88292,7 +88292,7 @@ class DrawD3Plsys {
         this.ctx = null;
         this.planetarySystem = null;
     }
-    init(event) {
+    initWorker(event) {
         console.debug(`#HERELINE ${this.type} init `);
         this.canvasOffscreen = event.data.canvas;
         this.ctx = this.canvasOffscreen.getContext("2d");
@@ -88490,7 +88490,7 @@ class DrawThreePlsys {
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(event_.width, event_.height, false);
     }
-    init(event) {
+    initWorker(event) {
         this.canvasOffscreen = event.data.canvas;
         console.debug(`#HERELINE ${this.type} init `);
         this.scene = new THREE.Scene();
@@ -89037,7 +89037,7 @@ class PlanetSysWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
                 var draw1_ = new DrawThreePlsys_1.DrawThreePlsys();
                 this.mapDraws.set(event.data.canvas_id, draw1_);
                 this.spread_objects(draw1_);
-                draw1_.init(event);
+                draw1_.initWorker(event);
                 this.updateJgiu(draw1_);
                 draw1_.updateDeep();
                 break;
@@ -89045,7 +89045,7 @@ class PlanetSysWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
                 var draw2_ = new DrawD3Plsys_1.DrawD3Plsys();
                 this.mapDraws.set(event.data.canvas_id, draw2_);
                 this.spread_objects(draw2_);
-                draw2_.init(event);
+                draw2_.initWorker(event);
                 this.updateJgiu(draw2_);
                 break;
             default:

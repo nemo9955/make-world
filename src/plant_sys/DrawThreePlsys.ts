@@ -150,7 +150,7 @@ export class DrawThreePlsys implements DrawWorkerInstance {
     }
 
 
-    public init(event: WorkerEvent) {
+    public initWorker(event: WorkerEvent) {
         this.canvasOffscreen = event.data.canvas;
         console.debug(`#HERELINE ${this.type} init `);
 

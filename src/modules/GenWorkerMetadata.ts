@@ -110,9 +110,21 @@ export interface DrawWorkerInstance {
     config: Config;
     fakeDOM: WorkerDOM;
 
-    init(event: WorkerEvent): void;
+    initWorker(event: WorkerEvent): void;
     updateShallow(): void;
     updateDeep(): void;
+    draw(): void;
+    addJgui(jData: jguiData): void;
+}
+
+export interface DrawPageInstance {
+    readonly type: string;
+    world: WorldData;
+    canvasOffscreen: HTMLCanvasElement;
+    config: Config;
+    fakeDOM: HTMLElement;
+
+    initPage(canvas: HTMLCanvasElement): void;
     draw(): void;
     addJgui(jData: jguiData): void;
 }
