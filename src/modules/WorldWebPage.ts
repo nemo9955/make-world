@@ -143,7 +143,7 @@ export class WorldWebPage {
             case MessageType.RefreshJGUI:
                 this.jgui.refreshJgui(the_worker, event); break;
             case MessageType.CanvasMake:
-                CanvasUtils.makeWorkerCanvas(this, the_worker, event); break;
+                CanvasUtils.makeWorkerCanvas(this.config, the_worker, event); break;
             case MessageType.Event:
                 this.callEvent(the_worker, event); break;
             default:

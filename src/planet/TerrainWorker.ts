@@ -59,14 +59,14 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
                 this.mapDraws.set(event.data.canvas_id, draw1_);
                 this.spread_objects(draw1_)
                 this.updateJgiu(draw1_)
-                draw1_.init(event);
+                draw1_.initWorker(event);
                 break;
             case `${this.name}-canvas-DrawD3Terrain`:
                 var draw2_ = new DrawD3Terrain();
                 this.mapDraws.set(event.data.canvas_id, draw2_);
                 this.spread_objects(draw2_)
                 this.updateJgiu(draw2_)
-                draw2_.init(event);
+                draw2_.initWorker(event);
                 break;
             default:
                 console.warn(`Not implemented in ${this.name} : ${event.data.metaCanvas.id} !`); break

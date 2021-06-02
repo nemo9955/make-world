@@ -77,7 +77,7 @@ export class DrawD3Terrain implements DrawWorkerInstance {
     }
 
 
-    public init(event: WorkerEvent) {
+    public initWorker(event: WorkerEvent) {
         console.debug(`#HERELINE ${this.type} init `);
         this.canvasOffscreen = event.data.canvas;
         this.ctx = this.canvasOffscreen.getContext("2d");

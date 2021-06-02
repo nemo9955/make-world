@@ -42,7 +42,7 @@ export class SettlementDrawThree implements DrawWorkerInstance {
 
     }
 
-    public init(event: WorkerEvent) {
+    public initWorker(event: WorkerEvent) {
         this.canvasOffscreen = event.data.canvas;
 
         this.scene = new THREE.Scene();
