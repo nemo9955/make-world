@@ -8,11 +8,13 @@ import { getWord, getName, makeBasicLanguage, makeOrthoLanguage, makeRandomLangu
 import { zip } from 'lodash-es';
 
 import * as d3 from "d3"
-import { Language } from "../language/Language";
+import { Language } from "./Language";
 
 
 
-export class MainLanguageManager {
+export class LanguageWebPage {
+    static get type() { return `LanguageWebPage` }
+    get name() { return `LanguageWebPage` }
     rawJson: d3.Selection<HTMLTextAreaElement, unknown, HTMLElement, any>;
     textIn: d3.Selection<HTMLTextAreaElement, unknown, HTMLElement, any>;
     textProc: d3.Selection<HTMLTextAreaElement, unknown, HTMLElement, any>;

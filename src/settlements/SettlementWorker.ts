@@ -1,26 +1,24 @@
-import { BaseDrawUpdateWorker, DrawWorkerInstance } from "./GenWorkerMetadata";
+import { BaseDrawUpdateWorker, DrawWorkerInstance } from "../modules/GenWorkerMetadata";
 import * as Convert from "../utils/Convert"
 import * as Units from "../utils/Units"
-import { Config, MessageType, WorkerEvent, WorkerPacket, WorldGenType } from "./Config";
-import { DrawD3Terrain } from "./DrawD3Terrain";
+import { Config, MessageType, WorkerEvent, WorkerPacket, WorldGenType } from "../modules/Config";
 import { JguiMake } from "../gui/JguiMake";
 import { jguiData, setMainContainer } from "../gui/JguiUtils";
-import { Terrain } from "../generate/Terrain";
-import { DrawThreeTerrain } from "./DrawThreeTerrain";
-import { Planet } from "../generate/Planet";
+import { Terrain } from "../planet/Terrain";
+import { Planet } from "../orbiting_elements/Planet";
 
 
 
-const JGUI_ORDINAL = "2"
-const WORLD_GEN_ORDER = 201;
+const JGUI_ORDINAL = "3"
+const WORLD_GEN_ORDER = 301;
 
-export class TerrainWorker extends BaseDrawUpdateWorker {
 
-    public terrain: Terrain;
+export class SettlementWorker extends BaseDrawUpdateWorker {
+
+    public settlement: Terrain;
 
     constructor(config: Config, worker: Worker, workerName: string, event: WorkerEvent) {
         super(config, worker, workerName, event);
-        this.terrain = new Terrain(this.world);
 
     }
 
@@ -37,14 +35,6 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
                     generalFlags: ["orbit"],
                 }
             });
-            this.worker.postMessage(<WorkerPacket>{
-                message: MessageType.CanvasMake,
-                metaCanvas: {
-                    id: `${this.name}-canvas-DrawD3Terrain`,
-                    order: JGUI_ORDINAL + "30",
-                    generalFlags: ["d3"],
-                }
-            });
             // }).then(() => {
             //     return this.refreshDeep(false);
         })
@@ -53,37 +43,37 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
 
     public CanvasReady(event: WorkerEvent): void {
         console.log(`CanvasReady ${this.name}`);
-        switch (event.data.metaCanvas.id) {
-            case `${this.name}-canvas-DrawThreeTerrain`:
-                var draw1_ = new DrawThreeTerrain();
-                this.mapDraws.set(event.data.canvas_id, draw1_);
-                this.spread_objects(draw1_)
-                this.updateJgiu(draw1_)
-                draw1_.init(event);
-                break;
-            case `${this.name}-canvas-DrawD3Terrain`:
-                var draw2_ = new DrawD3Terrain();
-                this.mapDraws.set(event.data.canvas_id, draw2_);
-                this.spread_objects(draw2_)
-                this.updateJgiu(draw2_)
-                draw2_.init(event);
-                break;
-            default:
-                console.warn(`Not implemented in ${this.name} : ${event.data.metaCanvas.id} !`); break
-        }
+        // switch (event.data.metaCanvas.id) {
+        //     case `${this.name}-canvas-DrawThreeTerrain`:
+        //         var draw1_ = new DrawThreeTerrain();
+        //         this.mapDraws.set(event.data.canvas_id, draw1_);
+        //         this.spread_objects(draw1_)
+        //         this.updateJgiu(draw1_)
+        //         draw1_.init(event);
+        //         break;
+        //     case `${this.name}-canvas-DrawD3Terrain`:
+        //         var draw2_ = new DrawD3Terrain();
+        //         this.mapDraws.set(event.data.canvas_id, draw2_);
+        //         this.spread_objects(draw2_)
+        //         this.updateJgiu(draw2_)
+        //         draw2_.init(event);
+        //         break;
+        //     default:
+        //         console.warn(`Not implemented in ${this.name} : ${event.data.metaCanvas.id} !`); break
+        // }
     }
 
 
     public spread_objects(object_: any) {
         super.spread_objects(object_);
-        if (object_.terrain === null) object_.terrain = this.terrain;
+        if (object_.terrain === null) object_.terrain = this.settlement;
     }
 
 
     public async getWorldEvent(event: WorkerEvent) {
         console.debug(`#HERELINE TerrainWorker getWorldEvent `, event.data);
         if (WORLD_GEN_ORDER > event.data.event.worldGenIndex) {
-            this.terrain.data.noiseSeed = Math.random();
+            this.settlement.data.noiseSeed = Math.random();
             await this.genFromExistingPlanet();
             this.broadcastEvent({
                 worldGenIndex: WORLD_GEN_ORDER,
@@ -192,9 +182,9 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
                 if (planet_.planetType == "Normal" && didOnce == false) {
                     // console.log("planet_", planet_);
                     // console.log("this.terrain", this.terrain);
-                    this.terrain.initFromPlanet(planet_);
-                    planet_.setTerrain(this.terrain);
-                    this.world.setRwObj(this.terrain.data);
+                    this.settlement.initFromPlanet(planet_);
+                    planet_.setTerrain(this.settlement);
+                    this.world.setRwObj(this.settlement.data);
                     didOnce = true;
                 }
             }
@@ -242,46 +232,15 @@ export class TerrainWorker extends BaseDrawUpdateWorker {
         genTab.addButton("Re-Genearte")
             .addTooltip("Regenerating will use an actual Planet, first run uses a dummy instance so we do not wait for PlSys to gen.")
             .addEventListener(jData.jMng, "click", (event: WorkerEvent) => {
-                this.terrain.data.noiseSeed = Math.random(); this.genFromExistingPlanet();
+                this.settlement.data.noiseSeed = Math.random(); this.genFromExistingPlanet();
             })
 
-        genTab.addNumber("altMinProc ", this.terrain.data.altitudeMinProc, 0.02).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
-            this.terrain.data.altitudeMinProc = event.data.event.target.valueAsNumber; this.genFromExistingPlanet();
+        genTab.addNumber("altMinProc ", this.settlement.data.altitudeMinProc, 0.02).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
+            this.settlement.data.altitudeMinProc = event.data.event.target.valueAsNumber; this.genFromExistingPlanet();
         })
-        genTab.addNumber("altMaxProc ", this.terrain.data.altitudeMaxProc, 0.02).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
-            this.terrain.data.altitudeMaxProc = event.data.event.target.valueAsNumber; this.genFromExistingPlanet();
+        genTab.addNumber("altMaxProc ", this.settlement.data.altitudeMaxProc, 0.02).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
+            this.settlement.data.altitudeMaxProc = event.data.event.target.valueAsNumber; this.genFromExistingPlanet();
         })
-        genTab.addNumber("altOceanProc ", this.terrain.data.altitudeOceanProc, 0.05).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
-            this.terrain.data.altitudeOceanProc = event.data.event.target.valueAsNumber; this.genFromExistingPlanet();
-        })
-        genTab.addNumber("altMountainProc ", this.terrain.data.altitudeMountainProc, 0.05).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
-            this.terrain.data.altitudeMountainProc = event.data.event.target.valueAsNumber; this.genFromExistingPlanet();
-        })
-        genTab.addNumber("pointsToGen ", this.terrain.data.pointsToGen, 500).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
-            this.terrain.data.pointsToGen = event.data.event.target.valueAsNumber; this.genFromExistingPlanet();
-        })
-        genTab.addNumber("noiseSeed ", this.terrain.data.noiseSeed, 0.0001).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
-            this.terrain.data.noiseSeed = event.data.event.target.valueAsNumber; this.genFromExistingPlanet();
-        })
-        genTab.addCheckButton("noiseApplyAbs ", this.terrain.data.noiseApplyAbs)[0].addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
-            this.terrain.data.noiseApplyAbs = event.data.event.target.checked; this.genFromExistingPlanet();
-        })
-        genTab.addNumber("noiseFrequency ", this.terrain.data.noiseFrequency, 0.25).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
-            this.terrain.data.noiseFrequency = event.data.event.target.valueAsNumber; this.genFromExistingPlanet();
-        })
-        genTab.addNumber("noiseAmplitude ", this.terrain.data.noiseAmplitude, 0.1).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
-            this.terrain.data.noiseAmplitude = event.data.event.target.valueAsNumber; this.genFromExistingPlanet();
-        })
-        genTab.addNumber("noisePersistence ", this.terrain.data.noisePersistence, 0.1).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
-            this.terrain.data.noisePersistence = event.data.event.target.valueAsNumber; this.genFromExistingPlanet();
-        })
-        genTab.addNumber("noiseOctaves ", this.terrain.data.noiseOctaves, 1).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
-            this.terrain.data.noiseOctaves = event.data.event.target.valueAsNumber; this.genFromExistingPlanet();
-        })
-        genTab.addNumber("noiseExponent1 ", this.terrain.data.noiseExponent1, 0.1).addEventListener(jData.jMng, "change", (event: WorkerEvent) => {
-            this.terrain.data.noiseExponent1 = event.data.event.target.valueAsNumber; this.genFromExistingPlanet();
-        })
-
 
         setMainContainer(this.worker, this.workerJguiMain)
     }

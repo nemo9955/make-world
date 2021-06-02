@@ -5,10 +5,10 @@ import * as Units from "../utils/Units"
 import * as Convert from "../utils/Convert"
 import { freeFloat32Array, freeUint8Array, getFloat32Array, getUint8Array, ObjectPool } from "../utils/ObjectPool";
 import { WorldData } from "../modules/WorldData";
-import { Orbit } from "./Orbit";
-import { OrbitingElement } from "./OrbitingElement";
-import { PlanetarySystem } from "./PlanetarySystem";
-import { Planet } from "./Planet";
+import { Orbit } from "../orbiting_elements/Orbit";
+import { OrbitingElement } from "../orbiting_elements/OrbitingElement";
+import { PlanetarySystem } from "../orbiting_elements/PlanetarySystem";
+import { Planet } from "../orbiting_elements/Planet";
 import { Identifiable } from "../modules/ObjectsHacker";
 
 

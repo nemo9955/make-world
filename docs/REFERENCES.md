@@ -158,6 +158,7 @@ https://www.fs.fed.us/psw/cirmount/meetings/agu/pdf2011/Stephenson_talk_AGU2011.
 
 http://www.mit.edu/~jessicav/6.S198/Blog_Post/ProceduralGeneration.html
 
+http://entropicparticles.com/procedure-for-rivers-and-lakes
 
 # WORDS and language generation
 

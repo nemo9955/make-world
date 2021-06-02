@@ -1,6 +1,6 @@
 
-import { WorldData } from "./WorldData"
-import { DrawWorkerInstance } from "./GenWorkerMetadata"
+import { WorldData } from "../modules/WorldData"
+import { DrawWorkerInstance } from "../modules/GenWorkerMetadata"
 
 
 import * as THREE from "three";
@@ -8,19 +8,19 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 import * as d3 from "d3"
 
-import { Config, WorkerEvent } from "./Config"
+import { Config, WorkerEvent } from "../modules/Config"
 import * as Convert from "../utils/Convert"
 import * as Units from "../utils/Units"
 
 
 import { ObjectPool } from "../utils/ObjectPool";
-import { Orbit } from "../generate/Orbit";
-import { Planet } from "../generate/Planet";
-import { Star } from "../generate/Star";
+import { Orbit } from "../orbiting_elements/Orbit";
+import { Planet } from "../orbiting_elements/Planet";
+import { Star } from "../orbiting_elements/Star";
 import { WorkerDOM } from "../utils/WorkerDOM";
-import { OrbitingElement } from "../generate/OrbitingElement";
-import { SpaceGroup } from "../generate/SpaceGroup";
-import { PlanetarySystem } from "../generate/PlanetarySystem";
+import { OrbitingElement } from "../orbiting_elements/OrbitingElement";
+import { SpaceGroup } from "../orbiting_elements/SpaceGroup";
+import { PlanetarySystem } from "../orbiting_elements/PlanetarySystem";
 import { jguiData, setTempContainer } from "../gui/JguiUtils";
 import { JguiMake, JguiManager } from "../gui/JguiMake";
 

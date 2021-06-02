@@ -1,32 +1,23 @@
 import { WorkerDOM } from "../utils/WorkerDOM";
-import { Config, WorkerEvent } from "./Config";
-import { DrawWorkerInstance } from "./GenWorkerMetadata";
-import { WorldData } from "./WorldData";
+import { Config, WorkerEvent } from "../modules/Config";
+import { DrawWorkerInstance } from "../modules/GenWorkerMetadata";
+import { WorldData } from "../modules/WorldData";
 import { freeFloat32Array, getFloat32Array, ObjectPool } from "../utils/ObjectPool";
 
 import * as Convert from "../utils/Convert"
 
-import * as d3 from "d3"
-
-
-
-// Would be nice to have THICKER lines
-// https://github.com/mrdoob/three.js/blob/master/examples/webgl_lines_fat.html
-// import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2"
-// import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeometry"
-// import { LineMaterial } from "three/examples/jsm/lines/LineMaterial"
-
 import * as THREE from "three"; // node_modules/three/build/three.js
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
-import { Terrain } from "../generate/Terrain";
+import { Terrain } from "../planet/Terrain";
 import { JguiMake, JguiManager } from "../gui/JguiMake";
 import { jguiData } from "../gui/JguiUtils";
 import { path } from "d3";
 import { Object3D } from "three";
+import { Settlement } from "./Settlement";
 
 
 
-export class DrawThreeTerrain implements DrawWorkerInstance {
+export class SettlementDrawThree implements DrawWorkerInstance {
     type: string;
     world: WorldData;
     canvasOffscreen: OffscreenCanvas;
@@ -36,7 +27,7 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
 
     ptsRadius: number = 0;
 
-    public terrain: Terrain = null;
+    public settlement: Settlement = null;
 
     scene: THREE.Scene;
     camera: THREE.PerspectiveCamera;
@@ -133,7 +124,7 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
                     var orb_ = intersects[0]
                     this.hoverSphere.visible = true;
                     this.hoverData.hoverId = orb_.index;
-                    const vec3pts = this.terrain.vec3pts[this.hoverData.hoverId];
+                    const vec3pts = this.settlement.vec3pts[this.hoverData.hoverId];
                     this.hoverSphere.position.copy(vec3pts);
                     // console.log("orb_", orb_);
                 } else {
@@ -170,11 +161,6 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
 
         console.log("this.selectedPoints", this.selectedPoints);
         // console.log("this.hoverData.hoverId", this.hoverData.hoverId);
-
-        if (this.selectedPoints.length >= 2) {
-            const paths = this.terrain.makePaths(this.selectedPoints)
-            this.drawLinesPaths(paths);
-        }
     }
 
 
@@ -185,7 +171,7 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
         patSegLen -= paths.length;
 
 
-        const vec3pts = this.terrain.vec3pts;
+        const vec3pts = this.settlement.vec3pts;
         const segLen = patSegLen * 3 * 2;
         freeFloat32Array(this.tpLines1?.geometry?.getAttribute('position').array as Float32Array);
         const lineSegs = getFloat32Array(segLen);
@@ -244,11 +230,11 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
         var ptsObject = new THREE.Points(ptsGeometry, ptsMaterial);
         ptsObject.material.visible = (this.ptsRadius != 0)
 
-        const ptsPosAttr = new THREE.Float32BufferAttribute(this.terrain.pos3d, 3);
-        ptsPosAttr.count = this.terrain.ptsLength;
+        const ptsPosAttr = new THREE.Float32BufferAttribute(this.settlement.pos3d, 3);
+        ptsPosAttr.count = this.settlement.ptsLength;
         // const ptsColAttr = new THREE.Float32BufferAttribute(this.terrain.color, 3);
-        const ptsColAttr = new THREE.Float32BufferAttribute(this.terrain.colorDebug, 3);
-        ptsColAttr.count = this.terrain.ptsLength;
+        const ptsColAttr = new THREE.Float32BufferAttribute(this.settlement.colorDebug, 3);
+        ptsColAttr.count = this.settlement.ptsLength;
 
         ptsGeometry.setAttribute('position', ptsPosAttr);
         ptsGeometry.setAttribute('color', ptsColAttr);
@@ -257,10 +243,6 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
         this.tpPts = ptsObject;
 
         this.scene.add(ptsObject);
-    }
-
-    private clearAllPoints() {
-        this.disposeObj(this.tpPts)
     }
 
     private drawMeshTerrain() {
@@ -277,10 +259,10 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
         var mesObject = new THREE.Mesh(ptcl, mesMaterial);
 
 
-        const vec3pts = this.terrain.vec3pts
-        const ptsPred = this.terrain.ptsPred
-        const color = this.terrain.color
-        const pts3Vertex = this.terrain.pts3Vertex
+        const vec3pts = this.settlement.vec3pts
+        const ptsPred = this.settlement.ptsPred
+        const color = this.settlement.color
+        const pts3Vertex = this.settlement.pts3Vertex
 
         freeFloat32Array(this.tpMesh?.geometry?.getAttribute('position').array as Float32Array)
         freeFloat32Array(this.tpMesh?.geometry?.getAttribute('color').array as Float32Array)
@@ -312,22 +294,11 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
         this.scene.add(mesObject);
     }
 
-    private clearAllMesh() {
-        this.disposeObj(this.tpMesh)
-    }
-
-    private clearAllLines() {
-        this.disposeObj(this.tpLines1)
-    }
-
-    private clearRivers() {
-        this.disposeObj(this.rivers)
-    }
 
     private drawLinesPrede() {
 
-        const vec3pts = this.terrain.vec3pts
-        const ptsPred = this.terrain.ptsPred
+        const vec3pts = this.settlement.vec3pts
+        const ptsPred = this.settlement.ptsPred
         const segLen = ptsPred.length * 3 * 2;
         freeFloat32Array(this.tpLines1?.geometry?.getAttribute('position').array as Float32Array)
         const lineSegs = getFloat32Array(segLen);
@@ -347,8 +318,8 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
 
     private drawLinesEdge() {
 
-        const vec3pts = this.terrain.vec3pts
-        const ptsEdges = this.terrain.ptsEdges
+        const vec3pts = this.settlement.vec3pts
+        const ptsEdges = this.settlement.ptsEdges
         const segLen = ptsEdges.length * 3 * 2;
         freeFloat32Array(this.tpLines1?.geometry?.getAttribute('position').array as Float32Array)
         const lineSegs = getFloat32Array(segLen);
@@ -439,6 +410,22 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
     }
 
 
+    private clearAllPoints() {
+        this.disposeObj(this.tpPts)
+    }
+
+    private clearAllMesh() {
+        this.disposeObj(this.tpMesh)
+    }
+
+    private clearAllLines() {
+        this.disposeObj(this.tpLines1)
+    }
+
+    private clearRivers() {
+        this.disposeObj(this.rivers)
+    }
+
     private disposeObj(threeObj: any) {
         if (!threeObj) return;
         this.scene.remove(threeObj);
@@ -456,7 +443,7 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
     }
 
     setCamera(): void {
-        this.camera.position.x = this.terrain.data.sphereSize * 2.2; // DRAWUNIT
+        this.camera.position.x = this.settlement.data.sphereSize * 2.2; // DRAWUNIT
         this.camera.position.y = 0;
         this.camera.position.z = 0;
         this.camera.lookAt(0, 0, 0)
@@ -464,7 +451,7 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
 
     setDistCamera(): void {
         this.camera.position.normalize();
-        this.camera.position.multiplyScalar(this.terrain.data.sphereSize * 2.2)// DRAWUNIT
+        this.camera.position.multiplyScalar(this.settlement.data.sphereSize * 2.2)// DRAWUNIT
         this.camera.lookAt(0, 0, 0)
     }
 
@@ -497,7 +484,7 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
     }
 
     private drawLinesSegmentsIndex(lineIndex: Float32Array, lineIndexLen: number) {
-        const vec3pts = this.terrain.vec3pts;
+        const vec3pts = this.settlement.vec3pts;
         const segLen = lineIndexLen * 3;
         freeFloat32Array(this.tpLines1?.geometry?.getAttribute('position').array as Float32Array);
         const lineSegs = getFloat32Array(segLen);
@@ -511,75 +498,6 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
         this.drawLinesSegments(lineSegs, segLen);
     }
 
-    private scanLand(index: number) {
-        var scanData = this.terrain.scanLand(index);
-        this.drawLinesSegmentsIndex(scanData.edgesArr, scanData.edgesLen);
-    }
-
-    private scanWater(index: number) {
-        var scanData = this.terrain.scanWater(index);
-        this.drawLinesSegmentsIndex(scanData.edgesArr, scanData.edgesLen);
-    }
-
-    private scanLower(index: number) {
-        const elev = this.terrain.elevation[index]
-        var scanData = this.terrain.getLowestElevPoints(elev);
-        this.drawLinesSegmentsIndex(scanData.edgesArr, scanData.edgesLen);
-    }
-
-    private scanHigher(index: number) {
-        const elev = this.terrain.elevation[index]
-        var scanData = this.terrain.getHighestElevPoints(elev);
-        this.drawLinesSegmentsIndex(scanData.edgesArr, scanData.edgesLen);
-    }
-
-    private scanOcean() {
-        var scanData = this.terrain.getLowestElevPoints(this.terrain.elevOcean);
-        this.drawLinesSegmentsIndex(scanData.edgesArr, scanData.edgesLen);
-    }
-
-    private scanContinent() {
-        var scanData = this.terrain.getHighestElevPoints(this.terrain.elevOcean);
-        this.drawLinesSegmentsIndex(scanData.edgesArr, scanData.edgesLen);
-    }
-
-    private scanMountains() {
-        var scanData = this.terrain.getHighestElevPoints(this.terrain.elevMountain);
-        this.drawLinesSegmentsIndex(scanData.edgesArr, scanData.edgesLen);
-    }
-
-    private scanRivers() {
-        var scanData = this.terrain.getRiverOrig();
-
-        const vec3pts = this.terrain.vec3pts;
-        const segLen = scanData.edgesLen * 3;
-        freeFloat32Array(this.rivers?.geometry?.getAttribute('position').array as Float32Array);
-        const lineSegs = getFloat32Array(segLen);
-        var lineCnt = 0;
-        for (let index = 0; index < scanData.edgesLen; index++) {
-            const e1 = scanData.edgesArr[index];
-            lineSegs[lineCnt++] = vec3pts[e1].x;
-            lineSegs[lineCnt++] = vec3pts[e1].y;
-            lineSegs[lineCnt++] = vec3pts[e1].z;
-        }
-        this.drawRivers(lineSegs, segLen);
-    }
-
-
-    private pathToWater() {
-        const edgesArr = getFloat32Array(this.terrain.ptsEdges.length * 2).fill(-1);
-        var edgesLen = 0;
-        for (let index = 0; index < this.terrain.ptsEdges.length; index++) {
-            const tow = this.terrain.pathToWatter[index];
-            if (tow == -1) continue;
-            if (isNaN(tow)) continue;
-            edgesArr[edgesLen++] = index;
-            edgesArr[edgesLen++] = tow;
-        }
-        // console.log("edgesArr", edgesArr);
-        this.drawLinesSegmentsIndex(edgesArr, edgesLen);
-    }
-
 
 
     specialHoverAction: any = null;
@@ -588,37 +506,37 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
         var threeDrawTab = jData.jGui.addColapse("Three Draw", true)
 
 
-        var [butLand, butWat] = threeDrawTab.add2Buttons("Zone land", "Zone Water")
-        butLand.addEventListener(jData.jMng, "click", (event: WorkerEvent) => {
-            this.specialHoverAction = this.scanLand.bind(this);
-        })
-        butWat.addEventListener(jData.jMng, "click", (event: WorkerEvent) => {
-            this.specialHoverAction = this.scanWater.bind(this);
-        })
+        // var [butLand, butWat] = threeDrawTab.add2Buttons("Zone land", "Zone Water")
+        // butLand.addEventListener(jData.jMng, "click", (event: WorkerEvent) => {
+        //     this.specialHoverAction = this.scanLand.bind(this);
+        // })
+        // butWat.addEventListener(jData.jMng, "click", (event: WorkerEvent) => {
+        //     this.specialHoverAction = this.scanWater.bind(this);
+        // })
 
-        var [butLow, butOcean] = threeDrawTab.add2Buttons("Scan low", "Scan ocean")
-        butLow.addEventListener(jData.jMng, "click", (event: WorkerEvent) => {
-            this.specialHoverAction = this.scanLower.bind(this);
-        })
-        butOcean.addEventListener(jData.jMng, "click", (event: WorkerEvent) => {
-            this.scanOcean();
-        })
+        // var [butLow, butOcean] = threeDrawTab.add2Buttons("Scan low", "Scan ocean")
+        // butLow.addEventListener(jData.jMng, "click", (event: WorkerEvent) => {
+        //     this.specialHoverAction = this.scanLower.bind(this);
+        // })
+        // butOcean.addEventListener(jData.jMng, "click", (event: WorkerEvent) => {
+        //     this.scanOcean();
+        // })
 
-        var [butHii, butLand] = threeDrawTab.add2Buttons("Scan hi", "Scan land")
-        butHii.addEventListener(jData.jMng, "click", (event: WorkerEvent) => {
-            this.specialHoverAction = this.scanHigher.bind(this);
-        })
-        butLand.addEventListener(jData.jMng, "click", (event: WorkerEvent) => {
-            this.scanContinent();
-        })
+        // var [butHii, butLand] = threeDrawTab.add2Buttons("Scan hi", "Scan land")
+        // butHii.addEventListener(jData.jMng, "click", (event: WorkerEvent) => {
+        //     this.specialHoverAction = this.scanHigher.bind(this);
+        // })
+        // butLand.addEventListener(jData.jMng, "click", (event: WorkerEvent) => {
+        //     this.scanContinent();
+        // })
 
-        var [butriv, butMtn] = threeDrawTab.add2Buttons("Scan river", "Scan mtn")
-        butriv.addEventListener(jData.jMng, "click", (event: WorkerEvent) => {
-            this.scanRivers();
-        })
-        butMtn.addEventListener(jData.jMng, "click", (event: WorkerEvent) => {
-            this.scanMountains();
-        })
+        // var [butriv, butMtn] = threeDrawTab.add2Buttons("Scan river", "Scan mtn")
+        // butriv.addEventListener(jData.jMng, "click", (event: WorkerEvent) => {
+        //     this.scanRivers();
+        // })
+        // butMtn.addEventListener(jData.jMng, "click", (event: WorkerEvent) => {
+        //     this.scanMountains();
+        // })
 
 
         threeDrawTab.addSlider("THREE Points size", 0, 1000, 1, this.ptsRadius)
@@ -636,7 +554,6 @@ export class DrawThreeTerrain implements DrawWorkerInstance {
                 switch (event.data.event.extra.listValue) {
                     case "none": this.clearAllLines(); this.clearRivers(); break;
                     case "edges": this.drawLinesEdge(); break;
-                    case "allRivers": this.pathToWater(); break;
                     case "predecesor": this.drawLinesPrede(); break;
                 }
             })

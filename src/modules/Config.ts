@@ -4,7 +4,6 @@
 */
 import { JguiMake } from "../gui/JguiMake";
 import * as Convert from "../utils/Convert"
-import { DrawD3Terrain } from "./DrawD3Terrain";
 
 
 // TODO things to add, with parameters being in SpaceConfig!

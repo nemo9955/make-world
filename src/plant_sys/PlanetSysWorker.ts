@@ -1,16 +1,16 @@
-import { BaseDrawUpdateWorker } from "./GenWorkerMetadata";
+import { BaseDrawUpdateWorker } from "../modules/GenWorkerMetadata";
 
 import * as Convert from "../utils/Convert"
 import * as Units from "../utils/Units"
-import { Config, MessageType, WorkerEvent, WorkerPacket, WorldGenType } from "./Config";
-import { DrawThreePlsys } from "./DrawThreePlsys";
-import { PlanetarySystem } from "../generate/PlanetarySystem";
-import { WorldData } from "./WorldData";
+import { Config, MessageType, WorkerEvent, WorkerPacket, WorldGenType } from "../modules/Config";
+import { DrawThreePlsys } from "../plant_sys/DrawThreePlsys";
+import { PlanetarySystem } from "../orbiting_elements/PlanetarySystem";
+import { WorldData } from "../modules/WorldData";
 import { WorkerDOM } from "../utils/WorkerDOM";
-import { DrawD3Plsys } from "./DrawD3Plsys";
+import { DrawD3Plsys } from "../plant_sys/DrawD3Plsys";
 import { JguiMake } from "../gui/JguiMake";
 import { jguiData, setMainContainer } from "../gui/JguiUtils";
-import { SpaceFactory } from "../generate/SpaceFactory";
+import { SpaceFactory } from "../orbiting_elements/SpaceFactory";
 
 
 // TODO move generation in this worker instead of in the main thread

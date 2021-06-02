@@ -1,17 +1,17 @@
 
-import { PlanetarySystem } from "../generate/PlanetarySystem"
+import { PlanetarySystem } from "../orbiting_elements/PlanetarySystem"
 import { DataBaseManager } from "./DataBaseManager";
 import * as Convert from "../utils/Convert"
 
-import { Config } from "./Config"
-import { SpaceFactory } from "../generate/SpaceFactory";
+import { Config } from "../modules/Config"
+import { SpaceFactory } from "../orbiting_elements/SpaceFactory";
 import * as Random from "../utils/Random"
-import { Orbit } from "../generate/Orbit";
-import { Planet } from "../generate/Planet";
-import { Star } from "../generate/Star";
-import { OrbitingElement } from "../generate/OrbitingElement";
-import { SpaceGroup } from "../generate/SpaceGroup";
-import { Terrain } from "../generate/Terrain";
+import { Orbit } from "../orbiting_elements/Orbit";
+import { Planet } from "../orbiting_elements/Planet";
+import { Star } from "../orbiting_elements/Star";
+import { OrbitingElement } from "../orbiting_elements/OrbitingElement";
+import { SpaceGroup } from "../orbiting_elements/SpaceGroup";
+import { Terrain } from "../planet/Terrain";
 import { ClonableConstructor, Identifiable } from "./ObjectsHacker";
 import { StoreKey } from "idb";
 

@@ -1,27 +1,27 @@
 
-import { WorldData } from "./WorldData"
+import { WorldData } from "../modules/WorldData"
 import * as d3 from "d3"
 
-import { Config, WorkerEvent } from "./Config"
+import { Config, WorkerEvent } from "../modules/Config"
 import * as Convert from "../utils/Convert"
 import * as Units from "../utils/Units"
 import * as Points from "../utils/Points"
 
 
 import { ObjectPool } from "../utils/ObjectPool";
-import { Orbit } from "../generate/Orbit";
-import { Planet } from "../generate/Planet";
-import { Star } from "../generate/Star";
+import { Orbit } from "../orbiting_elements/Orbit";
+import { Planet } from "../orbiting_elements/Planet";
+import { Star } from "../orbiting_elements/Star";
 import { WorkerDOM } from "../utils/WorkerDOM";
-import { OrbitingElement } from "../generate/OrbitingElement";
-import { SpaceGroup } from "../generate/SpaceGroup";
-import { PlanetarySystem } from "../generate/PlanetarySystem";
+import { OrbitingElement } from "../orbiting_elements/OrbitingElement";
+import { SpaceGroup } from "../orbiting_elements/SpaceGroup";
+import { PlanetarySystem } from "../orbiting_elements/PlanetarySystem";
 import { Color, colorArray } from "../utils/Color"
 
 
 import { pointGeoArr } from "../utils/Points"
-import { DrawWorkerInstance } from "./GenWorkerMetadata"
-import { Terrain } from "../generate/Terrain"
+import { DrawWorkerInstance } from "../modules/GenWorkerMetadata"
+import { Terrain } from "./Terrain"
 
 
 import { JguiMake, JguiManager } from "../gui/JguiMake"

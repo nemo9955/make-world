@@ -8,7 +8,7 @@ import { WorldData } from "../modules/WorldData";
 import { Orbit } from "./Orbit";
 import { OrbitingElement } from "./OrbitingElement";
 import { PlanetarySystem } from "./PlanetarySystem";
-import { Terrain } from "./Terrain";
+import { Terrain } from "../planet/Terrain";
 import { jguiData } from "../gui/JguiUtils";
 import { WorkerEvent } from "../modules/Config";
 

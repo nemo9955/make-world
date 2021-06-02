@@ -6,7 +6,7 @@ import GenericWorkerInstance from "worker-loader!./GenWorkerInstance.ts";
 import { MessageType, MetaCanvas, WorkerPacket } from "../modules/Config";
 
 import { throttle } from 'lodash-es';
-import { MainManager } from "../modules/MainManager";
+import { WorldWebPage } from "../modules/WorldWebPage";
 
 const BASIC_OBJECTS = ["number", "boolean", "string"]
 
@@ -60,7 +60,7 @@ export function getBasicEvent(source_: any) {
 }
 
 
-export function addRightClickStuff(metaCanvas: MetaCanvas, mngr: MainManager, the_worker: GenericWorkerInstance, canvas: HTMLCanvasElement): void {
+export function addRightClickStuff(metaCanvas: MetaCanvas, mngr: WorldWebPage, the_worker: GenericWorkerInstance, canvas: HTMLCanvasElement): void {
     var event_name = "contextmenu";
     var rightClick = (evt_) => {
 

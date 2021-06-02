@@ -6,10 +6,10 @@ import GenericWorkerInstance from "worker-loader!./GenWorkerInstance.ts";
 import { Config, MessageType, WorkerEvent, WorkerPacket } from "./Config"
 import * as THREE from "three";
 import { Ticker, waitBlocking } from "../utils/Time";
-import { OrbitingElement } from "../generate/OrbitingElement";
-import { TerrainWorker } from "./TerrainWorker";
+import { OrbitingElement } from "../orbiting_elements/OrbitingElement";
+import { TerrainWorker } from "../planet/TerrainWorker";
 import { BaseWorker } from "./GenWorkerMetadata";
-import { PlanetSysWorker } from "./PlanetSysWorker";
+import { PlanetSysWorker } from "../plant_sys/PlanetSysWorker";
 import { JsonToGUI } from "../gui/JsonToGUI";
 
 
@@ -17,7 +17,10 @@ import { JsonToGUI } from "../gui/JsonToGUI";
 // order of execution can be easilly imposed and probably just simpler to manage
 
 
-export class MainManager {
+export class WorldWebPage {
+    static get type() { return `WorldWebPage` }
+    get name() { return `WorldWebPage` }
+
     cam_timeout: any = null;
 
     jgui: JsonToGUI;
@@ -30,7 +33,7 @@ export class MainManager {
     constructor() {
         this.jgui = new JsonToGUI();
         this.config = new Config();
-        this.world = new WorldData(this.config.WORLD_DATABASE_NAME, "MainManager", 10, this.config);
+        this.world = new WorldData(this.config.WORLD_DATABASE_NAME, this.name, 10, this.config);
 
         // TODO Actions will need to tell everyone of cases when a readDeep will be need
         // Usual var updates will be ok readShallow, structure changes need readDeep
@@ -66,7 +69,7 @@ export class MainManager {
 
         for (const worker_ of this.workers) {
             // waitBlocking(50); // TODO TMP !!!!!!!!!!!!!!
-            console.log("MainManager writeDeep postMessage ", worker_.name);
+            console.log(`${this.name} writeDeep postMessage `, worker_.name);
             worker_.postMessage(<WorkerPacket>{
                 message: MessageType.RefreshConfig,
                 config: this.config
@@ -76,7 +79,7 @@ export class MainManager {
 
 
     public pauseAll() {
-        console.debug(`#HERELINE MainManager pauseAll `);
+        console.debug(`#HERELINE ${this.name} pauseAll `);
     }
 
 
@@ -126,7 +129,7 @@ export class MainManager {
 
 
     public getMessage(the_worker: GenericWorkerInstance, event: WorkerEvent) {
-        // console.debug("#HERELINE MainManager getMessage ", event.data.message, the_worker.name);
+        // console.debug("#HERELINE MainWorldManager getMessage ", event.data.message, the_worker.name);
 
         switch (event.data.message as MessageType) {
             case MessageType.Ready:
