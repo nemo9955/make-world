@@ -84199,10 +84199,1027 @@ class VertexList {
 
 /***/ }),
 
-/***/ "./src/generate/Orbit.ts":
+/***/ "./src/gui/JguiMake.ts":
+/*!*****************************!*\
+  !*** ./src/gui/JguiMake.ts ***!
+  \*****************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.JguiManager = exports.JguiMake = void 0;
+const Random_1 = __webpack_require__(/*! ../utils/Random */ "./src/utils/Random.ts");
+class JguiMake {
+    constructor(tag_) {
+        this.tag = null;
+        this.extra = {};
+        this.attr = {};
+        this.style = {};
+        this.html = null;
+        this.tag = tag_;
+        this.genId();
+    }
+    // just for convenience
+    get id() { return this.attr.id; }
+    set id(value) { this.attr.id = value; }
+    get class() { return this.attr.class; }
+    set class(value) { this.attr.class = value; }
+    get type() { return this.attr.type; }
+    set type(value) { this.attr.type = value; }
+    mkWorkerJgui(id, order, expanded) {
+        this.tag = "div";
+        this.id = id;
+        this.class = "d-grid gap-1 bg-light border shadow-sm rounded ";
+        // this.style.zIndex = "200";
+        // this.style.position = "fixed";
+        // this.style.top = "10px";
+        // this.style.left = "10px";
+        // this.style.width = "256px";
+        this.attr.jguiOrder = order;
+        var coll = this.addColapse(id, expanded);
+        return [this, coll];
+    }
+    mkContainer() {
+        // https://getbootstrap.com/docs/5.0/layout/containers/
+        this.tag = "div";
+        this.class = "d-grid gap-1 bg-light border shadow-sm rounded ";
+        return this;
+    }
+    mkButton(name, type = "primary") {
+        // https://getbootstrap.com/docs/5.0/components/buttons/
+        // https://www.w3schools.com/jsref/tryit.asp?filename=tryjsref_element_addeventlistener4
+        // click mouseover mouseout
+        this.tag = "button";
+        // this.listeners = "click";
+        this.attr.class = `btn btn-${type} btn-sm`;
+        this.attr.type = "button";
+        this.html = name;
+        this.style["padding"] = "0"; //  no padding
+        return this;
+    }
+    addButton(btnName) {
+        // https://getbootstrap.com/docs/5.0/components/buttons/
+        var btnObj = new JguiMake(null).mkButton(btnName);
+        this.appendHtml(btnObj);
+        return btnObj;
+    }
+    add2Buttons(btnName1, btnName2) {
+        // https://getbootstrap.com/docs/5.0/components/buttons/
+        var rowObj = new JguiMake(null).mkRow();
+        var btnObj1 = new JguiMake(null).mkButton(btnName1);
+        var btnObj2 = new JguiMake(null).mkButton(btnName2);
+        btnObj1.style.width = "50%";
+        btnObj2.style.width = "50%";
+        rowObj.appendHtml(btnObj1);
+        rowObj.appendHtml(btnObj2);
+        this.appendHtml(rowObj);
+        return [btnObj1, btnObj2];
+    }
+    addCheckButton(chboxName, chboxVal) {
+        // https://getbootstrap.com/docs/5.0/forms/checks-radios/
+        var cdiv = new JguiMake("div");
+        var cswitch = new JguiMake("input");
+        cswitch.type = "checkbox";
+        cswitch.class = "form-check-input";
+        // cswitch.attr.autocomplete = "off"
+        if (chboxVal)
+            cswitch.attr.checked = "true";
+        var cbutton = new JguiMake("label");
+        cbutton.class = "form-check-label";
+        cbutton.attr.for = cswitch.id;
+        cbutton.html = chboxName;
+        cdiv.appendHtml(cswitch);
+        cdiv.appendHtml(cbutton);
+        this.appendHtml(cdiv);
+        return [cswitch, cbutton];
+    }
+    addTooltip(ttName) {
+        // https://getbootstrap.com/docs/5.0/components/tooltips/
+        if (this.attr["data-bs-toggle"]) {
+            console.warn(`Cannot set tooltip, data-bs-toggle is already present ${this.attr["data-bs-toggle"]} `, this);
+            return this;
+        }
+        this.attr["data-bs-toggle"] = "tooltip";
+        this.attr["data-bs-animation"] = "false";
+        this.attr["data-bs-placement"] = "right";
+        this.attr.title = ttName;
+        return this;
+    }
+    addDropdown(ddwName, ddwArr) {
+        // https://getbootstrap.com/docs/5.0/components/dropdowns/
+        // click mouseover mouseout
+        var ddwBut = new JguiMake("button").mkButton(ddwName);
+        ddwBut.class += " dropdown-toggle";
+        ddwBut.attr["data-bs-toggle"] = "dropdown";
+        ddwBut.attr["aria-expanded"] = "false";
+        ddwBut.html = ddwName;
+        var ddwUl = new JguiMake("ul");
+        ddwUl.class = "dropdown-menu";
+        ddwUl.attr["aria-labelledby"] = ddwBut.id;
+        var ddwListElems = [];
+        for (let index = 0; index < ddwArr.length; index++) {
+            const element = ddwArr[index];
+            var ddwLi = new JguiMake("li").delId();
+            var dda = new JguiMake("button").mkButton(element);
+            dda.delStyle();
+            dda.attr.class = "dropdown-item";
+            dda.extra.listIndex = index;
+            dda.extra.listValue = element;
+            ddwLi.appendHtml(dda);
+            ddwUl.appendHtml(ddwLi);
+            ddwListElems.push(dda);
+        }
+        this.appendHtml(ddwBut);
+        this.appendHtml(ddwUl);
+        return [ddwBut, ddwListElems];
+    }
+    // public addCheckButton(chboxName: string, value: boolean): [JguiMake, JguiMake] {
+    //     // https://getbootstrap.com/docs/5.0/forms/checks-radios/
+    //     var cswitch = new JguiMake("input")
+    //     cswitch.type = "checkbox"
+    //     cswitch.class = "btn-check"
+    //     cswitch.attr.autocomplete = "off"
+    //     if (value)
+    //         cswitch.attr.checked = null
+    //     var cbutton = new JguiMake("label")
+    //     cbutton.class = "btn btn-outline-primary"
+    //     cbutton.attr.for = cswitch.id
+    //     cbutton.html = chboxName
+    //     this.appendHtml(cswitch)
+    //     this.appendHtml(cbutton)
+    //     return [cswitch, cbutton];
+    // }
+    add2CheckButtons(chboxName1, chboxVal1, chboxName2, chboxVal2) {
+        // https://getbootstrap.com/docs/5.0/forms/checks-radios/
+        var cdiv = new JguiMake(null).mkRow();
+        var swArr1 = cdiv.addCheckButton(chboxName1, chboxVal1);
+        var swArr2 = cdiv.addCheckButton(chboxName2, chboxVal2);
+        this.appendHtml(cdiv);
+        return [swArr1[0], swArr2[0]];
+    }
+    mkColapse(name, expanded) {
+        // https://getbootstrap.com/docs/5.0/components/collapse/
+        this.tag = "div";
+        // this.class = "collapse";
+        // this.class = "collapse gap-1 bg-light border shadow-sm rounded  ";
+        this.class = "collapse gap-1 card card-body";
+        if (expanded)
+            this.class += " show";
+        this.genId();
+        this.style["padding-top"] = "0.1rem";
+        this.style["padding-left"] = "0.4rem";
+        this.style["padding-bottom"] = "0px";
+        this.style["padding-right"] = "0px";
+        return this;
+    }
+    addColapse(colName, expanded = false) {
+        // https://getbootstrap.com/docs/5.0/components/collapse/
+        // https://getbootstrap.com/docs/5.0/components/card/
+        var btnName = `Toggle ${colName}`;
+        var btnObj = new JguiMake(null).mkButton(btnName, "secondary");
+        var colObj = new JguiMake(null).mkColapse(colName, expanded);
+        btnObj.genId();
+        // btnObj.attr["data-bs-toggle"] = "button"
+        btnObj.attr["data-bs-toggle"] = "collapse";
+        btnObj.attr["aria-expanded"] = `false`;
+        btnObj.attr["data-bs-target"] = `#${colObj.id}`;
+        btnObj.attr["aria-controls"] = `${colObj.id}`;
+        this.appendHtml(btnObj);
+        this.appendHtml(colObj);
+        return colObj;
+    }
+    mkRow() {
+        // https://getbootstrap.com/docs/5.0/utilities/flex/
+        this.tag = "div";
+        // this.class = "row align-items-start";
+        this.class = "d-flex flex-row bd-highlight";
+        return this;
+    }
+    addSlider(slideName, min, max, step, origVal) {
+        // https://getbootstrap.com/docs/5.0/forms/range/
+        // <label for= "customRange3" class= "form-label" > Example range < /label>
+        // < input type = "range" class="form-range" min = "0" max = "5" step = "0.5" id = "customRange3" >
+        // var rowObj = new JguiMake(null).mkRow()
+        var labelObj = new JguiMake("label").genId();
+        var rangeObj = new JguiMake("input").genId();
+        labelObj.tag = "label";
+        labelObj.attr.for = `${rangeObj.id}`;
+        labelObj.attr.class = "form-label";
+        labelObj.html = `${slideName} ${origVal}`;
+        labelObj.style.margin = "0";
+        rangeObj.tag = `input`;
+        rangeObj.attr.type = `range`;
+        rangeObj.attr.class = `form-range`;
+        rangeObj.attr.min = `${min}`;
+        rangeObj.attr.max = `${max}`;
+        rangeObj.attr.step = `${step}`;
+        rangeObj.attr.value = `${origVal}`;
+        rangeObj.style.margin = "0";
+        rangeObj.style["padding-left"] = "0.5rem";
+        rangeObj.style["padding-right"] = "0.5rem";
+        rangeObj.attr.oninput = `${labelObj.id}.innerHTML="${slideName} "+value`;
+        // rangeObj.listeners = `input`
+        // rangeObj.listeners = `change`
+        // rangeObj.listeners = `oninput`
+        this.appendHtml(labelObj);
+        this.appendHtml(rangeObj);
+        // rowObj.appendHtml(labelObj)
+        // rowObj.appendHtml(rangeObj)
+        // this.appendHtml(rowObj)
+        return rangeObj;
+    }
+    addNumber(numName, numValue, numStep = 1) {
+        // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/number
+        var rowObj = new JguiMake(null).mkRow();
+        var numObj = new JguiMake("input");
+        numObj.attr.type = "number";
+        numObj.attr.value = numValue;
+        numObj.attr.step = numStep;
+        numObj.style.width = "100%";
+        rowObj.addLabel(numName);
+        rowObj.appendHtml(numObj);
+        this.appendHtml(rowObj);
+        return numObj;
+    }
+    addColor(colName, colValue) {
+        // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/color
+        var rowObj = new JguiMake(null).mkRow();
+        var colObj = new JguiMake("input");
+        colObj.attr.type = "color";
+        colObj.attr.value = colValue;
+        colObj.style.width = "100%";
+        rowObj.addLabel(colName);
+        rowObj.appendHtml(colObj);
+        this.appendHtml(rowObj);
+        return colObj;
+    }
+    addLabel(labName) {
+        // https://getbootstrap.com/docs/5.0/forms/floating-labels/
+        // var labObj = new JguiMake("div")
+        // labObj.class = "d-inline-flex p-2 bd-highlight";
+        var labObj = new JguiMake("label");
+        labObj.html = labName;
+        labObj.style["padding-right"] = "0.5rem";
+        this.appendHtml(labObj);
+        return labObj;
+    }
+    genId() {
+        var bid = Random_1.randomAlphabetString(5);
+        this.id = `${this.tag}${bid}`;
+        return this;
+    }
+    delId() {
+        delete this.attr.id;
+        return this;
+    }
+    delStyle() {
+        delete this.style;
+        this.style = {};
+        return this;
+    }
+    appendHtml(elem) {
+        if (!this.html)
+            this.html = [];
+        this.html.push(elem);
+        // return
+    }
+    appendListener(elem) {
+        if (!this.listeners)
+            this.listeners = [];
+        this.listeners.push(elem);
+        // return
+    }
+    addEventListener(evMng, evName, listenerCbk) {
+        // TODO maybe option to not pass the Event to move less data ???
+        var jListen = {
+            name: evName,
+            id: `${evName}-${this.id}.${Random_1.randomAlphabetString(6)}` // TODO could be better
+        };
+        evMng.registerListener(jListen.id, listenerCbk);
+        this.appendListener(jListen);
+        return this;
+    }
+}
+exports.JguiMake = JguiMake;
+class JguiManager {
+    constructor(worker, workerName) {
+        this.listenersJguiMap = new Map();
+        this.worker = worker;
+        this.workerName = workerName;
+    }
+    registerListener(lisId, listenerCbk) {
+        this.listenersJguiMap.set(lisId, listenerCbk);
+    }
+    dispachListener(lisId, event) {
+        var lisCbk = this.listenersJguiMap.get(lisId);
+        lisCbk(event);
+    }
+}
+exports.JguiManager = JguiManager;
+
+
+/***/ }),
+
+/***/ "./src/gui/JguiUtils.ts":
+/*!******************************!*\
+  !*** ./src/gui/JguiUtils.ts ***!
+  \******************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.setTempContainer = exports.setMainContainer = void 0;
+const Config_1 = __webpack_require__(/*! ../modules/Config */ "./src/modules/Config.ts");
+function setMainContainer(the_worker, workerJgui) {
+    // console.warn("workerJgui", workerJgui);
+    the_worker.postMessage({
+        message: Config_1.MessageType.RefreshJGUI,
+        jgui: workerJgui,
+        metadata: {
+            isMainWorkerContainer: true,
+        }
+    });
+}
+exports.setMainContainer = setMainContainer;
+function setTempContainer(the_worker, workerJgui) {
+    the_worker.postMessage({
+        message: Config_1.MessageType.RefreshJGUI,
+        jgui: workerJgui,
+        metadata: {
+            isTempWorkerContainer: true,
+        }
+    });
+}
+exports.setTempContainer = setTempContainer;
+
+
+/***/ }),
+
+/***/ "./src/modules/Config.ts":
 /*!*******************************!*\
-  !*** ./src/generate/Orbit.ts ***!
+  !*** ./src/modules/Config.ts ***!
   \*******************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.MessageType = exports.WorldGenType = exports.Config = void 0;
+const Convert = __webpack_require__(/*! ../utils/Convert */ "./src/utils/Convert.ts");
+// TODO things to add, with parameters being in SpaceConfig!
+// genMainOrbits ... bool ensure_habitable
+// // make just the main orbits and add after
+// addMoons ... number how_many , bool make_harmonics
+class Config {
+    constructor() {
+        this.follow_pointed_orbit = "auto";
+        // globalIsReady: boolean = false; // global flag for when Tickers can run
+        this.timeEarthYearsTick = 0.0004;
+        this.genEnsureInHabZone = true;
+        this.genEnsureCenteredInHabZone = true;
+        this.genEnsureMoonInHabZone = true;
+        this.incrementId = 5;
+        this.keepDbAtPageRefresh = false; // EXPERIMENTAL
+        this.WORLD_DATABASE_NAME = "WORLD-123"; // TODO properly generate at right time
+    }
+    copy(source_) {
+        Convert.copyShallow(this, source_);
+        return this;
+    }
+}
+exports.Config = Config;
+var WorldGenType;
+(function (WorldGenType) {
+    WorldGenType[WorldGenType["Inital"] = 0] = "Inital";
+    WorldGenType[WorldGenType["Regenerate"] = 1] = "Regenerate";
+    WorldGenType[WorldGenType["Tweaked"] = 2] = "Tweaked";
+})(WorldGenType = exports.WorldGenType || (exports.WorldGenType = {}));
+var MessageType;
+(function (MessageType) {
+    MessageType["Event"] = "Event";
+    MessageType["Ready"] = "Ready";
+    MessageType["Play"] = "Play";
+    MessageType["Pause"] = "Pause";
+    MessageType["InitWorker"] = "InitWorker";
+    MessageType["RefreshDBDeep"] = "RefreshDBDeep";
+    MessageType["RefreshDBShallow"] = "RefreshDBShallow";
+    MessageType["RefreshConfig"] = "RefreshConfig";
+    MessageType["CanvasReady"] = "CanvasReady";
+    MessageType["CanvasMake"] = "CanvasMake";
+    MessageType["RefreshJGUI"] = "RefreshJGUI";
+})(MessageType = exports.MessageType || (exports.MessageType = {}));
+
+
+/***/ }),
+
+/***/ "./src/modules/DataBaseManager.ts":
+/*!****************************************!*\
+  !*** ./src/modules/DataBaseManager.ts ***!
+  \****************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.DataBaseManager = void 0;
+const idb_1 = __webpack_require__(/*! idb */ "./node_modules/idb/build/esm/index.js");
+// import { openDB, deleteDB, wrap, unwrap, IDBPDatabase, IDBPTransaction, IDBPObjectStore, StoreKey, StoreValue } from 'idb/with-async-ittr.js';
+/*
+TODO Make tables "universe" specific , the ones that ID is needed
+TODO better split databases for different usages for more efficient read-write
+
+Examples:
+DB only for OrbitElements and load all of them since they are small
+DB only for Terrain/Big objects and load one by one sice they are big, so
+    read -> make_object -> manage -> write -> destroy_object
+
+*/
+class DataBaseManager {
+    constructor(targetTable, name) {
+        this.tableName = null;
+        this.name = name;
+        this.tableName = targetTable;
+        this.idb = null;
+    }
+    async init(keepDb) {
+        console.log(`#HERELINE DataBaseManager ${this.name} init : ${this.tableName} `);
+        var prom_ = null;
+        if (keepDb)
+            prom_ = Promise.resolve();
+        else
+            prom_ = this.delete();
+        return prom_.then(() => {
+            console.debug(`#HERELINE DataBaseManager ${this.name} init then  `);
+            return this.open();
+        });
+    }
+    async open() {
+        console.debug(`#HERELINE DataBaseManager ${this.name} open `);
+        this.idb = await idb_1.openDB(this.tableName, 1, {
+            upgrade(db) {
+                console.debug("#HERELINE DataBaseManager NOTHEN open upgrade ");
+                // this.idb = db;
+                // TODO, make generic container with ID-able objects
+                if (!db.objectStoreNames.contains(DataBaseManager.STANDARD_OBJECTS)) {
+                    const store = db.createObjectStore(DataBaseManager.STANDARD_OBJECTS, { keyPath: 'id', autoIncrement: false });
+                    store.createIndex('type', 'type', { unique: false });
+                    // store.createIndex('id', 'id');
+                    // console.log("createObjectStore ", STANDARD_OBJECTS);
+                }
+                if (!db.objectStoreNames.contains(DataBaseManager.KEYVAL_OBJECTS)) {
+                    const store = db.createObjectStore(DataBaseManager.KEYVAL_OBJECTS);
+                }
+            }
+        });
+    }
+    async delete() {
+        console.debug("#HERELINE DataBaseManager " + this.name + " delete ");
+        return idb_1.deleteDB(this.tableName);
+    }
+    async getKv(key) { return await this.idb.get('keyval', key); }
+    setKv(key, val) { return this.idb.put('keyval', val, key); }
+    delKv(key) { return this.idb.delete('keyval', key); }
+    clearKv() { return this.idb.clear('keyval'); }
+    keysKv() { return this.idb.getAllKeys('keyval'); }
+}
+exports.DataBaseManager = DataBaseManager;
+DataBaseManager.STANDARD_OBJECTS = "STANDARD_OBJECTS";
+DataBaseManager.KEYVAL_OBJECTS = "keyval";
+
+
+/***/ }),
+
+/***/ "./node_modules/ts-loader/index.js!./src/modules/GenWorkerInstance.ts":
+/*!****************************************************************************!*\
+  !*** ./node_modules/ts-loader/index.js!./src/modules/GenWorkerInstance.ts ***!
+  \****************************************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.workerTypes = void 0;
+const ctx = self;
+const PlanetSysWorker_1 = __webpack_require__(/*! ../plant_sys/PlanetSysWorker */ "./src/plant_sys/PlanetSysWorker.ts");
+const TerrainWorker_1 = __webpack_require__(/*! ../planet/TerrainWorker */ "./src/planet/TerrainWorker.ts");
+exports.workerTypes = new Map();
+exports.workerTypes.TerrainWorker = TerrainWorker_1.TerrainWorker;
+exports.workerTypes.PlanetSysWorker = PlanetSysWorker_1.PlanetSysWorker;
+var work_instance = null;
+ctx.addEventListener("message", (event) => {
+    if (work_instance === null) {
+        var config = event.data.config;
+        work_instance = new exports.workerTypes[event.data.create](config.WORLD_DATABASE_NAME, ctx, event.data.create, event);
+    }
+    else {
+        work_instance.getMessage(event);
+    }
+});
+// export default null as any;
+
+
+/***/ }),
+
+/***/ "./src/modules/GenWorkerMetadata.ts":
+/*!******************************************!*\
+  !*** ./src/modules/GenWorkerMetadata.ts ***!
+  \******************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.BaseDrawUpdateWorker = exports.BaseWorker = void 0;
+const Time_1 = __webpack_require__(/*! ../utils/Time */ "./src/utils/Time.ts");
+const Config_1 = __webpack_require__(/*! ../modules/Config */ "./src/modules/Config.ts");
+const WorldData_1 = __webpack_require__(/*! ../modules/WorldData */ "./src/modules/WorldData.ts");
+const Units = __webpack_require__(/*! ../utils/Units */ "./src/utils/Units.ts");
+const JguiMake_1 = __webpack_require__(/*! ../gui/JguiMake */ "./src/gui/JguiMake.ts");
+const JguiUtils_1 = __webpack_require__(/*! ../gui/JguiUtils */ "./src/gui/JguiUtils.ts");
+class BaseWorker {
+    constructor(config, worker, workerName, event) {
+        this.db_read_itv = new Time_1.Intervaler();
+        this.name = workerName;
+        this.worker = worker;
+        this.config = new Config_1.Config().copy(config);
+        this.world = new WorldData_1.WorldData(this.config.WORLD_DATABASE_NAME, this.name, event.data.startId, this.config);
+        this.ticker = new Time_1.Ticker(false, this.updateInterval.bind(this), Units.LOOP_INTERVAL);
+    }
+    preInit() {
+        this.spread_objects(this.world);
+        this.world.initWorker().then(() => {
+            this.worker.postMessage({ message: Config_1.MessageType.Ready, from: this.name });
+        }).then(() => {
+            this.init();
+        });
+    }
+    spread_objects(object_) {
+        if (object_.config === null)
+            object_.config = this.config;
+        if (object_.world === null)
+            object_.world = this.world;
+        if (object_.worker === null)
+            object_.worker = this.worker;
+    }
+    getMessage(event) {
+        // console.debug(`#HERELINE ${this.name} getMessage  ${event.data.message}`);
+        var _a;
+        if (((_a = event === null || event === void 0 ? void 0 : event.data) === null || _a === void 0 ? void 0 : _a.config) && this.config)
+            this.config.copy(event.data.config);
+        const message_ = event.data.message;
+        switch (message_) {
+            case Config_1.MessageType.InitWorker:
+                this.preInit();
+                break;
+            case Config_1.MessageType.Play:
+                this.updPlay();
+                break;
+            case Config_1.MessageType.Pause:
+                this.updPause();
+                break;
+            default:
+                this.getMessageExtra(event);
+        }
+    }
+    getMessageExtra(event) {
+        const message_ = event.data.message;
+        console.warn(`Not implemented in ${this.name} : ${message_} !`);
+    }
+    async refreshConfig() {
+        // this.ticker.updateState(this.config.globalIsReady)
+    }
+    updPause() {
+        this.ticker.stop();
+    }
+    updPlay() {
+        this.ticker.start();
+    }
+    broadcastEvent(event) {
+        console.debug(`#HERELINE GenWorkerMetadata broadcastEvent `, event);
+        this.worker.postMessage({
+            message: Config_1.MessageType.Event,
+            metadata: {
+                broadcast: true,
+                isWorldEvent: true,
+            },
+            from: this.name,
+            event: event,
+            // event_id: null, // TODO what to do with it ?
+        });
+    }
+}
+exports.BaseWorker = BaseWorker;
+class BaseDrawUpdateWorker extends BaseWorker {
+    constructor(config, worker, workerName, event) {
+        super(config, worker, workerName, event);
+        this.doUpdate = true;
+        this.doDraw = true;
+        this.mapDraws = new Map();
+        this.workerJguiMain = null;
+        this.workerJguiCont = null;
+        this.workerJguiManager = null;
+        this.workerJguiManager = new JguiMake_1.JguiManager(worker, workerName);
+    }
+    callEvent(woEvent) {
+        var _a, _b, _c, _d;
+        var event = woEvent.data.event;
+        var event_id = woEvent.data.event_id;
+        if ((_b = (_a = woEvent.data) === null || _a === void 0 ? void 0 : _a.metadata) === null || _b === void 0 ? void 0 : _b.isFromJgui) {
+            this.workerJguiManager.dispachListener(event_id, woEvent);
+        }
+        else if ((_d = (_c = woEvent.data) === null || _c === void 0 ? void 0 : _c.metadata) === null || _d === void 0 ? void 0 : _d.isWorldEvent) {
+            this.getWorldEvent(woEvent);
+        }
+        else {
+            var drawRedirect = this.mapDraws.get(event_id);
+            drawRedirect.fakeDOM.dispatchEvent(event);
+        }
+    }
+    updateJgiu(draw_) {
+        var jData = {
+            jGui: this.workerJguiCont,
+            jMng: this.workerJguiManager,
+        };
+        draw_.addJgui(jData);
+        JguiUtils_1.setMainContainer(this.worker, this.workerJguiMain);
+    }
+    spread_objects(object_) {
+        super.spread_objects(object_);
+        if (object_.workerJguiManager === null)
+            object_.workerJguiManager = this.workerJguiManager;
+    }
+}
+exports.BaseDrawUpdateWorker = BaseDrawUpdateWorker;
+
+
+/***/ }),
+
+/***/ "./src/modules/ObjectsHacker.ts":
+/*!**************************************!*\
+  !*** ./src/modules/ObjectsHacker.ts ***!
+  \**************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Identifiable = void 0;
+const Convert = __webpack_require__(/*! ../utils/Convert */ "./src/utils/Convert.ts");
+class Identifiable {
+    constructor(worldData) {
+        this.id = null;
+        this.type = null;
+        this.type = this.constructor.name;
+        this.setWorldData(worldData);
+        this.genId();
+    }
+    /*
+    to be set from outside by WorldData
+    constructor(worldData: WorldData) {
+        (this as any).__proto__.getWorldData = () => { return worldData };
+    */
+    getWorldData() { throw new Error("Function needs to be re-defined in constructor."); }
+    setWorldData(worldData) {
+        this.__proto__.getWorldData = () => { return worldData; };
+    }
+    genId() {
+        this.id = this.getWorldData().getFreeID();
+    }
+    copyDeep(source_) {
+        Convert.copyDeep(this, source_);
+        return this;
+    }
+    copyShallow(source_) {
+        Convert.copyShallow(this, source_);
+        return this;
+    }
+    copyLogic(source_) {
+        Convert.copyShallow(this, source_, true);
+        return this;
+    }
+}
+exports.Identifiable = Identifiable;
+
+
+/***/ }),
+
+/***/ "./src/modules/WorldData.ts":
+/*!**********************************!*\
+  !*** ./src/modules/WorldData.ts ***!
+  \**********************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.WorldData = exports.objects_types_ = void 0;
+const PlanetarySystem_1 = __webpack_require__(/*! ../orbiting_elements/PlanetarySystem */ "./src/orbiting_elements/PlanetarySystem.ts");
+const DataBaseManager_1 = __webpack_require__(/*! ./DataBaseManager */ "./src/modules/DataBaseManager.ts");
+const Convert = __webpack_require__(/*! ../utils/Convert */ "./src/utils/Convert.ts");
+const Orbit_1 = __webpack_require__(/*! ../orbiting_elements/Orbit */ "./src/orbiting_elements/Orbit.ts");
+const Planet_1 = __webpack_require__(/*! ../orbiting_elements/Planet */ "./src/orbiting_elements/Planet.ts");
+const Star_1 = __webpack_require__(/*! ../orbiting_elements/Star */ "./src/orbiting_elements/Star.ts");
+const SpaceGroup_1 = __webpack_require__(/*! ../orbiting_elements/SpaceGroup */ "./src/orbiting_elements/SpaceGroup.ts");
+const Terrain_1 = __webpack_require__(/*! ../planet/Terrain */ "./src/planet/Terrain.ts");
+// TODO read&write function WITH and WITHOUT structure change
+// WITHOUT structure change is just update or variables values
+// WITH represents a refresh/regen
+// TODO Planet Star Orbit and such objects to be stored directly in DB and referenced by some UUID
+// TODO do not use function.name and constructor.name so minified can be used
+// https://stackoverflow.com/questions/50267543/class-name-always-e-for-every-class-after-uglify-webpack-for-production
+exports.objects_types_ = {};
+exports.objects_types_.PlanetarySystem = PlanetarySystem_1.PlanetarySystem;
+exports.objects_types_.Orbit = Orbit_1.Orbit;
+exports.objects_types_.Planet = Planet_1.Planet;
+exports.objects_types_.Star = Star_1.Star;
+exports.objects_types_.SpaceGroup = SpaceGroup_1.SpaceGroup;
+exports.objects_types_.Terrain = Terrain_1.Terrain;
+class WorldData {
+    constructor(targetTable, name, startId, config) {
+        this.type = this.constructor.name;
+        this.rwDbObjs = new Map();
+        this.roDbObjs = new Map();
+        this.roDbRaws = new Map();
+        this.cleanupIds = new Array();
+        this.config = null;
+        // TODO Move in WorldData when more fine read/write can be done
+        this.time = new Convert.NumberTime();
+        this.name = name;
+        this.startId = startId;
+        this.config = config;
+        if (WorldData.wdMaxId > 0)
+            console.error(`WorldData.wdMaxId was already set, it should be set only one per worker : ${WorldData.wdMaxId}`, this);
+        WorldData.wdMaxId = this.startId;
+        console.debug("this.startId", this.startId);
+        this.dbm = new DataBaseManager_1.DataBaseManager(targetTable, name);
+        // console.log("this.planetary_system.getWorldData()", this.planetary_system.getWorldData());
+    }
+    async preInit() {
+        console.debug(`#HERELINE WorldData preInit ${this.config.WORLD_DATABASE_NAME} `);
+        return this.dbm.init(this.config.keepDbAtPageRefresh).then(() => {
+            console.debug(`#HERELINE WorldData ${this.name} preInit then`);
+        });
+    }
+    // public async initTerrain() {
+    //     console.debug("#HERELINE WorldData initTerrain");
+    //     for (const element of this.planetarySystem.getAllSats()) {
+    //         if (element instanceof Planet && element.isInHabZone) {
+    //             if (element.planetType == "Normal") {
+    //                 Terrain.initForPlanet(element);
+    //                 return; // TODO TMP FIXME limit to 1 terrain while testing !!!!!!!!!!!!!!!!!
+    //             }
+    //         }
+    //     }
+    // }
+    initWorker() {
+        console.debug("#HERELINE WorldData initWorker");
+        return this.dbm.open();
+    }
+    getFreeID() {
+        return WorldData.wdMaxId += this.config.incrementId;
+    }
+    getAnyObj(id_) {
+        if (this.rwDbObjs.has(id_))
+            return this.rwDbObjs.get(id_);
+        if (this.roDbObjs.has(id_))
+            return this.roDbObjs.get(id_);
+        return null;
+    }
+    getRoObj(id_) {
+        if (this.roDbObjs.has(id_))
+            return this.roDbObjs.get(id_);
+        return null;
+    }
+    getRwObj(id_) {
+        if (this.rwDbObjs.has(id_))
+            return this.rwDbObjs.get(id_);
+        return null;
+    }
+    free(id_) {
+        if (this.rwDbObjs.has(id_))
+            this.rwDbObjs.delete(id_);
+        this.cleanupIds.push(id_);
+    }
+    setRwObj(obj_) {
+        this.rwDbObjs.set(obj_.id, obj_);
+    }
+    async readTime() {
+        this.time.value = await this.getKv("world_time");
+        return this.time;
+    }
+    async writeTime() { return this.setKv("world_time", this.time.value); }
+    restartTime() {
+        this.time.eby = 0;
+        this.writeTime();
+    }
+    async getKv(key) { return this.dbm.getKv(key); }
+    async setKv(key, val) { return this.dbm.setKv(key, val); }
+    async delKv(key) { return this.dbm.delKv(key); }
+    async clearKv() { return this.dbm.clearKv(); }
+    async keysKv() { return this.dbm.keysKv(); }
+    /*
+
+    public async readShallow() {
+        // console.debug("#HERELINE WorldData readShallow this.name", this.name);
+        // console.time("#time WorldData " + this.name + " readShallow");
+
+        // return this.readDeep(); // TODO WA FIXME
+        var data_ps = this.dbm.idb.transaction(DataBaseManager.STANDARD_OBJECTS, "readonly");
+
+        // var keys_from_db = []
+        // var keys_from_wd = [...this.mainDbData.keys()]
+
+        var all = await data_ps.store.getAll() /// var 1
+        for (const iterator of all) { /// var 1
+            // var cursor = data_ps.store.openCursor(); /// var 2
+            // for await (const cursor of data_ps.store) { /// var 2
+            //     var iterator = cursor.value; /// var 2
+
+            // keys_from_db.push(iterator.id)
+            if (iterator.type == "PlanetarySystem") {
+                this.planetarySystem.copyShallow(iterator)
+                this.rwDbObjs.set(iterator.id, this.planetarySystem)
+            } else {
+                const newLocal = this.rwDbObjs.get(iterator.id);
+                if (!newLocal) {
+                    console.warn("this", this);
+                    // console.warn("this.mainDbData", this.mainDbData);
+                    // console.warn("iterator", iterator);
+                }
+                newLocal.copyShallow(iterator);
+            }
+        }
+
+        // keys_from_db.sort()
+        // keys_from_wd.sort()
+
+        // console.log("keys_from_db", keys_from_db);
+        // console.log("keys_from_wd", keys_from_wd);
+
+
+        await data_ps.done.finally(() => {
+            // console.timeEnd("#time WorldData " + this.name + " readShallow");
+        })
+    }
+
+    public async readDeep() {
+        console.debug(`#HERELINE WorldData readDeep this.name ${this.name}`);
+        console.time(`#time WorldData ${this.name} readDeep`);
+
+        var data_ps = this.dbm.idb.transaction(DataBaseManager.STANDARD_OBJECTS, "readonly");
+        this.rwDbObjs.clear()
+
+        var all = await data_ps.store.getAll() /// var 1
+        for (const iterator of all) { /// var 1
+            // var cursor = data_ps.store.openCursor(); /// var 2
+            // for await (const cursor of data_ps.store) { /// var 2
+            //     var iterator = cursor.value; /// var 2
+
+            if (iterator.type == "PlanetarySystem") {
+                this.planetarySystem.copyDeep(iterator)
+                this.rwDbObjs.set(iterator.id, this.planetarySystem)
+            } else {
+                var obj_ = new objects_types_[iterator.type](this) // wow
+                this.rwDbObjs.set(iterator.id, obj_)
+                const newLocal = this.rwDbObjs.get(iterator.id);
+                if (!newLocal) {
+                    console.warn("this.mainDbData", this.rwDbObjs);
+                    console.warn("this", this);
+                    console.warn("iterator", iterator);
+                }
+                newLocal.copyDeep(iterator);
+            }
+        }
+        await data_ps.done.finally(() => {
+            console.timeEnd(`#time WorldData ${this.name} readDeep`);
+        })
+    }
+
+
+
+
+    public async writeDeep() {
+        console.debug(`#HERELINE WorldData writeDeep this.name ${this.name}`);
+        console.time(`#time WorldData ${this.name} writeDeep`);
+
+        var data_ps = this.dbm.idb.transaction(DataBaseManager.STANDARD_OBJECTS, "readwrite");
+
+        await data_ps.store.clear();
+
+        var promises: Promise<any>[] = []
+        for (const iterator of this.rwDbObjs.values()) {
+            promises.push(data_ps.store.put(iterator))
+        }
+
+        promises.push(data_ps.done)
+        await Promise.all(promises).finally(() => {
+            console.timeEnd(`#time WorldData ${this.name} writeDeep`);
+        })
+    }
+
+    public async writeShallow() {
+        // console.debug("#HERELINE WorldData writeShallow this.name", this.name);
+        // console.time("#time WorldData " + this.name + " writeShallow");
+
+        var data_ps = this.dbm.idb.transaction(DataBaseManager.STANDARD_OBJECTS, "readwrite");
+
+        var promises: Promise<any>[] = []
+        for (const iterator of this.rwDbObjs.values()) {
+            promises.push(data_ps.store.put(iterator))
+        }
+
+        promises.push(data_ps.done)
+        await Promise.all(promises).finally(() => {
+            // console.timeEnd("#time WorldData " + this.name + " writeShallow");
+        })
+    }
+
+    */
+    async delCleared() {
+        console.debug(`#HERELINE WorldData delCleared this.name ${this.name} len ${this.cleanupIds.length} `);
+        // console.time(`#time WorldData ${this.name} delCleared`);
+        var promises = [];
+        while (this.cleanupIds.length > 0) {
+            var iterator = this.cleanupIds.pop();
+            promises.push(this.dbm.idb.delete(DataBaseManager_1.DataBaseManager.STANDARD_OBJECTS, iterator));
+        }
+        return await Promise.all(promises);
+        // .finally(() => {
+        //     console.timeEnd(`#time WorldData ${this.name} delCleared`);
+        // })
+    }
+    async writeAllRw() {
+        console.debug(`#HERELINE WorldData writeAllRw this.name ${this.name}`);
+        console.time(`#time WorldData ${this.name} writeAllRw`);
+        await this.delCleared();
+        var data_ps = this.dbm.idb.transaction(DataBaseManager_1.DataBaseManager.STANDARD_OBJECTS, "readwrite");
+        var promises = [];
+        for (const iterator of this.rwDbObjs.values()) {
+            promises.push(data_ps.store.put(iterator));
+        }
+        promises.push(data_ps.done);
+        await Promise.all(promises).finally(() => {
+            console.timeEnd(`#time WorldData ${this.name} writeAllRw`);
+        });
+    }
+    async setBigIdObject(obj_) {
+        var data_ps = this.dbm.idb.transaction(DataBaseManager_1.DataBaseManager.STANDARD_OBJECTS, "readwrite");
+        await data_ps.store.put(obj_);
+        await data_ps.done;
+    }
+    async getBigIdObject(id_) {
+        var data_ps = this.dbm.idb.transaction(DataBaseManager_1.DataBaseManager.STANDARD_OBJECTS, "readwrite");
+        return data_ps.store.get(id_);
+    }
+    async *iterateAllBig(mode = "readonly") {
+        console.time(`#time WorldData ${this.name} iterateAllBig`);
+        console.debug(`#HERELINE WorldData iterateAllBig this.name ${this.name}`);
+        var data_ps = this.dbm.idb.transaction(DataBaseManager_1.DataBaseManager.STANDARD_OBJECTS, mode);
+        var cursor = await data_ps.store.openCursor();
+        while (cursor) {
+            // console.log("cursor.key, cursor.value", cursor.key, cursor.value);
+            var iterator = cursor.value;
+            yield iterator;
+            cursor.update(iterator);
+            cursor = await cursor.continue();
+        }
+        await data_ps.done.finally(() => {
+            console.timeEnd(`#time WorldData ${this.name} iterateAllBig`);
+        });
+    }
+    async *iterObjsType(VTYPE, mode = "readonly") {
+        // console.time(`#time WorldData ${this.name} iterObjsType`);
+        console.debug(`#HERELINE WorldData iterObjsType this.name ${this.name}`);
+        const data_ps = this.dbm.idb.transaction(DataBaseManager_1.DataBaseManager.STANDARD_OBJECTS, mode);
+        const index = data_ps.objectStore(DataBaseManager_1.DataBaseManager.STANDARD_OBJECTS).index('type');
+        // console.log("VTYPE", VTYPE);
+        var cursor = await index.openCursor(VTYPE.type);
+        while (cursor) {
+            var iterator = VTYPE.clone(this, cursor.value);
+            yield iterator;
+            if (mode == "readwrite") {
+                // console.log("iterator", iterator);
+                cursor.update(iterator);
+            }
+            cursor = await cursor.continue();
+        }
+        return await data_ps.done.finally(() => {
+            // console.timeEnd(`#time WorldData ${this.name} iterObjsType`);
+        });
+    }
+}
+exports.WorldData = WorldData;
+WorldData.wdMaxId = -999999;
+
+
+/***/ }),
+
+/***/ "./src/orbiting_elements/Orbit.ts":
+/*!****************************************!*\
+  !*** ./src/orbiting_elements/Orbit.ts ***!
+  \****************************************/
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 "use strict";
@@ -84211,7 +85228,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Orbit = void 0;
 const Random = __webpack_require__(/*! ../utils/Random */ "./src/utils/Random.ts");
 const Convert = __webpack_require__(/*! ../utils/Convert */ "./src/utils/Convert.ts");
-const OrbitingElement_1 = __webpack_require__(/*! ./OrbitingElement */ "./src/generate/OrbitingElement.ts");
+const OrbitingElement_1 = __webpack_require__(/*! ./OrbitingElement */ "./src/orbiting_elements/OrbitingElement.ts");
 /*
 https://www.amsat.org/keplerian-elements-tutorial/
 http://www.planetaryorbits.com/kepler-laws-orbital-elements.html
@@ -84403,10 +85420,10 @@ exports.Orbit = Orbit;
 
 /***/ }),
 
-/***/ "./src/generate/OrbitingElement.ts":
-/*!*****************************************!*\
-  !*** ./src/generate/OrbitingElement.ts ***!
-  \*****************************************/
+/***/ "./src/orbiting_elements/OrbitingElement.ts":
+/*!**************************************************!*\
+  !*** ./src/orbiting_elements/OrbitingElement.ts ***!
+  \**************************************************/
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 "use strict";
@@ -84616,10 +85633,10 @@ exports.OrbitingElement = OrbitingElement;
 
 /***/ }),
 
-/***/ "./src/generate/Planet.ts":
-/*!********************************!*\
-  !*** ./src/generate/Planet.ts ***!
-  \********************************/
+/***/ "./src/orbiting_elements/Planet.ts":
+/*!*****************************************!*\
+  !*** ./src/orbiting_elements/Planet.ts ***!
+  \*****************************************/
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 "use strict";
@@ -84629,7 +85646,7 @@ exports.Planet = void 0;
 const Color_1 = __webpack_require__(/*! ../utils/Color */ "./src/utils/Color.ts");
 const Random = __webpack_require__(/*! ../utils/Random */ "./src/utils/Random.ts");
 const Convert = __webpack_require__(/*! ../utils/Convert */ "./src/utils/Convert.ts");
-const OrbitingElement_1 = __webpack_require__(/*! ./OrbitingElement */ "./src/generate/OrbitingElement.ts");
+const OrbitingElement_1 = __webpack_require__(/*! ./OrbitingElement */ "./src/orbiting_elements/OrbitingElement.ts");
 // https://en.wikipedia.org/wiki/List_of_gravitationally_rounded_objects_of_the_Solar_System
 // TODO more proper and complex planets and moons generation
 // https://youtu.be/t6i6TPsqvaM?t=257
@@ -84825,17 +85842,17 @@ exports.Planet = Planet;
 
 /***/ }),
 
-/***/ "./src/generate/PlanetarySystem.ts":
-/*!*****************************************!*\
-  !*** ./src/generate/PlanetarySystem.ts ***!
-  \*****************************************/
+/***/ "./src/orbiting_elements/PlanetarySystem.ts":
+/*!**************************************************!*\
+  !*** ./src/orbiting_elements/PlanetarySystem.ts ***!
+  \**************************************************/
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.PlanetarySystem = void 0;
-const OrbitingElement_1 = __webpack_require__(/*! ./OrbitingElement */ "./src/generate/OrbitingElement.ts");
+const OrbitingElement_1 = __webpack_require__(/*! ./OrbitingElement */ "./src/orbiting_elements/OrbitingElement.ts");
 const Convert = __webpack_require__(/*! ../utils/Convert */ "./src/utils/Convert.ts");
 // https://www.youtube.com/watch?v=J5xU-8Kb63Y&list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&index=11&ab_channel=Artifexian
 // Calendar https://quarkndagger.com/an-informative-worldbuilding-guide-to-calendar-creation/
@@ -84897,22 +85914,22 @@ exports.PlanetarySystem = PlanetarySystem;
 
 /***/ }),
 
-/***/ "./src/generate/SpaceFactory.ts":
-/*!**************************************!*\
-  !*** ./src/generate/SpaceFactory.ts ***!
-  \**************************************/
+/***/ "./src/orbiting_elements/SpaceFactory.ts":
+/*!***********************************************!*\
+  !*** ./src/orbiting_elements/SpaceFactory.ts ***!
+  \***********************************************/
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.SpaceFactory = void 0;
-const Star_1 = __webpack_require__(/*! ./Star */ "./src/generate/Star.ts");
-const Orbit_1 = __webpack_require__(/*! ./Orbit */ "./src/generate/Orbit.ts");
-const Planet_1 = __webpack_require__(/*! ./Planet */ "./src/generate/Planet.ts");
+const Star_1 = __webpack_require__(/*! ./Star */ "./src/orbiting_elements/Star.ts");
+const Orbit_1 = __webpack_require__(/*! ./Orbit */ "./src/orbiting_elements/Orbit.ts");
+const Planet_1 = __webpack_require__(/*! ./Planet */ "./src/orbiting_elements/Planet.ts");
 const Random = __webpack_require__(/*! ../utils/Random */ "./src/utils/Random.ts");
 const Convert = __webpack_require__(/*! ../utils/Convert */ "./src/utils/Convert.ts");
-const SpaceGroup_1 = __webpack_require__(/*! ./SpaceGroup */ "./src/generate/SpaceGroup.ts");
+const SpaceGroup_1 = __webpack_require__(/*! ./SpaceGroup */ "./src/orbiting_elements/SpaceGroup.ts");
 const Config_1 = __webpack_require__(/*! ../modules/Config */ "./src/modules/Config.ts");
 // https://www.youtube.com/watch?v=J5xU-8Kb63Y&list=PLduA6tsl3gygXJbq_iQ_5h2yri4WL6zsS&index=11&ab_channel=Artifexian
 // MOONS : https://www.youtube.com/watch?reload=9&v=t6i6TPsqvaM&ab_channel=Artifexian
@@ -85275,10 +86292,10 @@ exports.SpaceFactory = SpaceFactory;
 
 /***/ }),
 
-/***/ "./src/generate/SpaceGroup.ts":
-/*!************************************!*\
-  !*** ./src/generate/SpaceGroup.ts ***!
-  \************************************/
+/***/ "./src/orbiting_elements/SpaceGroup.ts":
+/*!*********************************************!*\
+  !*** ./src/orbiting_elements/SpaceGroup.ts ***!
+  \*********************************************/
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 "use strict";
@@ -85286,7 +86303,7 @@ exports.SpaceFactory = SpaceFactory;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.SpaceGroup = void 0;
 const Convert = __webpack_require__(/*! ../utils/Convert */ "./src/utils/Convert.ts");
-const OrbitingElement_1 = __webpack_require__(/*! ./OrbitingElement */ "./src/generate/OrbitingElement.ts");
+const OrbitingElement_1 = __webpack_require__(/*! ./OrbitingElement */ "./src/orbiting_elements/OrbitingElement.ts");
 // import type { SpaceGroup } from "./SpaceGroup";
 /*
     Used to Logically group a number of orbital elements as one
@@ -85342,10 +86359,10 @@ exports.SpaceGroup = SpaceGroup;
 
 /***/ }),
 
-/***/ "./src/generate/Star.ts":
-/*!******************************!*\
-  !*** ./src/generate/Star.ts ***!
-  \******************************/
+/***/ "./src/orbiting_elements/Star.ts":
+/*!***************************************!*\
+  !*** ./src/orbiting_elements/Star.ts ***!
+  \***************************************/
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 "use strict";
@@ -85355,7 +86372,7 @@ exports.Star = void 0;
 const Color_1 = __webpack_require__(/*! ../utils/Color */ "./src/utils/Color.ts");
 const Random = __webpack_require__(/*! ../utils/Random */ "./src/utils/Random.ts");
 const Convert = __webpack_require__(/*! ../utils/Convert */ "./src/utils/Convert.ts");
-const OrbitingElement_1 = __webpack_require__(/*! ./OrbitingElement */ "./src/generate/OrbitingElement.ts");
+const OrbitingElement_1 = __webpack_require__(/*! ./OrbitingElement */ "./src/orbiting_elements/OrbitingElement.ts");
 // Artifexian : https://www.youtube.com/watch?v=x55nxxaWXAM
 // https://en.wikipedia.org/wiki/Stellar_classification
 // Class	Effective temperature[1][2]	Vega-relative chromaticity[3][4][a]	Chromaticity (D65)[5][6][3][b]	Main-sequence mass[1][7] (solar masses)	Main-sequence radius[1][7] (solar radii)	Main-sequence luminosity[1][7] (bolometric)	Hydrogen lines	Fraction of all main-sequence stars[8]
@@ -85544,10 +86561,752 @@ exports.Star = Star;
 
 /***/ }),
 
-/***/ "./src/generate/Terrain.ts":
-/*!*********************************!*\
-  !*** ./src/generate/Terrain.ts ***!
-  \*********************************/
+/***/ "./src/planet/DrawD3Terrain.ts":
+/*!*************************************!*\
+  !*** ./src/planet/DrawD3Terrain.ts ***!
+  \*************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.DrawD3Terrain = void 0;
+const d3 = __webpack_require__(/*! d3 */ "./node_modules/d3/index.js");
+const WorkerDOM_1 = __webpack_require__(/*! ../utils/WorkerDOM */ "./src/utils/WorkerDOM.ts");
+/*
+https://github.com/Fil/d3-geo-voronoi
+
+https://bl.ocks.org/d3indepth/c62b6ce6625b69f6007cea5fccdd4599
+https://observablehq.com/@d3/u-s-map-canvas
+
+!!!!!!!!! https://observablehq.com/@d3/zoom-canvas-rescaled?collection=@d3/d3-zoom
+
+
+https://bl.ocks.org/pkerpedjiev/32b11b37be444082762443c4030d145d D3 event filtering
+The red circles don't allow scroll-wheel zooming and drag-based panning
+https://bl.ocks.org/mbostock/6675193
+
+
+
+*/
+class DrawD3Terrain {
+    // points: { coordinates: pointGeoArr; type: string }
+    constructor() {
+        this.type = this.constructor.name;
+        this.world = null;
+        this.canvasOffscreen = null;
+        this.config = null;
+        this.fakeDOM = new WorkerDOM_1.WorkerDOM();
+        this.ctx = null;
+        // private ctx: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D = null;
+        this.terrain = null;
+        this.ptsRadius = 4;
+        this.previousScaleFactor = 1;
+        this.fastDrawTimeout = 0;
+    }
+    init(event) {
+        console.debug(`#HERELINE ${this.type} init `);
+        this.canvasOffscreen = event.data.canvas;
+        this.ctx = this.canvasOffscreen.getContext("2d");
+        this.fakeDOM.addEventListener("resize", (event_) => { this.resize(event_); });
+        this.initBase();
+        this.resize(this.canvasOffscreen); // lazy use canvas since params same as Event ...
+    }
+    resize(event_) {
+        console.debug("#HERELINE ${this.type} resize", event_);
+        this.canvasOffscreen.width = event_.width;
+        this.canvasOffscreen.height = event_.height;
+        this.fakeDOM.clientWidth = event_.width;
+        this.fakeDOM.clientHeight = event_.height;
+        this.translation = [this.canvasOffscreen.width / 2, this.canvasOffscreen.height / 2];
+        this.projection.translate(this.translation);
+        // this.ctx = this.canvasOffscreen.getContext("2d");
+        // this.initBase();
+        // this.setTmpFastDraw();
+        this.drawOnce();
+    }
+    updateDeep() {
+        console.debug(`#HERELINE ${this.type} updateDeep `);
+        // this.initBase();
+        // this.setTmpFastDraw();
+        this.drawOnce();
+    }
+    updateShallow() {
+        console.debug(`#HERELINE ${this.type} updateShallow `);
+        // this.initBase();
+        // this.setTmpFastDraw();
+        this.drawOnce();
+    }
+    draw() {
+        // this.drawOnce();
+    }
+    updateProjection(prStr) {
+        console.log(`#HERELINE DrawD3Terrain updateProjection `, prStr);
+        var viewMap = DrawD3Terrain.getGeoViewsMap();
+        var newPro = viewMap.get(prStr)()
+            .translate(this.translation)
+            .rotate(this.projection.rotate());
+        this.projection = newPro;
+        this.path.projection(this.projection);
+        this.originalScale = this.projection.scale();
+        this.scale = this.originalScale;
+        this.drawOnce();
+    }
+    initBase() {
+        console.debug(`#HERELINE ${this.type} initBase `);
+        this.graticule = d3.geoGraticule();
+        this.translation = [this.canvasOffscreen.width / 2, this.canvasOffscreen.height / 2];
+        var viewMap = DrawD3Terrain.getGeoViewsMap();
+        this.projection = viewMap.get(DrawD3Terrain.defaultGeoViews())()
+            .translate(this.translation);
+        this.originalScale = this.projection.scale();
+        this.scale = this.originalScale;
+        this.path = d3.geoPath()
+            .projection(this.projection)
+            .context(this.ctx)
+            .pointRadius(this.ptsRadius);
+        this.grid = this.graticule();
+        this.zoom = d3.zoom()
+            .filter(event => {
+            // console.log("event", event);
+            switch (event.type) {
+                // https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/button
+                case "mousedown": return event.button === 2;
+                case "wheel": return event.button === 0;
+                default: return false;
+            }
+        })
+            .scaleExtent([0.2, 7])
+            .on("zoom", this.zoomed.bind(this));
+        var fakeSelect = d3.select(this.fakeDOM).selection();
+        fakeSelect.call(this.zoom);
+    }
+    setTmpFastDraw() {
+        this.fastDrawTimeout = 2;
+    }
+    drawOnce() {
+        if (!this.terrain.posGeo)
+            return; // TODO make more elegant !!!!!
+        if (this.fastDrawTimeout > 0)
+            this.fastDrawTimeout--;
+        // console.log("this.fastDrawTimeout", this.fastDrawTimeout);
+        this.ctx.clearRect(0, 0, this.canvasOffscreen.width, this.canvasOffscreen.height);
+        this.ctx.save();
+        this.ctx.beginPath();
+        this.path(this.grid);
+        this.ctx.lineWidth = 2;
+        this.ctx.strokeStyle = '#ddd';
+        this.ctx.stroke();
+        // if (this.fastDrawTimeout == 0) {
+        //     for (let index = 0; index < this.polys.features.length; index++) {
+        //         const poly = this.polys.features[index];
+        //         this.ctx.beginPath();
+        //         this.path(poly);
+        //         // this.ctx.fillStyle = "tomato"
+        //         // this.ctx.fillStyle = `rgba(${153 * (50 + index) % 250}, ${79 * (49 + index) % 250}, ${555 * (17 + index) % 250}, 0.5)`;
+        //         this.ctx.fillStyle = `rgba(${37 * (150 + index) % 250}, ${13 * (49 + index) % 250}, ${17 * (17 + index) % 250}, 0.4)`;
+        //         this.ctx.fill();
+        //     }
+        // }
+        // this.points = {
+        //     type: "MultiPoint",
+        //     // coordinates: Points.makeGeoPtsSquares(0)
+        //     coordinates: Points.makeGeoPtsFibb(1000)
+        //     // coordinates: Points.makeGeoPtsRandOk(1000)
+        // }
+        if (this.ptsRadius != 0) {
+            for (let index = 0; index < this.terrain.posGeo.length; index++) {
+                const element = this.terrain.posGeo[index];
+                // for (const tkpl of this.terrain.tkplates) {
+                this.ctx.beginPath();
+                var ptsWrapper = {
+                    type: "Point",
+                    coordinates: element,
+                };
+                this.path(ptsWrapper);
+                // this.ctx.fillStyle = this.terrain.colorId
+                this.ctx.fillStyle = `rgb(${Math.floor(this.terrain.color[index * 3 + 0] * 255)},
+                                        ${Math.floor(this.terrain.color[index * 3 + 1] * 255)},
+                                        ${Math.floor(this.terrain.color[index * 3 + 2] * 255)})`;
+                this.ctx.fill();
+            }
+        }
+        this.ctx.restore();
+    }
+    zoomed(event) {
+        //     // https://github.com/d3/d3-zoom#zoom_filter
+        //     // https://bl.ocks.org/pkerpedjiev/32b11b37be444082762443c4030d145d
+        var dx = event.sourceEvent.movementX;
+        var dy = event.sourceEvent.movementY;
+        const globe_pan_speed_mod = 4;
+        var event_type = event.sourceEvent.type;
+        if (event_type === 'wheel') {
+            var scaleFactor = event.transform.k;
+            var scaleChange = scaleFactor - this.previousScaleFactor;
+            this.scale = this.scale + scaleChange * this.originalScale;
+            this.projection.scale(this.scale);
+            this.previousScaleFactor = scaleFactor;
+        }
+        else {
+            var r = this.projection.rotate();
+            this.rotation = [
+                r[0] + dx * 0.4 * globe_pan_speed_mod,
+                r[1] - dy * 0.5 * globe_pan_speed_mod,
+                r[2]
+            ];
+            this.projection.rotate(this.rotation);
+        }
+        // TODO make an drawFast variant in the future for this situation !!!!!
+        // this.setTmpFastDraw();
+        this.drawOnce(); // activate for smoother panning/zooming
+    }
+    static defaultGeoViews() { return "geoNaturalEarth1"; }
+    // public static defaultGeoViews() { return "geoMercator"; }
+    static getGeoViewsMap() {
+        var ret_ = new Map();
+        ret_.set("geoOrthographic", () => d3.geoOrthographic().clipAngle(90).scale(350));
+        ret_.set("geoMercator", () => d3.geoMercator().scale(130));
+        ret_.set("geoEquirectangular", () => d3.geoEquirectangular().scale(160));
+        ret_.set("geoNaturalEarth1", () => d3.geoNaturalEarth1().scale(200));
+        return ret_;
+    }
+    // public static guiMainStatic(pane_: Tweakpane, gui: WorldGui) {
+    //     var map_ = {};
+    //     [...DrawD3Terrain.getGeoViewsMap().keys()].forEach(obj_ => map_[obj_] = obj_)
+    //     pane_.addInput(gui.manager.config, 'terrain_geo_view', { options: map_ })
+    //     // .on('change', () => { gui.refreshConfig(); });
+    // }
+    addJgui(jData) {
+        // TODO make me a drop down list
+        var d3DrawTab = jData.jGui.addColapse("D3 Draw", true);
+        var allProj = [...DrawD3Terrain.getGeoViewsMap().keys()];
+        var [_, prdDropList] = d3DrawTab.addDropdown("D3 Projection", allProj);
+        for (const prjDdObj of prdDropList) {
+            prjDdObj.addEventListener(jData.jMng, "click", (event) => {
+                this.updateProjection(event.data.event.extra.listValue);
+            });
+            prjDdObj.addEventListener(jData.jMng, "mouseover", (event) => {
+                this.updateProjection(event.data.event.extra.listValue);
+            });
+        }
+        d3DrawTab.addSlider("D3 Points size", 0, 15, 0.1, this.ptsRadius)
+            .addEventListener(jData.jMng, "input", (event) => {
+            this.ptsRadius = event.data.event.target.valueAsNumber;
+            this.path.pointRadius(this.ptsRadius);
+            this.drawOnce();
+        });
+    }
+}
+exports.DrawD3Terrain = DrawD3Terrain;
+
+
+/***/ }),
+
+/***/ "./src/planet/DrawThreeTerrain.ts":
+/*!****************************************!*\
+  !*** ./src/planet/DrawThreeTerrain.ts ***!
+  \****************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.DrawThreeTerrain = void 0;
+const WorkerDOM_1 = __webpack_require__(/*! ../utils/WorkerDOM */ "./src/utils/WorkerDOM.ts");
+const ObjectPool_1 = __webpack_require__(/*! ../utils/ObjectPool */ "./src/utils/ObjectPool.ts");
+// Would be nice to have THICKER lines
+// https://github.com/mrdoob/three.js/blob/master/examples/webgl_lines_fat.html
+// import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2"
+// import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeometry"
+// import { LineMaterial } from "three/examples/jsm/lines/LineMaterial"
+const THREE = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js"); // node_modules/three/build/three.js
+const OrbitControls_1 = __webpack_require__(/*! three/examples/jsm/controls/OrbitControls */ "./node_modules/three/examples/jsm/controls/OrbitControls.js");
+class DrawThreeTerrain {
+    constructor() {
+        this.fakeDOM = new WorkerDOM_1.WorkerDOM();
+        this.ptsRadius = 0;
+        this.terrain = null;
+        this.raycaster = new THREE.Raycaster();
+        this.hoverData = { mousex: 0, mousey: 0, mousep: { x: null, y: null }, hoverId: 0, selectedId: 0 };
+        this.selectedPoints = [];
+        this.specialHoverAction = null;
+    }
+    init(event) {
+        this.canvasOffscreen = event.data.canvas;
+        this.scene = new THREE.Scene();
+        this.camera = new THREE.PerspectiveCamera(75, this.canvasOffscreen.width / this.canvasOffscreen.height, 0.1, 1000000);
+        this.setCamera();
+        this.renderer = new THREE.WebGLRenderer({
+            canvas: this.canvasOffscreen,
+            antialias: true,
+            logarithmicDepthBuffer: true,
+        });
+        this.resize(this.canvasOffscreen); // lazy use canvas since params same as Event ...
+        var ambcolo = 1;
+        const light_am = new THREE.AmbientLight(new THREE.Color(ambcolo, ambcolo, ambcolo)); // soft white light
+        this.scene.add(light_am);
+        const geometryHoverSphere = new THREE.SphereGeometry(1);
+        const materialHoverSphere = new THREE.MeshBasicMaterial({ color: new THREE.Color("red"), side: THREE.DoubleSide });
+        this.hoverSphere = new THREE.Mesh(geometryHoverSphere, materialHoverSphere);
+        this.hoverSphere.scale.setScalar(100);
+        this.hoverSphere.visible = false;
+        this.scene.add(this.hoverSphere);
+        const rayThresh = 200;
+        this.raycaster.params.Points.threshold = rayThresh; // DRAWUNIT
+        this.raycaster.params.Line.threshold = rayThresh; // DRAWUNIT
+        this.fakeDOM.addEventListener("resize", (event_) => { this.resize(event_); });
+        // events set in src/modules/EventsManager.ts -> addOrbitCtrlEvents
+        this.controls = new OrbitControls_1.OrbitControls(this.camera, this.fakeDOM);
+        // this.controls.addEventListener("change", this.cameraMoved.bind(this))
+        this.controls.enablePan = false;
+        this.controls.mouseButtons = { RIGHT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, LEFT: THREE.MOUSE.PAN };
+        this.fakeDOM.addEventListener("mouseenter", this.hoverEnter.bind(this));
+        this.fakeDOM.addEventListener("mousemove", this.hoverMoved.bind(this));
+        this.fakeDOM.addEventListener("mouseleave", this.hoverleave.bind(this));
+        this.fakeDOM.addEventListener("click", this.hoverClick.bind(this));
+        // this.fakeDOM.addEventListener("contextmenu", this.hoverClick.bind(this))
+        // this.syncTerrainData();
+    }
+    resize(event_) {
+        // console.debug("#HERELINE DrawThreePlsys resize", event_);
+        this.canvasOffscreen.width = event_.width;
+        this.canvasOffscreen.height = event_.height;
+        this.fakeDOM.clientWidth = event_.width;
+        this.fakeDOM.clientHeight = event_.height;
+        this.camera.aspect = event_.width / event_.height;
+        this.camera.updateProjectionMatrix();
+        this.renderer.setSize(event_.width, event_.height, false);
+    }
+    hoverMoved(event) {
+        this.hoverData.mousex = event.offsetX;
+        this.hoverData.mousey = event.offsetY;
+        this.hoverData.mousep.x = (this.hoverData.mousex / this.canvasOffscreen.width) * 2 - 1;
+        this.hoverData.mousep.y = -(this.hoverData.mousey / this.canvasOffscreen.height) * 2 + 1;
+        if (this.tpPts)
+            if (this.hoverData.mousep.x != null && this.hoverData.mousep.y != null) {
+                this.raycaster.setFromCamera(this.hoverData.mousep, this.camera);
+                const intersects = this.raycaster.intersectObject(this.tpPts, false);
+                if (intersects.length > 0) {
+                    var orb_ = intersects[0];
+                    this.hoverSphere.visible = true;
+                    this.hoverData.hoverId = orb_.index;
+                    const vec3pts = this.terrain.vec3pts[this.hoverData.hoverId];
+                    this.hoverSphere.position.copy(vec3pts);
+                    // console.log("orb_", orb_);
+                }
+                else {
+                    this.hoverData.hoverId = -1;
+                    this.hoverSphere.visible = false;
+                }
+            }
+    }
+    hoverEnter(event) {
+        this.hoverMoved(event);
+    }
+    hoverleave(event) {
+        this.hoverData.mousep.x = null;
+        this.hoverData.mousep.y = null;
+    }
+    hoverClick(event) {
+        if (this.specialHoverAction && this.hoverData.hoverId !== -1) {
+            this.specialHoverAction(this.hoverData.hoverId);
+            this.specialHoverAction = null;
+            return;
+        }
+        if (this.hoverData.hoverId == -1) {
+            this.selectedPoints.length = 0;
+            this.clearAllLines();
+        }
+        else
+            this.selectedPoints.push(this.hoverData.hoverId);
+        console.log("this.selectedPoints", this.selectedPoints);
+        // console.log("this.hoverData.hoverId", this.hoverData.hoverId);
+        if (this.selectedPoints.length >= 2) {
+            const paths = this.terrain.makePaths(this.selectedPoints);
+            this.drawLinesPaths(paths);
+        }
+    }
+    drawLinesPaths(paths) {
+        var _a, _b;
+        var patSegLen = 0;
+        for (const path_ of paths)
+            patSegLen += path_.path.length;
+        patSegLen -= paths.length;
+        const vec3pts = this.terrain.vec3pts;
+        const segLen = patSegLen * 3 * 2;
+        ObjectPool_1.freeFloat32Array((_b = (_a = this.tpLines1) === null || _a === void 0 ? void 0 : _a.geometry) === null || _b === void 0 ? void 0 : _b.getAttribute('position').array);
+        const lineSegs = ObjectPool_1.getFloat32Array(segLen);
+        var lineCnt = 0;
+        for (const path_ of paths) {
+            // console.log("path_", path_);
+            for (let index = 0; index < path_.path.length - 1; index++) {
+                const e1 = path_.path[index];
+                const e2 = path_.path[index + 1];
+                // console.log("e1,e2", e1, e2);
+                lineSegs[lineCnt++] = vec3pts[e1].x;
+                lineSegs[lineCnt++] = vec3pts[e1].y;
+                lineSegs[lineCnt++] = vec3pts[e1].z;
+                lineSegs[lineCnt++] = vec3pts[e2].x;
+                lineSegs[lineCnt++] = vec3pts[e2].y;
+                lineSegs[lineCnt++] = vec3pts[e2].z;
+            }
+        }
+        this.drawLinesSegments(lineSegs, segLen);
+    }
+    syncTerrainData() {
+        this.drawMeshTerrain();
+        this.drawPoints();
+    }
+    drawPoints() {
+        this.clearAllPoints();
+        var ptsGeometry = new THREE.BufferGeometry();
+        var ptsMaterial = new THREE.PointsMaterial({
+            size: this.ptsRadius,
+            // sizeAttenuation: false,
+            vertexColors: true,
+        });
+        var ptsObject = new THREE.Points(ptsGeometry, ptsMaterial);
+        ptsObject.material.visible = (this.ptsRadius != 0);
+        const ptsPosAttr = new THREE.Float32BufferAttribute(this.terrain.pos3d, 3);
+        ptsPosAttr.count = this.terrain.ptsLength;
+        // const ptsColAttr = new THREE.Float32BufferAttribute(this.terrain.color, 3);
+        const ptsColAttr = new THREE.Float32BufferAttribute(this.terrain.colorDebug, 3);
+        ptsColAttr.count = this.terrain.ptsLength;
+        ptsGeometry.setAttribute('position', ptsPosAttr);
+        ptsGeometry.setAttribute('color', ptsColAttr);
+        ptsGeometry.computeBoundingSphere();
+        this.tpPts = ptsObject;
+        this.scene.add(ptsObject);
+    }
+    clearAllPoints() {
+        this.disposeObj(this.tpPts);
+    }
+    drawMeshTerrain() {
+        var _a, _b, _c, _d;
+        this.clearAllMesh();
+        var mesMaterial = new THREE.MeshBasicMaterial({
+            // color: 0xffffff,
+            // opacity: 0.5,
+            // transparent: true,
+            vertexColors: true,
+        });
+        const ptcl = new THREE.BufferGeometry();
+        var mesObject = new THREE.Mesh(ptcl, mesMaterial);
+        const vec3pts = this.terrain.vec3pts;
+        const ptsPred = this.terrain.ptsPred;
+        const color = this.terrain.color;
+        const pts3Vertex = this.terrain.pts3Vertex;
+        ObjectPool_1.freeFloat32Array((_b = (_a = this.tpMesh) === null || _a === void 0 ? void 0 : _a.geometry) === null || _b === void 0 ? void 0 : _b.getAttribute('position').array);
+        ObjectPool_1.freeFloat32Array((_d = (_c = this.tpMesh) === null || _c === void 0 ? void 0 : _c.geometry) === null || _d === void 0 ? void 0 : _d.getAttribute('color').array);
+        const meshPos = ObjectPool_1.getFloat32Array(pts3Vertex.length * 3);
+        const meshCol = ObjectPool_1.getFloat32Array(pts3Vertex.length * 3);
+        for (let index = 0; index < pts3Vertex.length; index++) {
+            meshPos[index * 3 + 0] = vec3pts[pts3Vertex[index]].x;
+            meshPos[index * 3 + 1] = vec3pts[pts3Vertex[index]].y;
+            meshPos[index * 3 + 2] = vec3pts[pts3Vertex[index]].z;
+            meshCol[index * 3 + 0] = color[pts3Vertex[index] * 3 + 0];
+            meshCol[index * 3 + 1] = color[pts3Vertex[index] * 3 + 1];
+            meshCol[index * 3 + 2] = color[pts3Vertex[index] * 3 + 2];
+        }
+        const attrPos = new THREE.Float32BufferAttribute(meshPos, 3);
+        attrPos.count = pts3Vertex.length;
+        ptcl.setAttribute('position', attrPos);
+        const attrCol = new THREE.Float32BufferAttribute(meshCol, 3);
+        attrCol.count = pts3Vertex.length;
+        ptcl.setAttribute('color', attrCol);
+        // ptcl.setAttribute( 'normal', new THREE.Float32BufferAttribute( normals, 3 ) );
+        this.tpMesh = mesObject;
+        this.scene.add(mesObject);
+    }
+    clearAllMesh() {
+        this.disposeObj(this.tpMesh);
+    }
+    clearAllLines() {
+        this.disposeObj(this.tpLines1);
+    }
+    clearRivers() {
+        this.disposeObj(this.rivers);
+    }
+    drawLinesPrede() {
+        var _a, _b;
+        const vec3pts = this.terrain.vec3pts;
+        const ptsPred = this.terrain.ptsPred;
+        const segLen = ptsPred.length * 3 * 2;
+        ObjectPool_1.freeFloat32Array((_b = (_a = this.tpLines1) === null || _a === void 0 ? void 0 : _a.geometry) === null || _b === void 0 ? void 0 : _b.getAttribute('position').array);
+        const lineSegs = ObjectPool_1.getFloat32Array(segLen);
+        for (let index = 0; index < ptsPred.length - 1; index++) {
+            const ed = ptsPred[index];
+            if (ed < 0)
+                continue;
+            lineSegs[index * 6 + 0] = vec3pts[index].x;
+            lineSegs[index * 6 + 1] = vec3pts[index].y;
+            lineSegs[index * 6 + 2] = vec3pts[index].z;
+            lineSegs[index * 6 + 3] = vec3pts[ed].x;
+            lineSegs[index * 6 + 4] = vec3pts[ed].y;
+            lineSegs[index * 6 + 5] = vec3pts[ed].z;
+        }
+        this.drawLinesSegments(lineSegs, segLen);
+    }
+    drawLinesEdge() {
+        var _a, _b;
+        const vec3pts = this.terrain.vec3pts;
+        const ptsEdges = this.terrain.ptsEdges;
+        const segLen = ptsEdges.length * 3 * 2;
+        ObjectPool_1.freeFloat32Array((_b = (_a = this.tpLines1) === null || _a === void 0 ? void 0 : _a.geometry) === null || _b === void 0 ? void 0 : _b.getAttribute('position').array);
+        const lineSegs = ObjectPool_1.getFloat32Array(segLen);
+        for (let index = 0; index < ptsEdges.length; index++) {
+            const ed = ptsEdges[index];
+            lineSegs[index * 6 + 0] = vec3pts[ed[0]].x;
+            lineSegs[index * 6 + 1] = vec3pts[ed[0]].y;
+            lineSegs[index * 6 + 2] = vec3pts[ed[0]].z;
+            lineSegs[index * 6 + 3] = vec3pts[ed[1]].x;
+            lineSegs[index * 6 + 4] = vec3pts[ed[1]].y;
+            lineSegs[index * 6 + 5] = vec3pts[ed[1]].z;
+        }
+        this.drawLinesSegments(lineSegs, segLen);
+    }
+    drawLinesSegments(lineSegs, lineSegsLen) {
+        this.clearAllLines();
+        // console.log("lineSegsLen,lineSegs", lineSegsLen, lineSegs);
+        // if (lineSegs)
+        //     for (let index = 0; index < lineSegsLen; index++)
+        //         lineSegs[index] *= (Math.random() / 30) + 1
+        // if (lineSegs)
+        for (let index = 0; index < lineSegsLen; index++)
+            lineSegs[index] *= 1.01;
+        var line1Geometry = new THREE.BufferGeometry();
+        var line1Material = new THREE.LineBasicMaterial({
+            color: 0xffffff,
+            linewidth: 50, // not working :(
+            // vertexColors: true,
+        });
+        // const edges = new THREE.EdgesGeometry(ptcl);
+        // var line1Object = new THREE.LineSegments(edges, line1Material);
+        // const line1PosAttr = new THREE.Float32BufferAttribute(this.terrain.linesHull, 3);
+        const line1PosAttr = new THREE.Float32BufferAttribute(lineSegs, 3);
+        line1PosAttr.count = lineSegsLen / 3;
+        line1Geometry.setAttribute('position', line1PosAttr);
+        line1Geometry.computeBoundingSphere();
+        var line1Object = new THREE.LineSegments(line1Geometry, line1Material);
+        this.tpLines1 = line1Object;
+        this.scene.add(line1Object);
+    }
+    drawRivers(lineSegs, lineSegsLen) {
+        this.clearRivers();
+        // console.log("lineSegsLen,lineSegs", lineSegsLen, lineSegs);
+        // if (lineSegs)
+        //     for (let index = 0; index < lineSegsLen; index++)
+        //         lineSegs[index] *= (Math.random() / 30) + 1
+        // if (lineSegs)
+        for (let index = 0; index < lineSegsLen; index++)
+            lineSegs[index] *= 1.01;
+        var riversGeometry = new THREE.BufferGeometry();
+        var riversMaterial = new THREE.LineBasicMaterial({
+            color: 0x07cdf5,
+            linewidth: 1, // not working :(
+            // vertexColors: true,
+        });
+        // const edges = new THREE.EdgesGeometry(ptcl);
+        // var line1Object = new THREE.LineSegments(edges, line1Material);
+        // const line1PosAttr = new THREE.Float32BufferAttribute(this.terrain.linesHull, 3);
+        const riversPosAttr = new THREE.Float32BufferAttribute(lineSegs, 3);
+        riversPosAttr.count = lineSegsLen / 3;
+        riversGeometry.setAttribute('position', riversPosAttr);
+        riversGeometry.computeBoundingSphere();
+        var riversObject = new THREE.LineSegments(riversGeometry, riversMaterial);
+        this.rivers = riversObject;
+        this.scene.add(riversObject);
+    }
+    disposeObj(threeObj) {
+        var _a, _b;
+        if (!threeObj)
+            return;
+        this.scene.remove(threeObj);
+        (_a = threeObj === null || threeObj === void 0 ? void 0 : threeObj.material) === null || _a === void 0 ? void 0 : _a.dispose();
+        (_b = threeObj === null || threeObj === void 0 ? void 0 : threeObj.geometry) === null || _b === void 0 ? void 0 : _b.dispose();
+    }
+    clearTerrainData() {
+        this.clearAllPoints();
+        this.clearAllMesh();
+        this.clearAllLines();
+    }
+    updateShallow() {
+    }
+    setCamera() {
+        this.camera.position.x = this.terrain.data.sphereSize * 2.2; // DRAWUNIT
+        this.camera.position.y = 0;
+        this.camera.position.z = 0;
+        this.camera.lookAt(0, 0, 0);
+    }
+    setDistCamera() {
+        this.camera.position.normalize();
+        this.camera.position.multiplyScalar(this.terrain.data.sphereSize * 2.2); // DRAWUNIT
+        this.camera.lookAt(0, 0, 0);
+    }
+    updateDeep() {
+        console.time(`#time DrawThreeTerrain updateDeep`);
+        // RESET !!!!!!!!
+        this.selectedPoints.length = 0;
+        this.setDistCamera();
+        this.clearTerrainData();
+        this.syncTerrainData();
+        // this.scanRivers();
+        // this.pathToWater();
+        console.timeEnd(`#time DrawThreeTerrain updateDeep`);
+    }
+    draw() {
+        // console.log(`#HERELINE DrawThreeTerrain draw `);
+        this.renderer.render(this.scene, this.camera);
+    }
+    updatePtsMaterials() {
+        this.tpPts.material.visible = (this.ptsRadius != 0);
+        this.tpPts.material.size = this.ptsRadius;
+        this.tpPts.material.needsUpdate = true;
+    }
+    drawLinesSegmentsIndex(lineIndex, lineIndexLen) {
+        var _a, _b;
+        const vec3pts = this.terrain.vec3pts;
+        const segLen = lineIndexLen * 3;
+        ObjectPool_1.freeFloat32Array((_b = (_a = this.tpLines1) === null || _a === void 0 ? void 0 : _a.geometry) === null || _b === void 0 ? void 0 : _b.getAttribute('position').array);
+        const lineSegs = ObjectPool_1.getFloat32Array(segLen);
+        var lineCnt = 0;
+        for (let index = 0; index < lineIndexLen; index++) {
+            const e1 = lineIndex[index];
+            lineSegs[lineCnt++] = vec3pts[e1].x;
+            lineSegs[lineCnt++] = vec3pts[e1].y;
+            lineSegs[lineCnt++] = vec3pts[e1].z;
+        }
+        this.drawLinesSegments(lineSegs, segLen);
+    }
+    scanLand(index) {
+        var scanData = this.terrain.scanLand(index);
+        this.drawLinesSegmentsIndex(scanData.edgesArr, scanData.edgesLen);
+    }
+    scanWater(index) {
+        var scanData = this.terrain.scanWater(index);
+        this.drawLinesSegmentsIndex(scanData.edgesArr, scanData.edgesLen);
+    }
+    scanLower(index) {
+        const elev = this.terrain.elevation[index];
+        var scanData = this.terrain.getLowestElevPoints(elev);
+        this.drawLinesSegmentsIndex(scanData.edgesArr, scanData.edgesLen);
+    }
+    scanHigher(index) {
+        const elev = this.terrain.elevation[index];
+        var scanData = this.terrain.getHighestElevPoints(elev);
+        this.drawLinesSegmentsIndex(scanData.edgesArr, scanData.edgesLen);
+    }
+    scanOcean() {
+        var scanData = this.terrain.getLowestElevPoints(this.terrain.elevOcean);
+        this.drawLinesSegmentsIndex(scanData.edgesArr, scanData.edgesLen);
+    }
+    scanContinent() {
+        var scanData = this.terrain.getHighestElevPoints(this.terrain.elevOcean);
+        this.drawLinesSegmentsIndex(scanData.edgesArr, scanData.edgesLen);
+    }
+    scanMountains() {
+        var scanData = this.terrain.getHighestElevPoints(this.terrain.elevMountain);
+        this.drawLinesSegmentsIndex(scanData.edgesArr, scanData.edgesLen);
+    }
+    scanRivers() {
+        var _a, _b;
+        var scanData = this.terrain.getRiverOrig();
+        const vec3pts = this.terrain.vec3pts;
+        const segLen = scanData.edgesLen * 3;
+        ObjectPool_1.freeFloat32Array((_b = (_a = this.rivers) === null || _a === void 0 ? void 0 : _a.geometry) === null || _b === void 0 ? void 0 : _b.getAttribute('position').array);
+        const lineSegs = ObjectPool_1.getFloat32Array(segLen);
+        var lineCnt = 0;
+        for (let index = 0; index < scanData.edgesLen; index++) {
+            const e1 = scanData.edgesArr[index];
+            lineSegs[lineCnt++] = vec3pts[e1].x;
+            lineSegs[lineCnt++] = vec3pts[e1].y;
+            lineSegs[lineCnt++] = vec3pts[e1].z;
+        }
+        this.drawRivers(lineSegs, segLen);
+    }
+    pathToWater() {
+        const edgesArr = ObjectPool_1.getFloat32Array(this.terrain.ptsEdges.length * 2).fill(-1);
+        var edgesLen = 0;
+        for (let index = 0; index < this.terrain.ptsEdges.length; index++) {
+            const tow = this.terrain.pathToWatter[index];
+            if (tow == -1)
+                continue;
+            if (isNaN(tow))
+                continue;
+            edgesArr[edgesLen++] = index;
+            edgesArr[edgesLen++] = tow;
+        }
+        // console.log("edgesArr", edgesArr);
+        this.drawLinesSegmentsIndex(edgesArr, edgesLen);
+    }
+    addJgui(jData) {
+        var threeDrawTab = jData.jGui.addColapse("Three Draw", true);
+        var [butLand, butWat] = threeDrawTab.add2Buttons("Zone land", "Zone Water");
+        butLand.addEventListener(jData.jMng, "click", (event) => {
+            this.specialHoverAction = this.scanLand.bind(this);
+        });
+        butWat.addEventListener(jData.jMng, "click", (event) => {
+            this.specialHoverAction = this.scanWater.bind(this);
+        });
+        var [butLow, butOcean] = threeDrawTab.add2Buttons("Scan low", "Scan ocean");
+        butLow.addEventListener(jData.jMng, "click", (event) => {
+            this.specialHoverAction = this.scanLower.bind(this);
+        });
+        butOcean.addEventListener(jData.jMng, "click", (event) => {
+            this.scanOcean();
+        });
+        var [butHii, butLand] = threeDrawTab.add2Buttons("Scan hi", "Scan land");
+        butHii.addEventListener(jData.jMng, "click", (event) => {
+            this.specialHoverAction = this.scanHigher.bind(this);
+        });
+        butLand.addEventListener(jData.jMng, "click", (event) => {
+            this.scanContinent();
+        });
+        var [butriv, butMtn] = threeDrawTab.add2Buttons("Scan river", "Scan mtn");
+        butriv.addEventListener(jData.jMng, "click", (event) => {
+            this.scanRivers();
+        });
+        butMtn.addEventListener(jData.jMng, "click", (event) => {
+            this.scanMountains();
+        });
+        threeDrawTab.addSlider("THREE Points size", 0, 1000, 1, this.ptsRadius)
+            .addEventListener(jData.jMng, "input", (event) => {
+            this.ptsRadius = event.data.event.target.valueAsNumber;
+            this.updatePtsMaterials();
+        });
+        const lineTypes = ["none", "edges", "allRivers"];
+        // lineTypes.push("predecesor")
+        var [_, prdDropList] = threeDrawTab.addDropdown("View lines", lineTypes);
+        for (const prjDdObj of prdDropList) {
+            prjDdObj.addEventListener(jData.jMng, "click", (event) => {
+                switch (event.data.event.extra.listValue) {
+                    case "none":
+                        this.clearAllLines();
+                        this.clearRivers();
+                        break;
+                    case "edges":
+                        this.drawLinesEdge();
+                        break;
+                    case "allRivers":
+                        this.pathToWater();
+                        break;
+                    case "predecesor":
+                        this.drawLinesPrede();
+                        break;
+                }
+            });
+        }
+    }
+}
+exports.DrawThreeTerrain = DrawThreeTerrain;
+
+
+/***/ }),
+
+/***/ "./src/planet/Terrain.ts":
+/*!*******************************!*\
+  !*** ./src/planet/Terrain.ts ***!
+  \*******************************/
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 "use strict";
@@ -86230,502 +87989,284 @@ exports.Terrain = Terrain;
 
 /***/ }),
 
-/***/ "./src/gui/JguiMake.ts":
-/*!*****************************!*\
-  !*** ./src/gui/JguiMake.ts ***!
-  \*****************************/
+/***/ "./src/planet/TerrainWorker.ts":
+/*!*************************************!*\
+  !*** ./src/planet/TerrainWorker.ts ***!
+  \*************************************/
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.JguiManager = exports.JguiMake = void 0;
-const Random_1 = __webpack_require__(/*! ../utils/Random */ "./src/utils/Random.ts");
-class JguiMake {
-    constructor(tag_) {
-        this.tag = null;
-        this.extra = {};
-        this.attr = {};
-        this.style = {};
-        this.html = null;
-        this.tag = tag_;
-        this.genId();
-    }
-    // just for convenience
-    get id() { return this.attr.id; }
-    set id(value) { this.attr.id = value; }
-    get class() { return this.attr.class; }
-    set class(value) { this.attr.class = value; }
-    get type() { return this.attr.type; }
-    set type(value) { this.attr.type = value; }
-    mkWorkerJgui(id, order, expanded) {
-        this.tag = "div";
-        this.id = id;
-        this.class = "d-grid gap-1 bg-light border shadow-sm rounded ";
-        // this.style.zIndex = "200";
-        // this.style.position = "fixed";
-        // this.style.top = "10px";
-        // this.style.left = "10px";
-        // this.style.width = "256px";
-        this.attr.jguiOrder = order;
-        var coll = this.addColapse(id, expanded);
-        return [this, coll];
-    }
-    mkContainer() {
-        // https://getbootstrap.com/docs/5.0/layout/containers/
-        this.tag = "div";
-        this.class = "d-grid gap-1 bg-light border shadow-sm rounded ";
-        return this;
-    }
-    mkButton(name, type = "primary") {
-        // https://getbootstrap.com/docs/5.0/components/buttons/
-        // https://www.w3schools.com/jsref/tryit.asp?filename=tryjsref_element_addeventlistener4
-        // click mouseover mouseout
-        this.tag = "button";
-        // this.listeners = "click";
-        this.attr.class = `btn btn-${type} btn-sm`;
-        this.attr.type = "button";
-        this.html = name;
-        this.style["padding"] = "0"; //  no padding
-        return this;
-    }
-    addButton(btnName) {
-        // https://getbootstrap.com/docs/5.0/components/buttons/
-        var btnObj = new JguiMake(null).mkButton(btnName);
-        this.appendHtml(btnObj);
-        return btnObj;
-    }
-    add2Buttons(btnName1, btnName2) {
-        // https://getbootstrap.com/docs/5.0/components/buttons/
-        var rowObj = new JguiMake(null).mkRow();
-        var btnObj1 = new JguiMake(null).mkButton(btnName1);
-        var btnObj2 = new JguiMake(null).mkButton(btnName2);
-        btnObj1.style.width = "50%";
-        btnObj2.style.width = "50%";
-        rowObj.appendHtml(btnObj1);
-        rowObj.appendHtml(btnObj2);
-        this.appendHtml(rowObj);
-        return [btnObj1, btnObj2];
-    }
-    addCheckButton(chboxName, chboxVal) {
-        // https://getbootstrap.com/docs/5.0/forms/checks-radios/
-        var cdiv = new JguiMake("div");
-        var cswitch = new JguiMake("input");
-        cswitch.type = "checkbox";
-        cswitch.class = "form-check-input";
-        // cswitch.attr.autocomplete = "off"
-        if (chboxVal)
-            cswitch.attr.checked = "true";
-        var cbutton = new JguiMake("label");
-        cbutton.class = "form-check-label";
-        cbutton.attr.for = cswitch.id;
-        cbutton.html = chboxName;
-        cdiv.appendHtml(cswitch);
-        cdiv.appendHtml(cbutton);
-        this.appendHtml(cdiv);
-        return [cswitch, cbutton];
-    }
-    addTooltip(ttName) {
-        // https://getbootstrap.com/docs/5.0/components/tooltips/
-        if (this.attr["data-bs-toggle"]) {
-            console.warn(`Cannot set tooltip, data-bs-toggle is already present ${this.attr["data-bs-toggle"]} `, this);
-            return this;
-        }
-        this.attr["data-bs-toggle"] = "tooltip";
-        this.attr["data-bs-animation"] = "false";
-        this.attr["data-bs-placement"] = "right";
-        this.attr.title = ttName;
-        return this;
-    }
-    addDropdown(ddwName, ddwArr) {
-        // https://getbootstrap.com/docs/5.0/components/dropdowns/
-        // click mouseover mouseout
-        var ddwBut = new JguiMake("button").mkButton(ddwName);
-        ddwBut.class += " dropdown-toggle";
-        ddwBut.attr["data-bs-toggle"] = "dropdown";
-        ddwBut.attr["aria-expanded"] = "false";
-        ddwBut.html = ddwName;
-        var ddwUl = new JguiMake("ul");
-        ddwUl.class = "dropdown-menu";
-        ddwUl.attr["aria-labelledby"] = ddwBut.id;
-        var ddwListElems = [];
-        for (let index = 0; index < ddwArr.length; index++) {
-            const element = ddwArr[index];
-            var ddwLi = new JguiMake("li").delId();
-            var dda = new JguiMake("button").mkButton(element);
-            dda.delStyle();
-            dda.attr.class = "dropdown-item";
-            dda.extra.listIndex = index;
-            dda.extra.listValue = element;
-            ddwLi.appendHtml(dda);
-            ddwUl.appendHtml(ddwLi);
-            ddwListElems.push(dda);
-        }
-        this.appendHtml(ddwBut);
-        this.appendHtml(ddwUl);
-        return [ddwBut, ddwListElems];
-    }
-    // public addCheckButton(chboxName: string, value: boolean): [JguiMake, JguiMake] {
-    //     // https://getbootstrap.com/docs/5.0/forms/checks-radios/
-    //     var cswitch = new JguiMake("input")
-    //     cswitch.type = "checkbox"
-    //     cswitch.class = "btn-check"
-    //     cswitch.attr.autocomplete = "off"
-    //     if (value)
-    //         cswitch.attr.checked = null
-    //     var cbutton = new JguiMake("label")
-    //     cbutton.class = "btn btn-outline-primary"
-    //     cbutton.attr.for = cswitch.id
-    //     cbutton.html = chboxName
-    //     this.appendHtml(cswitch)
-    //     this.appendHtml(cbutton)
-    //     return [cswitch, cbutton];
-    // }
-    add2CheckButtons(chboxName1, chboxVal1, chboxName2, chboxVal2) {
-        // https://getbootstrap.com/docs/5.0/forms/checks-radios/
-        var cdiv = new JguiMake(null).mkRow();
-        var swArr1 = cdiv.addCheckButton(chboxName1, chboxVal1);
-        var swArr2 = cdiv.addCheckButton(chboxName2, chboxVal2);
-        this.appendHtml(cdiv);
-        return [swArr1[0], swArr2[0]];
-    }
-    mkColapse(name, expanded) {
-        // https://getbootstrap.com/docs/5.0/components/collapse/
-        this.tag = "div";
-        // this.class = "collapse";
-        // this.class = "collapse gap-1 bg-light border shadow-sm rounded  ";
-        this.class = "collapse gap-1 card card-body";
-        if (expanded)
-            this.class += " show";
-        this.genId();
-        this.style["padding-top"] = "0.1rem";
-        this.style["padding-left"] = "0.4rem";
-        this.style["padding-bottom"] = "0px";
-        this.style["padding-right"] = "0px";
-        return this;
-    }
-    addColapse(colName, expanded = false) {
-        // https://getbootstrap.com/docs/5.0/components/collapse/
-        // https://getbootstrap.com/docs/5.0/components/card/
-        var btnName = `Toggle ${colName}`;
-        var btnObj = new JguiMake(null).mkButton(btnName, "secondary");
-        var colObj = new JguiMake(null).mkColapse(colName, expanded);
-        btnObj.genId();
-        // btnObj.attr["data-bs-toggle"] = "button"
-        btnObj.attr["data-bs-toggle"] = "collapse";
-        btnObj.attr["aria-expanded"] = `false`;
-        btnObj.attr["data-bs-target"] = `#${colObj.id}`;
-        btnObj.attr["aria-controls"] = `${colObj.id}`;
-        this.appendHtml(btnObj);
-        this.appendHtml(colObj);
-        return colObj;
-    }
-    mkRow() {
-        // https://getbootstrap.com/docs/5.0/utilities/flex/
-        this.tag = "div";
-        // this.class = "row align-items-start";
-        this.class = "d-flex flex-row bd-highlight";
-        return this;
-    }
-    addSlider(slideName, min, max, step, origVal) {
-        // https://getbootstrap.com/docs/5.0/forms/range/
-        // <label for= "customRange3" class= "form-label" > Example range < /label>
-        // < input type = "range" class="form-range" min = "0" max = "5" step = "0.5" id = "customRange3" >
-        // var rowObj = new JguiMake(null).mkRow()
-        var labelObj = new JguiMake("label").genId();
-        var rangeObj = new JguiMake("input").genId();
-        labelObj.tag = "label";
-        labelObj.attr.for = `${rangeObj.id}`;
-        labelObj.attr.class = "form-label";
-        labelObj.html = `${slideName} ${origVal}`;
-        labelObj.style.margin = "0";
-        rangeObj.tag = `input`;
-        rangeObj.attr.type = `range`;
-        rangeObj.attr.class = `form-range`;
-        rangeObj.attr.min = `${min}`;
-        rangeObj.attr.max = `${max}`;
-        rangeObj.attr.step = `${step}`;
-        rangeObj.attr.value = `${origVal}`;
-        rangeObj.style.margin = "0";
-        rangeObj.style["padding-left"] = "0.5rem";
-        rangeObj.style["padding-right"] = "0.5rem";
-        rangeObj.attr.oninput = `${labelObj.id}.innerHTML="${slideName} "+value`;
-        // rangeObj.listeners = `input`
-        // rangeObj.listeners = `change`
-        // rangeObj.listeners = `oninput`
-        this.appendHtml(labelObj);
-        this.appendHtml(rangeObj);
-        // rowObj.appendHtml(labelObj)
-        // rowObj.appendHtml(rangeObj)
-        // this.appendHtml(rowObj)
-        return rangeObj;
-    }
-    addNumber(numName, numValue, numStep = 1) {
-        // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/number
-        var rowObj = new JguiMake(null).mkRow();
-        var numObj = new JguiMake("input");
-        numObj.attr.type = "number";
-        numObj.attr.value = numValue;
-        numObj.attr.step = numStep;
-        numObj.style.width = "100%";
-        rowObj.addLabel(numName);
-        rowObj.appendHtml(numObj);
-        this.appendHtml(rowObj);
-        return numObj;
-    }
-    addColor(colName, colValue) {
-        // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/color
-        var rowObj = new JguiMake(null).mkRow();
-        var colObj = new JguiMake("input");
-        colObj.attr.type = "color";
-        colObj.attr.value = colValue;
-        colObj.style.width = "100%";
-        rowObj.addLabel(colName);
-        rowObj.appendHtml(colObj);
-        this.appendHtml(rowObj);
-        return colObj;
-    }
-    addLabel(labName) {
-        // https://getbootstrap.com/docs/5.0/forms/floating-labels/
-        // var labObj = new JguiMake("div")
-        // labObj.class = "d-inline-flex p-2 bd-highlight";
-        var labObj = new JguiMake("label");
-        labObj.html = labName;
-        labObj.style["padding-right"] = "0.5rem";
-        this.appendHtml(labObj);
-        return labObj;
-    }
-    genId() {
-        var bid = Random_1.randomAlphabetString(5);
-        this.id = `${this.tag}${bid}`;
-        return this;
-    }
-    delId() {
-        delete this.attr.id;
-        return this;
-    }
-    delStyle() {
-        delete this.style;
-        this.style = {};
-        return this;
-    }
-    appendHtml(elem) {
-        if (!this.html)
-            this.html = [];
-        this.html.push(elem);
-        // return
-    }
-    appendListener(elem) {
-        if (!this.listeners)
-            this.listeners = [];
-        this.listeners.push(elem);
-        // return
-    }
-    addEventListener(evMng, evName, listenerCbk) {
-        // TODO maybe option to not pass the Event to move less data ???
-        var jListen = {
-            name: evName,
-            id: `${evName}-${this.id}.${Random_1.randomAlphabetString(6)}` // TODO could be better
-        };
-        evMng.registerListener(jListen.id, listenerCbk);
-        this.appendListener(jListen);
-        return this;
-    }
-}
-exports.JguiMake = JguiMake;
-class JguiManager {
-    constructor(worker, workerName) {
-        this.listenersJguiMap = new Map();
-        this.worker = worker;
-        this.workerName = workerName;
-    }
-    registerListener(lisId, listenerCbk) {
-        this.listenersJguiMap.set(lisId, listenerCbk);
-    }
-    dispachListener(lisId, event) {
-        var lisCbk = this.listenersJguiMap.get(lisId);
-        lisCbk(event);
-    }
-}
-exports.JguiManager = JguiManager;
-
-
-/***/ }),
-
-/***/ "./src/gui/JguiUtils.ts":
-/*!******************************!*\
-  !*** ./src/gui/JguiUtils.ts ***!
-  \******************************/
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.setTempContainer = exports.setMainContainer = void 0;
+exports.TerrainWorker = void 0;
+const GenWorkerMetadata_1 = __webpack_require__(/*! ../modules/GenWorkerMetadata */ "./src/modules/GenWorkerMetadata.ts");
 const Config_1 = __webpack_require__(/*! ../modules/Config */ "./src/modules/Config.ts");
-function setMainContainer(the_worker, workerJgui) {
-    // console.warn("workerJgui", workerJgui);
-    the_worker.postMessage({
-        message: Config_1.MessageType.RefreshJGUI,
-        jgui: workerJgui,
-        metadata: {
-            isMainWorkerContainer: true,
-        }
-    });
-}
-exports.setMainContainer = setMainContainer;
-function setTempContainer(the_worker, workerJgui) {
-    the_worker.postMessage({
-        message: Config_1.MessageType.RefreshJGUI,
-        jgui: workerJgui,
-        metadata: {
-            isTempWorkerContainer: true,
-        }
-    });
-}
-exports.setTempContainer = setTempContainer;
-
-
-/***/ }),
-
-/***/ "./src/modules/Config.ts":
-/*!*******************************!*\
-  !*** ./src/modules/Config.ts ***!
-  \*******************************/
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.MessageType = exports.WorldGenType = exports.Config = void 0;
-const Convert = __webpack_require__(/*! ../utils/Convert */ "./src/utils/Convert.ts");
-// TODO things to add, with parameters being in SpaceConfig!
-// genMainOrbits ... bool ensure_habitable
-// // make just the main orbits and add after
-// addMoons ... number how_many , bool make_harmonics
-class Config {
-    constructor() {
-        this.follow_pointed_orbit = "auto";
-        // globalIsReady: boolean = false; // global flag for when Tickers can run
-        this.timeEarthYearsTick = 0.0004;
-        this.genEnsureInHabZone = true;
-        this.genEnsureCenteredInHabZone = true;
-        this.genEnsureMoonInHabZone = true;
-        this.incrementId = 5;
-        this.keepDbAtPageRefresh = false; // EXPERIMENTAL
-        this.WORLD_DATABASE_NAME = "WORLD-123"; // TODO properly generate at right time
+const DrawD3Terrain_1 = __webpack_require__(/*! ./DrawD3Terrain */ "./src/planet/DrawD3Terrain.ts");
+const JguiMake_1 = __webpack_require__(/*! ../gui/JguiMake */ "./src/gui/JguiMake.ts");
+const JguiUtils_1 = __webpack_require__(/*! ../gui/JguiUtils */ "./src/gui/JguiUtils.ts");
+const Terrain_1 = __webpack_require__(/*! ./Terrain */ "./src/planet/Terrain.ts");
+const DrawThreeTerrain_1 = __webpack_require__(/*! ./DrawThreeTerrain */ "./src/planet/DrawThreeTerrain.ts");
+const Planet_1 = __webpack_require__(/*! ../orbiting_elements/Planet */ "./src/orbiting_elements/Planet.ts");
+const JGUI_ORDINAL = "2";
+const WORLD_GEN_ORDER = 201;
+class TerrainWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
+    constructor(config, worker, workerName, event) {
+        super(config, worker, workerName, event);
+        this.terrain = new Terrain_1.Terrain(this.world);
     }
-    copy(source_) {
-        Convert.copyShallow(this, source_);
-        return this;
-    }
-}
-exports.Config = Config;
-var WorldGenType;
-(function (WorldGenType) {
-    WorldGenType[WorldGenType["Inital"] = 0] = "Inital";
-    WorldGenType[WorldGenType["Regenerate"] = 1] = "Regenerate";
-    WorldGenType[WorldGenType["Tweaked"] = 2] = "Tweaked";
-})(WorldGenType = exports.WorldGenType || (exports.WorldGenType = {}));
-var MessageType;
-(function (MessageType) {
-    MessageType["Event"] = "Event";
-    MessageType["Ready"] = "Ready";
-    MessageType["Play"] = "Play";
-    MessageType["Pause"] = "Pause";
-    MessageType["InitWorker"] = "InitWorker";
-    MessageType["RefreshDBDeep"] = "RefreshDBDeep";
-    MessageType["RefreshDBShallow"] = "RefreshDBShallow";
-    MessageType["RefreshConfig"] = "RefreshConfig";
-    MessageType["CanvasReady"] = "CanvasReady";
-    MessageType["CanvasMake"] = "CanvasMake";
-    MessageType["RefreshJGUI"] = "RefreshJGUI";
-})(MessageType = exports.MessageType || (exports.MessageType = {}));
-
-
-/***/ }),
-
-/***/ "./src/modules/DataBaseManager.ts":
-/*!****************************************!*\
-  !*** ./src/modules/DataBaseManager.ts ***!
-  \****************************************/
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.DataBaseManager = void 0;
-const idb_1 = __webpack_require__(/*! idb */ "./node_modules/idb/build/esm/index.js");
-// import { openDB, deleteDB, wrap, unwrap, IDBPDatabase, IDBPTransaction, IDBPObjectStore, StoreKey, StoreValue } from 'idb/with-async-ittr.js';
-/*
-TODO Make tables "universe" specific , the ones that ID is needed
-TODO better split databases for different usages for more efficient read-write
-
-Examples:
-DB only for OrbitElements and load all of them since they are small
-DB only for Terrain/Big objects and load one by one sice they are big, so
-    read -> make_object -> manage -> write -> destroy_object
-
-*/
-class DataBaseManager {
-    constructor(targetTable, name) {
-        this.tableName = null;
-        this.name = name;
-        this.tableName = targetTable;
-        this.idb = null;
-    }
-    async init(keepDb) {
-        console.log(`#HERELINE DataBaseManager ${this.name} init : ${this.tableName} `);
-        var prom_ = null;
-        if (keepDb)
-            prom_ = Promise.resolve();
-        else
-            prom_ = this.delete();
-        return prom_.then(() => {
-            console.debug(`#HERELINE DataBaseManager ${this.name} init then  `);
-            return this.open();
+    init() {
+        Promise.resolve().then(() => {
+            this.makeJgiu();
+        }).then(() => {
+            this.worker.postMessage({
+                message: Config_1.MessageType.CanvasMake,
+                metaCanvas: {
+                    id: `${this.name}-canvas-DrawThreeTerrain`,
+                    order: JGUI_ORDINAL + "10",
+                    generalFlags: ["orbit"],
+                }
+            });
+            this.worker.postMessage({
+                message: Config_1.MessageType.CanvasMake,
+                metaCanvas: {
+                    id: `${this.name}-canvas-DrawD3Terrain`,
+                    order: JGUI_ORDINAL + "30",
+                    generalFlags: ["d3"],
+                }
+            });
+            // }).then(() => {
+            //     return this.refreshDeep(false);
         });
     }
-    async open() {
-        console.debug(`#HERELINE DataBaseManager ${this.name} open `);
-        this.idb = await idb_1.openDB(this.tableName, 1, {
-            upgrade(db) {
-                console.debug("#HERELINE DataBaseManager NOTHEN open upgrade ");
-                // this.idb = db;
-                // TODO, make generic container with ID-able objects
-                if (!db.objectStoreNames.contains(DataBaseManager.STANDARD_OBJECTS)) {
-                    const store = db.createObjectStore(DataBaseManager.STANDARD_OBJECTS, { keyPath: 'id', autoIncrement: false });
-                    store.createIndex('type', 'type', { unique: false });
-                    // store.createIndex('id', 'id');
-                    // console.log("createObjectStore ", STANDARD_OBJECTS);
-                }
-                if (!db.objectStoreNames.contains(DataBaseManager.KEYVAL_OBJECTS)) {
-                    const store = db.createObjectStore(DataBaseManager.KEYVAL_OBJECTS);
+    CanvasReady(event) {
+        console.log(`CanvasReady ${this.name}`);
+        switch (event.data.metaCanvas.id) {
+            case `${this.name}-canvas-DrawThreeTerrain`:
+                var draw1_ = new DrawThreeTerrain_1.DrawThreeTerrain();
+                this.mapDraws.set(event.data.canvas_id, draw1_);
+                this.spread_objects(draw1_);
+                this.updateJgiu(draw1_);
+                draw1_.init(event);
+                break;
+            case `${this.name}-canvas-DrawD3Terrain`:
+                var draw2_ = new DrawD3Terrain_1.DrawD3Terrain();
+                this.mapDraws.set(event.data.canvas_id, draw2_);
+                this.spread_objects(draw2_);
+                this.updateJgiu(draw2_);
+                draw2_.init(event);
+                break;
+            default:
+                console.warn(`Not implemented in ${this.name} : ${event.data.metaCanvas.id} !`);
+                break;
+        }
+    }
+    spread_objects(object_) {
+        super.spread_objects(object_);
+        if (object_.terrain === null)
+            object_.terrain = this.terrain;
+    }
+    async getWorldEvent(event) {
+        console.debug(`#HERELINE TerrainWorker getWorldEvent `, event.data);
+        if (WORLD_GEN_ORDER > event.data.event.worldGenIndex) {
+            this.terrain.data.noiseSeed = Math.random();
+            await this.genFromExistingPlanet();
+            this.broadcastEvent({
+                worldGenIndex: WORLD_GEN_ORDER,
+                worldGenType: Config_1.WorldGenType.Inital,
+            });
+        }
+        else {
+            console.debug(`World event is upstream, no acetion needed for ${this.name} !`);
+        }
+    }
+    getMessageExtra(event) {
+        // console.debug(`#HERELINE ${this.name} getMessageExtra  ${event.data.message}`);
+        const message_ = event.data.message;
+        switch (message_) {
+            case Config_1.MessageType.CanvasReady:
+                this.CanvasReady(event);
+                break;
+            case Config_1.MessageType.Event:
+                this.callEvent(event);
+                break;
+            case Config_1.MessageType.RefreshDBDeep:
+            case Config_1.MessageType.RefreshDBShallow:
+            case Config_1.MessageType.RefreshConfig:
+                this.refreshDb(event, message_);
+                break;
+            default:
+                console.warn(`Not implemented in ${this.name} : ${message_} !`);
+                break;
+        }
+    }
+    async refreshDb(event, refreshType) {
+        console.debug(`#HERELINE ${this.name} refreshDb ${refreshType}`);
+        console.time(`#time ${this.name} refreshDb ${refreshType} `);
+        await this.refreshConfig();
+        var doSpecial = false;
+        var prom = null;
+        if (refreshType == Config_1.MessageType.RefreshDBDeep)
+            prom = this.refreshDeep(doSpecial);
+        if (refreshType == Config_1.MessageType.RefreshDBShallow)
+            prom = this.refreshShallow(doSpecial);
+        await prom.finally(() => {
+            console.timeEnd(`#time ${this.name} refreshDb ${refreshType} `);
+        });
+    }
+    async refreshDeep(doSpecial = true) {
+        console.debug("#HERELINE DrawWorker refreshDeep");
+        await this.world.writeAllRw();
+        for (const draw_ of this.mapDraws.values())
+            draw_.updateDeep();
+        if (doSpecial) {
+            // this.updatePlSys();
+            for (const draw_ of this.mapDraws.values())
+                draw_.draw();
+        }
+    }
+    async refreshShallow(doSpecial = true) {
+        // console.debug("#HERELINE DrawWorker refreshShallow");
+        // await this.world.readShallow();
+        for (const draw_ of this.mapDraws.values())
+            draw_.updateShallow();
+        if (doSpecial) {
+            // this.updatePlSys();
+            for (const draw_ of this.mapDraws.values())
+                draw_.draw();
+        }
+    }
+    updateInterval() {
+        // console.log(`It is me, ${this.name}`);
+        // this.updPause();
+        // for (const draw_ of this.mapDraws.values())
+        //     draw_.draw();
+        this.refreshTick(true);
+    }
+    updateTerrain() {
+        // console.log("this.world.time.value", this.world.time.value);
+    }
+    async refreshTick(doSpecial = true) {
+        await this.world.readTime();
+        if (doSpecial) {
+            this.doUpdate && this.updateTerrain();
+            if (this.doDraw)
+                for (const draw_ of this.mapDraws.values())
+                    draw_.draw();
+        }
+        // await this.world.writeTime();
+    }
+    async genFromExistingPlanet() {
+        console.debug(`#HERELINE TerrainWorker genFromExistingPlanet `);
+        var didOnce = false;
+        for await (const planet_ of this.world.iterObjsType(Planet_1.Planet, "readwrite")) {
+            if (didOnce)
+                break;
+            if (planet_ instanceof Planet_1.Planet && planet_.isInHabZone) {
+                // if (planet_.planetType == "Normal" && planet_.terrainId == null) {
+                if (planet_.planetType == "Normal" && didOnce == false) {
+                    // console.log("planet_", planet_);
+                    // console.log("this.terrain", this.terrain);
+                    this.terrain.initFromPlanet(planet_);
+                    planet_.setTerrain(this.terrain);
+                    this.world.setRwObj(this.terrain.data);
+                    didOnce = true;
                 }
             }
+        }
+        if (didOnce) {
+            await this.refreshDeep(false);
+            this.broadcastEvent({
+                worldGenIndex: WORLD_GEN_ORDER,
+                worldGenType: Config_1.WorldGenType.Inital,
+            });
+            this.makeJgiu();
+            for (const draw_ of this.mapDraws.values())
+                this.updateJgiu(draw_);
+        }
+    }
+    makeJgiu() {
+        const jguiOrdinal = JGUI_ORDINAL + "00";
+        var startExpanded = true;
+        [this.workerJguiMain, this.workerJguiCont] = new JguiMake_1.JguiMake(null).mkWorkerJgui("terr", jguiOrdinal, startExpanded);
+        var jData = {
+            jGui: this.workerJguiCont,
+            jMng: this.workerJguiManager,
+        };
+        var chboxUpd, chboxDraw;
+        [chboxUpd, chboxDraw] = jData.jGui.add2CheckButtons("Update", this.doUpdate, "Draw", this.doDraw);
+        chboxUpd.addEventListener(jData.jMng, "change", (event) => {
+            this.doUpdate = event.data.event.target.checked;
         });
+        chboxDraw.addEventListener(jData.jMng, "change", (event) => {
+            this.doDraw = event.data.event.target.checked;
+        });
+        var genTab = jData.jGui.addColapse("Genearte", true);
+        genTab.addButton("Re-Genearte")
+            .addTooltip("Regenerating will use an actual Planet, first run uses a dummy instance so we do not wait for PlSys to gen.")
+            .addEventListener(jData.jMng, "click", (event) => {
+            this.terrain.data.noiseSeed = Math.random();
+            this.genFromExistingPlanet();
+        });
+        genTab.addNumber("altMinProc ", this.terrain.data.altitudeMinProc, 0.02).addEventListener(jData.jMng, "change", (event) => {
+            this.terrain.data.altitudeMinProc = event.data.event.target.valueAsNumber;
+            this.genFromExistingPlanet();
+        });
+        genTab.addNumber("altMaxProc ", this.terrain.data.altitudeMaxProc, 0.02).addEventListener(jData.jMng, "change", (event) => {
+            this.terrain.data.altitudeMaxProc = event.data.event.target.valueAsNumber;
+            this.genFromExistingPlanet();
+        });
+        genTab.addNumber("altOceanProc ", this.terrain.data.altitudeOceanProc, 0.05).addEventListener(jData.jMng, "change", (event) => {
+            this.terrain.data.altitudeOceanProc = event.data.event.target.valueAsNumber;
+            this.genFromExistingPlanet();
+        });
+        genTab.addNumber("altMountainProc ", this.terrain.data.altitudeMountainProc, 0.05).addEventListener(jData.jMng, "change", (event) => {
+            this.terrain.data.altitudeMountainProc = event.data.event.target.valueAsNumber;
+            this.genFromExistingPlanet();
+        });
+        genTab.addNumber("pointsToGen ", this.terrain.data.pointsToGen, 500).addEventListener(jData.jMng, "change", (event) => {
+            this.terrain.data.pointsToGen = event.data.event.target.valueAsNumber;
+            this.genFromExistingPlanet();
+        });
+        genTab.addNumber("noiseSeed ", this.terrain.data.noiseSeed, 0.0001).addEventListener(jData.jMng, "change", (event) => {
+            this.terrain.data.noiseSeed = event.data.event.target.valueAsNumber;
+            this.genFromExistingPlanet();
+        });
+        genTab.addCheckButton("noiseApplyAbs ", this.terrain.data.noiseApplyAbs)[0].addEventListener(jData.jMng, "change", (event) => {
+            this.terrain.data.noiseApplyAbs = event.data.event.target.checked;
+            this.genFromExistingPlanet();
+        });
+        genTab.addNumber("noiseFrequency ", this.terrain.data.noiseFrequency, 0.25).addEventListener(jData.jMng, "change", (event) => {
+            this.terrain.data.noiseFrequency = event.data.event.target.valueAsNumber;
+            this.genFromExistingPlanet();
+        });
+        genTab.addNumber("noiseAmplitude ", this.terrain.data.noiseAmplitude, 0.1).addEventListener(jData.jMng, "change", (event) => {
+            this.terrain.data.noiseAmplitude = event.data.event.target.valueAsNumber;
+            this.genFromExistingPlanet();
+        });
+        genTab.addNumber("noisePersistence ", this.terrain.data.noisePersistence, 0.1).addEventListener(jData.jMng, "change", (event) => {
+            this.terrain.data.noisePersistence = event.data.event.target.valueAsNumber;
+            this.genFromExistingPlanet();
+        });
+        genTab.addNumber("noiseOctaves ", this.terrain.data.noiseOctaves, 1).addEventListener(jData.jMng, "change", (event) => {
+            this.terrain.data.noiseOctaves = event.data.event.target.valueAsNumber;
+            this.genFromExistingPlanet();
+        });
+        genTab.addNumber("noiseExponent1 ", this.terrain.data.noiseExponent1, 0.1).addEventListener(jData.jMng, "change", (event) => {
+            this.terrain.data.noiseExponent1 = event.data.event.target.valueAsNumber;
+            this.genFromExistingPlanet();
+        });
+        JguiUtils_1.setMainContainer(this.worker, this.workerJguiMain);
     }
-    async delete() {
-        console.debug("#HERELINE DataBaseManager " + this.name + " delete ");
-        return idb_1.deleteDB(this.tableName);
-    }
-    async getKv(key) { return await this.idb.get('keyval', key); }
-    setKv(key, val) { return this.idb.put('keyval', val, key); }
-    delKv(key) { return this.idb.delete('keyval', key); }
-    clearKv() { return this.idb.clear('keyval'); }
-    keysKv() { return this.idb.getAllKeys('keyval'); }
 }
-exports.DataBaseManager = DataBaseManager;
-DataBaseManager.STANDARD_OBJECTS = "STANDARD_OBJECTS";
-DataBaseManager.KEYVAL_OBJECTS = "keyval";
+exports.TerrainWorker = TerrainWorker;
 
 
 /***/ }),
 
-/***/ "./src/modules/DrawD3Plsys.ts":
-/*!************************************!*\
-  !*** ./src/modules/DrawD3Plsys.ts ***!
-  \************************************/
+/***/ "./src/plant_sys/DrawD3Plsys.ts":
+/*!**************************************!*\
+  !*** ./src/plant_sys/DrawD3Plsys.ts ***!
+  \**************************************/
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 "use strict";
@@ -86846,251 +88387,10 @@ exports.DrawD3Plsys = DrawD3Plsys;
 
 /***/ }),
 
-/***/ "./src/modules/DrawD3Terrain.ts":
-/*!**************************************!*\
-  !*** ./src/modules/DrawD3Terrain.ts ***!
-  \**************************************/
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.DrawD3Terrain = void 0;
-const d3 = __webpack_require__(/*! d3 */ "./node_modules/d3/index.js");
-const WorkerDOM_1 = __webpack_require__(/*! ../utils/WorkerDOM */ "./src/utils/WorkerDOM.ts");
-/*
-https://github.com/Fil/d3-geo-voronoi
-
-https://bl.ocks.org/d3indepth/c62b6ce6625b69f6007cea5fccdd4599
-https://observablehq.com/@d3/u-s-map-canvas
-
-!!!!!!!!! https://observablehq.com/@d3/zoom-canvas-rescaled?collection=@d3/d3-zoom
-
-
-https://bl.ocks.org/pkerpedjiev/32b11b37be444082762443c4030d145d D3 event filtering
-The red circles don't allow scroll-wheel zooming and drag-based panning
-https://bl.ocks.org/mbostock/6675193
-
-
-
-*/
-class DrawD3Terrain {
-    // points: { coordinates: pointGeoArr; type: string }
-    constructor() {
-        this.type = this.constructor.name;
-        this.world = null;
-        this.canvasOffscreen = null;
-        this.config = null;
-        this.fakeDOM = new WorkerDOM_1.WorkerDOM();
-        this.ctx = null;
-        // private ctx: OffscreenCanvasRenderingContext2D | CanvasRenderingContext2D = null;
-        this.terrain = null;
-        this.ptsRadius = 4;
-        this.previousScaleFactor = 1;
-        this.fastDrawTimeout = 0;
-    }
-    init(event) {
-        console.debug(`#HERELINE ${this.type} init `);
-        this.canvasOffscreen = event.data.canvas;
-        this.ctx = this.canvasOffscreen.getContext("2d");
-        this.fakeDOM.addEventListener("resize", (event_) => { this.resize(event_); });
-        this.initBase();
-        this.resize(this.canvasOffscreen); // lazy use canvas since params same as Event ...
-    }
-    resize(event_) {
-        console.debug("#HERELINE ${this.type} resize", event_);
-        this.canvasOffscreen.width = event_.width;
-        this.canvasOffscreen.height = event_.height;
-        this.fakeDOM.clientWidth = event_.width;
-        this.fakeDOM.clientHeight = event_.height;
-        this.translation = [this.canvasOffscreen.width / 2, this.canvasOffscreen.height / 2];
-        this.projection.translate(this.translation);
-        // this.ctx = this.canvasOffscreen.getContext("2d");
-        // this.initBase();
-        // this.setTmpFastDraw();
-        this.drawOnce();
-    }
-    updateDeep() {
-        console.debug(`#HERELINE ${this.type} updateDeep `);
-        // this.initBase();
-        // this.setTmpFastDraw();
-        this.drawOnce();
-    }
-    updateShallow() {
-        console.debug(`#HERELINE ${this.type} updateShallow `);
-        // this.initBase();
-        // this.setTmpFastDraw();
-        this.drawOnce();
-    }
-    draw() {
-        // this.drawOnce();
-    }
-    updateProjection(prStr) {
-        console.log(`#HERELINE DrawD3Terrain updateProjection `, prStr);
-        var viewMap = DrawD3Terrain.getGeoViewsMap();
-        var newPro = viewMap.get(prStr)()
-            .translate(this.translation)
-            .rotate(this.projection.rotate());
-        this.projection = newPro;
-        this.path.projection(this.projection);
-        this.originalScale = this.projection.scale();
-        this.scale = this.originalScale;
-        this.drawOnce();
-    }
-    initBase() {
-        console.debug(`#HERELINE ${this.type} initBase `);
-        this.graticule = d3.geoGraticule();
-        this.translation = [this.canvasOffscreen.width / 2, this.canvasOffscreen.height / 2];
-        var viewMap = DrawD3Terrain.getGeoViewsMap();
-        this.projection = viewMap.get(DrawD3Terrain.defaultGeoViews())()
-            .translate(this.translation);
-        this.originalScale = this.projection.scale();
-        this.scale = this.originalScale;
-        this.path = d3.geoPath()
-            .projection(this.projection)
-            .context(this.ctx)
-            .pointRadius(this.ptsRadius);
-        this.grid = this.graticule();
-        this.zoom = d3.zoom()
-            .filter(event => {
-            // console.log("event", event);
-            switch (event.type) {
-                // https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/button
-                case "mousedown": return event.button === 2;
-                case "wheel": return event.button === 0;
-                default: return false;
-            }
-        })
-            .scaleExtent([0.2, 7])
-            .on("zoom", this.zoomed.bind(this));
-        var fakeSelect = d3.select(this.fakeDOM).selection();
-        fakeSelect.call(this.zoom);
-    }
-    setTmpFastDraw() {
-        this.fastDrawTimeout = 2;
-    }
-    drawOnce() {
-        if (!this.terrain.posGeo)
-            return; // TODO make more elegant !!!!!
-        if (this.fastDrawTimeout > 0)
-            this.fastDrawTimeout--;
-        // console.log("this.fastDrawTimeout", this.fastDrawTimeout);
-        this.ctx.clearRect(0, 0, this.canvasOffscreen.width, this.canvasOffscreen.height);
-        this.ctx.save();
-        this.ctx.beginPath();
-        this.path(this.grid);
-        this.ctx.lineWidth = 2;
-        this.ctx.strokeStyle = '#ddd';
-        this.ctx.stroke();
-        // if (this.fastDrawTimeout == 0) {
-        //     for (let index = 0; index < this.polys.features.length; index++) {
-        //         const poly = this.polys.features[index];
-        //         this.ctx.beginPath();
-        //         this.path(poly);
-        //         // this.ctx.fillStyle = "tomato"
-        //         // this.ctx.fillStyle = `rgba(${153 * (50 + index) % 250}, ${79 * (49 + index) % 250}, ${555 * (17 + index) % 250}, 0.5)`;
-        //         this.ctx.fillStyle = `rgba(${37 * (150 + index) % 250}, ${13 * (49 + index) % 250}, ${17 * (17 + index) % 250}, 0.4)`;
-        //         this.ctx.fill();
-        //     }
-        // }
-        // this.points = {
-        //     type: "MultiPoint",
-        //     // coordinates: Points.makeGeoPtsSquares(0)
-        //     coordinates: Points.makeGeoPtsFibb(1000)
-        //     // coordinates: Points.makeGeoPtsRandOk(1000)
-        // }
-        if (this.ptsRadius != 0) {
-            for (let index = 0; index < this.terrain.posGeo.length; index++) {
-                const element = this.terrain.posGeo[index];
-                // for (const tkpl of this.terrain.tkplates) {
-                this.ctx.beginPath();
-                var ptsWrapper = {
-                    type: "Point",
-                    coordinates: element,
-                };
-                this.path(ptsWrapper);
-                // this.ctx.fillStyle = this.terrain.colorId
-                this.ctx.fillStyle = `rgb(${Math.floor(this.terrain.color[index * 3 + 0] * 255)},
-                                        ${Math.floor(this.terrain.color[index * 3 + 1] * 255)},
-                                        ${Math.floor(this.terrain.color[index * 3 + 2] * 255)})`;
-                this.ctx.fill();
-            }
-        }
-        this.ctx.restore();
-    }
-    zoomed(event) {
-        //     // https://github.com/d3/d3-zoom#zoom_filter
-        //     // https://bl.ocks.org/pkerpedjiev/32b11b37be444082762443c4030d145d
-        var dx = event.sourceEvent.movementX;
-        var dy = event.sourceEvent.movementY;
-        const globe_pan_speed_mod = 4;
-        var event_type = event.sourceEvent.type;
-        if (event_type === 'wheel') {
-            var scaleFactor = event.transform.k;
-            var scaleChange = scaleFactor - this.previousScaleFactor;
-            this.scale = this.scale + scaleChange * this.originalScale;
-            this.projection.scale(this.scale);
-            this.previousScaleFactor = scaleFactor;
-        }
-        else {
-            var r = this.projection.rotate();
-            this.rotation = [
-                r[0] + dx * 0.4 * globe_pan_speed_mod,
-                r[1] - dy * 0.5 * globe_pan_speed_mod,
-                r[2]
-            ];
-            this.projection.rotate(this.rotation);
-        }
-        // TODO make an drawFast variant in the future for this situation !!!!!
-        // this.setTmpFastDraw();
-        this.drawOnce(); // activate for smoother panning/zooming
-    }
-    static defaultGeoViews() { return "geoNaturalEarth1"; }
-    // public static defaultGeoViews() { return "geoMercator"; }
-    static getGeoViewsMap() {
-        var ret_ = new Map();
-        ret_.set("geoOrthographic", () => d3.geoOrthographic().clipAngle(90).scale(350));
-        ret_.set("geoMercator", () => d3.geoMercator().scale(130));
-        ret_.set("geoEquirectangular", () => d3.geoEquirectangular().scale(160));
-        ret_.set("geoNaturalEarth1", () => d3.geoNaturalEarth1().scale(200));
-        return ret_;
-    }
-    // public static guiMainStatic(pane_: Tweakpane, gui: WorldGui) {
-    //     var map_ = {};
-    //     [...DrawD3Terrain.getGeoViewsMap().keys()].forEach(obj_ => map_[obj_] = obj_)
-    //     pane_.addInput(gui.manager.config, 'terrain_geo_view', { options: map_ })
-    //     // .on('change', () => { gui.refreshConfig(); });
-    // }
-    addJgui(jData) {
-        // TODO make me a drop down list
-        var d3DrawTab = jData.jGui.addColapse("D3 Draw", true);
-        var allProj = [...DrawD3Terrain.getGeoViewsMap().keys()];
-        var [_, prdDropList] = d3DrawTab.addDropdown("D3 Projection", allProj);
-        for (const prjDdObj of prdDropList) {
-            prjDdObj.addEventListener(jData.jMng, "click", (event) => {
-                this.updateProjection(event.data.event.extra.listValue);
-            });
-            prjDdObj.addEventListener(jData.jMng, "mouseover", (event) => {
-                this.updateProjection(event.data.event.extra.listValue);
-            });
-        }
-        d3DrawTab.addSlider("D3 Points size", 0, 15, 0.1, this.ptsRadius)
-            .addEventListener(jData.jMng, "input", (event) => {
-            this.ptsRadius = event.data.event.target.valueAsNumber;
-            this.path.pointRadius(this.ptsRadius);
-            this.drawOnce();
-        });
-    }
-}
-exports.DrawD3Terrain = DrawD3Terrain;
-
-
-/***/ }),
-
-/***/ "./src/modules/DrawThreePlsys.ts":
-/*!***************************************!*\
-  !*** ./src/modules/DrawThreePlsys.ts ***!
-  \***************************************/
+/***/ "./src/plant_sys/DrawThreePlsys.ts":
+/*!*****************************************!*\
+  !*** ./src/plant_sys/DrawThreePlsys.ts ***!
+  \*****************************************/
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 "use strict";
@@ -87101,9 +88401,9 @@ const THREE = __webpack_require__(/*! three */ "./node_modules/three/build/three
 const OrbitControls_1 = __webpack_require__(/*! three/examples/jsm/controls/OrbitControls */ "./node_modules/three/examples/jsm/controls/OrbitControls.js");
 const Convert = __webpack_require__(/*! ../utils/Convert */ "./src/utils/Convert.ts");
 const ObjectPool_1 = __webpack_require__(/*! ../utils/ObjectPool */ "./src/utils/ObjectPool.ts");
-const Orbit_1 = __webpack_require__(/*! ../generate/Orbit */ "./src/generate/Orbit.ts");
-const Planet_1 = __webpack_require__(/*! ../generate/Planet */ "./src/generate/Planet.ts");
-const Star_1 = __webpack_require__(/*! ../generate/Star */ "./src/generate/Star.ts");
+const Orbit_1 = __webpack_require__(/*! ../orbiting_elements/Orbit */ "./src/orbiting_elements/Orbit.ts");
+const Planet_1 = __webpack_require__(/*! ../orbiting_elements/Planet */ "./src/orbiting_elements/Planet.ts");
+const Star_1 = __webpack_require__(/*! ../orbiting_elements/Star */ "./src/orbiting_elements/Star.ts");
 const WorkerDOM_1 = __webpack_require__(/*! ../utils/WorkerDOM */ "./src/utils/WorkerDOM.ts");
 const JguiUtils_1 = __webpack_require__(/*! ../gui/JguiUtils */ "./src/gui/JguiUtils.ts");
 const JguiMake_1 = __webpack_require__(/*! ../gui/JguiMake */ "./src/gui/JguiMake.ts");
@@ -87658,739 +88958,24 @@ exports.DrawThreePlsys = DrawThreePlsys;
 
 /***/ }),
 
-/***/ "./src/modules/DrawThreeTerrain.ts":
-/*!*****************************************!*\
-  !*** ./src/modules/DrawThreeTerrain.ts ***!
-  \*****************************************/
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.DrawThreeTerrain = void 0;
-const WorkerDOM_1 = __webpack_require__(/*! ../utils/WorkerDOM */ "./src/utils/WorkerDOM.ts");
-const ObjectPool_1 = __webpack_require__(/*! ../utils/ObjectPool */ "./src/utils/ObjectPool.ts");
-// Would be nice to have THICKER lines
-// https://github.com/mrdoob/three.js/blob/master/examples/webgl_lines_fat.html
-// import { LineSegments2 } from "three/examples/jsm/lines/LineSegments2"
-// import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeometry"
-// import { LineMaterial } from "three/examples/jsm/lines/LineMaterial"
-const THREE = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js"); // node_modules/three/build/three.js
-const OrbitControls_1 = __webpack_require__(/*! three/examples/jsm/controls/OrbitControls */ "./node_modules/three/examples/jsm/controls/OrbitControls.js");
-class DrawThreeTerrain {
-    constructor() {
-        this.fakeDOM = new WorkerDOM_1.WorkerDOM();
-        this.ptsRadius = 0;
-        this.terrain = null;
-        this.raycaster = new THREE.Raycaster();
-        this.hoverData = { mousex: 0, mousey: 0, mousep: { x: null, y: null }, hoverId: 0, selectedId: 0 };
-        this.selectedPoints = [];
-        this.specialHoverAction = null;
-    }
-    init(event) {
-        this.canvasOffscreen = event.data.canvas;
-        this.scene = new THREE.Scene();
-        this.camera = new THREE.PerspectiveCamera(75, this.canvasOffscreen.width / this.canvasOffscreen.height, 0.1, 1000000);
-        this.setCamera();
-        this.renderer = new THREE.WebGLRenderer({
-            canvas: this.canvasOffscreen,
-            antialias: true,
-            logarithmicDepthBuffer: true,
-        });
-        this.resize(this.canvasOffscreen); // lazy use canvas since params same as Event ...
-        var ambcolo = 1;
-        const light_am = new THREE.AmbientLight(new THREE.Color(ambcolo, ambcolo, ambcolo)); // soft white light
-        this.scene.add(light_am);
-        const geometryHoverSphere = new THREE.SphereGeometry(1);
-        const materialHoverSphere = new THREE.MeshBasicMaterial({ color: new THREE.Color("red"), side: THREE.DoubleSide });
-        this.hoverSphere = new THREE.Mesh(geometryHoverSphere, materialHoverSphere);
-        this.hoverSphere.scale.setScalar(100);
-        this.hoverSphere.visible = false;
-        this.scene.add(this.hoverSphere);
-        const rayThresh = 200;
-        this.raycaster.params.Points.threshold = rayThresh; // DRAWUNIT
-        this.raycaster.params.Line.threshold = rayThresh; // DRAWUNIT
-        this.fakeDOM.addEventListener("resize", (event_) => { this.resize(event_); });
-        // events set in src/modules/EventsManager.ts -> addOrbitCtrlEvents
-        this.controls = new OrbitControls_1.OrbitControls(this.camera, this.fakeDOM);
-        // this.controls.addEventListener("change", this.cameraMoved.bind(this))
-        this.controls.enablePan = false;
-        this.controls.mouseButtons = { RIGHT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, LEFT: THREE.MOUSE.PAN };
-        this.fakeDOM.addEventListener("mouseenter", this.hoverEnter.bind(this));
-        this.fakeDOM.addEventListener("mousemove", this.hoverMoved.bind(this));
-        this.fakeDOM.addEventListener("mouseleave", this.hoverleave.bind(this));
-        this.fakeDOM.addEventListener("click", this.hoverClick.bind(this));
-        // this.fakeDOM.addEventListener("contextmenu", this.hoverClick.bind(this))
-        // this.syncTerrainData();
-    }
-    resize(event_) {
-        // console.debug("#HERELINE DrawThreePlsys resize", event_);
-        this.canvasOffscreen.width = event_.width;
-        this.canvasOffscreen.height = event_.height;
-        this.fakeDOM.clientWidth = event_.width;
-        this.fakeDOM.clientHeight = event_.height;
-        this.camera.aspect = event_.width / event_.height;
-        this.camera.updateProjectionMatrix();
-        this.renderer.setSize(event_.width, event_.height, false);
-    }
-    hoverMoved(event) {
-        this.hoverData.mousex = event.offsetX;
-        this.hoverData.mousey = event.offsetY;
-        this.hoverData.mousep.x = (this.hoverData.mousex / this.canvasOffscreen.width) * 2 - 1;
-        this.hoverData.mousep.y = -(this.hoverData.mousey / this.canvasOffscreen.height) * 2 + 1;
-        if (this.tpPts)
-            if (this.hoverData.mousep.x != null && this.hoverData.mousep.y != null) {
-                this.raycaster.setFromCamera(this.hoverData.mousep, this.camera);
-                const intersects = this.raycaster.intersectObject(this.tpPts, false);
-                if (intersects.length > 0) {
-                    var orb_ = intersects[0];
-                    this.hoverSphere.visible = true;
-                    this.hoverData.hoverId = orb_.index;
-                    const vec3pts = this.terrain.vec3pts[this.hoverData.hoverId];
-                    this.hoverSphere.position.copy(vec3pts);
-                    // console.log("orb_", orb_);
-                }
-                else {
-                    this.hoverData.hoverId = -1;
-                    this.hoverSphere.visible = false;
-                }
-            }
-    }
-    hoverEnter(event) {
-        this.hoverMoved(event);
-    }
-    hoverleave(event) {
-        this.hoverData.mousep.x = null;
-        this.hoverData.mousep.y = null;
-    }
-    hoverClick(event) {
-        if (this.specialHoverAction && this.hoverData.hoverId !== -1) {
-            this.specialHoverAction(this.hoverData.hoverId);
-            this.specialHoverAction = null;
-            return;
-        }
-        if (this.hoverData.hoverId == -1) {
-            this.selectedPoints.length = 0;
-            this.clearAllLines();
-        }
-        else
-            this.selectedPoints.push(this.hoverData.hoverId);
-        console.log("this.selectedPoints", this.selectedPoints);
-        // console.log("this.hoverData.hoverId", this.hoverData.hoverId);
-        if (this.selectedPoints.length >= 2) {
-            const paths = this.terrain.makePaths(this.selectedPoints);
-            this.drawLinesPaths(paths);
-        }
-    }
-    drawLinesPaths(paths) {
-        var _a, _b;
-        var patSegLen = 0;
-        for (const path_ of paths)
-            patSegLen += path_.path.length;
-        patSegLen -= paths.length;
-        const vec3pts = this.terrain.vec3pts;
-        const segLen = patSegLen * 3 * 2;
-        ObjectPool_1.freeFloat32Array((_b = (_a = this.tpLines1) === null || _a === void 0 ? void 0 : _a.geometry) === null || _b === void 0 ? void 0 : _b.getAttribute('position').array);
-        const lineSegs = ObjectPool_1.getFloat32Array(segLen);
-        var lineCnt = 0;
-        for (const path_ of paths) {
-            // console.log("path_", path_);
-            for (let index = 0; index < path_.path.length - 1; index++) {
-                const e1 = path_.path[index];
-                const e2 = path_.path[index + 1];
-                // console.log("e1,e2", e1, e2);
-                lineSegs[lineCnt++] = vec3pts[e1].x;
-                lineSegs[lineCnt++] = vec3pts[e1].y;
-                lineSegs[lineCnt++] = vec3pts[e1].z;
-                lineSegs[lineCnt++] = vec3pts[e2].x;
-                lineSegs[lineCnt++] = vec3pts[e2].y;
-                lineSegs[lineCnt++] = vec3pts[e2].z;
-            }
-        }
-        this.drawLinesSegments(lineSegs, segLen);
-    }
-    syncTerrainData() {
-        this.drawMeshTerrain();
-        this.drawPoints();
-    }
-    drawPoints() {
-        this.clearAllPoints();
-        var ptsGeometry = new THREE.BufferGeometry();
-        var ptsMaterial = new THREE.PointsMaterial({
-            size: this.ptsRadius,
-            // sizeAttenuation: false,
-            vertexColors: true,
-        });
-        var ptsObject = new THREE.Points(ptsGeometry, ptsMaterial);
-        ptsObject.material.visible = (this.ptsRadius != 0);
-        const ptsPosAttr = new THREE.Float32BufferAttribute(this.terrain.pos3d, 3);
-        ptsPosAttr.count = this.terrain.ptsLength;
-        // const ptsColAttr = new THREE.Float32BufferAttribute(this.terrain.color, 3);
-        const ptsColAttr = new THREE.Float32BufferAttribute(this.terrain.colorDebug, 3);
-        ptsColAttr.count = this.terrain.ptsLength;
-        ptsGeometry.setAttribute('position', ptsPosAttr);
-        ptsGeometry.setAttribute('color', ptsColAttr);
-        ptsGeometry.computeBoundingSphere();
-        this.tpPts = ptsObject;
-        this.scene.add(ptsObject);
-    }
-    clearAllPoints() {
-        this.disposeObj(this.tpPts);
-    }
-    drawMeshTerrain() {
-        var _a, _b, _c, _d;
-        this.clearAllMesh();
-        var mesMaterial = new THREE.MeshBasicMaterial({
-            // color: 0xffffff,
-            // opacity: 0.5,
-            // transparent: true,
-            vertexColors: true,
-        });
-        const ptcl = new THREE.BufferGeometry();
-        var mesObject = new THREE.Mesh(ptcl, mesMaterial);
-        const vec3pts = this.terrain.vec3pts;
-        const ptsPred = this.terrain.ptsPred;
-        const color = this.terrain.color;
-        const pts3Vertex = this.terrain.pts3Vertex;
-        ObjectPool_1.freeFloat32Array((_b = (_a = this.tpMesh) === null || _a === void 0 ? void 0 : _a.geometry) === null || _b === void 0 ? void 0 : _b.getAttribute('position').array);
-        ObjectPool_1.freeFloat32Array((_d = (_c = this.tpMesh) === null || _c === void 0 ? void 0 : _c.geometry) === null || _d === void 0 ? void 0 : _d.getAttribute('color').array);
-        const meshPos = ObjectPool_1.getFloat32Array(pts3Vertex.length * 3);
-        const meshCol = ObjectPool_1.getFloat32Array(pts3Vertex.length * 3);
-        for (let index = 0; index < pts3Vertex.length; index++) {
-            meshPos[index * 3 + 0] = vec3pts[pts3Vertex[index]].x;
-            meshPos[index * 3 + 1] = vec3pts[pts3Vertex[index]].y;
-            meshPos[index * 3 + 2] = vec3pts[pts3Vertex[index]].z;
-            meshCol[index * 3 + 0] = color[pts3Vertex[index] * 3 + 0];
-            meshCol[index * 3 + 1] = color[pts3Vertex[index] * 3 + 1];
-            meshCol[index * 3 + 2] = color[pts3Vertex[index] * 3 + 2];
-        }
-        const attrPos = new THREE.Float32BufferAttribute(meshPos, 3);
-        attrPos.count = pts3Vertex.length;
-        ptcl.setAttribute('position', attrPos);
-        const attrCol = new THREE.Float32BufferAttribute(meshCol, 3);
-        attrCol.count = pts3Vertex.length;
-        ptcl.setAttribute('color', attrCol);
-        // ptcl.setAttribute( 'normal', new THREE.Float32BufferAttribute( normals, 3 ) );
-        this.tpMesh = mesObject;
-        this.scene.add(mesObject);
-    }
-    clearAllMesh() {
-        this.disposeObj(this.tpMesh);
-    }
-    clearAllLines() {
-        this.disposeObj(this.tpLines1);
-    }
-    clearRivers() {
-        this.disposeObj(this.rivers);
-    }
-    drawLinesPrede() {
-        var _a, _b;
-        const vec3pts = this.terrain.vec3pts;
-        const ptsPred = this.terrain.ptsPred;
-        const segLen = ptsPred.length * 3 * 2;
-        ObjectPool_1.freeFloat32Array((_b = (_a = this.tpLines1) === null || _a === void 0 ? void 0 : _a.geometry) === null || _b === void 0 ? void 0 : _b.getAttribute('position').array);
-        const lineSegs = ObjectPool_1.getFloat32Array(segLen);
-        for (let index = 0; index < ptsPred.length - 1; index++) {
-            const ed = ptsPred[index];
-            if (ed < 0)
-                continue;
-            lineSegs[index * 6 + 0] = vec3pts[index].x;
-            lineSegs[index * 6 + 1] = vec3pts[index].y;
-            lineSegs[index * 6 + 2] = vec3pts[index].z;
-            lineSegs[index * 6 + 3] = vec3pts[ed].x;
-            lineSegs[index * 6 + 4] = vec3pts[ed].y;
-            lineSegs[index * 6 + 5] = vec3pts[ed].z;
-        }
-        this.drawLinesSegments(lineSegs, segLen);
-    }
-    drawLinesEdge() {
-        var _a, _b;
-        const vec3pts = this.terrain.vec3pts;
-        const ptsEdges = this.terrain.ptsEdges;
-        const segLen = ptsEdges.length * 3 * 2;
-        ObjectPool_1.freeFloat32Array((_b = (_a = this.tpLines1) === null || _a === void 0 ? void 0 : _a.geometry) === null || _b === void 0 ? void 0 : _b.getAttribute('position').array);
-        const lineSegs = ObjectPool_1.getFloat32Array(segLen);
-        for (let index = 0; index < ptsEdges.length; index++) {
-            const ed = ptsEdges[index];
-            lineSegs[index * 6 + 0] = vec3pts[ed[0]].x;
-            lineSegs[index * 6 + 1] = vec3pts[ed[0]].y;
-            lineSegs[index * 6 + 2] = vec3pts[ed[0]].z;
-            lineSegs[index * 6 + 3] = vec3pts[ed[1]].x;
-            lineSegs[index * 6 + 4] = vec3pts[ed[1]].y;
-            lineSegs[index * 6 + 5] = vec3pts[ed[1]].z;
-        }
-        this.drawLinesSegments(lineSegs, segLen);
-    }
-    drawLinesSegments(lineSegs, lineSegsLen) {
-        this.clearAllLines();
-        // console.log("lineSegsLen,lineSegs", lineSegsLen, lineSegs);
-        // if (lineSegs)
-        //     for (let index = 0; index < lineSegsLen; index++)
-        //         lineSegs[index] *= (Math.random() / 30) + 1
-        // if (lineSegs)
-        for (let index = 0; index < lineSegsLen; index++)
-            lineSegs[index] *= 1.01;
-        var line1Geometry = new THREE.BufferGeometry();
-        var line1Material = new THREE.LineBasicMaterial({
-            color: 0xffffff,
-            linewidth: 50, // not working :(
-            // vertexColors: true,
-        });
-        // const edges = new THREE.EdgesGeometry(ptcl);
-        // var line1Object = new THREE.LineSegments(edges, line1Material);
-        // const line1PosAttr = new THREE.Float32BufferAttribute(this.terrain.linesHull, 3);
-        const line1PosAttr = new THREE.Float32BufferAttribute(lineSegs, 3);
-        line1PosAttr.count = lineSegsLen / 3;
-        line1Geometry.setAttribute('position', line1PosAttr);
-        line1Geometry.computeBoundingSphere();
-        var line1Object = new THREE.LineSegments(line1Geometry, line1Material);
-        this.tpLines1 = line1Object;
-        this.scene.add(line1Object);
-    }
-    drawRivers(lineSegs, lineSegsLen) {
-        this.clearRivers();
-        // console.log("lineSegsLen,lineSegs", lineSegsLen, lineSegs);
-        // if (lineSegs)
-        //     for (let index = 0; index < lineSegsLen; index++)
-        //         lineSegs[index] *= (Math.random() / 30) + 1
-        // if (lineSegs)
-        for (let index = 0; index < lineSegsLen; index++)
-            lineSegs[index] *= 1.01;
-        var riversGeometry = new THREE.BufferGeometry();
-        var riversMaterial = new THREE.LineBasicMaterial({
-            color: 0x07cdf5,
-            linewidth: 1, // not working :(
-            // vertexColors: true,
-        });
-        // const edges = new THREE.EdgesGeometry(ptcl);
-        // var line1Object = new THREE.LineSegments(edges, line1Material);
-        // const line1PosAttr = new THREE.Float32BufferAttribute(this.terrain.linesHull, 3);
-        const riversPosAttr = new THREE.Float32BufferAttribute(lineSegs, 3);
-        riversPosAttr.count = lineSegsLen / 3;
-        riversGeometry.setAttribute('position', riversPosAttr);
-        riversGeometry.computeBoundingSphere();
-        var riversObject = new THREE.LineSegments(riversGeometry, riversMaterial);
-        this.rivers = riversObject;
-        this.scene.add(riversObject);
-    }
-    disposeObj(threeObj) {
-        var _a, _b;
-        if (!threeObj)
-            return;
-        this.scene.remove(threeObj);
-        (_a = threeObj === null || threeObj === void 0 ? void 0 : threeObj.material) === null || _a === void 0 ? void 0 : _a.dispose();
-        (_b = threeObj === null || threeObj === void 0 ? void 0 : threeObj.geometry) === null || _b === void 0 ? void 0 : _b.dispose();
-    }
-    clearTerrainData() {
-        this.clearAllPoints();
-        this.clearAllMesh();
-        this.clearAllLines();
-    }
-    updateShallow() {
-    }
-    setCamera() {
-        this.camera.position.x = this.terrain.data.sphereSize * 2.2; // DRAWUNIT
-        this.camera.position.y = 0;
-        this.camera.position.z = 0;
-        this.camera.lookAt(0, 0, 0);
-    }
-    setDistCamera() {
-        this.camera.position.normalize();
-        this.camera.position.multiplyScalar(this.terrain.data.sphereSize * 2.2); // DRAWUNIT
-        this.camera.lookAt(0, 0, 0);
-    }
-    updateDeep() {
-        console.time(`#time DrawThreeTerrain updateDeep`);
-        // RESET !!!!!!!!
-        this.selectedPoints.length = 0;
-        this.setDistCamera();
-        this.clearTerrainData();
-        this.syncTerrainData();
-        // this.scanRivers();
-        // this.pathToWater();
-        console.timeEnd(`#time DrawThreeTerrain updateDeep`);
-    }
-    draw() {
-        // console.log(`#HERELINE DrawThreeTerrain draw `);
-        this.renderer.render(this.scene, this.camera);
-    }
-    updatePtsMaterials() {
-        this.tpPts.material.visible = (this.ptsRadius != 0);
-        this.tpPts.material.size = this.ptsRadius;
-        this.tpPts.material.needsUpdate = true;
-    }
-    drawLinesSegmentsIndex(lineIndex, lineIndexLen) {
-        var _a, _b;
-        const vec3pts = this.terrain.vec3pts;
-        const segLen = lineIndexLen * 3;
-        ObjectPool_1.freeFloat32Array((_b = (_a = this.tpLines1) === null || _a === void 0 ? void 0 : _a.geometry) === null || _b === void 0 ? void 0 : _b.getAttribute('position').array);
-        const lineSegs = ObjectPool_1.getFloat32Array(segLen);
-        var lineCnt = 0;
-        for (let index = 0; index < lineIndexLen; index++) {
-            const e1 = lineIndex[index];
-            lineSegs[lineCnt++] = vec3pts[e1].x;
-            lineSegs[lineCnt++] = vec3pts[e1].y;
-            lineSegs[lineCnt++] = vec3pts[e1].z;
-        }
-        this.drawLinesSegments(lineSegs, segLen);
-    }
-    scanLand(index) {
-        var scanData = this.terrain.scanLand(index);
-        this.drawLinesSegmentsIndex(scanData.edgesArr, scanData.edgesLen);
-    }
-    scanWater(index) {
-        var scanData = this.terrain.scanWater(index);
-        this.drawLinesSegmentsIndex(scanData.edgesArr, scanData.edgesLen);
-    }
-    scanLower(index) {
-        const elev = this.terrain.elevation[index];
-        var scanData = this.terrain.getLowestElevPoints(elev);
-        this.drawLinesSegmentsIndex(scanData.edgesArr, scanData.edgesLen);
-    }
-    scanHigher(index) {
-        const elev = this.terrain.elevation[index];
-        var scanData = this.terrain.getHighestElevPoints(elev);
-        this.drawLinesSegmentsIndex(scanData.edgesArr, scanData.edgesLen);
-    }
-    scanOcean() {
-        var scanData = this.terrain.getLowestElevPoints(this.terrain.elevOcean);
-        this.drawLinesSegmentsIndex(scanData.edgesArr, scanData.edgesLen);
-    }
-    scanContinent() {
-        var scanData = this.terrain.getHighestElevPoints(this.terrain.elevOcean);
-        this.drawLinesSegmentsIndex(scanData.edgesArr, scanData.edgesLen);
-    }
-    scanMountains() {
-        var scanData = this.terrain.getHighestElevPoints(this.terrain.elevMountain);
-        this.drawLinesSegmentsIndex(scanData.edgesArr, scanData.edgesLen);
-    }
-    scanRivers() {
-        var _a, _b;
-        var scanData = this.terrain.getRiverOrig();
-        const vec3pts = this.terrain.vec3pts;
-        const segLen = scanData.edgesLen * 3;
-        ObjectPool_1.freeFloat32Array((_b = (_a = this.rivers) === null || _a === void 0 ? void 0 : _a.geometry) === null || _b === void 0 ? void 0 : _b.getAttribute('position').array);
-        const lineSegs = ObjectPool_1.getFloat32Array(segLen);
-        var lineCnt = 0;
-        for (let index = 0; index < scanData.edgesLen; index++) {
-            const e1 = scanData.edgesArr[index];
-            lineSegs[lineCnt++] = vec3pts[e1].x;
-            lineSegs[lineCnt++] = vec3pts[e1].y;
-            lineSegs[lineCnt++] = vec3pts[e1].z;
-        }
-        this.drawRivers(lineSegs, segLen);
-    }
-    pathToWater() {
-        const edgesArr = ObjectPool_1.getFloat32Array(this.terrain.ptsEdges.length * 2).fill(-1);
-        var edgesLen = 0;
-        for (let index = 0; index < this.terrain.ptsEdges.length; index++) {
-            const tow = this.terrain.pathToWatter[index];
-            if (tow == -1)
-                continue;
-            if (isNaN(tow))
-                continue;
-            edgesArr[edgesLen++] = index;
-            edgesArr[edgesLen++] = tow;
-        }
-        // console.log("edgesArr", edgesArr);
-        this.drawLinesSegmentsIndex(edgesArr, edgesLen);
-    }
-    addJgui(jData) {
-        var threeDrawTab = jData.jGui.addColapse("Three Draw", true);
-        var [butLand, butWat] = threeDrawTab.add2Buttons("Zone land", "Zone Water");
-        butLand.addEventListener(jData.jMng, "click", (event) => {
-            this.specialHoverAction = this.scanLand.bind(this);
-        });
-        butWat.addEventListener(jData.jMng, "click", (event) => {
-            this.specialHoverAction = this.scanWater.bind(this);
-        });
-        var [butLow, butOcean] = threeDrawTab.add2Buttons("Scan low", "Scan ocean");
-        butLow.addEventListener(jData.jMng, "click", (event) => {
-            this.specialHoverAction = this.scanLower.bind(this);
-        });
-        butOcean.addEventListener(jData.jMng, "click", (event) => {
-            this.scanOcean();
-        });
-        var [butHii, butLand] = threeDrawTab.add2Buttons("Scan hi", "Scan land");
-        butHii.addEventListener(jData.jMng, "click", (event) => {
-            this.specialHoverAction = this.scanHigher.bind(this);
-        });
-        butLand.addEventListener(jData.jMng, "click", (event) => {
-            this.scanContinent();
-        });
-        var [butriv, butMtn] = threeDrawTab.add2Buttons("Scan river", "Scan mtn");
-        butriv.addEventListener(jData.jMng, "click", (event) => {
-            this.scanRivers();
-        });
-        butMtn.addEventListener(jData.jMng, "click", (event) => {
-            this.scanMountains();
-        });
-        threeDrawTab.addSlider("THREE Points size", 0, 1000, 1, this.ptsRadius)
-            .addEventListener(jData.jMng, "input", (event) => {
-            this.ptsRadius = event.data.event.target.valueAsNumber;
-            this.updatePtsMaterials();
-        });
-        const lineTypes = ["none", "edges", "allRivers"];
-        // lineTypes.push("predecesor")
-        var [_, prdDropList] = threeDrawTab.addDropdown("View lines", lineTypes);
-        for (const prjDdObj of prdDropList) {
-            prjDdObj.addEventListener(jData.jMng, "click", (event) => {
-                switch (event.data.event.extra.listValue) {
-                    case "none":
-                        this.clearAllLines();
-                        this.clearRivers();
-                        break;
-                    case "edges":
-                        this.drawLinesEdge();
-                        break;
-                    case "allRivers":
-                        this.pathToWater();
-                        break;
-                    case "predecesor":
-                        this.drawLinesPrede();
-                        break;
-                }
-            });
-        }
-    }
-}
-exports.DrawThreeTerrain = DrawThreeTerrain;
-
-
-/***/ }),
-
-/***/ "./node_modules/ts-loader/index.js!./src/modules/GenWorkerInstance.ts":
-/*!****************************************************************************!*\
-  !*** ./node_modules/ts-loader/index.js!./src/modules/GenWorkerInstance.ts ***!
-  \****************************************************************************/
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.workerTypes = void 0;
-const ctx = self;
-const PlanetSysWorker_1 = __webpack_require__(/*! ./PlanetSysWorker */ "./src/modules/PlanetSysWorker.ts");
-const TerrainWorker_1 = __webpack_require__(/*! ./TerrainWorker */ "./src/modules/TerrainWorker.ts");
-exports.workerTypes = new Map();
-exports.workerTypes.TerrainWorker = TerrainWorker_1.TerrainWorker;
-exports.workerTypes.PlanetSysWorker = PlanetSysWorker_1.PlanetSysWorker;
-var work_instance = null;
-ctx.addEventListener("message", (event) => {
-    if (work_instance === null) {
-        var config = event.data.config;
-        work_instance = new exports.workerTypes[event.data.create](config.WORLD_DATABASE_NAME, ctx, event.data.create, event);
-    }
-    else {
-        work_instance.getMessage(event);
-    }
-});
-// export default null as any;
-
-
-/***/ }),
-
-/***/ "./src/modules/GenWorkerMetadata.ts":
+/***/ "./src/plant_sys/PlanetSysWorker.ts":
 /*!******************************************!*\
-  !*** ./src/modules/GenWorkerMetadata.ts ***!
+  !*** ./src/plant_sys/PlanetSysWorker.ts ***!
   \******************************************/
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.BaseDrawUpdateWorker = exports.BaseWorker = void 0;
-const Time_1 = __webpack_require__(/*! ../utils/Time */ "./src/utils/Time.ts");
-const Config_1 = __webpack_require__(/*! ./Config */ "./src/modules/Config.ts");
-const WorldData_1 = __webpack_require__(/*! ./WorldData */ "./src/modules/WorldData.ts");
-const Units = __webpack_require__(/*! ../utils/Units */ "./src/utils/Units.ts");
-const JguiMake_1 = __webpack_require__(/*! ../gui/JguiMake */ "./src/gui/JguiMake.ts");
-const JguiUtils_1 = __webpack_require__(/*! ../gui/JguiUtils */ "./src/gui/JguiUtils.ts");
-class BaseWorker {
-    constructor(config, worker, workerName, event) {
-        this.db_read_itv = new Time_1.Intervaler();
-        this.name = workerName;
-        this.worker = worker;
-        this.config = new Config_1.Config().copy(config);
-        this.world = new WorldData_1.WorldData(this.config.WORLD_DATABASE_NAME, this.name, event.data.startId, this.config);
-        this.ticker = new Time_1.Ticker(false, this.updateInterval.bind(this), Units.LOOP_INTERVAL);
-    }
-    preInit() {
-        this.spread_objects(this.world);
-        this.world.initWorker().then(() => {
-            this.worker.postMessage({ message: Config_1.MessageType.Ready, from: this.name });
-        }).then(() => {
-            this.init();
-        });
-    }
-    spread_objects(object_) {
-        if (object_.config === null)
-            object_.config = this.config;
-        if (object_.world === null)
-            object_.world = this.world;
-        if (object_.worker === null)
-            object_.worker = this.worker;
-    }
-    getMessage(event) {
-        // console.debug(`#HERELINE ${this.name} getMessage  ${event.data.message}`);
-        var _a;
-        if (((_a = event === null || event === void 0 ? void 0 : event.data) === null || _a === void 0 ? void 0 : _a.config) && this.config)
-            this.config.copy(event.data.config);
-        const message_ = event.data.message;
-        switch (message_) {
-            case Config_1.MessageType.InitWorker:
-                this.preInit();
-                break;
-            case Config_1.MessageType.Play:
-                this.updPlay();
-                break;
-            case Config_1.MessageType.Pause:
-                this.updPause();
-                break;
-            default:
-                this.getMessageExtra(event);
-        }
-    }
-    getMessageExtra(event) {
-        const message_ = event.data.message;
-        console.warn(`Not implemented in ${this.name} : ${message_} !`);
-    }
-    async refreshConfig() {
-        // this.ticker.updateState(this.config.globalIsReady)
-    }
-    updPause() {
-        this.ticker.stop();
-    }
-    updPlay() {
-        this.ticker.start();
-    }
-    broadcastEvent(event) {
-        console.debug(`#HERELINE GenWorkerMetadata broadcastEvent `, event);
-        this.worker.postMessage({
-            message: Config_1.MessageType.Event,
-            metadata: {
-                broadcast: true,
-                isWorldEvent: true,
-            },
-            from: this.name,
-            event: event,
-            // event_id: null, // TODO what to do with it ?
-        });
-    }
-}
-exports.BaseWorker = BaseWorker;
-class BaseDrawUpdateWorker extends BaseWorker {
-    constructor(config, worker, workerName, event) {
-        super(config, worker, workerName, event);
-        this.doUpdate = true;
-        this.doDraw = true;
-        this.mapDraws = new Map();
-        this.workerJguiMain = null;
-        this.workerJguiCont = null;
-        this.workerJguiManager = null;
-        this.workerJguiManager = new JguiMake_1.JguiManager(worker, workerName);
-    }
-    callEvent(woEvent) {
-        var _a, _b, _c, _d;
-        var event = woEvent.data.event;
-        var event_id = woEvent.data.event_id;
-        if ((_b = (_a = woEvent.data) === null || _a === void 0 ? void 0 : _a.metadata) === null || _b === void 0 ? void 0 : _b.isFromJgui) {
-            this.workerJguiManager.dispachListener(event_id, woEvent);
-        }
-        else if ((_d = (_c = woEvent.data) === null || _c === void 0 ? void 0 : _c.metadata) === null || _d === void 0 ? void 0 : _d.isWorldEvent) {
-            this.getWorldEvent(woEvent);
-        }
-        else {
-            var drawRedirect = this.mapDraws.get(event_id);
-            drawRedirect.fakeDOM.dispatchEvent(event);
-        }
-    }
-    updateJgiu(draw_) {
-        var jData = {
-            jGui: this.workerJguiCont,
-            jMng: this.workerJguiManager,
-        };
-        draw_.addJgui(jData);
-        JguiUtils_1.setMainContainer(this.worker, this.workerJguiMain);
-    }
-    spread_objects(object_) {
-        super.spread_objects(object_);
-        if (object_.workerJguiManager === null)
-            object_.workerJguiManager = this.workerJguiManager;
-    }
-}
-exports.BaseDrawUpdateWorker = BaseDrawUpdateWorker;
-
-
-/***/ }),
-
-/***/ "./src/modules/ObjectsHacker.ts":
-/*!**************************************!*\
-  !*** ./src/modules/ObjectsHacker.ts ***!
-  \**************************************/
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.Identifiable = void 0;
-const Convert = __webpack_require__(/*! ../utils/Convert */ "./src/utils/Convert.ts");
-class Identifiable {
-    constructor(worldData) {
-        this.id = null;
-        this.type = null;
-        this.type = this.constructor.name;
-        this.setWorldData(worldData);
-        this.genId();
-    }
-    /*
-    to be set from outside by WorldData
-    constructor(worldData: WorldData) {
-        (this as any).__proto__.getWorldData = () => { return worldData };
-    */
-    getWorldData() { throw new Error("Function needs to be re-defined in constructor."); }
-    setWorldData(worldData) {
-        this.__proto__.getWorldData = () => { return worldData; };
-    }
-    genId() {
-        this.id = this.getWorldData().getFreeID();
-    }
-    copyDeep(source_) {
-        Convert.copyDeep(this, source_);
-        return this;
-    }
-    copyShallow(source_) {
-        Convert.copyShallow(this, source_);
-        return this;
-    }
-    copyLogic(source_) {
-        Convert.copyShallow(this, source_, true);
-        return this;
-    }
-}
-exports.Identifiable = Identifiable;
-
-
-/***/ }),
-
-/***/ "./src/modules/PlanetSysWorker.ts":
-/*!****************************************!*\
-  !*** ./src/modules/PlanetSysWorker.ts ***!
-  \****************************************/
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.PlanetSysWorker = void 0;
-const GenWorkerMetadata_1 = __webpack_require__(/*! ./GenWorkerMetadata */ "./src/modules/GenWorkerMetadata.ts");
-const Config_1 = __webpack_require__(/*! ./Config */ "./src/modules/Config.ts");
-const DrawThreePlsys_1 = __webpack_require__(/*! ./DrawThreePlsys */ "./src/modules/DrawThreePlsys.ts");
-const PlanetarySystem_1 = __webpack_require__(/*! ../generate/PlanetarySystem */ "./src/generate/PlanetarySystem.ts");
-const DrawD3Plsys_1 = __webpack_require__(/*! ./DrawD3Plsys */ "./src/modules/DrawD3Plsys.ts");
+const GenWorkerMetadata_1 = __webpack_require__(/*! ../modules/GenWorkerMetadata */ "./src/modules/GenWorkerMetadata.ts");
+const Config_1 = __webpack_require__(/*! ../modules/Config */ "./src/modules/Config.ts");
+const DrawThreePlsys_1 = __webpack_require__(/*! ../plant_sys/DrawThreePlsys */ "./src/plant_sys/DrawThreePlsys.ts");
+const PlanetarySystem_1 = __webpack_require__(/*! ../orbiting_elements/PlanetarySystem */ "./src/orbiting_elements/PlanetarySystem.ts");
+const DrawD3Plsys_1 = __webpack_require__(/*! ../plant_sys/DrawD3Plsys */ "./src/plant_sys/DrawD3Plsys.ts");
 const JguiMake_1 = __webpack_require__(/*! ../gui/JguiMake */ "./src/gui/JguiMake.ts");
 const JguiUtils_1 = __webpack_require__(/*! ../gui/JguiUtils */ "./src/gui/JguiUtils.ts");
-const SpaceFactory_1 = __webpack_require__(/*! ../generate/SpaceFactory */ "./src/generate/SpaceFactory.ts");
+const SpaceFactory_1 = __webpack_require__(/*! ../orbiting_elements/SpaceFactory */ "./src/orbiting_elements/SpaceFactory.ts");
 // TODO move generation in this worker instead of in the main thread
 // TODO simplify the refresh deep/shallow mechanisms since most actions will be done in this worker
 // TODO store position and rotation of objects inside themselves after time/orbit update so other workers can do "basic" checks and calculations
@@ -88624,591 +89209,6 @@ class PlanetSysWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
     }
 }
 exports.PlanetSysWorker = PlanetSysWorker;
-
-
-/***/ }),
-
-/***/ "./src/modules/TerrainWorker.ts":
-/*!**************************************!*\
-  !*** ./src/modules/TerrainWorker.ts ***!
-  \**************************************/
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.TerrainWorker = void 0;
-const GenWorkerMetadata_1 = __webpack_require__(/*! ./GenWorkerMetadata */ "./src/modules/GenWorkerMetadata.ts");
-const Config_1 = __webpack_require__(/*! ./Config */ "./src/modules/Config.ts");
-const DrawD3Terrain_1 = __webpack_require__(/*! ./DrawD3Terrain */ "./src/modules/DrawD3Terrain.ts");
-const JguiMake_1 = __webpack_require__(/*! ../gui/JguiMake */ "./src/gui/JguiMake.ts");
-const JguiUtils_1 = __webpack_require__(/*! ../gui/JguiUtils */ "./src/gui/JguiUtils.ts");
-const Terrain_1 = __webpack_require__(/*! ../generate/Terrain */ "./src/generate/Terrain.ts");
-const DrawThreeTerrain_1 = __webpack_require__(/*! ./DrawThreeTerrain */ "./src/modules/DrawThreeTerrain.ts");
-const Planet_1 = __webpack_require__(/*! ../generate/Planet */ "./src/generate/Planet.ts");
-const JGUI_ORDINAL = "2";
-const WORLD_GEN_ORDER = 201;
-class TerrainWorker extends GenWorkerMetadata_1.BaseDrawUpdateWorker {
-    constructor(config, worker, workerName, event) {
-        super(config, worker, workerName, event);
-        this.terrain = new Terrain_1.Terrain(this.world);
-    }
-    init() {
-        Promise.resolve().then(() => {
-            this.makeJgiu();
-        }).then(() => {
-            this.worker.postMessage({
-                message: Config_1.MessageType.CanvasMake,
-                metaCanvas: {
-                    id: `${this.name}-canvas-DrawThreeTerrain`,
-                    order: JGUI_ORDINAL + "10",
-                    generalFlags: ["orbit"],
-                }
-            });
-            this.worker.postMessage({
-                message: Config_1.MessageType.CanvasMake,
-                metaCanvas: {
-                    id: `${this.name}-canvas-DrawD3Terrain`,
-                    order: JGUI_ORDINAL + "30",
-                    generalFlags: ["d3"],
-                }
-            });
-            // }).then(() => {
-            //     return this.refreshDeep(false);
-        });
-    }
-    CanvasReady(event) {
-        console.log(`CanvasReady ${this.name}`);
-        switch (event.data.metaCanvas.id) {
-            case `${this.name}-canvas-DrawThreeTerrain`:
-                var draw1_ = new DrawThreeTerrain_1.DrawThreeTerrain();
-                this.mapDraws.set(event.data.canvas_id, draw1_);
-                this.spread_objects(draw1_);
-                this.updateJgiu(draw1_);
-                draw1_.init(event);
-                break;
-            case `${this.name}-canvas-DrawD3Terrain`:
-                var draw2_ = new DrawD3Terrain_1.DrawD3Terrain();
-                this.mapDraws.set(event.data.canvas_id, draw2_);
-                this.spread_objects(draw2_);
-                this.updateJgiu(draw2_);
-                draw2_.init(event);
-                break;
-            default:
-                console.warn(`Not implemented in ${this.name} : ${event.data.metaCanvas.id} !`);
-                break;
-        }
-    }
-    spread_objects(object_) {
-        super.spread_objects(object_);
-        if (object_.terrain === null)
-            object_.terrain = this.terrain;
-    }
-    async getWorldEvent(event) {
-        console.debug(`#HERELINE TerrainWorker getWorldEvent `, event.data);
-        if (WORLD_GEN_ORDER > event.data.event.worldGenIndex) {
-            this.terrain.data.noiseSeed = Math.random();
-            await this.genFromExistingPlanet();
-            this.broadcastEvent({
-                worldGenIndex: WORLD_GEN_ORDER,
-                worldGenType: Config_1.WorldGenType.Inital,
-            });
-        }
-        else {
-            console.debug(`World event is upstream, no acetion needed for ${this.name} !`);
-        }
-    }
-    getMessageExtra(event) {
-        // console.debug(`#HERELINE ${this.name} getMessageExtra  ${event.data.message}`);
-        const message_ = event.data.message;
-        switch (message_) {
-            case Config_1.MessageType.CanvasReady:
-                this.CanvasReady(event);
-                break;
-            case Config_1.MessageType.Event:
-                this.callEvent(event);
-                break;
-            case Config_1.MessageType.RefreshDBDeep:
-            case Config_1.MessageType.RefreshDBShallow:
-            case Config_1.MessageType.RefreshConfig:
-                this.refreshDb(event, message_);
-                break;
-            default:
-                console.warn(`Not implemented in ${this.name} : ${message_} !`);
-                break;
-        }
-    }
-    async refreshDb(event, refreshType) {
-        console.debug(`#HERELINE ${this.name} refreshDb ${refreshType}`);
-        console.time(`#time ${this.name} refreshDb ${refreshType} `);
-        await this.refreshConfig();
-        var doSpecial = false;
-        var prom = null;
-        if (refreshType == Config_1.MessageType.RefreshDBDeep)
-            prom = this.refreshDeep(doSpecial);
-        if (refreshType == Config_1.MessageType.RefreshDBShallow)
-            prom = this.refreshShallow(doSpecial);
-        await prom.finally(() => {
-            console.timeEnd(`#time ${this.name} refreshDb ${refreshType} `);
-        });
-    }
-    async refreshDeep(doSpecial = true) {
-        console.debug("#HERELINE DrawWorker refreshDeep");
-        await this.world.writeAllRw();
-        for (const draw_ of this.mapDraws.values())
-            draw_.updateDeep();
-        if (doSpecial) {
-            // this.updatePlSys();
-            for (const draw_ of this.mapDraws.values())
-                draw_.draw();
-        }
-    }
-    async refreshShallow(doSpecial = true) {
-        // console.debug("#HERELINE DrawWorker refreshShallow");
-        // await this.world.readShallow();
-        for (const draw_ of this.mapDraws.values())
-            draw_.updateShallow();
-        if (doSpecial) {
-            // this.updatePlSys();
-            for (const draw_ of this.mapDraws.values())
-                draw_.draw();
-        }
-    }
-    updateInterval() {
-        // console.log(`It is me, ${this.name}`);
-        // this.updPause();
-        // for (const draw_ of this.mapDraws.values())
-        //     draw_.draw();
-        this.refreshTick(true);
-    }
-    updateTerrain() {
-        // console.log("this.world.time.value", this.world.time.value);
-    }
-    async refreshTick(doSpecial = true) {
-        await this.world.readTime();
-        if (doSpecial) {
-            this.doUpdate && this.updateTerrain();
-            if (this.doDraw)
-                for (const draw_ of this.mapDraws.values())
-                    draw_.draw();
-        }
-        // await this.world.writeTime();
-    }
-    async genFromExistingPlanet() {
-        console.debug(`#HERELINE TerrainWorker genFromExistingPlanet `);
-        var didOnce = false;
-        for await (const planet_ of this.world.iterObjsType(Planet_1.Planet, "readwrite")) {
-            if (didOnce)
-                break;
-            if (planet_ instanceof Planet_1.Planet && planet_.isInHabZone) {
-                // if (planet_.planetType == "Normal" && planet_.terrainId == null) {
-                if (planet_.planetType == "Normal" && didOnce == false) {
-                    // console.log("planet_", planet_);
-                    // console.log("this.terrain", this.terrain);
-                    this.terrain.initFromPlanet(planet_);
-                    planet_.setTerrain(this.terrain);
-                    this.world.setRwObj(this.terrain.data);
-                    didOnce = true;
-                }
-            }
-        }
-        if (didOnce) {
-            await this.refreshDeep(false);
-            this.broadcastEvent({
-                worldGenIndex: WORLD_GEN_ORDER,
-                worldGenType: Config_1.WorldGenType.Inital,
-            });
-            this.makeJgiu();
-            for (const draw_ of this.mapDraws.values())
-                this.updateJgiu(draw_);
-        }
-    }
-    makeJgiu() {
-        const jguiOrdinal = JGUI_ORDINAL + "00";
-        var startExpanded = true;
-        [this.workerJguiMain, this.workerJguiCont] = new JguiMake_1.JguiMake(null).mkWorkerJgui("terr", jguiOrdinal, startExpanded);
-        var jData = {
-            jGui: this.workerJguiCont,
-            jMng: this.workerJguiManager,
-        };
-        var chboxUpd, chboxDraw;
-        [chboxUpd, chboxDraw] = jData.jGui.add2CheckButtons("Update", this.doUpdate, "Draw", this.doDraw);
-        chboxUpd.addEventListener(jData.jMng, "change", (event) => {
-            this.doUpdate = event.data.event.target.checked;
-        });
-        chboxDraw.addEventListener(jData.jMng, "change", (event) => {
-            this.doDraw = event.data.event.target.checked;
-        });
-        var genTab = jData.jGui.addColapse("Genearte", true);
-        genTab.addButton("Re-Genearte")
-            .addTooltip("Regenerating will use an actual Planet, first run uses a dummy instance so we do not wait for PlSys to gen.")
-            .addEventListener(jData.jMng, "click", (event) => {
-            this.terrain.data.noiseSeed = Math.random();
-            this.genFromExistingPlanet();
-        });
-        genTab.addNumber("altMinProc ", this.terrain.data.altitudeMinProc, 0.02).addEventListener(jData.jMng, "change", (event) => {
-            this.terrain.data.altitudeMinProc = event.data.event.target.valueAsNumber;
-            this.genFromExistingPlanet();
-        });
-        genTab.addNumber("altMaxProc ", this.terrain.data.altitudeMaxProc, 0.02).addEventListener(jData.jMng, "change", (event) => {
-            this.terrain.data.altitudeMaxProc = event.data.event.target.valueAsNumber;
-            this.genFromExistingPlanet();
-        });
-        genTab.addNumber("altOceanProc ", this.terrain.data.altitudeOceanProc, 0.05).addEventListener(jData.jMng, "change", (event) => {
-            this.terrain.data.altitudeOceanProc = event.data.event.target.valueAsNumber;
-            this.genFromExistingPlanet();
-        });
-        genTab.addNumber("altMountainProc ", this.terrain.data.altitudeMountainProc, 0.05).addEventListener(jData.jMng, "change", (event) => {
-            this.terrain.data.altitudeMountainProc = event.data.event.target.valueAsNumber;
-            this.genFromExistingPlanet();
-        });
-        genTab.addNumber("pointsToGen ", this.terrain.data.pointsToGen, 500).addEventListener(jData.jMng, "change", (event) => {
-            this.terrain.data.pointsToGen = event.data.event.target.valueAsNumber;
-            this.genFromExistingPlanet();
-        });
-        genTab.addNumber("noiseSeed ", this.terrain.data.noiseSeed, 0.0001).addEventListener(jData.jMng, "change", (event) => {
-            this.terrain.data.noiseSeed = event.data.event.target.valueAsNumber;
-            this.genFromExistingPlanet();
-        });
-        genTab.addCheckButton("noiseApplyAbs ", this.terrain.data.noiseApplyAbs)[0].addEventListener(jData.jMng, "change", (event) => {
-            this.terrain.data.noiseApplyAbs = event.data.event.target.checked;
-            this.genFromExistingPlanet();
-        });
-        genTab.addNumber("noiseFrequency ", this.terrain.data.noiseFrequency, 0.25).addEventListener(jData.jMng, "change", (event) => {
-            this.terrain.data.noiseFrequency = event.data.event.target.valueAsNumber;
-            this.genFromExistingPlanet();
-        });
-        genTab.addNumber("noiseAmplitude ", this.terrain.data.noiseAmplitude, 0.1).addEventListener(jData.jMng, "change", (event) => {
-            this.terrain.data.noiseAmplitude = event.data.event.target.valueAsNumber;
-            this.genFromExistingPlanet();
-        });
-        genTab.addNumber("noisePersistence ", this.terrain.data.noisePersistence, 0.1).addEventListener(jData.jMng, "change", (event) => {
-            this.terrain.data.noisePersistence = event.data.event.target.valueAsNumber;
-            this.genFromExistingPlanet();
-        });
-        genTab.addNumber("noiseOctaves ", this.terrain.data.noiseOctaves, 1).addEventListener(jData.jMng, "change", (event) => {
-            this.terrain.data.noiseOctaves = event.data.event.target.valueAsNumber;
-            this.genFromExistingPlanet();
-        });
-        genTab.addNumber("noiseExponent1 ", this.terrain.data.noiseExponent1, 0.1).addEventListener(jData.jMng, "change", (event) => {
-            this.terrain.data.noiseExponent1 = event.data.event.target.valueAsNumber;
-            this.genFromExistingPlanet();
-        });
-        JguiUtils_1.setMainContainer(this.worker, this.workerJguiMain);
-    }
-}
-exports.TerrainWorker = TerrainWorker;
-
-
-/***/ }),
-
-/***/ "./src/modules/WorldData.ts":
-/*!**********************************!*\
-  !*** ./src/modules/WorldData.ts ***!
-  \**********************************/
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.WorldData = exports.objects_types_ = void 0;
-const PlanetarySystem_1 = __webpack_require__(/*! ../generate/PlanetarySystem */ "./src/generate/PlanetarySystem.ts");
-const DataBaseManager_1 = __webpack_require__(/*! ./DataBaseManager */ "./src/modules/DataBaseManager.ts");
-const Convert = __webpack_require__(/*! ../utils/Convert */ "./src/utils/Convert.ts");
-const Orbit_1 = __webpack_require__(/*! ../generate/Orbit */ "./src/generate/Orbit.ts");
-const Planet_1 = __webpack_require__(/*! ../generate/Planet */ "./src/generate/Planet.ts");
-const Star_1 = __webpack_require__(/*! ../generate/Star */ "./src/generate/Star.ts");
-const SpaceGroup_1 = __webpack_require__(/*! ../generate/SpaceGroup */ "./src/generate/SpaceGroup.ts");
-const Terrain_1 = __webpack_require__(/*! ../generate/Terrain */ "./src/generate/Terrain.ts");
-// TODO read&write function WITH and WITHOUT structure change
-// WITHOUT structure change is just update or variables values
-// WITH represents a refresh/regen
-// TODO Planet Star Orbit and such objects to be stored directly in DB and referenced by some UUID
-// TODO do not use function.name and constructor.name so minified can be used
-// https://stackoverflow.com/questions/50267543/class-name-always-e-for-every-class-after-uglify-webpack-for-production
-exports.objects_types_ = {};
-exports.objects_types_.PlanetarySystem = PlanetarySystem_1.PlanetarySystem;
-exports.objects_types_.Orbit = Orbit_1.Orbit;
-exports.objects_types_.Planet = Planet_1.Planet;
-exports.objects_types_.Star = Star_1.Star;
-exports.objects_types_.SpaceGroup = SpaceGroup_1.SpaceGroup;
-exports.objects_types_.Terrain = Terrain_1.Terrain;
-class WorldData {
-    constructor(targetTable, name, startId, config) {
-        this.type = this.constructor.name;
-        this.rwDbObjs = new Map();
-        this.roDbObjs = new Map();
-        this.roDbRaws = new Map();
-        this.cleanupIds = new Array();
-        this.config = null;
-        // TODO Move in WorldData when more fine read/write can be done
-        this.time = new Convert.NumberTime();
-        this.name = name;
-        this.startId = startId;
-        this.config = config;
-        if (WorldData.wdMaxId > 0)
-            console.error(`WorldData.wdMaxId was already set, it should be set only one per worker : ${WorldData.wdMaxId}`, this);
-        WorldData.wdMaxId = this.startId;
-        console.debug("this.startId", this.startId);
-        this.dbm = new DataBaseManager_1.DataBaseManager(targetTable, name);
-        // console.log("this.planetary_system.getWorldData()", this.planetary_system.getWorldData());
-    }
-    async preInit() {
-        console.debug(`#HERELINE WorldData preInit ${this.config.WORLD_DATABASE_NAME} `);
-        return this.dbm.init(this.config.keepDbAtPageRefresh).then(() => {
-            console.debug(`#HERELINE WorldData ${this.name} preInit then`);
-        });
-    }
-    // public async initTerrain() {
-    //     console.debug("#HERELINE WorldData initTerrain");
-    //     for (const element of this.planetarySystem.getAllSats()) {
-    //         if (element instanceof Planet && element.isInHabZone) {
-    //             if (element.planetType == "Normal") {
-    //                 Terrain.initForPlanet(element);
-    //                 return; // TODO TMP FIXME limit to 1 terrain while testing !!!!!!!!!!!!!!!!!
-    //             }
-    //         }
-    //     }
-    // }
-    initWorker() {
-        console.debug("#HERELINE WorldData initWorker");
-        return this.dbm.open();
-    }
-    getFreeID() {
-        return WorldData.wdMaxId += this.config.incrementId;
-    }
-    getAnyObj(id_) {
-        if (this.rwDbObjs.has(id_))
-            return this.rwDbObjs.get(id_);
-        if (this.roDbObjs.has(id_))
-            return this.roDbObjs.get(id_);
-        return null;
-    }
-    getRoObj(id_) {
-        if (this.roDbObjs.has(id_))
-            return this.roDbObjs.get(id_);
-        return null;
-    }
-    getRwObj(id_) {
-        if (this.rwDbObjs.has(id_))
-            return this.rwDbObjs.get(id_);
-        return null;
-    }
-    free(id_) {
-        if (this.rwDbObjs.has(id_))
-            this.rwDbObjs.delete(id_);
-        this.cleanupIds.push(id_);
-    }
-    setRwObj(obj_) {
-        this.rwDbObjs.set(obj_.id, obj_);
-    }
-    async readTime() {
-        this.time.value = await this.getKv("world_time");
-        return this.time;
-    }
-    async writeTime() { return this.setKv("world_time", this.time.value); }
-    restartTime() {
-        this.time.eby = 0;
-        this.writeTime();
-    }
-    async getKv(key) { return this.dbm.getKv(key); }
-    async setKv(key, val) { return this.dbm.setKv(key, val); }
-    async delKv(key) { return this.dbm.delKv(key); }
-    async clearKv() { return this.dbm.clearKv(); }
-    async keysKv() { return this.dbm.keysKv(); }
-    /*
-
-    public async readShallow() {
-        // console.debug("#HERELINE WorldData readShallow this.name", this.name);
-        // console.time("#time WorldData " + this.name + " readShallow");
-
-        // return this.readDeep(); // TODO WA FIXME
-        var data_ps = this.dbm.idb.transaction(DataBaseManager.STANDARD_OBJECTS, "readonly");
-
-        // var keys_from_db = []
-        // var keys_from_wd = [...this.mainDbData.keys()]
-
-        var all = await data_ps.store.getAll() /// var 1
-        for (const iterator of all) { /// var 1
-            // var cursor = data_ps.store.openCursor(); /// var 2
-            // for await (const cursor of data_ps.store) { /// var 2
-            //     var iterator = cursor.value; /// var 2
-
-            // keys_from_db.push(iterator.id)
-            if (iterator.type == "PlanetarySystem") {
-                this.planetarySystem.copyShallow(iterator)
-                this.rwDbObjs.set(iterator.id, this.planetarySystem)
-            } else {
-                const newLocal = this.rwDbObjs.get(iterator.id);
-                if (!newLocal) {
-                    console.warn("this", this);
-                    // console.warn("this.mainDbData", this.mainDbData);
-                    // console.warn("iterator", iterator);
-                }
-                newLocal.copyShallow(iterator);
-            }
-        }
-
-        // keys_from_db.sort()
-        // keys_from_wd.sort()
-
-        // console.log("keys_from_db", keys_from_db);
-        // console.log("keys_from_wd", keys_from_wd);
-
-
-        await data_ps.done.finally(() => {
-            // console.timeEnd("#time WorldData " + this.name + " readShallow");
-        })
-    }
-
-    public async readDeep() {
-        console.debug(`#HERELINE WorldData readDeep this.name ${this.name}`);
-        console.time(`#time WorldData ${this.name} readDeep`);
-
-        var data_ps = this.dbm.idb.transaction(DataBaseManager.STANDARD_OBJECTS, "readonly");
-        this.rwDbObjs.clear()
-
-        var all = await data_ps.store.getAll() /// var 1
-        for (const iterator of all) { /// var 1
-            // var cursor = data_ps.store.openCursor(); /// var 2
-            // for await (const cursor of data_ps.store) { /// var 2
-            //     var iterator = cursor.value; /// var 2
-
-            if (iterator.type == "PlanetarySystem") {
-                this.planetarySystem.copyDeep(iterator)
-                this.rwDbObjs.set(iterator.id, this.planetarySystem)
-            } else {
-                var obj_ = new objects_types_[iterator.type](this) // wow
-                this.rwDbObjs.set(iterator.id, obj_)
-                const newLocal = this.rwDbObjs.get(iterator.id);
-                if (!newLocal) {
-                    console.warn("this.mainDbData", this.rwDbObjs);
-                    console.warn("this", this);
-                    console.warn("iterator", iterator);
-                }
-                newLocal.copyDeep(iterator);
-            }
-        }
-        await data_ps.done.finally(() => {
-            console.timeEnd(`#time WorldData ${this.name} readDeep`);
-        })
-    }
-
-
-
-
-    public async writeDeep() {
-        console.debug(`#HERELINE WorldData writeDeep this.name ${this.name}`);
-        console.time(`#time WorldData ${this.name} writeDeep`);
-
-        var data_ps = this.dbm.idb.transaction(DataBaseManager.STANDARD_OBJECTS, "readwrite");
-
-        await data_ps.store.clear();
-
-        var promises: Promise<any>[] = []
-        for (const iterator of this.rwDbObjs.values()) {
-            promises.push(data_ps.store.put(iterator))
-        }
-
-        promises.push(data_ps.done)
-        await Promise.all(promises).finally(() => {
-            console.timeEnd(`#time WorldData ${this.name} writeDeep`);
-        })
-    }
-
-    public async writeShallow() {
-        // console.debug("#HERELINE WorldData writeShallow this.name", this.name);
-        // console.time("#time WorldData " + this.name + " writeShallow");
-
-        var data_ps = this.dbm.idb.transaction(DataBaseManager.STANDARD_OBJECTS, "readwrite");
-
-        var promises: Promise<any>[] = []
-        for (const iterator of this.rwDbObjs.values()) {
-            promises.push(data_ps.store.put(iterator))
-        }
-
-        promises.push(data_ps.done)
-        await Promise.all(promises).finally(() => {
-            // console.timeEnd("#time WorldData " + this.name + " writeShallow");
-        })
-    }
-
-    */
-    async delCleared() {
-        console.debug(`#HERELINE WorldData delCleared this.name ${this.name} len ${this.cleanupIds.length} `);
-        // console.time(`#time WorldData ${this.name} delCleared`);
-        var promises = [];
-        while (this.cleanupIds.length > 0) {
-            var iterator = this.cleanupIds.pop();
-            promises.push(this.dbm.idb.delete(DataBaseManager_1.DataBaseManager.STANDARD_OBJECTS, iterator));
-        }
-        return await Promise.all(promises);
-        // .finally(() => {
-        //     console.timeEnd(`#time WorldData ${this.name} delCleared`);
-        // })
-    }
-    async writeAllRw() {
-        console.debug(`#HERELINE WorldData writeAllRw this.name ${this.name}`);
-        console.time(`#time WorldData ${this.name} writeAllRw`);
-        await this.delCleared();
-        var data_ps = this.dbm.idb.transaction(DataBaseManager_1.DataBaseManager.STANDARD_OBJECTS, "readwrite");
-        var promises = [];
-        for (const iterator of this.rwDbObjs.values()) {
-            promises.push(data_ps.store.put(iterator));
-        }
-        promises.push(data_ps.done);
-        await Promise.all(promises).finally(() => {
-            console.timeEnd(`#time WorldData ${this.name} writeAllRw`);
-        });
-    }
-    async setBigIdObject(obj_) {
-        var data_ps = this.dbm.idb.transaction(DataBaseManager_1.DataBaseManager.STANDARD_OBJECTS, "readwrite");
-        await data_ps.store.put(obj_);
-        await data_ps.done;
-    }
-    async getBigIdObject(id_) {
-        var data_ps = this.dbm.idb.transaction(DataBaseManager_1.DataBaseManager.STANDARD_OBJECTS, "readwrite");
-        return data_ps.store.get(id_);
-    }
-    async *iterateAllBig(mode = "readonly") {
-        console.time(`#time WorldData ${this.name} iterateAllBig`);
-        console.debug(`#HERELINE WorldData iterateAllBig this.name ${this.name}`);
-        var data_ps = this.dbm.idb.transaction(DataBaseManager_1.DataBaseManager.STANDARD_OBJECTS, mode);
-        var cursor = await data_ps.store.openCursor();
-        while (cursor) {
-            // console.log("cursor.key, cursor.value", cursor.key, cursor.value);
-            var iterator = cursor.value;
-            yield iterator;
-            cursor.update(iterator);
-            cursor = await cursor.continue();
-        }
-        await data_ps.done.finally(() => {
-            console.timeEnd(`#time WorldData ${this.name} iterateAllBig`);
-        });
-    }
-    async *iterObjsType(VTYPE, mode = "readonly") {
-        // console.time(`#time WorldData ${this.name} iterObjsType`);
-        console.debug(`#HERELINE WorldData iterObjsType this.name ${this.name}`);
-        const data_ps = this.dbm.idb.transaction(DataBaseManager_1.DataBaseManager.STANDARD_OBJECTS, mode);
-        const index = data_ps.objectStore(DataBaseManager_1.DataBaseManager.STANDARD_OBJECTS).index('type');
-        // console.log("VTYPE", VTYPE);
-        var cursor = await index.openCursor(VTYPE.type);
-        while (cursor) {
-            var iterator = VTYPE.clone(this, cursor.value);
-            yield iterator;
-            if (mode == "readwrite") {
-                // console.log("iterator", iterator);
-                cursor.update(iterator);
-            }
-            cursor = await cursor.continue();
-        }
-        return await data_ps.done.finally(() => {
-            // console.timeEnd(`#time WorldData ${this.name} iterObjsType`);
-        });
-    }
-}
-exports.WorldData = WorldData;
-WorldData.wdMaxId = -999999;
 
 
 /***/ }),

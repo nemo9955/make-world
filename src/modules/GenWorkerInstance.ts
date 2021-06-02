@@ -1,14 +1,14 @@
 const ctx: Worker = self as any;
 
-import { WorkerEvent } from "./Config";
+import { WorkerEvent } from "../modules/Config";
 // TODO make a performance monitor using SharedArrayBuffer, data just dumped in a structure and read in main (FPS, memory, etc)
 // TODO add mouse position to buffer so basic highlights in workers can be done ...
 // TODO send some raw inputs to workers like mouse click and keypress ... mouse move/scross sounds exccesive
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer
 
-import { BaseWorker } from "./GenWorkerMetadata";
-import { PlanetSysWorker } from "./PlanetSysWorker";
-import { TerrainWorker } from "./TerrainWorker";
+import { BaseWorker } from "../modules/GenWorkerMetadata";
+import { PlanetSysWorker } from "../plant_sys/PlanetSysWorker";
+import { TerrainWorker } from "../planet/TerrainWorker";
 
 
 

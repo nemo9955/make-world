@@ -1,12 +1,10 @@
 import { Intervaler, Ticker } from "../utils/Time";
-import { Config, MessageType, WorkerEvent, WorkerPacket } from "./Config";
-import { WorldData } from "./WorldData";
+import { Config, MessageType, WorkerEvent, WorkerPacket } from "../modules/Config";
+import { WorldData } from "../modules/WorldData";
 
 
 import * as Convert from "../utils/Convert"
 import * as Units from "../utils/Units"
-import { TerrainWorker } from "./TerrainWorker";
-import { PlanetSysWorker } from "./PlanetSysWorker";
 import { WorkerDOM } from "../utils/WorkerDOM";
 import { JguiMake, JguiManager } from "../gui/JguiMake";
 import { jguiData, setMainContainer } from "../gui/JguiUtils";

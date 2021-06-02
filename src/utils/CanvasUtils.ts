@@ -1,6 +1,6 @@
-import { MainManager } from "../modules/MainManager";
+import { WorldWebPage } from "../modules/WorldWebPage";
 import type GenericWorkerInstance from "worker-loader!./GenWorkerInstance.ts";
-import { OrbitingElement } from "../generate/OrbitingElement";
+import { OrbitingElement } from "../orbiting_elements/OrbitingElement";
 import { WorkerEvent, MetaCanvas, MessageType, WorkerPacket } from "../modules/Config";
 
 
@@ -11,7 +11,7 @@ export const SCROLL_THING_SIZE = 20;
 
 
 
-export function makeWorkerCanvas(mngr: MainManager, the_worker: GenericWorkerInstance, event: WorkerEvent) {
+export function makeWorkerCanvas(mngr: WorldWebPage, the_worker: GenericWorkerInstance, event: WorkerEvent) {
     var metaCanvas = event.data.metaCanvas
 
     var canvas = addCanvas(metaCanvas, mngr, the_worker)
@@ -41,7 +41,7 @@ export function makeWorkerCanvas(mngr: MainManager, the_worker: GenericWorkerIns
 }
 
 
-function addResizeListener(metaCanvas: MetaCanvas, mngr: MainManager, the_worker: GenericWorkerInstance, canvas: HTMLCanvasElement): void {
+function addResizeListener(metaCanvas: MetaCanvas, mngr: WorldWebPage, the_worker: GenericWorkerInstance, canvas: HTMLCanvasElement): void {
 
     var canvasResize = () => {
         var fakeResizeEvent: any = new Event("resize");
@@ -61,7 +61,7 @@ function addResizeListener(metaCanvas: MetaCanvas, mngr: MainManager, the_worker
     EventUtils.addResizeEvents(canvas, canvas.id, the_worker)
 }
 
-function sortExistingElements(metaCanvas: MetaCanvas, mngr: MainManager, the_worker: GenericWorkerInstance): void {
+function sortExistingElements(metaCanvas: MetaCanvas, mngr: WorldWebPage, the_worker: GenericWorkerInstance): void {
 
     var body = document.getElementsByTagName("body")[0];
     var stores_li = body.getElementsByTagName("canvas");
@@ -76,7 +76,7 @@ function sortExistingElements(metaCanvas: MetaCanvas, mngr: MainManager, the_wor
 }
 
 
-function addCanvas(metaCanvas: MetaCanvas, mngr: MainManager, the_worker: GenericWorkerInstance): HTMLCanvasElement {
+function addCanvas(metaCanvas: MetaCanvas, mngr: WorldWebPage, the_worker: GenericWorkerInstance): HTMLCanvasElement {
     var body = document.getElementsByTagName("body")[0];
     body.style.margin = "0"
     const canvas = document.createElement('canvas');

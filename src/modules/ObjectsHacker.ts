@@ -1,8 +1,8 @@
 
 
-import { PlanetarySystem } from "../generate/PlanetarySystem"
+import { PlanetarySystem } from "../orbiting_elements/PlanetarySystem"
 import * as Convert from "../utils/Convert"
-import { WorldData } from "./WorldData";
+import { WorldData } from "../modules/WorldData";
 
 
 
