@@ -13,6 +13,7 @@ import { BuildingDrawThree } from "./BuildingDrawThree";
 
 import { throttle, debounce } from 'lodash-es';
 import { Building } from "./Building";
+import { randClampInt } from "../utils/Random";
 
 
 const JGUI_ORDINAL = "4"
@@ -20,12 +21,30 @@ const WORLD_GEN_ORDER = 401;
 const THROTTHE_TIME = 500;
 
 
-const INITAL_TEXT_VAL = `
+const INITAL_TEXT_VAL_SM = `
+room-1 > door-30 | on:0 sides:3
+room-3 > door-30 | on:0    llen:3
 
-outside > door-1
-room-1 > door-1 | on:east
+room-1 > door-40 | on:120
+room-4 > door-40 | on:0  sides:4
+
+room-1 > door-20 | on:240
+room-2 > door-20 | on:0   llen:3
+room-2 > door-21 | on:140
+
+
+room-4 > door-41 | on:180
+room-5 > door-41 | on:0  sides:5
+
+room-5 > door-51 | on:222    llen:3
+room-6 > door-51 | on:0  sides:6
 
 `;
+
+
+
+
+
 
 export class BuildingWebPage {
     static get type() { return `BuildingWebPage` }
@@ -61,11 +80,33 @@ export class BuildingWebPage {
         const body = d3.select("body");
         this.textInput = body.append("textarea")
             // .attr("order", "0")
-            .style("width", "98%")
+            .style("width", "70%")
             .style("height", `${heightOffset}px`)
             .on("input", () => { wrapChangeText(null); })
 
-        this.textInput.node().value = INITAL_TEXT_VAL;
+        this.textInput.node().value = INITAL_TEXT_VAL_SM;
+
+
+
+        body.append("input").attr("type", "button")
+            .attr("class", "btn btn-secondary btn-sm").attr("value", "small")
+            .on("click", () => { this.textInput.node().value = INITAL_TEXT_VAL_SM; wrapChangeText(null); })
+
+        body.append("input").attr("type", "button")
+            .attr("class", "btn btn-secondary btn-sm").attr("value", "med")
+            .on("click", () => { this.textInput.node().value = this.makeRandRoomStr(14); wrapChangeText(null); })
+
+        body.append("input").attr("type", "button")
+            .attr("class", "btn btn-secondary btn-sm").attr("value", "big")
+            .on("click", () => { this.textInput.node().value = this.makeRandRoomStr(40); wrapChangeText(null); })
+
+        body.append("input").attr("type", "button")
+            .attr("class", "btn btn-info btn-sm").attr("value", "LOG")
+            .on("click", () => {
+                this.building.printGlobJson();
+            })
+
+
 
         this.canvas = CanvasUtils.makePageCanvas(this.config, this.metaCanvas);
         this.canvas.width = window.innerWidth - CanvasUtils.SCROLL_THING_SIZE;
@@ -77,24 +118,56 @@ export class BuildingWebPage {
             });
         })
 
+        // this way control will not react to scroll for zooming
+        // this.canvas.onscroll = (event) => { this.drawObj.controls.enableZoom = false; };
+        // this.canvas.onmousedown = (event) => { this.drawObj.controls.enableZoom = true; };
+        window.addEventListener('keydown', (event) => { this.drawObj.controls.enableZoom = event.shiftKey; });
+        window.addEventListener('keyup', (event) => { this.drawObj.controls.enableZoom = event.shiftKey; });
+
         this.drawObj.initPage(this.canvas);
+        this.drawObj.controls.enableZoom = false;
 
         this.building.init(this.drawObj.scene)
 
+
         // setTimeout(() => { this.textChanged(this.textInput.node().value); }, 0);
         this.textChanged(this.textInput.node().value);
+
+        // this.building.printGlobJson(); // DEBUGGING !!!!!!!!!!!!!!!
     }
 
     textChanged(text: string) {
         // console.log("text", text);
         this.building.fromText(text);
+        // this.building.placeIgnoreLinks()
+        this.building.placeRespectLinks()
+        this.building.adaptCamera(this.drawObj.camera, this.drawObj.controls)
         this.drawCall();
     }
 
     drawCall(): void {
         this.drawObj.draw();
-        // window.requestAnimationFrame(this.drawCall.bind(this));
+        window.requestAnimationFrame(this.drawCall.bind(this));
     }
+
+
+    makeRandRoomStr(count: number, lnkCnt = 2) {
+
+
+        var tst = ``;
+        for (let index = 0; index < count; index++) {
+            for (let lnkind = 0; lnkind < lnkCnt; lnkind++) {
+                var dorin = Math.max(0, index - randClampInt(0, 2))
+                tst += `\nroom-${index} > door-${dorin}`;
+                tst += `\nroom-${Math.max(0, index - randClampInt(0, 4))} > door-${dorin}`;
+            }
+        }
+
+
+        return tst
+
+    }
+
 
 }
 

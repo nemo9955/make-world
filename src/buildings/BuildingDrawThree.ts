@@ -64,6 +64,7 @@ export class BuildingDrawThree implements DrawPageInstance {
     }
 
     draw(): void {
+        this.renderer.setClearColor(0xeeeeee, 1);
         this.renderer.render(this.scene, this.camera);
     }
 
@@ -88,9 +89,18 @@ export class BuildingDrawThree implements DrawPageInstance {
         this.resize(this.canvasOffscreen); // lazy use canvas since params same as Event ...
 
 
-        var ambcolo = 1
-        const light_am = new THREE.AmbientLight(new THREE.Color(ambcolo, ambcolo, ambcolo));
-        this.scene.add(light_am);
+        // var ambcolo = 1
+        // const light_am = new THREE.AmbientLight(new THREE.Color(ambcolo, ambcolo, ambcolo));
+        // this.scene.add(light_am);
+
+
+        const radius = 10;
+        const radials = 12;
+        const circles = 6;
+        const divisions = 20;
+
+        const helper = new THREE.PolarGridHelper(radius, radials, circles, divisions);
+        this.scene.add(helper);
 
 
         const geometryHoverSphere = new THREE.SphereGeometry(1);
@@ -108,8 +118,8 @@ export class BuildingDrawThree implements DrawPageInstance {
         // events set in src/modules/EventsManager.ts -> addOrbitCtrlEvents
         this.controls = new OrbitControls(this.camera, this.fakeDOM);
         // this.controls.addEventListener("change", this.cameraMoved.bind(this))
-        this.controls.enablePan = false;
-        this.controls.enableZoom = false;
+        // this.controls.enablePan = false;
+        // this.controls.enableZoom = false;
         this.controls.mouseButtons = { RIGHT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, LEFT: THREE.MOUSE.PAN }
 
 

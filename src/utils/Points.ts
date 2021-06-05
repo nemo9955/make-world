@@ -292,3 +292,32 @@ export function makeGeoPtsRandBad2(number: number): pointGeoArr {
 //     // console.log("results", results);
 //     return results;
 // }
+
+
+/*
+    Get an ordered list of [number,number][] that can be used to display
+    the pointsCount objects starting from the center
+    output range is 0 to 1
+*/
+export function get2dGridPropPositions(pointsCount: number) {
+    var points: [number, number][] = [];
+    const maxPow = Math.ceil(Math.sqrt(pointsCount))
+
+    var rows = maxPow, cols = maxPow;
+    if ((cols - 1) * rows >= pointsCount) cols--;
+    rows += 1; cols += 1;
+
+    for (let row = 1; row < rows; row++) {
+        for (let col = 1; col < cols; col++) {
+            const elem: [number, number] = [(row / rows), (col / cols)];
+            points.push(elem)
+        }
+    }
+
+    // Sort the points so first ones are closer to the center
+    const a = [0.5, 0.5]; // https://stackoverflow.com/a/56223940/2948519
+    const sqDist = (pointa, pointb) => (pointa[0] - pointb[0]) ** 2 + (pointa[1] - pointb[1]) ** 2;
+    const pointsSorted = points.sort((pointa, pointb) => sqDist(a, pointa) - sqDist(a, pointb));
+
+    return { points: pointsSorted, rows: rows - 1, cols: cols - 1 };
+}
