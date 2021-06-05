@@ -22,14 +22,14 @@ const THROTTHE_TIME = 500;
 
 
 const INITAL_TEXT_VAL_SM = `
-room-1 > door-30 | on:0 sides:3
+room-1 > door-30 | on:0 sides:42
 room-3 > door-30 | on:0    llen:3
 
 room-1 > door-40 | on:120
 room-4 > door-40 | on:0  sides:4
 
 room-1 > door-20 | on:240
-room-2 > door-20 | on:0   llen:3
+room-2 > door-20 | on:0 llen:3 sides:3
 room-2 > door-21 | on:140
 
 
