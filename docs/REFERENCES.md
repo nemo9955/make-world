@@ -114,6 +114,9 @@ https://www.reddit.com/r/proceduralgeneration/comments/n6khor/wip_hierarchical_p
 
 https://www.reddit.com/r/proceduralgeneration/comments/n3id9t/wip_attempt_at_a_homegrown_pattern_creation/
 
+Not actual city, but districts and stuff
+https://www.reddit.com/r/generative/comments/nsl4m6/my_take_on_a_classic_p5js/
+
 
 # Procedural Tectonic Planets
 https://www.britannica.com/science/plate-tectonics
@@ -159,6 +162,10 @@ https://www.fs.fed.us/psw/cirmount/meetings/agu/pdf2011/Stephenson_talk_AGU2011.
 http://www.mit.edu/~jessicav/6.S198/Blog_Post/ProceduralGeneration.html
 
 http://entropicparticles.com/procedure-for-rivers-and-lakes
+
+Could be nice for sun effects or black holes in the background
+https://www.reddit.com/r/proceduralgeneration/comments/nqnr2z/an_accretion_disk_develops/
+
 
 # WORDS and language generation
 
