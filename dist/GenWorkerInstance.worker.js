@@ -89492,10 +89492,14 @@ exports.Color = Color;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.NumberRadiantFlux = exports.NumberTemperature = exports.NumberTime = exports.NumberAngle = exports.NumberDensity = exports.NumberBigMass = exports.NumberMass = exports.NumberVolume = exports.NumberLength = exports.NumberConverter = exports.true_anomaly_rev = exports.copyDeep = exports.copyShallow = exports.sphereVolumeBig = exports.sphereVolume = exports.copy = exports.clamp = exports.revToDeg = exports.degToRev = exports.lerp = exports.mapLinear = exports.radToRev = exports.revToRad = exports.radToDeg = exports.degToRad = exports.srToAu = exports.auToSr = exports.earthJupMass = exports.jupEarthMass = exports.jupmToKg = exports.kgToJupm = exports.juprToKm = exports.kmToJupr = exports.erToKm = exports.kmToEr = exports.srToKm = exports.kmToSr = exports.auToGm = exports.GmToAu = exports.auToKm = exports.kmToAu = exports.emToKg = exports.kgToEm = exports.smToKg = exports.kgToSm = void 0;
+exports.NumberRadiantFlux = exports.NumberTemperature = exports.NumberTime = exports.NumberAngle = exports.NumberDensity = exports.NumberBigMass = exports.NumberMass = exports.NumberVolume = exports.NumberLength = exports.NumberConverter = exports.true_anomaly_rev = exports.copyDeep = exports.copyShallow = exports.sphereVolumeBig = exports.sphereVolume = exports.copy = exports.clamp = exports.revToDeg = exports.degToRev = exports.lerp = exports.mapLinear = exports.radToRev = exports.revToRad = exports.radToDeg = exports.degToRad = exports.srToAu = exports.auToSr = exports.earthJupMass = exports.jupEarthMass = exports.jupmToKg = exports.kgToJupm = exports.juprToKm = exports.kmToJupr = exports.erToKm = exports.kmToEr = exports.srToKm = exports.kmToSr = exports.auToGm = exports.GmToAu = exports.auToKm = exports.kmToAu = exports.emToKg = exports.kgToEm = exports.smToKg = exports.kgToSm = exports.mToCm = exports.cmToM = void 0;
 const THREE = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 const Units = __webpack_require__(/*! ../utils/Units */ "./src/utils/Units.ts");
 // import * as Convert from "../utils/Convert"
+function cmToM(from) { return from / 100; }
+exports.cmToM = cmToM;
+function mToCm(from) { return from * 100; }
+exports.mToCm = mToCm;
 function kgToSm(from) {
     return from / Units.SOLAR_MASS_KG;
 }

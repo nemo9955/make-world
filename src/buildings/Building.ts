@@ -38,24 +38,39 @@ import { bLink } from "./bLink";
 // https://www.reddit.com/r/typescript/comments/hxo7c9/type_nested_object/
 
 export type BldNameType = string;
-export type BldMainLinkType = {
-    links?: BldNameType[],
+
+export type BldDefaults = {
+    onAngle: number,
+    elevation: number,
+    sides: number,
+    height: number,
+    width: number,
+    depth: number,
+    ldepth: number,
+    revLink: boolean,
 }
 export type BldRoomLinkType = {
-    name?: BldNameType,
-    onAngle?: number,
+    name: BldNameType,
+    onAngle: number,
+    elevation: number,
+    revLink: boolean,
 }
 export type BldRoomType = {
-    links?: Record<string, BldRoomLinkType>,
+    name: BldNameType,
     sides?: number,
+    links: Record<string, BldRoomLinkType>,
+    height: number,
+    width: number,
+    depth?: number,
 };
 export type BldLinkType = {
-    rooms?: BldNameType[],
-    length?: number,
+    rooms: BldNameType[],
+    depth: number,
 };
 export type BuildingJson = {
     rooms: Record<string, BldRoomType>,
     links: Record<string, BldLinkType>,
+    default: BldDefaults,
 };
 
 export type BldGraphRoom = {
@@ -84,7 +99,20 @@ export class Building {
         this.rootRooms = [];
     }
 
-    private getEmptyJson(): BuildingJson { return { rooms: {}, links: {}, }; }
+    private getEmptyJson(): BuildingJson {
+        return {
+            rooms: {}, links: {}, default: {
+                onAngle: 0,
+                elevation: 0,
+                sides: 4,
+                height: 2.5,
+                width: 2,
+                depth: 2,
+                ldepth: 0.2,
+                revLink: false,
+            }
+        };
+    }
 
     init(scene: THREE.Scene,) {
         this.scene = scene;
@@ -101,96 +129,209 @@ export class Building {
             var line = textArr[index];
             line = line.trim();
             if (!line) continue;
-            // console.log("line", line);
 
-            const decRoomLink = line.match(/^([\w-]+)\s*\>\s*([\w-]+)/i);
-            if (decRoomLink) {
-                const room = decRoomLink[1];
-                const link = decRoomLink[2];
-
-                if (!asJson.rooms.hasOwnProperty(room)) {
-                    asJson.rooms[room] = {}
-                    asJson.rooms[room].links = {}
-                    asJson.rooms[room].sides = 4;
-                }
-
-                if (!asJson.rooms[room].links.hasOwnProperty(link)) {
-                    asJson.rooms[room].links[link] = {}
-                    asJson.rooms[room].links[link].onAngle = 0;
-                }
-
-                if (!asJson.links.hasOwnProperty(link)) {
-                    asJson.links[link] = {}
-                    asJson.links[link].rooms = []
-                    asJson.links[link].length = 1;
-                }
-
-                asJson.rooms[room].links[link].name = link;
-
-                if (asJson.links[link].rooms.includes(room) == false)
-                    asJson.links[link].rooms.push(room)
-
-                const pipeData = line.match(/\|([^<>|]+)/i)?.[1];
-                if (pipeData) {
-                    // console.log("pipeData", pipeData);
-                    const pdOn = pipeData.match(/on:(-?\w+)/i)?.[1];
-                    if (pdOn) {
-                        // console.log("pdOn", pdOn);
-                        const tmpAsNumber = toNumber(pdOn)
-                        var asAngle = 0;
-                        if (isFinite(tmpAsNumber)) asAngle = tmpAsNumber;
-                        else if (pdOn === "north") asAngle = 0;
-                        else if (pdOn === "east") asAngle = 90;
-                        else if (pdOn === "south") asAngle = 180;
-                        else if (pdOn === "west") asAngle = 270;
-                        else console.warn(`No value can be extracted`, pdOn)
-                        // console.log("pdOn, asAngle", pdOn, asAngle);
-                        asJson.rooms[room].links[link].onAngle = asAngle;
-                    }
-
-
-                    const pdSides = pipeData.match(/sides:(-?\w+)/i)?.[1];
-                    if (pdSides) {
-                        // console.log("pdSides,room", pdSides, room);
-                        const tmpAsNumber = toNumber(pdSides)
-                        var asNumber = 4;
-                        if (isFinite(tmpAsNumber)) asNumber = tmpAsNumber;
-                        else console.warn(`No value can be extracted`, pdSides)
-                        asJson.rooms[room].sides = asNumber;
-                    }
-
-
-                    const pdLinkLen = pipeData.match(/(lLen|linkLen|linkLength):(-?\w+)/i)?.[2];
-                    if (pdLinkLen) {
-                        const tmpAsNumber = toNumber(pdLinkLen)
-                        var asNumber = 1;
-                        if (isFinite(tmpAsNumber)) asNumber = tmpAsNumber;
-                        else console.warn(`No value can be extracted`, pdLinkLen)
-                        asJson.links[link].length = asNumber;
-                    }
-
-
-
-                    // const pdPlaceh = pipeData.match(/on:(-?\w+)/i)?.[1];
-                    // if (pdPlaceh) {
-                    //     const tmpAsNumber = toNumber(pdPlaceh)
-                    //     var asNumber = 0;
-                    //     if (isFinite(tmpAsNumber)) asNumber = tmpAsNumber;
-                    //     else if (pdPlaceh === "north") asNumber = 0;
-                    //     else if (pdPlaceh === "east") asNumber = 90;
-                    //     else if (pdPlaceh === "south") asNumber = 180;
-                    //     else if (pdPlaceh === "west") asNumber = 270;
-                    //     else console.warn(`No value can be extracted`, pdPlaceh)
-                    //     asJson.rooms[room].links[link].onAngle = asNumber;
-                    // }
-                }
+            const defaultMatch = line.match(/^(default|defaults)\s*\|/i);
+            if (defaultMatch) {
+                this.parseDefaultLine(line, asJson)
+                continue;
             }
+
+            const roomLinkMatch = line.match(/^([\w-]+)\s*\>\s*([\w-]+)/i);
+            if (roomLinkMatch) {
+                const room = roomLinkMatch[1]
+                const link = roomLinkMatch[2]
+                this.parseRoomLinkLine(room, link, line, asJson)
+                continue;
+            }
+
 
         }
 
         // console.log("asJson", JSON.stringify(asJson, null, 4));
         this.fromJson(asJson);
     }
+
+
+
+    private parseDefaultLine(line: string, asJson: BuildingJson) {
+        const pipeData = line.match(/\|([^<>|]+)/i)?.[1]
+
+        if (pipeData) {
+            this.genericSetNumberFromLine(pipeData, /ang/, (asNumber) => {
+                asJson.default.onAngle = asNumber
+            }, null)
+
+            this.genericSetNumberFromLine(pipeData, /sides/, (asNumber) => {
+                asJson.default.sides = asNumber
+            }, null)
+
+            this.genericSetNumberFromLine(pipeData, /lLen|lnkDepth|ld/, (asNumber) => {
+                asJson.default.ldepth = asNumber
+            }, null)
+
+            this.genericSetNumberFromLine(pipeData, /height|rh/, (asNumber) => {
+                asJson.default.height = asNumber
+            }, null)
+            this.genericSetNumberFromLine(pipeData, /width|rw/, (asNumber) => {
+                asJson.default.width = asNumber
+            }, null)
+            this.genericSetNumberFromLine(pipeData, /depth|rd/, (asNumber) => {
+                asJson.default.depth = asNumber
+            }, null)
+
+            this.genericSetNumberFromLine(pipeData, /elev|elevation/, (asNumber) => {
+                asJson.default.elevation = asNumber
+            }, null)
+        }
+    }
+
+
+
+    private parseRoomLinkLine(room: string, link: string, line: string, asJson: BuildingJson) {
+
+        if (!asJson.rooms.hasOwnProperty(room))
+            asJson.rooms[room] = {
+                links: {},
+                name: room,
+                sides: asJson.default.sides,
+                height: asJson.default.height,
+                width: asJson.default.width,
+                depth: asJson.default.depth, // will be ignored depending on sides
+            }
+
+        if (!asJson.rooms[room].links.hasOwnProperty(link))
+            asJson.rooms[room].links[link] = {
+                name: link,
+                revLink: asJson.default.revLink,
+                onAngle: asJson.default.onAngle,
+                elevation: asJson.default.elevation,
+            }
+
+        if (!asJson.links.hasOwnProperty(link))
+            asJson.links[link] = {
+                rooms: [],
+                depth: asJson.default.ldepth,
+            }
+
+        if (asJson.links[link].rooms.includes(room) == false)
+            asJson.links[link].rooms.push(room)
+
+        const pipeData = line.match(/\|([^<>|]+)/i)?.[1]
+        if (pipeData) {
+            this.genericSetNumberFromLine(pipeData, /ang/, (asNumber) => {
+                asJson.rooms[room].links[link].onAngle = asNumber
+            }, null)
+
+            this.genericSetNumberFromLine(pipeData, /sides/, (asNumber) => {
+                asJson.rooms[room].sides = asNumber
+            }, null)
+
+            this.genericSetNumberFromLine(pipeData, /lLen|lnkDepth|ld/, (asNumber) => {
+                asJson.links[link].depth = asNumber;
+                if (asNumber < 0) asJson.rooms[room].links[link].revLink = true;
+            }, null)
+
+            this.genericSetNumberFromLine(pipeData, /height|rh/, (asNumber) => {
+                asJson.rooms[room].height = asNumber
+            }, null)
+
+            this.genericSetNumberFromLine(pipeData, /width|rw/, (asNumber) => {
+                asJson.rooms[room].width = asNumber
+            }, null)
+
+            this.genericSetNumberFromLine(pipeData, /depth|rd/, (asNumber) => {
+                asJson.rooms[room].depth = asNumber
+            }, null)
+
+            this.genericSetNumberFromLine(pipeData, /elev|elevation/, (asNumber) => {
+                asJson.rooms[room].links[link].elevation = asNumber
+            }, asJson.rooms[room].height)
+        }
+    }
+
+
+
+    private genericSetNumberFromLine(
+        line: string,
+        fider: RegExp,
+        callback: any = null,
+        procTarget: number = null,
+        units: RegExp = /\S*/,
+    ): number {
+
+        const fancyAngleMatch = /(\S*)(-?\d+\.?\d*)\,(-?\d+\.?\d*)\,(-?\d+\.?\d*)/;
+        const fancyAngleRegex = new RegExp(`\\b(${fider.source}):${fancyAngleMatch.source}`, "i")
+        const fancyAngleMatcher = line.match(fancyAngleRegex);
+        if (fancyAngleMatcher) {
+            var [fullMatch, findName, faFlag, faMax, faSide, faProc, ...restData] = fancyAngleMatcher;
+            const nMax = toNumber(faMax);
+            const nSide = toNumber(faSide);
+            const nProc = toNumber(faProc);
+
+            const segFull = 360 / nMax;
+            const segPart = (nProc / 100) * segFull;
+            var asNum = (segFull * nSide) + segPart;
+
+            if (faFlag == "h") asNum -= segFull / 2;
+            if (faFlag == "H") asNum += segFull / 2;
+
+            // console.log(asNum, { nMax, nSide, nProc }, { segFull, segPart, asNum });
+
+            if (callback) callback(asNum, findName, mWord, null);
+            return asNum;
+        }
+
+
+        const numMatch = /-?\d+\.?\d*/;
+        const numberRegex = new RegExp(`\\b(${fider.source}):(${numMatch.source})(${units.source})`, "i")
+        const numberMatcher = line.match(numberRegex);
+        if (numberMatcher) {
+            // console.log("matcher", matcher);
+            var [fullMatch, findName, numVal, numUnit, ...restData] = numberMatcher;
+            var asNum = 0;
+            const tmpAsNumber = toNumber(numVal)
+
+            if (!numUnit) asNum = tmpAsNumber;
+            else if (numUnit == "%" && isFinite(procTarget)) asNum = (tmpAsNumber / 100) * procTarget;
+            else if (numUnit == "m") asNum = tmpAsNumber; // default is meters
+            else if (numUnit == "cm") asNum = Convert.cmToM(tmpAsNumber);
+            else {
+                console.warn(`No value can be extracted numberMatcher`, { line, matcher: numberMatcher });
+                return null;
+            }
+
+            if (callback) callback(asNum, findName, numVal, numUnit);
+            return asNum;
+        }
+
+
+        const wordMatch = /\S+/;
+        const wordRegex = new RegExp(`\\b(${fider.source}):(${wordMatch.source})`, "i")
+        const wordMatcher = line.match(wordRegex);
+        if (wordMatcher) {
+            // console.log("matcher", matcher);
+            var [fullMatch, findName, mWord, ...restData] = wordMatcher;
+            var asNum = 0;
+            const tmpAsNumber = toNumber(mWord)
+
+            if (isFinite(tmpAsNumber)) asNum = tmpAsNumber;
+            else if (mWord === "north") asNum = 0;
+            else if (mWord === "east") asNum = 270; // 270/90 rotation is CW
+            else if (mWord === "south") asNum = 180;
+            else if (mWord === "west") asNum = 90; // 90/270 rotation is CW
+            else {
+                console.warn(`No value can be extracted wordMatcher`, { line, matcher: wordMatcher });
+                return null;
+            }
+
+            if (callback) callback(asNum, findName, mWord, null);
+            return asNum;
+        }
+
+        return undefined;
+    }
+
+
 
     fromJson(json: BuildingJson) {
 
@@ -202,6 +343,7 @@ export class Building {
         const gupdRoom = intersection(lrKeys, grKeys);
 
         this.globalJson.links = json.links; // just copy all the links
+        this.globalJson.default = json.default;
 
         for (const rkey of gaddRoom)
             this.addRoom(rkey, json);
@@ -249,19 +391,22 @@ export class Building {
         this.graphRooms = [];
         this.rootRooms = [];
         for (const room of this.allRooms.values()) {
+            if (!this.breathRoomsList.includes(room))
+                this.rootRooms.push(room)
             this.genGraphStep(room);
         }
         this.graphRooms.reverse();
     }
 
 
-    placeIgnoreLinks() {
+    placeIgnoreLinks(listOfRooms: bRoom[]) {
 
-        const disPtsData = Points.get2dGridPropPositions(this.allRooms.size);
+        const disPtsData = Points.get2dGridPropPositions(listOfRooms.length);
+        // console.log("disPtsData", disPtsData);
 
         this.maxEdge = 0;
         var tmpvec3 = new THREE.Vector3();
-        for (const room of this.allRooms.values()) {
+        for (const room of listOfRooms) {
             // room.computeBoundingBox();
             room.boundingBox.getSize(tmpvec3);
             this.maxEdge = Math.max(this.maxEdge, tmpvec3.x)
@@ -277,15 +422,10 @@ export class Building {
 
         const displayPoints = disPtsData.points
         var dpIndex = 0;
-        for (const room of this.allRooms.values()) {
+        for (const room of listOfRooms) {
             const pt = displayPoints[dpIndex++];
             room.position.set((pt[0] - 0.5) * 2 * distx, 0, (pt[1] - 0.5) * 2 * distz)
             // console.log("room.position", room.position);
-        }
-
-        for (const room of this.allRooms.values()) {
-            // console.log("room.position", room.position);
-            // console.log("room.cube.position", room.cube.position);
         }
 
 
@@ -294,7 +434,7 @@ export class Building {
     placeRespectLinks() {
         var tmpvec3 = new THREE.Vector3();
 
-        // this.placeIgnoreLinks();
+        this.placeIgnoreLinks(this.rootRooms);
 
         // console.log("this.graphRooms", this.graphRooms);
         for (const { room1, room2, link } of this.graphRooms) {
@@ -321,22 +461,25 @@ export class Building {
         }
 
 
-        const disPtsData = Points.get2dGridPropPositions(this.allRooms.size);
+        // const usedCount = this.allRooms.size ;
+        const usedCount = this.rootRooms.length;
+        const disPtsData = Points.get2dGridPropPositions(usedCount);
         var distx = disPtsData.cols * this.maxEdge * EXTRA_SPACE;
 
-        // more from the TOP
-        const camExtra = distx * 0.99;
-        camera.position.set(-1 * 0.1 * camExtra, camExtra, 0);
+        // // more from the TOP
+        // const camExtra = distx * 0.99;
+        // camera.position.set(-1 * 0.1 * camExtra, camExtra, 0);
+        // tmpvec3.set(0, 0, 0);
+        // camera.lookAt(tmpvec3);
+        // controls.target.copy(tmpvec3)
+
+        // more from the DIAGONAL
+        const camExtra = distx * .8;
+        camera.position.set(-1 * 0.4 * camExtra, camExtra, 0);
+        // tmpvec3.set(distx * -0.2, 0, 0);
         tmpvec3.set(0, 0, 0);
         camera.lookAt(tmpvec3);
         controls.target.copy(tmpvec3)
-
-        // more from the DIAGONAL
-        // const camExtra = distx * 0.5;
-        // camera.position.set(-1 * 1.4 * camExtra, camExtra, 0);
-        // tmpvec3.set(distx * -0.2, 0, 0);
-        // camera.lookAt(tmpvec3);
-        // controls.target.copy(tmpvec3)
 
     }
 

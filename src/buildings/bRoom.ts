@@ -26,9 +26,6 @@ export class bRoom extends bBaseObj {
 
     constructor() {
         super();
-
-
-
     }
 
 
@@ -36,23 +33,32 @@ export class bRoom extends bBaseObj {
         this.name = rkey;
         var rdata = globalJson.rooms[rkey];
 
+        var geomRoom: THREE.BufferGeometry = null;
+        if (rdata.sides == 4)
+            // geomRoom = new THREE.BoxGeometry(rdata.width, rdata.height, rdata.depth);
+            geomRoom = new THREE.BoxGeometry(rdata.depth, rdata.height, rdata.width);
+        else
+            geomRoom = new THREE.CylinderGeometry(rdata.width, rdata.width,
+                rdata.height, rdata.sides);
 
-        // const geomRoom = new THREE.BoxGeometry(1, 1, 1);
-        const geomRoom = new THREE.CylinderGeometry(2, 2, 1, rdata.sides);
-        const mateRoom = new THREE.MeshBasicMaterial({ color: 0x008800 });
+        const mateRoom = new THREE.MeshBasicMaterial({ color: 0xffffff * Math.random() });
+        // const mateRoom = new THREE.MeshBasicMaterial({ color: 0x008800 });
         mateRoom.transparent = true;
-        mateRoom.opacity = 0.9;
+        mateRoom.opacity = 0.7;
         this.cube = new THREE.Mesh(geomRoom, mateRoom);
-        this.cube.material.side = THREE.BackSide;
-        this.cube.position.set(0, 0.5, 0)
+        // this.cube.material.side = THREE.BackSide;
+        this.cube.material.side = THREE.DoubleSide;
+        this.cube.position.set(0, rdata.height / 2, 0)
         this.add(this.cube);
 
-        const geomTor = new THREE.TorusGeometry(0.1, 0.03, 5, 6);
-        const mateTor = new THREE.MeshBasicMaterial({ color: "cyan" });
-        const torus = new THREE.Mesh(geomTor, mateTor);
-        torus.rotateX(degToRad(90));
-        this.add(torus);
+        // const geomTor = new THREE.TorusGeometry(0.1, 0.03, 5, 6);
+        // const mateTor = new THREE.MeshBasicMaterial({ color: "cyan" });
+        // const torus = new THREE.Mesh(geomTor, mateTor);
+        // torus.rotateX(degToRad(90));
+        // this.add(torus);
 
+        const origax = new THREE.AxesHelper(0.5);
+        this.add(origax);
 
         this.computeBoundingBox();
     }
@@ -75,7 +81,10 @@ export class bRoom extends bBaseObj {
             // console.log("linkdata.onAngle", linkdata.onAngle);
 
             raycaster.ray.direction.applyAxisAngle(VEC3_UP, degToRad(linkdata.onAngle))
-            // console.log("raycaster.ray.direction", raycaster.ray.direction);
+
+            // Ray looks from outside !!!!!!!!!!!
+            raycaster.ray.at(1000, raycaster.ray.origin)
+            raycaster.ray.direction.negate();
 
             const arrowHelper = new THREE.ArrowHelper(raycaster.ray.direction, raycaster.ray.origin,
                 0.5, "red", 0.3, 0.05);
@@ -85,13 +94,11 @@ export class bRoom extends bBaseObj {
             if (intersect) {
                 // console.log("intersect", intersect);
                 var link = new bLink();
+                const linkPoint = intersect.point;
+                const linkDir = intersect.face.normal;
                 link.create(globalJson, linkid);
-                link.position.copy(intersect.point)
-                link.position.add(vec3tmp0.copy(intersect.face.normal).setScalar(0.001))
-                link.position.y = 0; // move it on the ground ... could be mutch better ...
-                vec3tmp0.copy(link.position).add(intersect.face.normal)
-                link.lookAt(vec3tmp0);
-                // link.rota
+                link.dock(globalJson, linkid, rkey, linkPoint, linkDir);
+
                 this.allLinks.set(linkid, link)
                 // this.allLinks.set(link.name, link)
                 this.add(link);

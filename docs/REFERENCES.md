@@ -56,10 +56,12 @@ https://terrarray.itch.io/orbis-multiplex
 interesting branching patter, maybe usefull for rivers/textures ?
 https://observablehq.com/@makio135/confined-trees
 
-
 js graph lib : dagrejs/graphlib
 https://github.com/dagrejs/graphlib
 
+https://deep-fold.itch.io/pixel-planet-generator
+https://www.reddit.com/r/proceduralgeneration/comments/nt38li/a_pixel_planet_generator_this_project_is_already/
+https://github.com/Deep-Fold/PixelPlanets
 
 
 # Sphere stuff :
