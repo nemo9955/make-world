@@ -6,6 +6,9 @@ import * as Units from "../utils/Units"
 
 
 
+export function cmToM(from: number): number { return from / 100; }
+export function mToCm(from: number): number { return from * 100; }
+
 export function kgToSm(from: number): number {
     return from / Units.SOLAR_MASS_KG;
 }

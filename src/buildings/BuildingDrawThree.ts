@@ -102,6 +102,16 @@ export class BuildingDrawThree implements DrawPageInstance {
         const helper = new THREE.PolarGridHelper(radius, radials, circles, divisions);
         this.scene.add(helper);
 
+        const mainAx = new THREE.AxesHelper(30);
+        mainAx.position.y = -5;
+        mainAx.scale.y = 0.1;
+        this.scene.add(mainAx);
+
+        this.scene.add(new THREE.ArrowHelper(new THREE.Vector3(+1, 0, 0), new THREE.Vector3(0, -6, 0), 10, 0x775555, 4, 2));      // N
+        this.scene.add(new THREE.ArrowHelper(new THREE.Vector3(-1, 0, 0), new THREE.Vector3(0, -6, 0), 10, 0xdddddd, 4, 2)); // S
+        this.scene.add(new THREE.ArrowHelper(new THREE.Vector3(0, 0, +1), new THREE.Vector3(0, -6, 0), 10, 0xaaaacc, 4, 1)); // E
+        this.scene.add(new THREE.ArrowHelper(new THREE.Vector3(0, 0, -1), new THREE.Vector3(0, -6, 0), 10, 0xdddddd, 4, 1)); // W
+
 
         const geometryHoverSphere = new THREE.SphereGeometry(1);
         const materialHoverSphere = new THREE.MeshBasicMaterial({ color: new THREE.Color("red"), side: THREE.DoubleSide });

@@ -45,23 +45,30 @@ Open Worldbuilding discord server invite : https://discord.gg/JNFcxXMYEX
     ✅ Complex event system for use with workers
     ✅ GUI to interact with the tool
     ✅ DB to hold information locally
-    🌓 Linearly (re)generate world : Planet Sys -> Terrain -> Region -> Town
-    🌓 Dedicated Pages to experiment with/generate single world parts like Planet Sys, Terrain, Towns, Languages, etc.
+    ✔️ Linearly (re)generate world : Planet Sys -> Terrain -> Region -> Town
+    ✔️ Dedicated Pages to experiment with/generate single world parts like Planet Sys, Terrain, Towns, Languages, etc.
     🌑 Proper Save, Select & Load of worlds from local DB
 
-    ✔️ Planetary system - functionally implemented
+    🌐 Planetary system - functionally implemented
         ✔️ Realistic-ish formulas and rules for a few usable elements (Planets and Starts)
         ✔️ Complex structures like single/binary Start and single/multi Planets with 0/1/2+ Moons
         🌑 More complex generation with more Orbital Elements
 
-    🌍 Planet terrain - under developement
+    🌐 Planet terrain - Basic implementation
         ✔️ Store and smoothly draw up to 100k points (target is 500k)
-        🌍 Static terrain with graph algos. to generate different elements like rivers
+        ✔️ Static terrain with graph algos. to generate different elements like rivers
         🌑 Moving Tectonic plates for more complex terrain
 
-    🌍 Languages - grooming
-        🌍 Experiemnet with a few existing names/words generating libs
-        🌍 Make a custom way of generating names/words by passing text and extracting probabilities
+    🌐 Languages - Basic demo implementation
+        🐞 Experiemnet with a few existing names/words generating libs
+        ✔️ Make a custom way of generating names/words by passing text and extracting probabilities
+        ✔️ Script to exctract category data from Wikipedia to feed the names/words generator
+
+    🌍 Building/rooms - Basic demo implementation
+        🌍 Based on imput text, assemble the layout of a building room by room
+        🌓 Implement some automatic generation of rooms
+        🌓 Generate some outside mesh based on rooms
+        🌓 Add furniture and architecture to rooms
 
     🌓 Interaction between elements
         🌓 Heating of the Planets from the Star(s)
@@ -90,6 +97,7 @@ https://gist.github.com/rxaviers/7360908 <<<<<<<<<<<<<<<<<<<<<<<<<<<<
     🌑 Not started, priority low
     🌓 Not started, priority medium
     🌔 Not started, priority high
+    🌐 Development paused
     🌍 Worked on
     🐞 Implemented but bugggy
     ✔️ Done but needs feedback/refinment
