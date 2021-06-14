@@ -133,10 +133,25 @@ sleep > uf-slp | ang:0 rw:3 rd:4
 upforge > upfor-mil | ang:212
 upmill > upfor-mil | ang:west  rw:2 rd:1.5
 
-
 `;
 
 
+const INITAL_TEXT_VAL_SM5 = `
+default | ld:0.1 rh:2.5
+
+hallway | rh:2 rw:2 rd:4
+closet  | rh:3 rw:2 sides:6 rot:90
+closet1  | rh:3 rw:2 sides:6
+
+// hallway > closet | cpang:100 elev:100%
+// hallway > closet | aang:100 elev:100%
+// hallway < closet | elev:100%
+hallway > closet | aang:91
+
+closet1 < closet | aang:170
+
+
+`;
 
 export class BuildingWebPage {
     static get type() { return `BuildingWebPage` }
@@ -173,42 +188,50 @@ export class BuildingWebPage {
         const body = d3.select("body");
 
 
-        body.append("input").attr("type", "button")
+        this.textInput = body.append("textarea")
+            // .attr("order", "0")
+            .style("width", "69%")
+            .style("height", `${heightOffset}px`)
+            .on("input", () => { wrapChangeText(null); })
+
+        this.textInput.node().value = INITAL_TEXT_VAL_SM5;
+
+        const butdiv = body.append("div");
+        // const butdiv = body.append("div")
+        //     .style("width", "29%")
+        //     .style("margin", "0px")
+        //     .style("padding", "0px")
+
+        butdiv.append("input").attr("type", "button")
             .attr("class", "btn btn-secondary btn-sm").attr("value", "small1")
             .on("click", () => { this.textInput.node().value = INITAL_TEXT_VAL_SM1; wrapChangeText(null); })
-
-        body.append("input").attr("type", "button")
+        butdiv.append("input").attr("type", "button")
             .attr("class", "btn btn-secondary btn-sm").attr("value", "small2")
             .on("click", () => { this.textInput.node().value = INITAL_TEXT_VAL_SM2; wrapChangeText(null); })
-
-        body.append("input").attr("type", "button")
+        butdiv.append("input").attr("type", "button")
             .attr("class", "btn btn-secondary btn-sm").attr("value", "small3")
             .on("click", () => { this.textInput.node().value = INITAL_TEXT_VAL_SM3; wrapChangeText(null); })
-        body.append("input").attr("type", "button")
+        butdiv.append("input").attr("type", "button")
             .attr("class", "btn btn-secondary btn-sm").attr("value", "small4")
             .on("click", () => { this.textInput.node().value = INITAL_TEXT_VAL_SM4; wrapChangeText(null); })
+        butdiv.append("input").attr("type", "button")
+            .attr("class", "btn btn-secondary btn-sm").attr("value", "small5")
+            .on("click", () => { this.textInput.node().value = INITAL_TEXT_VAL_SM5; wrapChangeText(null); })
 
-        body.append("input").attr("type", "button")
+        butdiv.append("input").attr("type", "button")
             .attr("class", "btn btn-secondary btn-sm").attr("value", "med")
             .on("click", () => { this.textInput.node().value = this.makeRandRoomStr(14); wrapChangeText(null); })
 
-        body.append("input").attr("type", "button")
+        butdiv.append("input").attr("type", "button")
             .attr("class", "btn btn-secondary btn-sm").attr("value", "big")
             .on("click", () => { this.textInput.node().value = this.makeRandRoomStr(40); wrapChangeText(null); })
 
-        body.append("input").attr("type", "button")
+        butdiv.append("input").attr("type", "button")
             .attr("class", "btn btn-info btn-sm").attr("value", "LOG")
             .on("click", () => {
                 this.building.printGlobJson();
             })
 
-        this.textInput = body.append("textarea")
-            // .attr("order", "0")
-            .style("width", "70%")
-            .style("height", `${heightOffset}px`)
-            .on("input", () => { wrapChangeText(null); })
-
-        this.textInput.node().value = INITAL_TEXT_VAL_SM4;
 
         this.canvas = CanvasUtils.makePageCanvas(this.config, this.metaCanvas);
         this.canvas.width = window.innerWidth - CanvasUtils.SCROLL_THING_SIZE;
@@ -241,8 +264,10 @@ export class BuildingWebPage {
     textChanged(text: string) {
         // console.log("text", text);
         this.building.fromText(text);
+
         // this.building.placeIgnoreLinks([...this.building.allRooms.values()]);
         this.building.placeRespectLinks()
+
         // this.building.adaptCamera(this.drawObj.camera, this.drawObj.controls)
         // this.drawCall();
     }

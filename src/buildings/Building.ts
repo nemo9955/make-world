@@ -29,7 +29,6 @@ import { difference, intersection, isNumber, toNumber, uniq } from "lodash";
 import { bBaseObj } from "./bBaseObj";
 import { bRoom } from "./bRoom";
 import { Vector3 } from "three";
-import { bLink } from "./bLink";
 
 
 // https://en.wikipedia.org/wiki/Building
@@ -41,47 +40,45 @@ export type BldNameType = string;
 
 export type BldDefaults = {
     onAngle: number,
-    elevation: number,
+    conElev: number,
     sides: number,
     height: number,
     width: number,
     depth: number,
     ldepth: number,
-    revLink: boolean,
 }
-export type BldRoomLinkType = {
-    name: BldNameType,
-    onAngle: number,
-    elevation: number,
-    revLink: boolean,
-}
+
+export type BldConectedRoom = {
+    room1: BldNameType,
+    room2: BldNameType,
+    conElev: number,
+    conAng?: number,
+    snapPoint: boolean,
+};
+
 export type BldRoomType = {
     name: BldNameType,
     sides?: number,
-    links: Record<string, BldRoomLinkType>,
+    conected: Record<string, BldConectedRoom>,
     height: number,
     width: number,
     depth?: number,
-};
-export type BldLinkType = {
-    rooms: BldNameType[],
-    depth: number,
-};
-export type BuildingJson = {
-    rooms: Record<string, BldRoomType>,
-    links: Record<string, BldLinkType>,
-    default: BldDefaults,
+    rotation: number,
 };
 
 export type BldGraphRoom = {
     room1: BldNameType,
     room2: BldNameType,
-    link: BldNameType,
+};
+
+export type BuildingJson = {
+    default: BldDefaults,
+    rooms: Record<string, BldRoomType>,
 };
 
 
 
-const EXTRA_SPACE = 3;
+const EXTRA_SPACE = 1.5;
 
 
 export class Building {
@@ -101,16 +98,17 @@ export class Building {
 
     private getEmptyJson(): BuildingJson {
         return {
-            rooms: {}, links: {}, default: {
+            default: {
                 onAngle: 0,
-                elevation: 0,
+                conElev: 0,
                 sides: 4,
                 height: 2.5,
                 width: 2,
                 depth: 2,
                 ldepth: 0.2,
-                revLink: false,
-            }
+            },
+            // pairs: {},
+            rooms: {},
         };
     }
 
@@ -136,21 +134,57 @@ export class Building {
                 continue;
             }
 
-            const roomLinkMatch = line.match(/^([\w-]+)\s*\>\s*([\w-]+)/i);
-            if (roomLinkMatch) {
-                const room = roomLinkMatch[1]
-                const link = roomLinkMatch[2]
-                this.parseRoomLinkLine(room, link, line, asJson)
+            const justRoomMatch = line.match(/^([\w-]+)\s*\|/i);
+            if (justRoomMatch) {
+                const room = justRoomMatch[1]
+                this.parseCreateRoomLine(room, line, asJson)
                 continue;
             }
 
+            const roomLinkMatch = line.match(/^([\w-]+)\s*(>|<)\s*([\w-]+)/i);
+            if (roomLinkMatch) {
+                var room1 = roomLinkMatch[1]
+                var room2 = roomLinkMatch[3]
+                const sign = roomLinkMatch[2]
+
+                // swap order for order sensitive actions
+                if (sign == "<") [room1, room2] = [room2, room1]
+
+                this.parsePairedRoomsLine(room1, room2, line, asJson)
+                continue;
+            }
 
         }
 
-        // console.log("asJson", JSON.stringify(asJson, null, 4));
+        console.log("asJson", JSON.stringify(asJson, null, 4));
         this.fromJson(asJson);
     }
 
+    fromJson(json: BuildingJson) {
+
+        const grKeys = Object.keys(this.globalJson.rooms);
+        const lrKeys = Object.keys(json.rooms);
+
+        const gdelRoom = difference(grKeys, lrKeys);
+        const gaddRoom = difference(lrKeys, grKeys);
+        const gupdRoom = intersection(lrKeys, grKeys);
+
+        // this.globalJson.links = json.links; // just copy all the links
+        // this.globalJson.pairs = json.pairs; // just copy all the links
+        this.globalJson.default = json.default;
+
+        for (const rkey of gaddRoom)
+            this.addRoom(rkey, json);
+        for (const rkey of gdelRoom)
+            this.deleteRoom(rkey);
+        for (const rkey of gupdRoom) /// no update until internal structure is also properly managed
+            // this.updateRoom(rkey, json);
+            this.deleteRoom(rkey), this.addRoom(rkey, json);
+
+
+        // console.log("this.globalJson", JSON.stringify(this.globalJson, null, 4));
+        this.genGraph();
+    }
 
 
     private parseDefaultLine(line: string, asJson: BuildingJson) {
@@ -180,55 +214,22 @@ export class Building {
             }, null)
 
             this.genericSetNumberFromLine(pipeData, /elev|elevation/, (asNumber) => {
-                asJson.default.elevation = asNumber
+                asJson.default.conElev = asNumber
             }, null)
         }
     }
 
 
 
-    private parseRoomLinkLine(room: string, link: string, line: string, asJson: BuildingJson) {
+    private parseCreateRoomLine(room: string, line: string, asJson: BuildingJson) {
 
-        if (!asJson.rooms.hasOwnProperty(room))
-            asJson.rooms[room] = {
-                links: {},
-                name: room,
-                sides: asJson.default.sides,
-                height: asJson.default.height,
-                width: asJson.default.width,
-                depth: asJson.default.depth, // will be ignored depending on sides
-            }
-
-        if (!asJson.rooms[room].links.hasOwnProperty(link))
-            asJson.rooms[room].links[link] = {
-                name: link,
-                revLink: asJson.default.revLink,
-                onAngle: asJson.default.onAngle,
-                elevation: asJson.default.elevation,
-            }
-
-        if (!asJson.links.hasOwnProperty(link))
-            asJson.links[link] = {
-                rooms: [],
-                depth: asJson.default.ldepth,
-            }
-
-        if (asJson.links[link].rooms.includes(room) == false)
-            asJson.links[link].rooms.push(room)
+        this.ensureJsonRoom(asJson, room)
 
         const pipeData = line.match(/\|([^<>|]+)/i)?.[1]
         if (pipeData) {
-            this.genericSetNumberFromLine(pipeData, /ang/, (asNumber) => {
-                asJson.rooms[room].links[link].onAngle = asNumber
-            }, null)
 
             this.genericSetNumberFromLine(pipeData, /sides/, (asNumber) => {
                 asJson.rooms[room].sides = asNumber
-            }, null)
-
-            this.genericSetNumberFromLine(pipeData, /lLen|lnkDepth|ld/, (asNumber) => {
-                asJson.links[link].depth = asNumber;
-                if (asNumber < 0) asJson.rooms[room].links[link].revLink = true;
             }, null)
 
             this.genericSetNumberFromLine(pipeData, /height|rh/, (asNumber) => {
@@ -243,10 +244,72 @@ export class Building {
                 asJson.rooms[room].depth = asNumber
             }, null)
 
-            this.genericSetNumberFromLine(pipeData, /elev|elevation/, (asNumber) => {
-                asJson.rooms[room].links[link].elevation = asNumber
-            }, asJson.rooms[room].height)
+            this.genericSetNumberFromLine(pipeData, /rot|rotation/, (asNumber) => {
+                asJson.rooms[room].rotation = asNumber
+            }, null)
         }
+    }
+
+
+
+    private ensureJsonRoom(asJson: BuildingJson, room: BldNameType) {
+        if (!asJson.rooms.hasOwnProperty(room))
+            asJson.rooms[room] = {
+                name: room,
+                rotation: 0,
+                conected: {},
+                sides: asJson.default.sides,
+                height: asJson.default.height,
+                width: asJson.default.width,
+                depth: asJson.default.depth,
+            }
+    }
+
+
+    private ensureRoomsPair(asJson: BuildingJson, room1: string, room2: string) {
+        if (!asJson.rooms[room1].conected.hasOwnProperty(room2))
+            asJson.rooms[room1].conected[room2] = {
+                room1: room2,
+                room2: room1,
+                conElev: asJson.default.conElev,
+                snapPoint: false,
+            }
+    }
+
+    private parsePairedRoomsLine(room1: BldNameType, room2: BldNameType, line: string, asJson: BuildingJson) {
+
+        this.ensureJsonRoom(asJson, room1);
+        this.ensureJsonRoom(asJson, room2);
+        this.ensureRoomsPair(asJson, room1, room2)
+        this.ensureRoomsPair(asJson, room2, room1)
+
+        // const pipeData = line.match(/\|([^<>|]+)/i)?.[1]
+        const pipeData = line.match(/\|(.+)/i)?.[1]
+        if (pipeData) {
+
+            this.genericSetNumberFromLine(pipeData, /aang|auto_angle/, (asNumber) => {
+                asJson.rooms[room1].conected[room2].conAng = 0 + asNumber;
+                asJson.rooms[room2].conected[room1].conAng = 180 + asNumber;
+            }, null)
+
+            this.genericSetNumberFromLine(pipeData, /cpang|close_point_angle/, (asNumber) => {
+                asJson.rooms[room1].conected[room2].conAng = 0 + asNumber;
+                asJson.rooms[room2].conected[room1].conAng = 180 + asNumber;
+                asJson.rooms[room1].conected[room2].snapPoint = true;
+                asJson.rooms[room2].conected[room1].snapPoint = true;
+            }, null)
+
+            this.genericSetNumberFromLine(pipeData, /ang|angle/, (asNumber) => {
+                asJson.rooms[room1].conected[room2].conAng = asNumber
+            }, null)
+
+            this.genericSetNumberFromLine(pipeData, /elev|elevation/, (asNum, findName, numVal, numUnit) => {
+                console.log("asNumber", { asNum, findName, numVal, numUnit });
+                asJson.rooms[room1].conected[room2].conElev = asNum
+            }, asJson.rooms[room1].height)
+
+        }
+
     }
 
 
@@ -292,7 +355,8 @@ export class Building {
             const tmpAsNumber = toNumber(numVal)
 
             if (!numUnit) asNum = tmpAsNumber;
-            else if (numUnit == "%" && isFinite(procTarget)) asNum = (tmpAsNumber / 100) * procTarget;
+            else if (numUnit == "%" && !isNumber(procTarget)) asNum = 0, console.warn(`No procTarget for %`, line);
+            else if (numUnit == "%" && isNumber(procTarget)) asNum = (tmpAsNumber / 100) * procTarget;
             else if (numUnit == "m") asNum = tmpAsNumber; // default is meters
             else if (numUnit == "cm") asNum = Convert.cmToM(tmpAsNumber);
             else {
@@ -333,54 +397,25 @@ export class Building {
 
 
 
-    fromJson(json: BuildingJson) {
-
-        const grKeys = Object.keys(this.globalJson.rooms);
-        const lrKeys = Object.keys(json.rooms);
-
-        const gdelRoom = difference(grKeys, lrKeys);
-        const gaddRoom = difference(lrKeys, grKeys);
-        const gupdRoom = intersection(lrKeys, grKeys);
-
-        this.globalJson.links = json.links; // just copy all the links
-        this.globalJson.default = json.default;
-
-        for (const rkey of gaddRoom)
-            this.addRoom(rkey, json);
-        for (const rkey of gdelRoom)
-            this.deleteRoom(rkey);
-        for (const rkey of gupdRoom) /// no update until internal structure is also properly managed
-            // this.updateRoom(rkey, json);
-            this.deleteRoom(rkey), this.addRoom(rkey, json);
-
-
-        this.genGraph();
-    }
 
 
     private genGraphStep(room: bRoom) {
         if (this.breathRoomsList.includes(room)) return;
         this.breathRoomsList.push(room);
 
-        // console.log("room", room);
-        const roomLinks = Object.keys(this.globalJson.rooms[room.name].links);
-        for (const link of roomLinks) {
-            // var liroom = this.allRooms.get(link);
-            var linkedRooms = this.globalJson.links[link].rooms
-            for (const linkedRoomName of linkedRooms) {
-                var linkedRoom = this.allRooms.get(linkedRoomName)
+        var conRooms = Object.entries(this.globalJson.rooms[room.name].conected)
+        for (const [conRoomName, conRoomData] of conRooms) {
+            var linkedRoom = this.allRooms.get(conRoomName)
 
-                if (this.breathRoomsList.includes(linkedRoom)) continue;
-                room.linkedRooms.push(linkedRoom)
-                this.genGraphStep(linkedRoom);
+            if (this.breathRoomsList.includes(linkedRoom)) continue;
+            // room.linkedRooms.push(linkedRoom)
+            this.genGraphStep(linkedRoom);
 
-                if (room.name == linkedRoom.name) continue;
-                this.graphRooms.push({
-                    room1: room.name,
-                    room2: linkedRoom.name,
-                    link: link,
-                })
-            }
+            if (room.name == linkedRoom.name) continue;
+            this.graphRooms.push({
+                room1: room.name,
+                room2: linkedRoom.name,
+            })
         }
     }
 
@@ -424,7 +459,8 @@ export class Building {
         var dpIndex = 0;
         for (const room of listOfRooms) {
             const pt = displayPoints[dpIndex++];
-            room.position.set((pt[0] - 0.5) * 2 * distx, 0, (pt[1] - 0.5) * 2 * distz)
+            // room.position.set((pt[0] - 0.5) * 2 * distx, 0, (pt[1] - 0.5) * 2 * distz)
+            room.position.set((pt[1] - 0.5) * 2 * distx, 0, (pt[0] - 0.5) * 2 * distz)
             // console.log("room.position", room.position);
         }
 
@@ -434,15 +470,18 @@ export class Building {
     placeRespectLinks() {
         var tmpvec3 = new THREE.Vector3();
 
-        this.placeIgnoreLinks(this.rootRooms);
+        // this.placeIgnoreLinks(this.rootRooms);
+        this.placeIgnoreLinks([...this.allRooms.values()]);
+
+        // this.scene.updateWorldMatrix(false, true)
+        // this.scene.updateMatrixWorld(true)
 
         // console.log("this.graphRooms", this.graphRooms);
-        for (const { room1, room2, link } of this.graphRooms) {
+        for (const { room1, room2 } of this.graphRooms) {
             const roomObj1 = this.allRooms.get(room1);
             const roomObj2 = this.allRooms.get(room2);
 
-            // console.log("....", room1, room2, link);
-            roomObj2.dockTo(roomObj1, link, this.scene);
+            roomObj2.dockTo(roomObj1, this.globalJson, this.scene);
         }
 
 
@@ -451,6 +490,12 @@ export class Building {
 
     adaptCamera(camera: THREE.Camera, controls: OrbitControls) {
         var tmpvec3 = new THREE.Vector3();
+
+
+        camera.position.set(-0.5, 3, 0).multiplyScalar(4);
+        tmpvec3.set(0, 0, 0); camera.lookAt(tmpvec3);
+        return;
+
 
 
         this.maxEdge = 0;
@@ -484,7 +529,6 @@ export class Building {
     }
 
     allRooms = new Map<string, bRoom>()
-    allLinks = new Map<string, bLink>()
 
     private addRoom(rkey: string, json: BuildingJson) {
         // console.log("added rkey", rkey);
@@ -493,14 +537,14 @@ export class Building {
         room.create(this.globalJson, rkey)
         this.scene.add(room);
         this.allRooms.set(rkey, room);
-        this.updateRoom(rkey, json); // this will actually set all the right properties
+        // this.updateRoom(rkey, json); // this will actually set all the right properties
     }
 
     private updateRoom(rkey: string, json: BuildingJson) {
         // console.log("update rkey", rkey);
         this.globalJson.rooms[rkey] = json.rooms[rkey];
         const room = this.allRooms.get(rkey);
-        room.update(this.globalJson, rkey, this.scene)
+        // room.update(this.globalJson, rkey, this.scene)
     }
 
     private deleteRoom(rkey: string) {
